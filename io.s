@@ -16,19 +16,19 @@ io_char := $02FF
 ; Returns the length in A.
 
 getline:
-        ldy     #0              ; Use Y to track write index
+        ldx     #0              ; Use X to track write index
 @next:
-        tya                     ; Save Y before calling functions
+        txa                     ; Save X before calling functions
         pha
         jsr     getchar         ; Read one character
         cmp     #$0A            ; EOL?
         beq     @done           ; Yes
-        tax                     ; Restore Y while preserving A
+        tay                     ; Restore X while preserving A
         pla
-        tay
-        txa    
-        sta     buffer,y        ; Otherwise store character in buffer
-        iny                     ; Increment write index
+        tax
+        tya    
+        sta     buffer,x        ; Otherwise store character in buffer
+        inx                     ; Increment write index
         jmp     @next
 @done:
         pla
@@ -50,7 +50,6 @@ getchar:
 
 ; Writes a line to the console. Defaults to write from buffer.
 ; The putline_ptr1 entry point writes from the buffer address in ptr1.
-; Inputs:
 ; AX = a pointer to the buffer to write (putline_buffer sets this to buffer)
 ; Y = the number of bytes to write
 
@@ -72,7 +71,6 @@ putline:
         rts
 
 ; Writes a single character to the console.
-; Inputs:
 ; A = the character to output
 
 putchar:
