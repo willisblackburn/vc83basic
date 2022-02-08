@@ -13,35 +13,40 @@ buffer := $0200
 io_char := $02FF
 
 ; Reads a line from the console into the buffer.
-; Returns the length in Y.
+; Returns the length in A.
 
 getline:
-    ldy     #0                  ; Y will be the read index
+        ldy     #0              ; Use Y to track write index
 @next:
-    jsr     getchar             ; Read one character
-    pha
-    jsr     putchar
-    pla
-    cmp     #$0A                ; EOL?
-    beq     @done               ; Yes
-    sta     buffer,y            ; Otherwise store character in buffer
-    jmp     @next
+        tya                     ; Save Y before calling functions
+        pha
+        jsr     getchar         ; Read one character
+        cmp     #$0A            ; EOL?
+        beq     @done           ; Yes
+        tax                     ; Restore Y while preserving A
+        pla
+        tay
+        txa    
+        sta     buffer,y        ; Otherwise store character in buffer
+        iny                     ; Increment write index
+        jmp     @next
 @done:
-    rts
+        pla
+        rts
 
 ; Reads a single character from the console.
 ; Returns the character in A.
 
 getchar:
-    jsr     push0               ; File descriptor 0 (stdin)
-    lda     #<io_char           ; Load io_char address into AX
-    ldx     #>io_char
-    jsr     pushax              ; Push onto C stack
-    lda     #1                  ; Length
-    ldx     #0 
-    jsr     _read
-    lda     io_char             ; Get the character into A
-    rts
+        jsr     push0           ; File descriptor 0 (stdin)
+        lda     #<io_char       ; Load io_char address into AX
+        ldx     #>io_char
+        jsr     pushax          ; Push onto C stack
+        lda     #1              ; Length
+        ldx     #0 
+        jsr     _read
+        lda     io_char         ; Get the character into A
+        rts
 
 ; Writes a line to the console. Defaults to write from buffer.
 ; The putline_ptr1 entry point writes from the buffer address in ptr1.
@@ -50,35 +55,35 @@ getchar:
 ; ptr1 = pointer to the buffer containing the string (putline_ptr1 only)
 
 putline:
-    ldx     #<buffer
-    stx     ptr1
-    ldx     #>buffer
-    stx     ptr1+1
+        ldx     #<buffer        ; Use X to load ptr1 since A is the length
+        stx     ptr1
+        ldx     #>buffer
+        stx     ptr1+1
 putline_ptr1:
-    pha                         ; Park the length
-    jsr     push1               ; File descriptor 1 (stdout)
-    lda     ptr1
-    ldx     ptr1+1
-    jsr     pushax              ; Push buffer pointer onto C stack
-    pla                         ; Length back into A
-    ldx     #0                  ; High byte of length
-    jsr     _write
-    rts
+        pha                     ; Park the length
+        jsr     push1           ; File descriptor 1 (stdout)
+        lda     ptr1
+        ldx     ptr1+1
+        jsr     pushax          ; Push buffer pointer onto C stack
+        pla                     ; Length back into A
+        ldx     #0              ; High byte of length
+        jsr     _write
+        rts
 
 ; Writes a single character to the console.
 ; Inputs:
 ; A = the character to output
 
 putchar:
-    sta     io_char             ; Store character in io_char
-    jsr     push1               ; File descriptor 1 (stdout)
-    lda     #<io_char           ; Load io_char address into AX
-    ldx     #>io_char
-    jsr     pushax              ; Push onto C stack
-    lda     #1                  ; Length
-    ldx     #0 
-    jsr     _write
-    rts
+        sta     io_char         ; Store character in io_char
+        jsr     push1           ; File descriptor 1 (stdout)
+        lda     #<io_char       ; Load io_char address into AX
+        ldx     #>io_char
+        jsr     pushax          ; Push onto C stack
+        lda     #1              ; Length
+        ldx     #0 
+        jsr     _write
+        rts
     
 
 

@@ -1,4 +1,4 @@
-.import putline_ptr1
+.import getline, putline, putline_ptr1, putchar
 
 ; cc65 runtime
 .include "zeropage.inc"
@@ -14,7 +14,10 @@
 ; Export startup address to exehdr module
 .export startup
 
-message: .byte "Hello, world", $0A
+message: .byte "Enter your name: "
+message_length = * - message
+hello: .byte "Hello, "
+hello_length = * - hello
 
 .segment "STARTUP"
 
@@ -27,12 +30,25 @@ startup:
         sta     sp
         stx     sp+1            ; Set up C stack
 
-        lda     #<message
+        lda     #<message       ; Load ptr1 with the message pointer
         sta     ptr1
         lda     #>message
         sta     ptr1+1
-        lda     #13
-        jsr     putline_ptr1
+        lda     #message_length
+        jsr     putline_ptr1    ; Write the message
+
+        jsr     getline         ; Get the user's input
+        pha                     ; Save the length of the input
+        lda     #<hello         ; Load ptr1 with the hello pointer
+        sta     ptr1
+        lda     #>hello
+        sta     ptr1+1
+        lda     #hello_length
+        jsr     putline_ptr1    ; Write "hello"
+        pla                     ; Get input length
+        jsr     putline         ; Output name (still in buffer)
+        lda     #$0A            ; Linefeed
+        jsr     putchar         ; Write linefeed
 
         ldx     #$00
         lda     #$00
