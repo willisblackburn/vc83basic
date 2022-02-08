@@ -1,4 +1,4 @@
-.import getline, putline, putline_ptr1, putchar
+.import getline, putline, putline_buffer, putchar
 
 ; cc65 runtime
 .include "zeropage.inc"
@@ -31,22 +31,19 @@ startup:
         stx     sp+1            ; Set up C stack
 
         lda     #<message       ; Load ptr1 with the message pointer
-        sta     ptr1
-        lda     #>message
-        sta     ptr1+1
-        lda     #message_length
-        jsr     putline_ptr1    ; Write the message
+        ldx     #>message
+        ldy     #message_length
+        jsr     putline         ; Write the message
 
         jsr     getline         ; Get the user's input
-        pha                     ; Save the length of the input
+        pha                     ; Save length of user input
         lda     #<hello         ; Load ptr1 with the hello pointer
-        sta     ptr1
-        lda     #>hello
-        sta     ptr1+1
-        lda     #hello_length
-        jsr     putline_ptr1    ; Write "hello"
+        ldx     #>hello
+        ldy     #hello_length
+        jsr     putline         ; Write "hello"
         pla                     ; Get input length
-        jsr     putline         ; Output name (still in buffer)
+        tay
+        jsr     putline_buffer  ; Output name (still in buffer)
         lda     #$0A            ; Linefeed
         jsr     putchar         ; Write linefeed
 

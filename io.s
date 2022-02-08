@@ -5,7 +5,7 @@
 ; sim65 vectors
 .import _read, _write
 
-.export getline, getchar, putline, putline_ptr1, putchar
+.export getline, getchar, putline, putline_buffer, putchar
 
 ; 255-byte buffer for I/O functions
 buffer := $0200
@@ -51,15 +51,16 @@ getchar:
 ; Writes a line to the console. Defaults to write from buffer.
 ; The putline_ptr1 entry point writes from the buffer address in ptr1.
 ; Inputs:
-; A = the number of bytes to write
-; ptr1 = pointer to the buffer containing the string (putline_ptr1 only)
+; AX = a pointer to the buffer to write (putline_buffer sets this to buffer)
+; Y = the number of bytes to write
 
-putline:
-        ldx     #<buffer        ; Use X to load ptr1 since A is the length
-        stx     ptr1
+putline_buffer:
+        lda     #<buffer
         ldx     #>buffer
+putline:
+        sta     ptr1
         stx     ptr1+1
-putline_ptr1:
+        tya
         pha                     ; Park the length
         jsr     push1           ; File descriptor 1 (stdout)
         lda     ptr1
