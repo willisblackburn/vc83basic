@@ -7,10 +7,14 @@
 
 .export getline, getchar, putline, putline_buffer, putchar
 
-; 255-byte buffer for I/O functions
+; 256-byte buffer for I/O functions
 buffer := $0200
-; Use the last byte of the BUFFER page for character I/O operations.
-io_char := $02FF
+
+.bss
+
+io_char:        .res 1
+
+.code
 
 ; Reads a line from the console into the buffer.
 ; Returns the length in A.
