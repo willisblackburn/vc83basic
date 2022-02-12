@@ -14,12 +14,12 @@
 ; Export startup address to exehdr module
 .export startup
 
+.segment "STARTUP"
+
 message: .byte "Enter your name: "
 message_length = * - message
 hello: .byte "Hello, "
 hello_length = * - hello
-
-.segment "STARTUP"
 
 startup:
         cld                     ; Clear decimal flag
