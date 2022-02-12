@@ -36,13 +36,10 @@ startup:
         jsr     putline         ; Write the message
 
         jsr     getline         ; Get the user's input
-        pha                     ; Save length of user input
         lda     #<hello         ; Load ptr1 with the hello pointer
         ldx     #>hello
         ldy     #hello_length
         jsr     putline         ; Write "hello"
-        pla                     ; Get input length
-        tay
         jsr     putline_buffer  ; Output name (still in buffer)
         lda     #$0A            ; Linefeed
         jsr     putchar         ; Write linefeed
