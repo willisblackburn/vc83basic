@@ -6,6 +6,7 @@ TEST_COMMON_OBJECTS = $(TEST_COMMON_SOURCES:.s=.o)
 TEST_SOURCES = util_test.c
 TEST_OBJECTS = $(TEST_SOURCES:.c=.o)
 TESTS = $(TEST_SOURCES:.c=)
+RUN_TESTS = $(addsuffix .run, $(TESTS))
 
 CL65 = cl65
 ARCH = -t sim6502
@@ -18,8 +19,13 @@ all: basic $(TESTS)
 basic: $(OBJECTS)
 	$(CL65) $(LDFLAGS) -o $@ $^
 
-$(TESTS): %: %.o $(TEST_COMMON_OBJECTS) $(filter-out startup.o,$(OBJECTS))
+test: $(RUN_TESTS)
+
+$(TESTS): %: %.o $(TEST_COMMON_OBJECTS) $(filter-out startup.o, $(OBJECTS))
 	$(CL65) $(LDFLAGS) -o $@ $^
+
+$(RUN_TESTS): %.run: %
+	sim65 $^
 
 %.o: %.s
 	$(CL65) -c $(ASMFLAGS) -o $@ $<
@@ -34,4 +40,4 @@ ifneq ($(MAKECMDGOALS), clean)
 endif
 
 clean:
-	rm -f $(TARGET) *.o *.d *.map
+	rm -f basic $(TESTS) *.o *.d *.map
