@@ -30,4 +30,9 @@ void hexdump(const char* name, const char* data, size_t length) {
 
 #define HEXDUMP(data, length) hexdump(#data, (data), (length))
 
+// Prototypes for C wrapper functions
+
+void memcpy_lower(char* to, const char* from, size_t size);
+void memcpy_higher(char* to, const char* from, size_t size);
+
 #endif

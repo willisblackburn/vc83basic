@@ -3,9 +3,6 @@
 // Buffer to use in tests
 char buffer[10000];
 
-void memcpy_lower(char* to, const char* from, size_t size);
-void memcpy_higher(char* to, const char* from, size_t size);
-
 void fill_test_data(char* p, size_t size) {
     size_t i;
     for (i = 0; i < size; ++i) {
