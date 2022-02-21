@@ -20,6 +20,7 @@ io_char: .res 1
 ; Returns the length in A and also sets buffer_length.
 
 getline:
+.export getline
         ldy     #0              ; Use Y to track write index
 @next:
         tya                     ; Save Y before calling functions
@@ -43,6 +44,7 @@ getline:
 ; Returns the character in A.
 
 getchar:
+.export getchar
         jsr     push0           ; File descriptor 0 (stdin)
         lda     #<io_char       ; Load io_char address into AX
         ldx     #>io_char
@@ -59,10 +61,12 @@ getchar:
 ; Y = the number of bytes to write (putline_buffer sets this to buffer_length)
 
 putline_buffer:
+.export putline_buffer
         lda     #<buffer
         ldx     #>buffer
         ldy     buffer_length
 putline:
+.export putline
         sta     ptr1
         stx     ptr1+1
         tya
@@ -80,6 +84,7 @@ putline:
 ; A = the character to output
 
 putchar:
+.export putchar
         sta     io_char         ; Store character in io_char
         jsr     push1           ; File descriptor 1 (stdout)
         lda     #<io_char       ; Load io_char address into AX
