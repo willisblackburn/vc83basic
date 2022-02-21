@@ -11,9 +11,6 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __STACKSIZE__
 
-; Export startup address to exehdr module
-.export startup
-
 .segment "STARTUP"
 
 message: .byte "Enter your name: "
@@ -22,6 +19,7 @@ hello: .byte "Hello, "
 hello_length = * - hello
 
 startup:
+.export startup
         cld                     ; Clear decimal flag
         ldx     #$FF
         txs                     ; Initialize the stack to $FF
