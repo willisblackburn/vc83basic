@@ -71,6 +71,7 @@ static void test_copy_bytes_back(void) {
 }
 
 int main(void) {
+    initialize_arch();
     test_copy_bytes();
     test_copy_bytes_back();
     return 0;

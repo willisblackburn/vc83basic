@@ -31,10 +31,13 @@ program_end: .res 2
 ; Inserts an empty zero-length line -1 into the program space.
 
 initialize_program:
-        lda     #<__BSS_RUN__       ; Set program_start and line_ptr to start of BSS
+        clc
+        lda     #<__BSS_RUN__       ; Set program_start and line_ptr to end of BSS
+        adc     #<__BSS_SIZE__
         sta     program_start
         sta     line_ptr
         lda     #>__BSS_RUN__  
+        adc     #>__BSS_SIZE__
         sta     program_start+1
         sta     line_ptr+1
         lda     #$FF                ; Line number = -1
@@ -52,7 +55,7 @@ initialize_program:
 
 ; Sets line_ptr to program_start.
 
-reset_program:
+reset_line_ptr:
         lda     program_start
         sta     line_ptr
         lda     program_start+1
@@ -74,10 +77,6 @@ find_line:
         sta     sreg                ; Stash the line number
         stx     sreg+1
 find_line_sreg:
-        lda     #<program_start     ; Load program start into line_ptr
-        sta     line_ptr
-        lda     #>program_start
-        sta     line_ptr+1
 @check_line:
         ldy     #1                  ; Set Y to 1 for getting high byte of line number
         lda     (line_ptr),y
@@ -244,4 +243,3 @@ update_program_end:
         adc     sreg+1
         sta     program_end+1
         rts
-        

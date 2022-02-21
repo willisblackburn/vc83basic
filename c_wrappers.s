@@ -6,18 +6,23 @@
 
 ; cc65 runtime
 .include "zeropage.inc"
-.import popptr1, incsp2
+.import popax, popptr1, incsp2, return0, return1
 
 .include "basic.inc"
 
 ; Aliases for globals
 
-.export _line_ptr
+_buffer = buffer
+.export _buffer
+_buffer_length = buffer_length
+.export _buffer_length
+
 _line_ptr = line_ptr
-.export _program_start
+.export _line_ptr
 _program_start = program_start
-.export _program_end
+.export _program_start
 _program_end = program_end
+.export _program_end
 
 ; Function wrappers
 
@@ -31,21 +36,45 @@ popptr2:
         sta     ptr2
         jmp     incsp2
 
-.export _initialize_program
+; Returns 0 or 1 depending on the carry state.
+return_carry:
+        bcs     @error
+        jmp     return0
+@error:
+        jmp     return1        
+
+_initialize_arch:
+.export _initialize_arch
+        jmp     initialize_arch
+
 _initialize_program:
+.export _initialize_program
         jsr     initialize_program
         rts
 
-.export _copy_bytes
+_reset_line_ptr:
+.export _reset_line_ptr
+        jmp     reset_line_ptr
+
+_find_line:
+.export _find_line
+        jsr     find_line
+        jmp     return_carry
+
+_advance_line_ptr:
+.export _advance_line_ptr
+        jmp     advance_line_ptr
+
 _copy_bytes:
+.export _copy_bytes
         sta     sreg
         stx     sreg+1
         jsr     popptr1
         jsr     popptr2
         jmp     copy_bytes
 
-.export _copy_bytes_back
 _copy_bytes_back:
+.export _copy_bytes_back
         sta     sreg
         stx     sreg+1
         jsr     popptr1

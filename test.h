@@ -16,7 +16,6 @@
 #define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %u  assert %s (%u, $%X) %s NULL: ", __LINE__, #a, (a), (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
-#define ASSERT_OK(a) do { fprintf(stderr, "  %u  assert %s (%u, $%X, %s) is OK: ", __LINE__, #a, (a), (a), get_error_message(a)); assert(!(a)); fputs("OK\n", stderr); } while (0)
 
 void hexdump(const char* name, const char* data, size_t length) {
     unsigned i = 0;
@@ -49,7 +48,11 @@ extern line* program_end;
 
 // Prototypes for C wrapper functions
 
+void initialize_arch(void);
 void initialize_program(void);
+void reset_line_ptr(void);
+int find_line(int line_number);
+void advance_line_ptr(void);
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
 
