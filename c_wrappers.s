@@ -10,7 +10,16 @@
 
 .include "basic.inc"
 
-.export _initialize_program, _copy_bytes, _copy_bytes_back
+; Aliases for globals
+
+.export _line_ptr
+_line_ptr = line_ptr
+.export _program_start
+_program_start = program_start
+.export _program_end
+_program_end = program_end
+
+; Function wrappers
 
 ; Same as popptr1 but for ptr2.
 popptr2:
@@ -22,10 +31,12 @@ popptr2:
         sta     ptr2
         jmp     incsp2
 
+.export _initialize_program
 _initialize_program:
         jsr     initialize_program
         rts
 
+.export _copy_bytes
 _copy_bytes:
         sta     sreg
         stx     sreg+1
@@ -33,6 +44,7 @@ _copy_bytes:
         jsr     popptr2
         jmp     copy_bytes
 
+.export _copy_bytes_back
 _copy_bytes_back:
         sta     sreg
         stx     sreg+1

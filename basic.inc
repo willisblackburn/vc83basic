@@ -2,6 +2,9 @@
 
 .global buffer, buffer_length
 
+.globalzp line_ptr
+.global program_start, program_end
+
 ; Functions
 
 ; arch_sim6502.s
@@ -12,4 +15,3 @@
 
 ; util.s
 .global copy_bytes, copy_bytes_back
-

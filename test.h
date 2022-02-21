@@ -30,6 +30,23 @@ void hexdump(const char* name, const char* data, size_t length) {
 
 #define HEXDUMP(data, length) hexdump(#data, (data), (length))
 
+// Types
+// These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
+// the assembly language code in order to make unit testing easier.
+
+typedef struct line {
+    int number;
+    char length;
+    char data[];
+} line;
+
+// Globals
+
+extern line* line_ptr;
+#pragma zpsym ("line_ptr")
+extern line* program_start;
+extern line* program_end;
+
 // Prototypes for C wrapper functions
 
 void initialize_program(void);
