@@ -25,9 +25,9 @@ io_char: .res 1
 brk_vector := $FFFE
 
 initialize_arch:
-        lda     #<brk_handler
+        lda     #<debug_handler
         sta     brk_vector
-        lda     #>brk_handler
+        lda     #>debug_handler
         sta     brk_vector+1
         rts
 
@@ -107,11 +107,16 @@ putchar:
 
 ; Debugging helpers
 
+.zeropage
+
+save_pc: .res 2
+
 .bss
 
-savea: .res 1
-savex: .res 1
-savey: .res 1
+save_a: .res 1
+save_x: .res 1
+save_y: .res 1
+save_sp: .res 1
 
 .macro  push8   value
         lda     value
@@ -135,14 +140,21 @@ savey: .res 1
 
 .code
 
-format: .byte "A=%02X, X=%02X, Y=%02X, SP=%02X", $0A, $00
+format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X", $0A, $00
 
 ; Prints the register values to stderr.
-brk_handler:
-        php
-        sta     savea
-        stx     savex
-        sty     savey
+debug_handler:
+        cld                     ; Clear decimal flag (just in case)
+        sta     save_a          ; Save the registers
+        stx     save_x
+        sty     save_y
+        tsx                     ; Get stack pointer into X
+        stx     save_sp         ; Save it so we can print it
+        ldy     $102,x          ; PC low byte
+        sty     save_pc
+        ldy     $103,x          ; PC high byte
+        dey                     ; Subtract 256 from PC; we will index with Y = 255 to get PC-1
+        sty     save_pc+1
         push8   tmp1
         push8   tmp2
         push8   tmp3
@@ -151,22 +163,24 @@ brk_handler:
         push16  ptr2
         push16  sreg
         push16  regsave  
-        lda     _stderr
+        lda     _stderr         ; fprintf(stderr, ...
         ldx     _stderr+1
         jsr     pushax
-        lda     #<format
+        lda     #<format        ; format, ...
         ldx     #>format
         jsr     pushax
-        lda     savea
+        ldy     #$FF
+        lda     (save_pc),y     ; id, ...
+        jsr     pusha0          
+        lda     save_a          ; A, ...
         jsr     pusha0
-        lda     savex
+        lda     save_x          ; X, ...
         jsr     pusha0
-        lda     savey
+        lda     save_y          ; Y, ...
         jsr     pusha0
-        tsx
-        txa
+        lda     save_sp         ; SP)
         jsr     pusha0
-        ldy     #12             ; 12 bytes on the C stack
+        ldy     #14             ; 14 bytes on the C stack
         jsr     _fprintf
         pull16  regsave
         pull16  sreg
@@ -176,8 +190,7 @@ brk_handler:
         pull8   tmp3
         pull8   tmp2
         pull8   tmp1
-        lda     savea
-        ldx     savex
-        ldy     savey
-        plp
+        lda     save_a
+        ldx     save_x
+        ldy     save_y
         rti

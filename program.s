@@ -76,8 +76,8 @@ reset_line_ptr:
 find_line:
         sta     sreg                ; Stash the line number
         stx     sreg+1
+        jsr     reset_line_ptr      ; Set line_ptr to beginning of program
 find_line_sreg:
-@check_line:
         ldy     #1                  ; Set Y to 1 for getting high byte of line number
         lda     (line_ptr),y
         cmp     sreg+1
@@ -89,10 +89,10 @@ find_line_sreg:
         bcc     @continue
         bne     @return             ; Return with carry set
         sta     line_number         ; A is still low byte of line number; save it
-        iny                         ; Y = 2
+        iny                         ; Y = 1
         lda     (line_ptr),y        ; Go back and get the high byte
         sta     line_number+1       ; Save it
-        ldy     #0                  ; Y = 0 to get the length byte
+        iny                         ; Y = 2 to get the length byte
         lda     (line_ptr),y        ; Line length
         sta     line_length         ; Save it
         clc                         ; Signal ok
@@ -101,7 +101,7 @@ find_line_sreg:
 
 @continue:
         jsr     advance_line_ptr    ; Advance to the next line    
-        jmp     @check_line
+        jmp     find_line_sreg
 
 ; Advances the current line pointer to the next line.
 ; Operates directly on line_ptr.
@@ -113,7 +113,6 @@ advance_line_ptr:
         jsr     get_line_start_plus_a
         sta     line_ptr            ; Store back into line_ptr
         stx     line_ptr+1          
-@return:
         rts
 
 ; Returns a pointer to the start of data for the current line (identified by line_ptr).
@@ -142,7 +141,7 @@ get_line_ptr_plus_a:
 ; Y = a pointer to the read offset in buffer 
 ; Returns carry clear if okay, carry set if error (e.g., out of memory)
 
-insert_or_upate_line:
+insert_or_update_line:
         sta     regsave             ; Stash the line number in regsave
         stx     regsave+1
         sty     tmp1                ; Stash the offset in tmp1
@@ -177,9 +176,9 @@ insert_or_upate_line:
 
 @insert:
         lda     line_ptr            ; Initialize ptr1 to line_ptr
-        sta     ptr1                ; This will be the source for the copy
-        lda     line_ptr+1
-        sta     ptr1+1
+        ldx     line_ptr+1          ; This will be the source for the copy
+        sta     ptr1                
+        stx     ptr1+1
         lda     buffer_length       ; Load buffer_length, which should be <= 252
         sec
         sbc     tmp1                ; Subtract the offset saved earlier to get line length
@@ -190,7 +189,6 @@ insert_or_upate_line:
         stx     ptr2+1
         jsr     calculate_bytes_to_move     ; Set sreg to length of program from line_ptr
         jsr     copy_bytes_back
-        jsr     update_program_end
         lda     regsave
         ldy     #0
         sta     (line_ptr),y        ; Save line item number low byte
@@ -214,8 +212,12 @@ insert_or_upate_line:
         sta     ptr2                ; Destination into ptr2
         stx     ptr2+1
         jsr     copy_bytes          ; Copy data from buffer into program space
+        jsr     calculate_bytes_to_move     ; Reset sreg to the length from line_ptr to original program_end
+        jsr     advance_line_ptr    ; Jump over the new line
+        jsr     update_program_end  ; Update program end
 
 @finish:
+        clc
         rts
 
 ; Calculates the bytes to move for both compact and expand as

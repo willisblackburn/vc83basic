@@ -49,8 +49,7 @@ _initialize_arch:
 
 _initialize_program:
 .export _initialize_program
-        jsr     initialize_program
-        rts
+        jmp     initialize_program
 
 _reset_line_ptr:
 .export _reset_line_ptr
@@ -64,6 +63,14 @@ _find_line:
 _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
+
+_insert_or_update_line:
+.export _insert_or_update_line
+        sta     tmp1            ; The offset into buffer will be passed from C function in A; save in tmp1
+        jsr     popax           ; The line number will be on the stack
+        ldy     tmp1            ; Recover offset into Y
+        jsr     insert_or_update_line
+        jmp     return_carry
 
 _copy_bytes:
 .export _copy_bytes

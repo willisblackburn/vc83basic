@@ -1,12 +1,13 @@
 #include "test.h"
 
-// Buffer to use in tests
-static char buffer[10000];
+// test_data to use in tests
+static char test_data[10000];
 
-static void fill_test_data(char* p, size_t size) {
+static void fill_test_data(size_t offset, size_t size) {
     size_t i;
+    char* p = test_data + offset;
     for (i = 0; i < size; ++i) {
-        p[i] = (char)i;
+        *p++ = (char)i;
     }
 }
 
@@ -23,13 +24,13 @@ static void verify_test_data(const char* p, size_t size) {
 }
 
 static void test_copy_bytes_case(size_t size, size_t offset) {
-    memset(buffer, 0, sizeof buffer);
-    // Set up test data in buffer + offset and try to copy it to the lower position.
-    fill_test_data(buffer + offset, size);
-    HEXDUMP(buffer + offset, 16);
-    copy_bytes(buffer, buffer + offset, size);
-    HEXDUMP(buffer, 16);
-    verify_test_data(buffer, size);
+    memset(test_data, 0, sizeof test_data);
+    // Set up test data in test_data + offset and try to copy it to the lower position.
+    fill_test_data(offset, size);
+    HEXDUMP(test_data + offset, 16);
+    copy_bytes(test_data, test_data + offset, size);
+    HEXDUMP(test_data, 16);
+    verify_test_data(test_data, size);
 }
 
 static void test_copy_bytes(void) {
@@ -47,13 +48,13 @@ static void test_copy_bytes(void) {
 }
 
 static void test_copy_bytes_back_case(size_t size, size_t offset) {
-    memset(buffer, 0, sizeof buffer);
-    // Set up test data in buffer and try to copy it to the higher position.
-    fill_test_data(buffer, size);
-    HEXDUMP(buffer, 16);
-    copy_bytes_back(buffer + offset, buffer, size);
-    HEXDUMP(buffer + offset, 16);
-    verify_test_data(buffer + offset, size);
+    memset(test_data, 0, sizeof test_data);
+    // Set up test data in test_data and try to copy it to the higher position.
+    fill_test_data(0, size);
+    HEXDUMP(test_data, 16);
+    copy_bytes_back(test_data + offset, test_data, size);
+    HEXDUMP(test_data + offset, 16);
+    verify_test_data(test_data + offset, size);
 }
 
 static void test_copy_bytes_back(void) {

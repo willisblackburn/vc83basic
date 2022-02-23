@@ -11,7 +11,14 @@
 .global initialize_arch, getline, getchar, putline, putline_buffer, putchar
 
 ; program.s
-.global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_upate_line
+.global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_update_line
 
 ; util.s
 .global copy_bytes, copy_bytes_back
+
+; Macros
+
+.macro  debug   value
+        brk
+        .byte   value
+.endmacro

@@ -17,7 +17,7 @@ static void test_reset_line_ptr(void) {
     initialize_program();
 
     // After altering line_ptr, reset_line_ptr should set it back.
-    line_ptr = 0;
+    line_ptr = NULL;
     reset_line_ptr();
 
     ASSERT_EQ(line_ptr, program_start);
@@ -47,6 +47,7 @@ static void test_find_line(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
+    fprintf(stderr, "program_start = %p\n", line_ptr);
 
     ASSERT_EQ(line_ptr, program_start);
 
@@ -73,22 +74,6 @@ static void test_find_line(void) {
     program_end = line_ptr;
 
     // Test if we can find each line separately.
-    reset_line_ptr();
-
-    result = find_line(10);
-    ASSERT_EQ(result, 0);
-    ASSERT_EQ(line_ptr->number, 10);
-    reset_line_ptr();
-    result = find_line(256);
-    ASSERT_EQ(result, 0);
-    ASSERT_EQ(line_ptr->number, 256);
-    reset_line_ptr();
-    result = find_line(10000);
-    ASSERT_EQ(result, 0);
-    ASSERT_EQ(line_ptr->number, 10000);
-
-    // Test finding the lines in sequence.
-    reset_line_ptr();
     result = find_line(10);
     ASSERT_EQ(result, 0);
     ASSERT_EQ(line_ptr->number, 10);
@@ -100,23 +85,90 @@ static void test_find_line(void) {
     ASSERT_EQ(line_ptr->number, 10000);
 
     // Test not finding a line at all.
-    reset_line_ptr();
+    // In this case line_ptr should point to where the line would have been, i.e., line 256.
     result = find_line(15);
     ASSERT_NE(result, 0);
+    ASSERT_EQ(line_ptr->number, 256);
 
     // Test finding a line that occurs earlier in the program.
-    reset_line_ptr();
     result = find_line(10000);
+    ASSERT_EQ(line_ptr->number, 10000);
     ASSERT_EQ(result, 0);
     result = find_line(10);
-    ASSERT_NE(result, 0);
+    ASSERT_NE(result, 1);
+    ASSERT_EQ(line_ptr->number, 10);
+}
+
+static void test_insert_or_update_line(void) {
+    int result;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    strcpy(buffer, "10 PRINT 1");
+    buffer_length = 10;
+    fprintf(stderr, "program_start = %p, program_end=%p\n", program_start, program_end);
+    result = insert_or_update_line(10, 3);
+    ASSERT_EQ(result, 0);
+    reset_line_ptr();
+    ASSERT_EQ(line_ptr->number, 10);    
+    ASSERT_EQ(line_ptr->length, 7);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, -1);    
+
+    strcpy(buffer, "200 PRINT 3.14159");
+    buffer_length = 16;
+    fprintf(stderr, "program_start = %p, program_end=%p\n", program_start, program_end);
+    result = insert_or_update_line(200, 4);
+    ASSERT_EQ(result, 0);
+    reset_line_ptr();
+    ASSERT_EQ(line_ptr->number, 10);    
+    ASSERT_EQ(line_ptr->length, 7);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, 200);    
+    ASSERT_EQ(line_ptr->length, 12);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, -1);    
+
+    // Test inserting a line before the other two.
+    strcpy(buffer, "5 END");
+    buffer_length = 5;
+    result = insert_or_update_line(5, 2);
+    ASSERT_EQ(result, 0);
+    reset_line_ptr();
+    ASSERT_EQ(line_ptr->number, 5);    
+    ASSERT_EQ(line_ptr->length, 3);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, 10);    
+    ASSERT_EQ(line_ptr->length, 7);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, 200);    
+    ASSERT_EQ(line_ptr->length, 12);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, -1);    
+
+    // Test deleting a line.
+    strcpy(buffer, "200");
+    buffer_length = 3;
+    result = insert_or_update_line(200, 3);
+    ASSERT_EQ(result, 0);
+    reset_line_ptr();
+    ASSERT_EQ(line_ptr->number, 5);    
+    ASSERT_EQ(line_ptr->length, 3);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, 10);    
+    ASSERT_EQ(line_ptr->length, 7);    
+    advance_line_ptr();
+    ASSERT_EQ(line_ptr->number, -1);    
 }
 
 int main(void) {
     initialize_arch();
-    test_initalize_program();
-    test_reset_line_ptr();
-    test_advance_line_ptr();
+    // test_initalize_program();
+    // test_reset_line_ptr();
+    // test_advance_line_ptr();
     test_find_line();
+    test_insert_or_update_line();
     return 0;
 }

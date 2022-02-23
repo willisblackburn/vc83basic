@@ -20,14 +20,16 @@
 void hexdump(const char* name, const char* data, size_t length) {
     unsigned i = 0;
     fprintf(stderr, "        %s ($%04X):\n", name, data);
-    for (i = 0; i < length; ++i) {
-        if (i % 16 == 0) fprintf(stderr, "        %04x  ", i);
-        fprintf(stderr, "%02x ", data[i]);
-        if (i % 16 == 15) printf("\n");
+    while (i < length) {
+        fprintf(stderr, "        %04x  ", i);
+        do {
+            fprintf(stderr, "%02x ", data[i++]);
+        } while (i < length && (i % 16));
+        printf("\n");
     }
 }
 
-#define HEXDUMP(data, length) hexdump(#data, (data), (length))
+#define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
 
 // Types
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
@@ -41,6 +43,9 @@ typedef struct line {
 
 // Globals
 
+extern char buffer[];
+extern char buffer_length;
+
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
 extern line* program_start;
@@ -53,6 +58,7 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
+int insert_or_update_line(int line_number, char r);
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
 
