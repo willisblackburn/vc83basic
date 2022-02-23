@@ -68,7 +68,6 @@ static void test_find_line(void) {
     advance_line_ptr();
     line_ptr->number = -1;
     line_ptr->length = 0;
-
     // Patch up the program end.
     advance_line_ptr();
     program_end = line_ptr;
