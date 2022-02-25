@@ -68,6 +68,8 @@ parse_keyword:
         tax
         ldy     #0              ; Y will index the keyword
 @compare:
+        cpx     buffer_length   ; At the end of the buffer?
+        beq     @not_match      ; Yep
         lda     (ptr1),y        ; Get keyword character
         and     #$7F            ; Mask out the high bit
         cmp     buffer,x        ; Compare with character from buffer
