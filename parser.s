@@ -32,7 +32,6 @@ parse_number:
         jmp     @next
 
 @finish:
-        debug 0
         cpy     tmp1            ; Did we parse anything?
         beq     @nothing        ; Nope
         clc                     ; Clear carry to signal OK
@@ -58,7 +57,7 @@ char_to_digit:
         rts
 
 ; Skip past any whitespace in the buffer.
-; X = the read index
+; Y = the read index
 
 iny_skip_whitespace:
         iny
