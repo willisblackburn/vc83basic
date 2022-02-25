@@ -1,6 +1,5 @@
 ; cc65 runtime
 .include "zeropage.inc"
-.import mulax10
 
 .include "basic.inc"
 
@@ -24,7 +23,7 @@ parse_number:
         pla                     ; Retrieve the low byte of value
         bcs     @finish         ; If there was an error in char_to_digit, stop parsing
         iny                     ; No error, increment read index
-        jsr     mulax10         ; Multiply the value by 10
+        jsr     mul10           ; Multiply the value by 10
         clc
         adc     tmp1            ; Add tmp1
         bcc     @next           ; If carry clear then next digit
