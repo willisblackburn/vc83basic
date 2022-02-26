@@ -117,7 +117,6 @@ save_a: .res 1
 save_x: .res 1
 save_y: .res 1
 save_sp: .res 1
-save_cc65_regs: .res zpsavespace
 
 .macro  push8   value
         lda     value
@@ -162,12 +161,6 @@ debug_handler:
         dey                     ; Subtract 256 from PC; we will index with Y = 255 to get PC-1
         sty     save_pc+1
         ldx     #0              ; Prepare to save cc65 registers
-; @save_reg:
-;         lda     sp,x            ; sp is the first register
-;         sta     save_cc65_regs,x
-;         inx
-;         cpx     zpsavespace
-;         bne     @save_reg 
         push16  sreg
         push8   tmp1
         push8   tmp2
@@ -195,12 +188,6 @@ debug_handler:
         ldy     #14             ; 14 bytes on the C stack
         jsr     _fprintf
         ldx     #0              ; Prepare to restore cc65 registers
-; @restore_reg:
-;         lda     save_cc65_regs,x
-;         sta     sp,x      
-;         inx
-;         cpx     zpsavespace
-;         bne     @restore_reg 
         pull16  ptr4
         pull16  ptr3
         pull16  ptr2
