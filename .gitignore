@@ -2,5 +2,4 @@
 *.o
 *.d
 *.map
-basic
-*_test
+basic_sim6502

@@ -1,4 +1,4 @@
-SOURCES = arch_sim6502.s
+SOURCES = basic_sim6502.s
 OBJECTS = $(SOURCES:.s=.o)
 
 CL65 = cl65
@@ -6,7 +6,7 @@ ARCH = -t sim6502
 ASMFLAGS = $(ARCH) --create-dep $(<:.s=.d)
 LDFLAGS = $(ARCH) -m $@.map
 
-TARGET = basic
+TARGET = basic_sim6502
 
 $(TARGET): $(OBJECTS)
 	$(CL65) $(LDFLAGS) -o $@ $^
