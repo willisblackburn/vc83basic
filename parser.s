@@ -54,13 +54,8 @@ parse_number:
 
 char_to_digit:
         sec                     ; Set carry
-        sbc     #'0'            ; Subtract '0'
-        bcc     @set_carry_return   ; If we had to borrow (carry clear) then not digit
-        cmp     #10             ; If we did *not* borrow (carry set) then not digit
-        rts
-
-@set_carry_return:
-        sec                     ; Set carry to indicate error
+        sbc     #'0'            ; Subtract '0'; maps valid values to range 0-9 and other values to 10-255
+        cmp     #10             ; Sets carry if it's in the 10-255 range
         rts
 
 ; Tests the input against a keyword. The last letter of the keyword must have bit 7 set (but it is ignored

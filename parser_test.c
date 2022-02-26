@@ -16,9 +16,17 @@ static void test_char_to_digit(void) {
     err = char_to_digit('9');
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 9);
+    err = char_to_digit('0'-1);
+    ASSERT_NE(err, 0);
+    err = char_to_digit('9'+1);
+    ASSERT_NE(err, 0);
     err = char_to_digit(' ');
     ASSERT_NE(err, 0);
     err = char_to_digit('A');
+    ASSERT_NE(err, 0);
+    err = char_to_digit(0);
+    ASSERT_NE(err, 0);
+    err = char_to_digit(255);
     ASSERT_NE(err, 0);
 }
 
