@@ -92,7 +92,6 @@ write:
 ; Starts a new line on the console.
 
 newline:
-.export newline
         lda     #$0A            ; Load LF into A then fall through to putchar
 
 ; Writes a single character to the console.
