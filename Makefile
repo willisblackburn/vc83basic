@@ -6,6 +6,8 @@ COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 ASMFLAGS = --create-dep $(@:.o=.d)
 LDFLAGS = -m $@.map
 
+# create-target defines all the rules to build a single target.
+
 define create-target
 
 TARGET_$1_SOURCES = $$(wildcard $1/*.s)
@@ -13,7 +15,7 @@ TARGET_$1_OBJECTS = $$(TARGET_$1_SOURCES:.s=.o)
 
 TARGET_$1_COMMON_OBJECTS = $(COMMON_SOURCES:%.s=$1/%.o)
 
-$1/basic: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
+basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
 	cl65 -t $1 $$(LDFLAGS) -o $$@ $$^
 
 $1/%.o: %.s
@@ -22,17 +24,18 @@ $1/%.o: %.s
 $1/%.o: $1/%.s
 	cl65 -t $1 -c $$(ASMFLAGS) -o $$@ $$<
 
+-include $$(TARGET_$1_SOURCES:.s=.d)
+
 clean::
-	rm -f $1/basic $1/*.o $1/*.d $1/*.map
+	rm -f basic_$1 $1/*.o $1/*.d $1/*.map
 
 endef
 
-all: $(TARGETS:%=%/basic)
+all: $(addprefix basic_,$(TARGETS))
 
-$(eval $(call create-target,sim6502))
-$(eval $(call create-target,apple2))
+$(foreach TARGET,$(TARGETS),$(eval $(call create-target,$(TARGET))))
 
-#$(eval $(foreach TARGET, $(TARGETS), $(create-target $(TARGET))))
+-include $$(COMMON_SOURCES:.s=.d)
 
 clean::
 	rm -f *.o *.d *.map
