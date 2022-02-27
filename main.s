@@ -25,5 +25,4 @@ main:
         jsr     write           ; Write "hello"
         jsr     write_buffer    ; Output name (still in buffer)
         jsr     newline         ; Write linefeed
-
         jmp     return0

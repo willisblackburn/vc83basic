@@ -1,7 +1,7 @@
 ; cc65 runtime
 .include "zeropage.inc"
 
-.include "arch.inc"
+.include "apple2.inc"
 
 .import main, newline
 
@@ -21,7 +21,7 @@
 init:
         lda     #$FF            ; Print in normal mode
         sta     COUTMASK
-        jsr     newline         ; Apple doesn't automatically start new line after BRUN
+        jsr     CROUT           ; Apple doesn't automatically start new line after BRUN
         rts
 
 .segment "INIT"

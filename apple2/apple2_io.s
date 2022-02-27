@@ -2,7 +2,7 @@
 .include "zeropage.inc"
 .import push0, push1, pushax
 
-.include "arch.inc"
+.include "apple2.inc"
 
 buffer := $200
 
