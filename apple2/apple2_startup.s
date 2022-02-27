@@ -2,30 +2,24 @@
 .include "zeropage.inc"
 
 .include "apple2.inc"
-
-.import main, newline
+.include "../target.inc"
 
 .segment "STARTUP"
 
+startup:
         cld                     ; Clear decimal flag
         ldx     #$FF
         txs                     ; Initialize the stack to $FF
-        jsr     init            ; One-time initialization
+        jsr     initialize_once
         jsr     main
         jmp     DOSWARM         ; Exit to resident program
 
-; The ONCE and INIT segments have to exist or the linker will complain.
-
 .segment "ONCE"
 
-init:
+initialize_once:
         lda     #$FF            ; Print in normal mode
         sta     COUTMASK
         jsr     CROUT           ; Apple doesn't automatically start new line after BRUN
         rts
 
-.segment "INIT"
-
-dummy:
-        rts
-
+.code

@@ -14,7 +14,7 @@ keyword_run: .byte 'R', 'U', 'N'+$80
 keyword_print: .byte 'P', 'R', 'I', 'N', 'T'+$80
 
 main:
-        jsr     initialize_arch
+        jsr     initialize_target
         jsr     initialize_program
 @ready:
         jsr     print_ready

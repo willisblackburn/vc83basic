@@ -1,6 +1,5 @@
 ; cc65 runtime
 .include "zeropage.inc"
-.import push0, push1, pushax
 
 ; sim65 vectors
 .import exit
@@ -9,12 +8,11 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __STACKSIZE__
 
-.import main
+.include "../target.inc"
 
 .segment "STARTUP"
 
 startup:
-.export startup
         cld                     ; Clear decimal flag
         ldx     #$FF
         txs                     ; Initialize the stack to $FF

@@ -1,6 +1,6 @@
 ; Global data
 
-.global buffer, buffer_length
+.include "target.inc"
 
 .globalzp r
 
@@ -15,12 +15,6 @@ STATUS_OK                   = $00   ; Everything OK; used to clear status
 ERR_FAIL                    = $FF   ; General failure
 
 ; Functions
-
-; arch_sim6502.s
-.global initialize_arch, readline, getchar, write, write_buffer, putchar, newline
-
-; main.s
-.global main
 
 ; parser.s
 .global parse_number, char_to_digit

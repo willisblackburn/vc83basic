@@ -96,7 +96,7 @@ void test_parse_keyword(void) {
 }
 
 int main(void) {
-    initialize_arch();
+    initialize_target();
     test_char_to_digit();
     test_parse_number();
     test_parse_keyword();

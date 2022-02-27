@@ -3,6 +3,7 @@
 .import push0, push1, pushax
 
 .include "apple2.inc"
+.include "../target.inc"
 
 buffer := $200
 
@@ -13,12 +14,9 @@ buffer_length: .res 1
 .code 
 
 getchar = KEYIN
-.export getchar
 newline = CROUT
-.export newline
 
 readline:
-.export readline
         jsr     GETLNNOPMPT
         ldx     #$FF            ; Go looking for the "RETURN" character
 @next:
@@ -32,12 +30,10 @@ readline:
         rts
 
 write_buffer:
-.export write_buffer
         lda     #<buffer
         ldx     #>buffer
         ldy     buffer_length
 write:
-.export write
         sta     ptr1
         stx     ptr1+1
         sty     tmp1
@@ -54,7 +50,6 @@ write:
         rts
 
 putchar:
-.export putchar
         ora     #$80
         jmp     COUT
         

@@ -62,9 +62,9 @@ return_carry:
         rol     A
         rts
 
-_initialize_arch:
-.export _initialize_arch
-        jmp     initialize_arch
+_initialize_target:
+.export _initialize_target
+        jmp     initialize_target
 
 _initialize_program:
 .export _initialize_program

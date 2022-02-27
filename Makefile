@@ -24,15 +24,15 @@ TARGET_$1_OBJECTS = $$(TARGET_$1_SOURCES:.s=.o)
 TARGET_$1_COMMON_OBJECTS = $(COMMON_SOURCES:%.s=$1/%.o)
 
 basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
-	cl65 -t $1 $$(LDFLAGS) -o $$@ $$^
+	cl65 -t $1 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^
 
 # Builds a target-specific object from a common source
 $1/%.o: %.s
-	cl65 -t $1 -c $$(ASMFLAGS) -o $$@ $$<
+	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 # Builds a target-specific object from a target-specific source
 $1/%.o: $1/%.s
-	cl65 -t $1 -c $$(ASMFLAGS) -o $$@ $$<
+	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 -include $$(TARGET_$1_SOURCES:.s=.d)
 
@@ -49,12 +49,12 @@ run_$1: $1
 	sim65 $1
 
 $1: $1.o $$(TEST_COMMON_OBJECTS) $$(COMMON_OBJECTS)
-	cl65 -t $$(TEST_TARGET) $$(LDFLAGS) -o $$@ $$^
+	cl65 -t $$(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(LDFLAGS) -o $$@ $$^
 
 -include $1.d
 
 clean::
-	rm $1
+	rm -f $1
 
 endef
 
@@ -68,11 +68,11 @@ $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 
 # Builds a common object from a common assembly language source; used by tests
 %.o: %.s
-	cl65 -t $(TEST_TARGET) -c $(ASMFLAGS) -o $@ $<
+	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(ASMFLAGS) -o $@ $<
 
 # Same but for a C source
 %.o: %.c
-	cl65 -t $(TEST_TARGET) -c $(CFLAGS) -o $@ $<
+	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(CFLAGS) -o $@ $<
 
 -include $$(COMMON_SOURCES:.s=.d)
 
