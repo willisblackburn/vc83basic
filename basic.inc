@@ -14,11 +14,18 @@
 STATUS_OK                   = $00   ; Everything OK; used to clear status
 ERR_FAIL                    = $FF   ; General failure
 
+; Statements
+; Must match statement_name_table.
+
+ST_LIST     = 0
+ST_RUN      = 1
+ST_PRINT    = 2
+
 ; Functions
 
 ; parser.s
 .global parse_number, char_to_digit
-.global parse_keyword
+.global parse_name
 .global skip_whitespace
 
 ; program.s

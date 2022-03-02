@@ -9,9 +9,15 @@ ready_length = * - ready_message
 error_message: .byte "ERROR"
 error_length = * - error_message
 
-keyword_list: .byte 'L', 'I', 'S', 'T'+$80
-keyword_run: .byte 'R', 'U', 'N'+$80
-keyword_print: .byte 'P', 'R', 'I', 'N', 'T'+$80
+statement_name_table:
+        .byte 'L', 'I', 'S', 'T'+$80
+        .byte 'R', 'U', 'N'+$80
+        .byte 'P', 'R', 'I', 'N', 'T'+$80
+
+statement_handlers:
+        .word list
+        .word run
+        .word print
 
 main:
         jsr     initialize_target
@@ -31,24 +37,29 @@ main:
         jmp     @wait_for_input
 
 @immediate_mode:
-        lda     #<keyword_list
-        ldx     #>keyword_list
-        jsr     parse_keyword           ; Was it "LIST"?
-        bcs     @not_list
-        jsr     list
-        jmp     @ready
+        lda     #<statement_name_table
+        ldx     #>statement_name_table
+        jsr     parse_name
+        bcs     @error
+        jsr     invoke_statement_handler
+        jmp     @wait_for_input
 
-@not_list:
-        lda     #<keyword_run
-        ldx     #>keyword_run
-        jsr     parse_keyword           ; Was it "RUN"?
-        bcs     @not_run
-        jsr     run
-        jmp     @ready
-
-@not_run:
+@error:
         jsr     print_error
         jmp     @wait_for_input
+
+; Invokes a statement handler from a table.
+; This function does not return; it jumps to the handler, which will eventually return.
+; A = the index of the handler in the table
+
+invoke_statement_handler:
+        asl     A                       ; Multiply index by 2
+        tax                             ; Use to look up handler and copy into ptr1
+        lda     statement_handlers,x
+        sta     ptr1
+        lda     statement_handlers+1,x
+        sta     ptr1+1
+        jmp     (ptr1)                  ; Jump to handler; handle will RTS to caller
 
 ; Scans through the program and prints each line.
 
@@ -100,16 +111,25 @@ run:
         jsr     copy_bytes              ; Copy line into buffer
         lda     #0                      ; Start reading from offset 0
         sta     r
-        lda     #<keyword_print         ; Check if the keyword is print
-        ldx     #>keyword_print
-        jsr     parse_keyword           ; Was it "PRINT"?
-        bcs     @error                  ; Nope
+        lda     #<statement_name_table    ; What statement was it?
+        ldx     #>statement_name_table
+        jsr     parse_name
+        bcs     @error
+        jsr     invoke_statement_handler
+        jsr     advance_line_ptr
+        jmp     @next_line
+
+@error:
+        jsr     print_error
+@end:
+        rts
+
+print:
         jsr     parse_number            ; Get the number
         bcs     @error                  ; Fail if not a number
         jsr     print_number            ; Print the number
         jsr     newline
-        jsr     advance_line_ptr
-        jmp     @next_line
+        rts
 
 @error:
         jsr     print_error

@@ -101,11 +101,11 @@ _char_to_digit:
         jsr     char_to_digit
         jmp     return_carry
 
-_parse_keyword:
-.export _parse_keyword
+_parse_name:
+.export _parse_name
         sta     r               ; Buffer index
-        jsr     popax           ; Keyword pointer
-        jsr     parse_keyword
+        jsr     popax           ; Name table pointer
+        jsr     parse_name
         jmp     return_carry
 
 _copy_bytes:

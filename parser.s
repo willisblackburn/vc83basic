@@ -58,26 +58,31 @@ char_to_digit:
         cmp     #10             ; Sets carry if it's in the 10-255 range
         rts
 
-; Tests the input against a keyword. The last letter of the keyword must have bit 7 set (but it is ignored
-; in the comparison).
-; AX = pointer to the keyword
+; Matches the input against names from a table.
+; The last letter of each name must have bit 7 set (but it is ignored in the comparison).
+; A zero byte ends the name table.
+; AX = pointer to the name table
 ; r = read index into buffer
-; Returns carry clear if the keyword matched, carry set if it didn't match.
+; Returns carry clear if the name matched and the index of the name in A, carry set if it didn't match any name.
 
-parse_keyword:
-        sta     ptr1            ; Keyword pointer into ptr1        
+parse_name:
+        sta     ptr1            ; Name table pointer into ptr1        
         stx     ptr1+1
+        lda     #0              ; Name index
+        sta     tmp1            ; Maintain in tmp1
         jsr     skip_whitespace
+@test:
         ldx     r               ; Use X to index buffer in this function
-        ldy     #0              ; Y will index the keyword
+        ldy     #0              ; Y will index the name
 @compare:
-        cpx     buffer_length   ; At the end of the buffer?
-        beq     @not_match      ; Yep
-        lda     (ptr1),y        ; Get keyword character
+        cpx     buffer_length   ; At the end of the buffer? (TODO: add 0 to buffer instead)
+        beq     @no_match       ; Yep
+        lda     (ptr1),y        ; Get name character
+        beq     @no_match       ; If it's 0 then out of names to match
         and     #$7F            ; Mask out the high bit
         cmp     buffer,x        ; Compare with character from buffer
-        bne     @not_match      ; It's not a match (carry flag will be uncertain)
-        lda     (ptr1),y        ; Get keyword character again
+        bne     @skip_to_next   ; It's not a match; skip to next name
+        lda     (ptr1),y        ; Get name character again
         bmi     @match          ; Last character so it's a match; carry will be set from cmp above
         inx                     ; Next position
         iny                     
@@ -86,10 +91,27 @@ parse_keyword:
 @match:
         inx                     ; Move past matched character
         stx     r               ; Update read index
-        clc                     ; On match the carry flag will be set to have to clear it
+        clc                     ; On match the carry flag will be set; to have to clear it
+        lda     tmp1            ; Return index of matched name
+        ldx     #0        
         rts
 
-@not_match:
+@iny_skip_to_next:
+        iny                     
+@skip_to_next:
+        lda     (ptr1),y        ; Scan forward to the next name
+        bpl     @iny_skip_to_next
+        iny                     ; Skip the terminating character
+        inc     tmp1            ; Increment the name index
+        tya                     ; Reset ptr1 to the start of this name
+        clc
+        adc     ptr1
+        sta     ptr1
+        bcc     @test   ; Don't have to increment high byte
+        inc     ptr1+1
+        bcs     @test   ; Unconditional branch
+
+@no_match:
         sec
         rts
 

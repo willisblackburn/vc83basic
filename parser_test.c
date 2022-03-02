@@ -73,25 +73,35 @@ static void test_parse_number(void) {
     ASSERT_NE(err, 0);
 }
 
-void test_parse_keyword(void) {
+void test_parse_name(void) {
     int err;
     const char* print = "PRIN\xD4";
 
     PRINT_TEST_NAME();
 
+    // C adds a trailing 0 to these strings which terminates the name table.
     set_buffer("PRINT");
-    err = parse_keyword("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
+    err = parse_name("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_EQ(err, 0);
-    err = parse_keyword("LIS\xD4", 0);
+    ASSERT_EQ(reg_ax, 0);
+    err = parse_name("PRIN\xD4LIS\xD4", 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_ax, 0);
+    err = parse_name("LIS\xD4PRIN\xD4", 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_ax, 1);
+    err = parse_name("LIS\xD4", 0);
     ASSERT_NE(err, 0);
-    err = parse_keyword("PRINTE\xD2", 0);
+    err = parse_name("PRINTE\xD2", 0);
     ASSERT_NE(err, 0);
-    err = parse_keyword("PRIN\xD4", 2);
+    err = parse_name("LIS\xD4PRINTE\xD2", 0);
+    ASSERT_NE(err, 0);
+    err = parse_name("PRIN\xD4", 2);
     ASSERT_NE(err, 0);
 
     // The function should pay attention to buffer_length.
     buffer_length = 3;
-    err = parse_keyword("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
+    err = parse_name("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_NE(err, 0);
 }
 
@@ -99,6 +109,6 @@ int main(void) {
     initialize_target();
     test_char_to_digit();
     test_parse_number();
-    test_parse_keyword();
+    test_parse_name();
     return 0;
 }
