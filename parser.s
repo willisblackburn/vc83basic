@@ -71,48 +71,52 @@ parse_name:
         lda     #0              ; Name index
         sta     tmp1            ; Maintain in tmp1
         jsr     skip_whitespace
-@test:
+@compare_name:
         ldx     r               ; Use X to index buffer in this function
         ldy     #0              ; Y will index the name
-@compare:
-        cpx     buffer_length   ; At the end of the buffer? (TODO: add 0 to buffer instead)
-        beq     @no_match       ; Yep
-        lda     (ptr1),y        ; Get name character
-        beq     @no_match       ; If it's 0 then out of names to match
-        and     #$7F            ; Mask out the high bit
-        cmp     buffer,x        ; Compare with character from buffer
-        bne     @skip_to_next   ; It's not a match; skip to next name
-        lda     (ptr1),y        ; Get name character again
-        bmi     @match          ; Last character so it's a match; carry will be set from cmp above
-        inx                     ; Next position
-        iny                     
-        jmp     @compare
+        sty     tmp2            ; Reset number of unmatched characters
 
+; Compare each character of the name table entry with the input and count unmatched characters in tmp2.
+; A character is matched if either we've run out of characters in the buffer or the characters don't match.
+; When we find the last character in the name, if the unmatched count is zero then return that name.
+
+@compare_byte:
+        lda     (ptr1),y        ; Get name character
+        beq     @fail           ; If it's 0 then out of names to match
+        pha                     ; Save on the stack for later
+        and     #$7F            ; Mask out the high bit
+        cpx     buffer_length   ; At the end of the buffer? (TODO: add 0 to buffer instead)
+        beq     @no_match       ; Yes
+        cmp     buffer,x        ; Compare with character from buffer
+        beq     @match          ; It matches
+@no_match:
+        inc     tmp2            ; Increment unmatched count
 @match:
-        inx                     ; Move past matched character
-        stx     r               ; Update read index
-        clc                     ; On match the carry flag will be set; to have to clear it
-        lda     tmp1            ; Return index of matched name
-        ldx     #0        
+        iny                     ; Next position
+        inx                     
+        pla                     ; Get name character again
+        bmi     @finish_name    ; Last character so it's a match; carry will be set from cmp above
+        bne     @compare_byte   ; X cannot be zero so this is unconditional branch
+
+@finish_name:
+        clc                     ; Going to need carry clear no matter what, so do that now
+        lda     tmp2            ; How many unmatched?
+        bne     @next_name      ; Some unmatched, go to next name.
+        lda     tmp1            ; Good match, return tmp1 in A
+        ldx     #0
         rts
 
-@iny_skip_to_next:
-        iny                     
-@skip_to_next:
-        lda     (ptr1),y        ; Scan forward to the next name
-        bpl     @iny_skip_to_next
-        iny                     ; Skip the terminating character
+@next_name:
         inc     tmp1            ; Increment the name index
         tya                     ; Reset ptr1 to the start of this name
-        clc
-        adc     ptr1
+        adc     ptr1            ; Carry was cleared in @finish_name
         sta     ptr1
-        bcc     @test   ; Don't have to increment high byte
+        bcc     @compare_name   ; Don't have to increment high byte
         inc     ptr1+1
-        bcs     @test   ; Unconditional branch
+        bcs     @compare_name   ; Unconditional branch
 
-@no_match:
-        sec
+@fail:
+        sec                     ; No names matched; set carry and return
         rts
 
 ; Skip past any whitespace in the buffer.
