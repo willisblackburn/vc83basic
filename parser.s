@@ -102,6 +102,7 @@ parse_name:
         clc                     ; Going to need carry clear no matter what, so do that now
         lda     tmp2            ; How many unmatched?
         bne     @next_name      ; Some unmatched, go to next name.
+        stx     r               ; Update buffer index
         lda     tmp1            ; Good match, return tmp1 in A
         ldx     #0
         rts

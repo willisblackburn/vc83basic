@@ -12,20 +12,16 @@
 
 ; Aliases for globals
 
-_buffer = buffer
-.export _buffer
-_buffer_length = buffer_length
-.export _buffer_length
+.export _buffer = buffer
+.export _buffer_length = buffer_length
 
-_line_ptr = line_ptr
-.export _line_ptr
-_program_start = program_start
-.export _program_start
-_program_end = program_end
-.export _program_end
+.export _line_ptr = line_ptr
+.export _program_start = program_start
+.export _program_end = program_end
 
-_status = status
-.export _status
+.export _status = status
+
+.export _r = r
 
 .bss
 

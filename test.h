@@ -61,6 +61,9 @@ extern line* line_ptr;
 extern line* program_start;
 extern line* program_end;
 
+extern char r;
+#pragma zpsym ("r")
+
 // Prototypes for C wrapper functions
 
 void initialize_target(void);

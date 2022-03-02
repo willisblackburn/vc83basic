@@ -75,7 +75,6 @@ static void test_parse_number(void) {
 
 void test_parse_name(void) {
     int err;
-    const char* print = "PRIN\xD4";
 
     PRINT_TEST_NAME();
 
@@ -84,25 +83,33 @@ void test_parse_name(void) {
     err = parse_name("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 0);
+    ASSERT_EQ(r, 5);
     err = parse_name("PRIN\xD4LIS\xD4", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 0);
+    ASSERT_EQ(r, 5);
     err = parse_name("LIS\xD4PRIN\xD4", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 1);
+    ASSERT_EQ(r, 5);
     err = parse_name("LIS\xD4", 0);
     ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
     err = parse_name("PRINTE\xD2", 0);
     ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
     err = parse_name("LIS\xD4PRINTE\xD2", 0);
     ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
     err = parse_name("PRIN\xD4", 2);
     ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 2);
 
     // The function should pay attention to buffer_length.
     buffer_length = 3;
     err = parse_name("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
 }
 
 int main(void) {
