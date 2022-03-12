@@ -83,14 +83,17 @@ void test_parse_name(void) {
     err = parse_name("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 0);
+    ASSERT_EQ(reg_y, 5);
     ASSERT_EQ(r, 5);
     err = parse_name("PRIN\xD4LIS\xD4", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 0);
+    ASSERT_EQ(reg_y, 5);
     ASSERT_EQ(r, 5);
     err = parse_name("LIS\xD4PRIN\xD4", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 1);
+    ASSERT_EQ(reg_y, 5);
     ASSERT_EQ(r, 5);
     err = parse_name("LIS\xD4", 0);
     ASSERT_NE(err, 0);

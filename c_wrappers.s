@@ -53,6 +53,7 @@ popptr2:
 return_carry:
         sta     _reg_a
         stx     _reg_x
+        sty     _reg_y
         lda     #0
         tax
         rol     A

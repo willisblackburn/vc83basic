@@ -143,8 +143,9 @@ get_line_ptr_plus_a:
 ; Returns carry clear if okay, carry set if error (e.g., out of memory).
 
 insert_or_update_line:
-        sta     regsave             ; Stash the line number in regsave
-        stx     regsave+1
+@save_line_ptr = regsave
+        sta     @save_line_ptr      ; Stash the line number
+        stx     @save_line_ptr+1
         jsr     find_line           ; Search for an existing line
         bcs     @insert             ; Not found, just insert the new line
 
@@ -189,10 +190,10 @@ insert_or_update_line:
         stx     ptr2+1
         jsr     calculate_bytes_to_move     ; Set sreg to length of program from line_ptr
         jsr     copy_bytes_back
-        lda     regsave
+        lda     @save_line_ptr
         ldy     #0
         sta     (line_ptr),y        ; Save line item number low byte
-        lda     regsave+1
+        lda     @save_line_ptr+1
         iny
         sta     (line_ptr),y        ; Save line item number high byte
         pla                         ; Get the line length saved earlier
