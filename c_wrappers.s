@@ -8,12 +8,16 @@
 .include "zeropage.inc"
 .import popax, popptr1, incsp2, return0, return1
 
+.include "target.inc"
 .include "basic.inc"
 
 ; Aliases for globals
 
 .export _buffer = buffer
 .export _buffer_length = buffer_length
+
+.export _output_buffer = output_buffer
+.export _output_buffer_length = output_buffer_length
 
 .export _line_ptr = line_ptr
 .export _program_start = program_start
@@ -22,6 +26,7 @@
 .export _status = status
 
 .export _r = r
+.export _w = w;
 
 .bss
 
@@ -61,6 +66,8 @@ return_carry:
         rol     A
         rts
 
+; program.s
+
 _initialize_target:
 .export _initialize_target
         jmp     initialize_target
@@ -89,6 +96,8 @@ _insert_or_update_line:
         jsr     insert_or_update_line
         jmp     return_carry
 
+; parser.s
+
 _parse_number:
 .export _parse_number
         sta     r               ; Buffer index
@@ -106,6 +115,15 @@ _find_name:
         jsr     popax           ; Name table pointer
         jsr     find_name
         jmp     return_carry
+
+; encode.s
+
+_encode_int:
+.export _encode_int
+        jsr     encode_int
+        jmp     return_carry
+
+; util.s
 
 _copy_bytes:
 .export _copy_bytes

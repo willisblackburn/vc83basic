@@ -1,6 +1,7 @@
 ; cc65 runtime
 .include "zeropage.inc"
 
+.include "target.inc"
 .include "basic.inc"
 
 ready_message: .byte "READY"
@@ -21,7 +22,7 @@ statement_signature_table:
         .byte   TYPE_INT | TYPE_OPTIONAL, TYPE_NONE
         .byte   TYPE_CH | TYPE_OPTIONAL, TYPE_PRINT
 
-statement_exec_handler_table:
+statement_exec_vectors:
         .word   exec_list
         .word   exec_run
         .word   exec_print
@@ -62,9 +63,9 @@ main:
 invoke_statement_handler:
         asl     A                       ; Multiply index by 2
         tax                             ; Use to look up handler and copy into ptr1
-        lda     statement_exec_handler_table,x
+        lda     statement_exec_vectors,x
         sta     ptr1
-        lda     statement_exec_handler_table+1,x
+        lda     statement_exec_vectors+1,x
         sta     ptr1+1
         jmp     (ptr1)                  ; Jump to handler; handle will RTS to caller
 

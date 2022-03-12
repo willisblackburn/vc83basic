@@ -1,6 +1,8 @@
 ; cc65 runtime
 .include "zeropage.inc"
+.import jmpvec
 
+.include "target.inc"
 .include "basic.inc"
 
 .zeropage
@@ -16,7 +18,8 @@ copy_length: .res 2
 
 .code
 
-mul_div_tmp = regsave              
+mul_div_tmp = regsave
+jump_table = ptr2              
 
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
@@ -193,3 +196,20 @@ div10:
         lda     mul_div_tmp         ; Divisor into AX
         ldx     mul_div_tmp+1
         rts
+
+; JSR to a jump table entry.
+; AX = address of the jump table.
+; Y = the index of the jump table entry
+
+jsr_to_table_entry:
+        sta     jump_table
+        stx     jump_table+1
+        tya
+        asl     A
+        tay
+        lda     (jump_table),y
+        sta     jmpvec+1
+        iny 
+        lda     (jump_table),y
+        sta     jmpvec+2
+        jmp     jmpvec              ; Handler function RTS will return from *this* function

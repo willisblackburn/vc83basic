@@ -1,9 +1,5 @@
 ; Global data
 
-.include "target.inc"
-
-; Globals
-
 .globalzp r
 .globalzp w
 
@@ -12,13 +8,35 @@
 
 .globalzp status
 
-.globalzp name_table
-.globalzp name_index
-.globalzp save_name_table_byte
-
 .global statement_name_table
 
 .globalzp copy_from, copy_to, copy_length
+
+.globalzp name_table, name_index
+
+.global output_buffer, output_buffer_length
+
+; Global functions
+
+; encode.s
+.global encode_int
+
+; name.s
+.global find_name, advance_y_next_name
+
+; parser.s
+.global parse_number, char_to_digit
+.global skip_whitespace
+
+; program.s
+.global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_update_line
+.global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
+
+; util.s
+.global copy_bytes, copy_bytes_back
+.global return_error, return_internal_error, return_status, return_status_ok
+.global mul10, div10
+.global jsr_to_table_entry
 
 ; Value types
 
@@ -47,6 +65,12 @@ NT_2ARG             = NT_1ARG + 1
 NT_3ARG             = NT_1ARG + 2
 NT_END              = $80
 
+; Tokenized form constants
+
+TOKEN_EOL           = $00
+TOKEN_EOS           = $01
+TOKEN_INT           = $02
+
 ; Status and error codes
 
 STATUS_OK                   = $00   ; Everything OK; used to clear status
@@ -58,24 +82,6 @@ ERR_FAIL                    = $FF   ; General failure
 ST_LIST     = 0
 ST_RUN      = 1
 ST_PRINT    = 2
-
-; Functions
-
-; name.s
-.global find_name, advance_y_next_name
-
-; parser.s
-.global parse_number, char_to_digit
-.global skip_whitespace
-
-; program.s
-.global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_update_line
-.global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
-
-; util.s
-.global copy_bytes, copy_bytes_back
-.global return_error, return_internal_error, return_status, return_status_ok
-.global mul10, div10
 
 ; Macros
 

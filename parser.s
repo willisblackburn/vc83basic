@@ -1,6 +1,7 @@
 ; cc65 runtime
 .include "zeropage.inc"
 
+.include "target.inc"
 .include "basic.inc"
 
 .zeropage
@@ -10,11 +11,19 @@ r: .res 1
 ; Write index.
 w: .res 1
 
-digit_value = tmp1              ; parse_number
-argument_read_count = tmp3      ; parse_statement
-save_y = tmp4                   ; parse_statement
+.bss
+
+output_buffer: .res 256
+output_buffer_length: .res 1
 
 .code
+
+digit_value = tmp1              ; parse_number
+save_name_table_byte = tmp1     ; find_name
+save_y = tmp2                   ; parse_statement
+argument_index = tmp4           ; parse_statement, parse_arguments
+argument_count = tmp3           ; parse_arguments
+signature_entry = ptr1;         ; parse_arguments
 
 ; Parses a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, parse up to the first non-digit.
@@ -67,7 +76,6 @@ char_to_digit:
 ; Parses and tokenizes a statement.
 ; The last byte of the buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
-; AX = pointer to the syntax rule table.
 ; r = read index into the bffer
 ; Returns carry clear if the input matched a rule and the index of that rule in A, 
 ; or carry set if it didn't match any syntax rule.
@@ -75,13 +83,18 @@ char_to_digit:
 parse_statement:
         lda     #<statement_name_table
         ldx     #>statement_name_table
-        jsr     find_name       ; Leaves name_table and Y pointing to next byte in name table
+        jsr     find_name       ; Sets name_table and name_index and Y points to next byte in name table
         bcs     @error
+        lda     #0
+        sta     argument_index  ; Start out at argument index 0
         lda     (name_table),y  ; Check if there are any arguments to read
-        sta     save_name_table_byte
+        pha
         and     #$70            ; If we're left with $10 then read arguments
         cmp     #$10
-;         beq     @arguments
+        pla
+        and     #$0F            ; How many arguments to parse?
+        jsr     parse_arguments        
+        bcs     @error
 
 
 
@@ -176,10 +189,73 @@ parse_string_literal:
         rts
 
 
+parse_type_vectors:
+        .word   parse_error
+        .word   parse_expression
+        .word   parse_expression
+        .word   parse_expression
+        .word   parse_expression
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+        .word   parse_error
+
+; Parses arguments from the buffer and tokenizes them.
+; Arguments must be separated by ','.
+; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
+; number of arguments based on the types in the signature table.
+; A = the number of arguments to parse
+; r = the read index into buffer
+; signature_entry = the address of the signature table entry
+; argument_index = where to start reading arguments from signature table (updated by function)
 
 parse_arguments:
+        sta     argument_count
+        beq     @done
+@next_argument:
+        ldy     argument_index  ; Use Y to index argument
+        lda     (signature_entry),y     ; Load argument
+        and     $0F             ; Isolate argument type
+        tay
+        lda     parse_type_vectors
+        ldx     parse_type_vectors+1
+        jsr     jsr_to_table_entry
+        bcs     @error
+        dec     argument_count
+        inc     argument_index
+        beq     @done
+        jsr     skip_whitespace
+        jmp     @next_argument
+@done:
         rts
 
+@error:
+        sec
+        rts
+
+; Placeholder handler that just signals an error.
+
+parse_error:
+        sec
+        rts
+
+; Parses and tokenizes a expression.
+; r = the read index into buffer
+; w = the tokenization write index
+
+parse_expression:
+        jsr     parse_number
+        bcs     @error
+        jsr     encode_int      ; Will set carry if fail
+@error:
+        rts
 
 ; Skip past any whitespace in the buffer.
 ; r = the read index
@@ -194,3 +270,5 @@ skip_whitespace:
         dey                     ; It wasn't whitespace so go back
         sty     r               ; Update read index
         rts
+
+

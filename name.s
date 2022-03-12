@@ -1,15 +1,17 @@
 ; cc65 runtime
 .include "zeropage.inc"
 
+.include "target.inc"
 .include "basic.inc"
 
 .zeropage
 
-name_table = ptr1               ; find_name
-name_index = tmp1               ; find_name
-save_name_table_byte = tmp2     ; find_name
+name_table: .res 2
+name_index: .res 1
 
 .code
+
+save_name_table_byte = tmp1     ; find_name
 
 ; Matches the input against names from a table.
 ; The last letter of each name must have bit 7 set (but it is ignored in the comparison).
@@ -20,7 +22,7 @@ save_name_table_byte = tmp2     ; find_name
 ; On match, returns the index of the name in A and the next position in the name table after the matched name in Y.
 
 find_name:
-        sta     name_table      ; Name table pointer into ptr1        
+        sta     name_table      ; Name table pointer into name_table        
         stx     name_table+1
         lda     #0              ; Name index
         sta     name_index      

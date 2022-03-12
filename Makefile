@@ -2,10 +2,10 @@ TARGETS = sim6502 apple2
 
 TEST_TARGET = sim6502
 
-COMMON_SOURCES = main.s name.s parser.s program.s util.s
+COMMON_SOURCES = encode.s main.s name.s parser.s program.s util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
-TESTS = name_test parser_test program_test util_test
+TESTS = encode_test name_test parser_test program_test util_test
 
 TEST_COMMON_SOURCES = c_wrappers.s $(filter-out $(TEST_TARGET)/$(TEST_TARGET)_startup.s,$(wildcard $(TEST_TARGET)/*.s))
 TEST_COMMON_OBJECTS = $(TEST_COMMON_SOURCES:.s=.o)
