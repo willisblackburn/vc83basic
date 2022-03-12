@@ -35,6 +35,8 @@ readline:
         iny                     ; Increment write index
         jmp     @next
 @done:
+        lda     #0
+        sta     buffer,y        ; Store 0 at end of buffer
         tya                     ; Return buffer_length in A
         rts
 

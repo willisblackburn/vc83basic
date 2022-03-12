@@ -65,7 +65,7 @@ char_to_digit:
         cmp     #10             ; Sets carry if it's in the 10-255 range
         rts
 
-; Parses and tokenizes a syntax rule.
+; Parses and tokenizes a statement.
 ; The last byte of the buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
 ; AX = pointer to the syntax rule table.
@@ -168,8 +168,6 @@ parse_name:
 ; Compare each character of the name table entry with the input.
 
 @compare_byte:
-        cpx     buffer_length   ; At the end of the buffer? (TODO: add 0 to buffer instead)
-        beq     @no_match       ; Yes, skip to next name
         lda     (name_table),y  ; Get name character
         beq     @fail           ; If it's 0 then out of names to match
         sta     save_name_table_byte
