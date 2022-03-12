@@ -18,6 +18,8 @@
 
 .global statement_name_table
 
+.globalzp copy_from, copy_to, copy_length
+
 ; Value types
 
 TYPE_NONE           = $00

@@ -38,14 +38,16 @@ _reg_y: .res 1
 
 ; Function wrappers
 
-; Same as popptr1 but for ptr2.
-popptr2:
-        ldy     #1
+; Pops a word from C stack into zero-page register identified by X.
+
+popzpword:
+        ldy     #0
         lda     (sp),y
-        sta     ptr2+1
-        dey           
+        sta     0,x
+        iny           
+        inx
         lda     (sp),y
-        sta     ptr2
+        sta     0,x
         jmp     incsp2
 
 ; Returns 0 or 1 depending on the carry state,
@@ -107,18 +109,22 @@ _find_name:
 
 _copy_bytes:
 .export _copy_bytes
-        sta     sreg
-        stx     sreg+1
-        jsr     popptr1
-        jsr     popptr2
+        sta     copy_length
+        stx     copy_length+1
+        ldx     #copy_from
+        jsr     popzpword
+        ldx     #copy_to
+        jsr     popzpword
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
-        sta     sreg
-        stx     sreg+1
-        jsr     popptr1
-        jsr     popptr2
+        sta     copy_length
+        stx     copy_length+1
+        ldx     #copy_from
+        jsr     popzpword
+        ldx     #copy_to
+        jsr     popzpword
         jmp     copy_bytes_back
 
 _mul10:
