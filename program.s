@@ -14,7 +14,7 @@ line_ptr: .res 2
 
 ; The length of the current line
 line_length: .res 1
-; The curent line number
+; The curent line number; also used to store line number sought in find_line
 line_number: .res 2
 
 .bss
@@ -66,32 +66,29 @@ reset_line_ptr:
 ; This function needs to be reasonably fast because it will be called every time
 ; the program executes GOTO, GOSUB, RESTORE, or any other function that requires
 ; a line number.
-; The find_line_sreg entry point uses the line number in sreg.
+; The find_line_number entry point uses the line number in line_number.
 ; Sets line_ptr, line_number, and line_length if the line was found.
-; If not found, they are left set to where the line would have been, i.e., pointing
+; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
 ; AX = the line number
 ; Carry clear if ok (the was found), carry set if error (line not found).
 
 find_line:
-        sta     sreg                ; Stash the line number
-        stx     sreg+1
+        sta     line_number         ; Stash the line number
+        stx     line_number+1
         jsr     reset_line_ptr      ; Set line_ptr to beginning of program
-find_line_sreg:
+find_line_number:
         ldy     #1                  ; Set Y to 1 for getting high byte of line number
         lda     (line_ptr),y
-        cmp     sreg+1
+        cmp     line_number+1
         bcc     @continue           ; Line number high byte is <target; go to next line
         bne     @return             ; Return with carry set
         dey                         ; High byte is equal; decrement Y to 0
         lda     (line_ptr),y        ; Check the low byte of line number
-        cmp     sreg                ; Same logic for low byte
+        cmp     line_number         ; Same logic for low byte
         bcc     @continue
         bne     @return             ; Return with carry set
-        sta     line_number         ; A is still low byte of line number; save it
         iny                         ; Y = 1
-        lda     (line_ptr),y        ; Go back and get the high byte
-        sta     line_number+1       ; Save it
         iny                         ; Y = 2 to get the length byte
         lda     (line_ptr),y        ; Line length
         sta     line_length         ; Save it
@@ -101,7 +98,7 @@ find_line_sreg:
 
 @continue:
         jsr     advance_line_ptr    ; Advance to the next line    
-        jmp     find_line_sreg
+        jmp     find_line_number
 
 ; Advances the current line pointer to the next line.
 ; Operates directly on line_ptr.
