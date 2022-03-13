@@ -48,16 +48,6 @@ _reg_y: .res 1
 
 ; Pops a word from C stack into zero-page register identified by X.
 
-popzpword:
-        ldy     #0
-        lda     (sp),y
-        sta     0,x
-        iny           
-        inx
-        lda     (sp),y
-        sta     0,x
-        jmp     incsp2
-
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
 return_carry:
@@ -76,6 +66,13 @@ _encode_int:
         sta     w
         jsr     popax
         jsr     encode_int
+        jmp     return_carry
+
+_encode_byte:
+.export _encode_byte
+        sta     w
+        jsr     popa
+        jsr     encode_byte
         jmp     return_carry
 
 ; program.s
@@ -156,6 +153,21 @@ _find_name:
         sta     r               ; Buffer index
         jsr     popax           ; Name table pointer
         jsr     find_name
+        jmp     return_carry
+
+_match_character_sequence:
+.export _match_character_sequence
+
+@save_index = tmp1
+
+        sta     r
+        jsr     popa
+        sta     @save_index
+        jsr     popax
+        sta     name_table
+        stx     name_table+1
+        ldy     @save_index
+        jsr     match_character_sequence
         jmp     return_carry
 
 ; util.s

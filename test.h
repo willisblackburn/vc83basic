@@ -54,10 +54,12 @@ extern char reg_y;
 // Prototypes for C wrapper functions
 
 // name.s
-int find_name(const char* name, char r);
+int find_name(const char* name_table, char r);
+int match_character_sequence(void* name_table_entry, char y, char r);
 
 // encode.s
 int encode_int(int int_value, char w);
+int encode_byte(char byte_value, char w);
 
 // parser.s
 int parse_number(char r);

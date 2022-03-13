@@ -82,8 +82,18 @@ parse_statement:
         ldx     #>statement_name_table
         jsr     find_name       ; Sets name_table and name_index and Y points to next byte in name table
         bcs     @error
+        sty     @save_y         ; Remember name table entry index
+        pha                     ; Push the returned name index
+        ; jsr     encode_statement_name   ; Encode a statement name
         lda     #0
         sta     argument_index  ; Start out at argument index 0
+        
+
+; After matching a name, Y will point to one of:
+; 1. 0, meaning we matched the last entry and there are no arguments.
+; 2. A character, which must be the *next* entry.
+; 3. An argument placeholder. In this case we keep reading arguments and/or character sequences.
+
         lda     (name_table),y  ; Check if there are any arguments to read
         pha
         and     #$70            ; If we're left with $10 then read arguments
@@ -210,9 +220,9 @@ argument_type_vectors:
 ; number of arguments based on the types in the signature table.
 ; A = the number of arguments to parse
 ; signature = the address of the signature
-; argument_index = where to start reading arguments from signature table (will be updated)
-; r = the read index into buffer (will be updated)
-; w = the token write index (will be updated)
+; argument_index = where to start reading arguments from signature table (modified)
+; r = the read index into buffer (modified)
+; w = the token write index (modified)
 
 parse_arguments:
 
@@ -260,7 +270,7 @@ parse_expression:
         rts
 
 ; Parses a mandatory comma beween arguments.
-; r = the read index (will be updated)
+; r = the read index (modified)
 ; Returns carry clear if the ',' was found or carry set if it was not.
 
 parse_argument_separator:
@@ -279,7 +289,7 @@ parse_argument_separator:
         rts
 
 ; Skip past any whitespace in the buffer.
-; r = the read index (will be updated)
+; r = the read index (modified)
 
 skip_whitespace:
         ldy     r               ; Use Y to index buffer

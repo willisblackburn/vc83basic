@@ -19,9 +19,11 @@
 
 ; encode.s
 .global encode_int
+.global encode_byte
 
 ; name.s
 .global find_name, advance_y_next_name
+.global match_character_sequence
 
 ; parser.s
 .global parse_number, char_to_digit

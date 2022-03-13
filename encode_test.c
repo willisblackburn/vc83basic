@@ -1,5 +1,30 @@
 #include "test.h"
 
+static void test_encode_byte(void) {
+    int err;
+
+    PRINT_TEST_NAME();
+
+    err = encode_byte(2, 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(output_buffer[0], 2);
+    ASSERT_EQ(w, 1);
+
+    err = encode_byte(2, 1);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(output_buffer[1], 2);
+    ASSERT_EQ(w, 2);
+
+    err = encode_byte(255, 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(output_buffer[0], 255);
+    ASSERT_EQ(w, 1);
+
+    // Encode at end of buffer should fail
+    err = encode_int(100, 255);
+    ASSERT_EQ(err, 1);
+}
+
 static void test_encode_int(void) {
     int err;
 
@@ -25,12 +50,13 @@ static void test_encode_int(void) {
     ASSERT_EQ(w, 6);
 
     // Encode at end of buffer should fail
-    err = encode_int(100, 254);
+    err = encode_int(100, 253);
     ASSERT_EQ(err, 1);
 }
 
 int main(void) {
     initialize_target();
+    test_encode_byte();
     test_encode_int();
     return 0;
 }
