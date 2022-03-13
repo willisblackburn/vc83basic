@@ -104,7 +104,6 @@ parse_statement:
 
 @after_character_sequence:
         lda     (name_table),y  ; Check if there are any arguments to read
-        debug $00
         beq     @success
         and     #$60            ; If byte AND $60 is non-zero then it's another character sequence.
         bne     @success
@@ -115,7 +114,6 @@ parse_statement:
         lda     (name_table),y  ; Re-read name table byte
         pha                     ; Remember it in order to check bit 7 later
         iny
-        debug $01
         and     #$0F            ; How many arguments to parse?
         sty     @save_y         ; parse_arguments needs Y
         jsr     parse_arguments
@@ -127,7 +125,6 @@ parse_statement:
 
         ldy     @save_y
         lda     (name_table),y
-        debug $10
         and     #$60            ; Is it a character sequence?
         beq     @arguments      ; Nope, go handle more arguments (Y is good)
         jsr     skip_whitespace
@@ -137,7 +134,6 @@ parse_statement:
 ; We never jump to @error without carry being set so don't have to set it again.
 
 @error:
-        debug $11
         rts
 
 @success:
@@ -181,7 +177,6 @@ parse_arguments:
 @next_argument:
         ldy     argument_index  ; Use Y to index signature
         lda     (signature),y   ; Load argument
-        debug $20
         and     $0F             ; Isolate argument type
         tay
         lda     #<argument_type_vectors
@@ -194,11 +189,9 @@ parse_arguments:
         jsr     parse_argument_separator
         jmp     @next_argument
 @done:
-        debug $21
         rts
 
 @error:
-        debug $22
         sec
         rts
 

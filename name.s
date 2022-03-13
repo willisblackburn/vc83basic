@@ -78,7 +78,6 @@ match_character_sequence:
         ldx     r               ; Load read position into X
 @compare_byte:
         lda     (name_table),y  ; Get name character
-        debug $40
         and     #$60            ; Check if it's a string literal character
         beq     @match          ; If not, then we've reached the end of the string and have a match
         lda     (name_table),y  ; Reload the character from name table
