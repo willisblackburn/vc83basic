@@ -35,7 +35,7 @@ main:
         jsr     readline
         lda     #0                      ; Initialize the read pointer
         sta     r
-        jsr     parse_number            ; Leaves line number in AX and Y points to next character in buffer
+        jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; Wasn't a number, maybe an immediate mode command
         pha                             ; Save line number
         jsr     skip_whitespace
@@ -132,7 +132,7 @@ exec_run:
         rts
 
 exec_print:
-        jsr     parse_number            ; Get the number
+        jsr     read_number             ; Get the number
         bcs     @error                  ; Fail if not a number
         jsr     print_number            ; Print the number
         jsr     newline

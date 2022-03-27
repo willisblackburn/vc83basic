@@ -61,11 +61,11 @@ return_carry:
 
 ; encode.s
 
-_encode_int:
-.export _encode_int
+_encode_number:
+.export _encode_number
         sta     w
         jsr     popax
-        jsr     encode_int
+        jsr     encode_number
         jmp     return_carry
 
 _encode_byte:
@@ -107,10 +107,10 @@ _insert_or_update_line:
 
 ; parser.s
 
-_parse_number:
-.export _parse_number
+_read_number:
+.export _read_number
         sta     r               ; Buffer index
-        jsr     parse_number
+        jsr     read_number
         jmp     return_carry
 
 _char_to_digit:

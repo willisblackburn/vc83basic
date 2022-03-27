@@ -56,11 +56,11 @@ int find_name(const char* name_table, char r);
 int match_character_sequence(void* name_table_entry, char y, char r);
 
 // encode.s
-int encode_int(int int_value, char w);
+int encode_number(int number, char w);
 int encode_byte(char byte_value, char w);
 
 // parser.s
-int parse_number(char r);
+int read_number(char r);
 int char_to_digit(char c);
 int parse_statement(void* name_table, void* signature, char r, char w);
 int parse_arguments(char count, void* signature, char argument_index, char r, char w);

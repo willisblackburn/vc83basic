@@ -16,12 +16,26 @@ argument_index: .res 1
 
 .code
 
+; All "parse" functions use:
+; r = the read index into buffer (modified)
+; w = the token write index (modified)
+
 ; Parses a number from the buffer.
-; If the first character is not a number, then return an error. Otherwise, parse up to the first non-digit.
+; 
+
+parse_number:
+        jsr     read_number
+        bcs     @error
+        jsr     encode_number   ; Will set carry if fail
+@error:
+        rts
+
+; Reads a number from the buffer.
+; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
 ; r = the read index
 ; Returns the number in AX, carry clear if ok, carry set if error
 
-parse_number:
+read_number:
 
 @digit_value = tmp1
 
@@ -72,7 +86,6 @@ char_to_digit:
 ; the buffer length.
 ; name = pointer to the first entry of the name table
 ; signature = pointer to the first entry of the signature table
-; r = read index into the bffer
 ; Returns carry clear if the input matched a rule and the index of that rule in A, 
 ; or carry set if it didn't match any syntax rule.
 
@@ -165,8 +178,6 @@ argument_type_vectors:
 ; A = the number of arguments to parse
 ; signature = the address of the signature
 ; argument_index = where to start reading arguments from signature table (modified)
-; r = the read index into buffer (modified)
-; w = the token write index (modified)
 
 parse_arguments:
 
@@ -202,18 +213,13 @@ parse_error:
         rts
 
 ; Parses and tokenizes a expression.
-; r = the read index (will be modified)
-; w = the token write index (will be modified)
 
 parse_expression:
         jsr     parse_number
-        bcs     @error
-        jsr     encode_int      ; Will set carry if fail
 @error:
         rts
 
-; Parses a mandatory comma beween arguments.
-; r = the read index (modified)
+; Parses a mandatory comma beween arguments. Does not write any tokens.
 ; Returns carry clear if the ',' was found or carry set if it was not.
 
 parse_argument_separator:

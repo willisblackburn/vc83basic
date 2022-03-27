@@ -10,10 +10,10 @@
 ; All function clobber Y, so save it if you need it.
 ; Functions may use regsave for temporary storage.
 
-; Encodes an integer.
+; Encodes a number.
 ; AX = the integer to encode
 
-encode_int:
+encode_number:
         sta     regsave
         lda     #TOKEN_INT
         jsr     encode

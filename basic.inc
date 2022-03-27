@@ -18,7 +18,7 @@
 ; Functions
 
 ; encode.s
-.global encode_int
+.global encode_number
 .global encode_byte
 
 ; name.s
@@ -26,7 +26,7 @@
 .global match_character_sequence
 
 ; parser.s
-.global parse_number, char_to_digit
+.global read_number, char_to_digit
 .global parse_statement
 .global parse_arguments
 .global parse_expression
