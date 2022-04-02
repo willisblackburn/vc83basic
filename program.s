@@ -81,8 +81,9 @@ reset_line_ptr:
 find_line:
         sta     line_number         ; Stash the line number
         stx     line_number+1
-        jsr     reset_line_ptr      ; Set line_ptr to beginning of program
 find_line_number:
+        jsr     reset_line_ptr      ; Set line_ptr to beginning of program
+next_line:
         ldy     #1                  ; Set Y to 1 for getting high byte of line number
         lda     (line_ptr),y
         cmp     line_number+1
@@ -103,7 +104,7 @@ find_line_number:
 
 @continue:
         jsr     advance_line_ptr    ; Advance to the next line    
-        jmp     find_line_number
+        jmp     next_line
 
 ; Advances the current line pointer to the next line.
 ; Operates directly on line_ptr.
@@ -145,12 +146,7 @@ get_line_ptr_plus_a:
 ; Returns carry clear if okay, carry set if error (e.g., out of memory).
 
 insert_or_update_line:
-
-@save_line_number = regsave
-        
-        sta     @save_line_number   ; Stash the line number
-        stx     @save_line_number+1
-        jsr     find_line           ; Search for an existing line
+        jsr     find_line           ; Saves line number in line_number
         bcs     @insert             ; Not found, just insert the new line
 
 ; line_ptr points to a line that we have to remove.
@@ -195,10 +191,10 @@ insert_or_update_line:
         jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     update_pointers     ; Knowing copy from and to, we can update pointers
         jsr     copy_bytes_back
-        lda     @save_line_number
+        lda     line_number
         ldy     #0
         sta     (line_ptr),y        ; Save line item number low byte
-        lda     @save_line_number+1
+        lda     line_number+1
         iny
         sta     (line_ptr),y        ; Save line item number high byte
         pla                         ; Get the line length saved earlier
