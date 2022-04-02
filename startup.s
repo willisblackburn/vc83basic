@@ -34,7 +34,7 @@ startup:
         jsr     write           ; Write the message
 
         jsr     readline        ; Get the user's input
-        lda     #<hello         ; Load ptr1 with the hello pointer
+        lda     #<hello         ; Load AX with the hello pointer
         ldx     #>hello
         ldy     #hello_length
         jsr     write           ; Write "hello"
