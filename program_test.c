@@ -5,10 +5,10 @@ static void test_initalize_program(void) {
 
     initialize_program();
 
-    ASSERT_EQ(line_ptr, program_start);
+    ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->number, -1);
     ASSERT_EQ(line_ptr->length, 0);
-    ASSERT_EQ(program_end, program_start + 1); // sizeof *program_start == size of the line header
+    ASSERT_EQ(heap_ptr, program_ptr + 1); // sizeof *program_ptr == size of the line header
 }
 
 static void test_reset_line_ptr(void) {
@@ -20,25 +20,25 @@ static void test_reset_line_ptr(void) {
     line_ptr = NULL;
     reset_line_ptr();
 
-    ASSERT_EQ(line_ptr, program_start);
+    ASSERT_EQ(line_ptr, program_ptr);
 }
 
 static void test_advance_line_ptr(void) {
     PRINT_TEST_NAME();
 
-    // Calling advance_line_ptr on the empty program should advance line_ptr to program_end.
+    // Calling advance_line_ptr on the empty program should advance line_ptr to heap_ptr.
     initialize_program();
     advance_line_ptr();
-    ASSERT_EQ(line_ptr, program_end);
+    ASSERT_EQ(line_ptr, heap_ptr);
 
     // If we put in a fake line with various lengths then line_ptr should advance by that much plus the header.
     initialize_program();
     line_ptr->length = 10;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_start + 13);
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13);
     line_ptr->length = 250;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_start + 13 + 253);
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13 + 253);
 }
 
 static void test_find_line(void) {
@@ -47,9 +47,9 @@ static void test_find_line(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
-    fprintf(stderr, "program_start = %p\n", line_ptr);
+    fprintf(stderr, "program_ptr = %p\n", line_ptr);
 
-    ASSERT_EQ(line_ptr, program_start);
+    ASSERT_EQ(line_ptr, program_ptr);
 
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
@@ -70,7 +70,7 @@ static void test_find_line(void) {
     line_ptr->length = 0;
     // Patch up the program end.
     advance_line_ptr();
-    program_end = line_ptr;
+    heap_ptr = line_ptr;
 
     // Test if we can find each line separately.
     err = find_line(10);
@@ -107,7 +107,7 @@ static void test_insert_or_update_line(void) {
 
     strcpy(buffer, "10 PRINT 1");
     buffer_length = 10;
-    fprintf(stderr, "program_start = %p, program_end=%p\n", program_start, program_end);
+    fprintf(stderr, "program_ptr = %p, heap_ptr=%p\n", program_ptr, heap_ptr);
     err = insert_or_update_line(10, 3);
     ASSERT_EQ(err, 0);
     reset_line_ptr();
@@ -120,7 +120,7 @@ static void test_insert_or_update_line(void) {
 
     strcpy(buffer, "200 PRINT 3.14159");
     buffer_length = 16;
-    fprintf(stderr, "program_start = %p, program_end=%p\n", program_start, program_end);
+    fprintf(stderr, "program_ptr = %p, heap_ptr=%p\n", program_ptr, heap_ptr);
     err = insert_or_update_line(200, 4);
     ASSERT_EQ(err, 0);
     reset_line_ptr();

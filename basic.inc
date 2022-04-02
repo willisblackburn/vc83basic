@@ -5,7 +5,7 @@
 .globalzp r
 
 .globalzp line_ptr
-.global program_start, program_end
+.global program_ptr, heap_ptr
 
 .globalzp status
 
