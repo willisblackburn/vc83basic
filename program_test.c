@@ -8,7 +8,7 @@ static void test_initalize_program(void) {
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->number, -1);
     ASSERT_EQ(line_ptr->length, 0);
-    ASSERT_EQ(heap_ptr, program_ptr + 1); // sizeof *program_ptr == size of the line header
+    ASSERT_EQ(heap_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
 }
 
 static void test_reset_line_ptr(void) {
@@ -29,7 +29,7 @@ static void test_advance_line_ptr(void) {
     // Calling advance_line_ptr on the empty program should advance line_ptr to heap_ptr.
     initialize_program();
     advance_line_ptr();
-    ASSERT_EQ(line_ptr, heap_ptr);
+    ASSERT_EQ((void*)line_ptr, heap_ptr);
 
     // If we put in a fake line with various lengths then line_ptr should advance by that much plus the header.
     initialize_program();
