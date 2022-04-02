@@ -6,25 +6,26 @@
 
 .zeropage
 
-name_table: .res 2 ; TODO: maybe just "name"
+name_table: .res 2 ; TODO: maybe just "name" or "name_ptr" since it can point to any entry
 
 .code
 
 ; Matches the input against names from a table.
-; The last letter of each name must have bit 7 set (but it is ignored in the comparison).
-; A zero byte ends the name table.
+; Each name table entry consists of a name, which is a sequence of character bytes in the range $20-$5F,
+; followed by any number of extra data bytes. The last byte of the name table entry must have bit 7 set.
 ; name_table = pointer to the first entry of the name table
-; r = read index into buffer (modified)
+; r = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On match, returns the number of the matched name in A and the next position in the name table
 ; after the matched name in Y.
+; If no match, then name_table points to the 0 at the end of the name table.
 
 find_name:
 
-@count = tmp1
+@index = tmp1
 
         lda     #0              ; Name index
-        sta     @count      
+        sta     @index      
 @compare_name:
         ldy     #0              ; Y will index the name
         lda     (name_table),y  ; Get name character
@@ -32,12 +33,12 @@ find_name:
         jsr     match_character_sequence
         bcc     @match
         jsr     advance_y_next_name     ; No match, move to next entry
-        inc     @count          ; Increment name count
+        inc     @index          ; Increment name index
         jmp     @compare_name
 
 @match:
         clc                     ; Signal success
-        lda     @count          ; Return number of matched name in A
+        lda     @index          ; Return number of matched name in A
         ldx     #0
         rts
 
@@ -68,13 +69,12 @@ advance_y_next_name:
 ; Matches a character sequence from the name table with characters from buffer.
 ; name_table = pointer to the current name table entry
 ; Y = the current read position in the name table entry
-; r = read index into buffer (modified)
+; r = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On success, Y will point to the next byte past the matched word, or will point past the first unmatched
+; On success, Y will point to the next byte past the matched word, or will point to the first unmatched
 ; character on failure.
 
 match_character_sequence:
-
         ldx     r               ; Load read position into X
 @compare_byte:
         lda     (name_table),y  ; Get name character

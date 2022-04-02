@@ -36,7 +36,7 @@ static void test_read_number(void) {
     ASSERT_EQ(reg_ax, 10);
     ASSERT_EQ(r, 2);
 
-    // The function should honor the current read index.
+    // The function should honor the current read position.
     set_buffer("1020 PRINT X");
     err = read_number(2);
     ASSERT_EQ(err, 0);
@@ -155,14 +155,16 @@ static void test_parse_statement(void) {
         'P', 'L', 'O', 'T', 0x12+0x80, 
         'N', 'E', 'W'+0x80, 
         'G', 'R', 0x11+0x80,
-        'F', 'O', 'R', 0x11, 'T', 'O', 0x11+0x80,
-        0 
+        'F', 'O', 'R', 0x11, '=', 0x11, 'T', 'O', 0x11+0x80, 
+        0x80,
+        0
     };
     char signature_table[] = { 
         0x01, 0x01,
         0, 0, 
         0x01, 0,
-        0x01, 0x01
+        0x08, 0x01,
+        0x01, 0
     };
 
     PRINT_TEST_NAME();
@@ -197,7 +199,7 @@ static void test_parse_statement(void) {
     ASSERT_EQ(output_buffer[2], 8);
     ASSERT_EQ(output_buffer[3], 0);
 
-    set_buffer("FOR 1 TO 10000");
+    set_buffer("FOR X=1 TO 10000");
     err = parse_statement(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 14);

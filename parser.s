@@ -6,9 +6,9 @@
 
 .zeropage
 
-; Read index.
+; Read position in buffer
 r: .res 1
-; Write index.
+; Write position in output_buffer
 w: .res 1
 
 signature: .res 2
@@ -17,22 +17,12 @@ argument_index: .res 1
 .code
 
 ; All "parse" functions use:
-; r = the read index into buffer (modified)
-; w = the token write index (modified)
-
-; Parses a number from the buffer.
-; 
-
-parse_number:
-        jsr     read_number
-        bcs     @error
-        jsr     encode_number   ; Will set carry if fail
-@error:
-        rts
+; r = the read position in buffer (modified on success)
+; w = the token write position (modified on success)
 
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
-; r = the read index
+; r = the read position in buffer
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
@@ -52,7 +42,7 @@ read_number:
         sta     @digit_value    ; Store the digit value
         pla                     ; Retrieve the low byte of value
         bcs     @finish         ; If there was an error in char_to_digit, stop parsing
-        iny                     ; No error, increment read index
+        iny                     ; No error, increment read position
         jsr     mul10           ; Multiply the value by 10
         clc
         adc     @digit_value    ; Add the digit value
@@ -63,7 +53,7 @@ read_number:
 @finish:
         cpy     r               ; Did we parse anything?
         beq     @nothing        ; Nope
-        sty     r               ; Update read index
+        sty     r               ; Update read position
         clc                     ; Clear carry to signal OK
         rts
 
@@ -162,7 +152,7 @@ argument_type_vectors:
         .word   parse_error
         .word   parse_error
         .word   parse_error
-        .word   parse_error
+        .word   parse_variable_name
         .word   parse_error
         .word   parse_error
         .word   parse_error
@@ -219,6 +209,28 @@ parse_expression:
 @error:
         rts
 
+; Parses a number from the buffer.
+
+parse_number:
+        jsr     read_number
+        bcs     @error
+        jsr     encode_number   ; Will set carry if fail
+@error:
+        rts
+
+; Parses a variable name.
+; Finds all alphanumeric characters (first must be alpha) up to the first non-alphanumeric character.
+; Replaces the first non-alphanumeric character with a 0 and then looks up that name in the variable name table
+; (creating it if it is not present) and writes the variable token to the output buffer.
+; Restores the non-alphanumeric character that was replaced with 0 before returning.
+
+parse_variable_name:
+        
+
+
+
+
+
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
 ; Returns carry clear if the ',' was found or carry set if it was not.
 
@@ -239,7 +251,7 @@ parse_argument_separator:
 
 ; Skip past any whitespace in the buffer.
 ; This function is NOT exported because we want other modules to call parsing funtions, not this function.
-; r = the read index (modified)
+; r = the read position (modified)
 
 skip_whitespace:
         ldx     r               ; Use X to index buffer
@@ -249,5 +261,5 @@ skip_whitespace:
         cmp     #' '
         beq     @next
         dex                     ; It wasn't whitespace so go back
-        stx     r               ; Update read index
+        stx     r               ; Update read position
         rts
