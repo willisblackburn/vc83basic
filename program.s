@@ -206,7 +206,7 @@ insert_or_update_line:
         clc
         lda     #<buffer            ; Buffer start address
         adc     r                   ; Add buffer index
-        sta     copy_from_ptr           ; Set source address
+        sta     copy_from_ptr       ; Set source address
         lda     #>buffer            ; Do the same for the high byte (TODO: if buffer is fixed address we can remove)
         adc     #0                  ; This will leave carry clear
         sta     copy_from_ptr+1
