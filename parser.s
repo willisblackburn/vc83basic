@@ -242,7 +242,7 @@ parse_argument_separator:
 ; r = the read index (modified)
 
 skip_whitespace:
-        ldx     r               ; Use Y to index buffer
+        ldx     r               ; Use X to index buffer
 @next:
         lda     buffer,x
         inx

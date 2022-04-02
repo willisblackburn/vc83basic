@@ -139,7 +139,9 @@ get_line_ptr_plus_a:
 ; Returns carry clear if okay, carry set if error (e.g., out of memory).
 
 insert_or_update_line:
+
 @save_line_ptr = regsave
+        
         sta     @save_line_ptr      ; Stash the line number
         stx     @save_line_ptr+1
         jsr     find_line           ; Search for an existing line
