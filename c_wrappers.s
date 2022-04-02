@@ -12,20 +12,14 @@
 
 ; Aliases for globals
 
-_buffer = buffer
-.export _buffer
-_buffer_length = buffer_length
-.export _buffer_length
+.export _buffer = buffer
+.export _buffer_length = buffer_length
 
-_line_ptr = line_ptr
-.export _line_ptr
-_program_ptr = program_ptr
-.export _program_ptr
-_heap_ptr = heap_ptr
-.export _heap_ptr
+.export _line_ptr = line_ptr
+.export _program_ptr = program_ptr
+.export _heap_ptr = heap_ptr
 
-_status = status
-.export _status
+.export _status = status
 
 .bss
 
@@ -57,6 +51,7 @@ popptr2:
 return_carry:
         sta     _reg_a
         stx     _reg_x
+        sty     _reg_y
         lda     #0
         tax
         rol     A
