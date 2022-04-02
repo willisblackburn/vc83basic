@@ -6,7 +6,7 @@
 
 ; cc65 runtime
 .include "zeropage.inc"
-.import popax, popptr1, incsp2, return0, return1
+.import popax, incsp2, return0, return1
 
 .include "basic.inc"
 
@@ -35,16 +35,6 @@ _reg_y: .res 1
 .code
 
 ; Function wrappers
-
-; Same as popptr1 but for ptr2.
-popptr2:
-        ldy     #1
-        lda     (sp),y
-        sta     ptr2+1
-        dey           
-        lda     (sp),y
-        sta     ptr2
-        jmp     incsp2
 
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
