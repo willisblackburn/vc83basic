@@ -58,8 +58,8 @@ extern char buffer_length;
 
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
-extern line* program_start;
-extern line* program_end;
+extern line* program_ptr;
+extern line* heap_ptr;
 
 // Prototypes for C wrapper functions
 

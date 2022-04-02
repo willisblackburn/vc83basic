@@ -19,11 +19,11 @@ line_number: .res 2
 
 .bss
 
-; A pointer to the start of the program.
-program_start: .res 2
+; A pointer to the start of the program
+program_ptr: .res 2
 
-; A pointer to one byte past the end of the program.
-program_end: .res 2
+; The start of the heap
+heap_ptr: .res 2
 
 .code
 
@@ -32,13 +32,13 @@ program_end: .res 2
 
 initialize_program:
         clc
-        lda     #<__BSS_RUN__       ; Set program_start and line_ptr to end of BSS
+        lda     #<__BSS_RUN__       ; Set program_ptr and line_ptr to end of BSS
         adc     #<__BSS_SIZE__
-        sta     program_start
+        sta     program_ptr
         sta     line_ptr
         lda     #>__BSS_RUN__  
         adc     #>__BSS_SIZE__
-        sta     program_start+1
+        sta     program_ptr+1
         sta     line_ptr+1
         lda     #$FF                ; Line number = -1
         ldy     #0                  
@@ -48,17 +48,17 @@ initialize_program:
         lda     #0
         iny
         sta     (line_ptr),y        ; Line length
-        jsr     get_line_start_plus_a   ; Adding header + A (0) to line_start gives program_end in AX
-        sta     program_end
-        stx     program_end+1
+        jsr     get_line_start_plus_a   ; Adding header + A (0) to line_start gives heap_ptr in AX
+        sta     heap_ptr
+        stx     heap_ptr+1
         rts
 
-; Sets line_ptr to program_start.
+; Sets line_ptr to program_ptr.
 
 reset_line_ptr:
-        lda     program_start
+        lda     program_ptr
         sta     line_ptr
-        lda     program_start+1
+        lda     program_ptr+1
         sta     line_ptr+1
         rts
 
@@ -212,7 +212,7 @@ insert_or_update_line:
         sta     ptr2                ; Destination into ptr2
         stx     ptr2+1
         jsr     copy_bytes          ; Copy data from buffer into program space
-        jsr     calculate_bytes_to_move     ; Reset sreg to the length from line_ptr to original program_end
+        jsr     calculate_bytes_to_move     ; Reset sreg to the length from line_ptr to original heap_ptr
         jsr     advance_line_ptr    ; Jump over the new line
         jsr     update_program_end  ; Update program end
 
@@ -221,27 +221,27 @@ insert_or_update_line:
         rts
 
 ; Calculates the bytes to move for both compact and expand as
-; program_end - line_ptr.
+; heap_ptr - line_ptr.
 ; Returns the number of bytes in sreg.
 
 calculate_bytes_to_move:
-        sec                         ; Calculate length as program_end - line_ptr
-        lda     program_end
+        sec                         ; Calculate length as heap_ptr - line_ptr
+        lda     heap_ptr
         sbc     line_ptr
         sta     sreg                ; Store length in sreg
-        lda     program_end+1
+        lda     heap_ptr+1
         sbc     line_ptr+1
         sta     sreg+1              ; Store high byte of length
         rts
 
-; Updates program_end by adding sreg to line_ptr.
+; Updates heap_ptr by adding sreg to line_ptr.
 
 update_program_end:
         clc
         lda     line_ptr
         adc     sreg
-        sta     program_end
+        sta     heap_ptr
         lda     line_ptr+1
         adc     sreg+1
-        sta     program_end+1
+        sta     heap_ptr+1
         rts

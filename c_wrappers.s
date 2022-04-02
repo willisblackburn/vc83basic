@@ -19,10 +19,10 @@ _buffer_length = buffer_length
 
 _line_ptr = line_ptr
 .export _line_ptr
-_program_start = program_start
-.export _program_start
-_program_end = program_end
-.export _program_end
+_program_ptr = program_ptr
+.export _program_ptr
+_heap_ptr = heap_ptr
+.export _heap_ptr
 
 _status = status
 .export _status
