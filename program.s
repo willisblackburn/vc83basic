@@ -154,15 +154,15 @@ insert_or_update_line:
 ; actually exists.
 
         lda     line_ptr            ; Current line_ptr
-        sta     ptr2                ; will be the target of the memcpy
+        sta     copy_to_ptr         ; will be the target of the memcpy
         pha                         ; Also push it on the stack so we can restore after advancing
         lda     line_ptr+1          ; High byte
-        sta     ptr2+1
+        sta     copy_to_ptr+1
         pha
         jsr     advance_line_ptr    ; Move to line_ptr to next line (AX = line_ptr)
-        sta     ptr1                ; This will be the source for the copy
-        stx     ptr1+1
-        jsr     calculate_bytes_to_move     ; Set sreg to length of program from line_ptr
+        sta     copy_from_ptr       ; This will be the source for the copy
+        stx     copy_from_ptr+1
+        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     copy_bytes          ; Compact the program
         pla                         ; line_ptr now points to an invalid line so restore saved value
         sta     line_ptr+1
@@ -175,19 +175,19 @@ insert_or_update_line:
 ; line_ptr points to where this new line should go.
 
 @insert:
-        lda     line_ptr            ; Initialize ptr1 to line_ptr
+        lda     line_ptr            ; Initialize copy_from_ptr to line_ptr
         ldx     line_ptr+1          ; This will be the source for the copy
-        sta     ptr1                
-        stx     ptr1+1
+        sta     copy_from_ptr                
+        stx     copy_from_ptr+1
         lda     buffer_length       ; Load buffer_length, which should be <= 252
         sec
         sbc     r                   ; Subtract the buffer index to get line length
         beq     @finish             ; If they're the same, line is blank, nothing to insert
         pha                         ; Save the line length on the stack
         jsr     get_line_start_plus_a   ; Allocate space for new line plus header
-        sta     ptr2                
-        stx     ptr2+1
-        jsr     calculate_bytes_to_move     ; Set sreg to length of program from line_ptr
+        sta     copy_to_ptr                
+        stx     copy_to_ptr+1
+        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     copy_bytes_back
         lda     regsave
         ldy     #0
@@ -198,21 +198,21 @@ insert_or_update_line:
         pla                         ; Get the line length saved earlier
         iny
         sta     (line_ptr),y        ; Save line length
-        sta     sreg                ; Also save it into sreg
+        sta     copy_length         ; Also save it into copy_length
         lda     #0
-        sta     sreg+1              ; Set high byte of sreg to 0
+        sta     copy_length+1       ; Set high byte of copy_length to 0
         clc
         lda     #<buffer            ; Buffer start address
         adc     r                   ; Add buffer index
-        sta     ptr1                ; Set source address
+        sta     copy_from_ptr       ; Set source address
         lda     #>buffer            ; Do the same for the high byte (TODO: if buffer is fixed address we can remove)
         adc     #0                  ; This will leave carry clear
-        sta     ptr1+1
+        sta     copy_from_ptr+1
         jsr     get_line_start      ; Get destination address for copy
-        sta     ptr2                ; Destination into ptr2
-        stx     ptr2+1
+        sta     copy_to_ptr         ; Destination into copy_to_ptr
+        stx     copy_to_ptr+1
         jsr     copy_bytes          ; Copy data from buffer into program space
-        jsr     calculate_bytes_to_move     ; Reset sreg to the length from line_ptr to original heap_ptr
+        jsr     calculate_bytes_to_move     ; Reset copy_length to the length from line_ptr to original heap_ptr
         jsr     advance_line_ptr    ; Jump over the new line
         jsr     update_pointers     ; Update program end
 
@@ -225,13 +225,13 @@ insert_or_update_line:
 ; Returns the number of bytes in sreg.
 
 calculate_bytes_to_move:
-        sec                         ; Calculate length as heap_ptr - line_ptr
+        sec                       
         lda     heap_ptr
         sbc     line_ptr
-        sta     sreg                ; Store length in sreg
+        sta     copy_length         ; Store length
         lda     heap_ptr+1
         sbc     line_ptr+1
-        sta     sreg+1              ; Store high byte of length
+        sta     copy_length+1       ; Store high byte of length
         rts
 
 ; Updates heap_ptr by adding sreg to line_ptr.
