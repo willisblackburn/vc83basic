@@ -110,18 +110,27 @@ _parse_keyword:
 
 _copy_bytes:
 .export _copy_bytes
-        sta     sreg
-        stx     sreg+1
-        jsr     popptr1
-        jsr     popptr2
+        sta     copy_length
+        stx     copy_length+1
+        jsr     popax
+        sta     copy_from_ptr
+        stx     copy_from_ptr+1
+        jsr     popax
+        sta     copy_to_ptr
+        stx     copy_to_ptr+1
+        jmp     copy_bytes
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
-        sta     sreg
-        stx     sreg+1
-        jsr     popptr1
-        jsr     popptr2
+        sta     copy_length
+        stx     copy_length+1
+        jsr     popax
+        sta     copy_from_ptr
+        stx     copy_from_ptr+1
+        jsr     popax
+        sta     copy_to_ptr
+        stx     copy_to_ptr+1
         jmp     copy_bytes_back
 
 _mul10:

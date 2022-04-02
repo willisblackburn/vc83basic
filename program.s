@@ -239,9 +239,9 @@ calculate_bytes_to_move:
 update_pointers:
         clc
         lda     line_ptr
-        adc     sreg
+        adc     copy_length
         sta     heap_ptr
         lda     line_ptr+1
-        adc     sreg+1
+        adc     copy_length+1
         sta     heap_ptr+1
         rts
