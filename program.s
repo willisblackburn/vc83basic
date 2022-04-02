@@ -168,7 +168,7 @@ insert_or_update_line:
         sta     line_ptr+1
         pla
         sta     line_ptr
-        jsr     update_program_end
+        jsr     update_pointers
 
 ; Insert the new line, if there is one.
 ; There is a line if Y (recovered from tmp1) is less than buffer_length.
@@ -214,7 +214,7 @@ insert_or_update_line:
         jsr     copy_bytes          ; Copy data from buffer into program space
         jsr     calculate_bytes_to_move     ; Reset sreg to the length from line_ptr to original heap_ptr
         jsr     advance_line_ptr    ; Jump over the new line
-        jsr     update_program_end  ; Update program end
+        jsr     update_pointers     ; Update program end
 
 @finish:
         clc
@@ -236,7 +236,7 @@ calculate_bytes_to_move:
 
 ; Updates heap_ptr by adding sreg to line_ptr.
 
-update_program_end:
+update_pointers:
         clc
         lda     line_ptr
         adc     sreg
