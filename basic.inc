@@ -4,6 +4,7 @@
 
 .globalzp r
 
+.globalzp copy_from_ptr, copy_to_ptr, copy_length
 .globalzp line_ptr
 .global program_ptr
 .global heap_ptr
