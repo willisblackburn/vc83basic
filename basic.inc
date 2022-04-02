@@ -6,7 +6,7 @@
 .globalzp signature
 .globalzp argument_index
 .globalzp name_table
-.globalzp copy_from, copy_to, copy_length
+.globalzp copy_from_ptr, copy_to_ptr, copy_length
 .globalzp line_ptr
 
 ; Data

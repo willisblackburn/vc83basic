@@ -12,8 +12,8 @@
 ; for example if a function completed successfully (carry clear) but had no effect.
 status: .res 1
 
-copy_from: .res 2
-copy_to: .res 2
+copy_from_ptr: .res 2
+copy_to_ptr: .res 2
 copy_length: .res 2
 
 .code
@@ -21,9 +21,9 @@ copy_length: .res 2
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
 ; source address.
-; Alters copy_from and copy_to.
-; copy_from = source
-; copy_to = destination (must be <=copy_from)
+; Alters copy_from_ptr and copy_to_ptr.
+; copy_from_ptr = source
+; copy_to_ptr = destination (must be <=copy_from_ptr)
 ; copy_length = number of bytes to copy
 
 copy_bytes:
@@ -31,12 +31,12 @@ copy_bytes:
         ldx     copy_length+1       ; Number of 256-byte blocks
         beq     @remaining          ; If no blocks, just do remaining bytes
 @next_byte:
-        lda     (copy_from),y       ; Copy one byte
-        sta     (copy_to),y            
+        lda     (copy_from_ptr),y   ; Copy one byte
+        sta     (copy_to_ptr),y            
         iny                         ; Next byte
         bne     @next_byte          ; More to move
-        inc     copy_from+1         ; Add 256
-        inc     copy_to+1           ; to both copy_from and copy_to
+        inc     copy_from_ptr+1     ; Add 256
+        inc     copy_to_ptr+1       ; to both copy_from_ptr and copy_to_ptr
         dex                         ; Decrement number of blocks
         bne     @next_byte          ; Move to move
 
@@ -46,8 +46,8 @@ copy_bytes:
 @remaining:
         cpy     copy_length         ; Compare Y with number of remaining bytes
         beq     @return             ; If equal then we're done
-        lda     (copy_from),y       ; Otherwise move one more byte
-        sta     (copy_to),y           
+        lda     (copy_from_ptr),y   ; Otherwise move one more byte
+        sta     (copy_to_ptr),y           
         iny
         jmp     @remaining          ; TODO: optimize for 65C02
 
@@ -56,33 +56,33 @@ copy_bytes:
 
 ; Copy bytes backwards from a source address to a destination address.
 ; Used when the source and destination byte ranges overlap and destination address is higher than the source address.
-; Alters copy_from and copy_to.
-; copy_from = source
-; copy_to = destination (must be <=copy_from)
+; Alters copy_from_ptr and copy_to_ptr.
+; copy_from_ptr = source
+; copy_to_ptr = destination (must be <=copy_from_ptr)
 ; copy_length = number of bytes to copy
 
 copy_bytes_back:
         clc
-        lda     copy_from           ; Add copy_length (the length) to copy_from and copy_to
+        lda     copy_from_ptr       ; Add copy_length (the length) to copy_from_ptr and copy_to_ptr
         pha                         ; and save the original values on the stack
         adc     copy_length
-        sta     copy_from
-        lda     copy_from+1
+        sta     copy_from_ptr
+        lda     copy_from_ptr+1
         pha
         adc     copy_length+1
-        sta     copy_from+1
+        sta     copy_from_ptr+1
         clc
-        lda     copy_to              
+        lda     copy_to_ptr              
         pha                         
         adc     copy_length
-        sta     copy_to
-        lda     copy_to+1
+        sta     copy_to_ptr
+        lda     copy_to_ptr+1
         pha
         adc     copy_length+1
-        sta     copy_to+1
+        sta     copy_to_ptr+1
 
-; The stack contains the original copy_from and copy_to; we'll use these to move the last bytes.
-; The current values of copy_from and copy_to are one past the end of the move ranges.
+; The stack contains the original copy_from_ptr and copy_to_ptr; we'll use these to move the last bytes.
+; The current values of copy_from_ptr and copy_to_ptr are one past the end of the move ranges.
 ; The number of bytes to move is in copy_length.
 
         ldy     #0                  ; Y = 0 meaning 256 bytes per block
@@ -90,8 +90,8 @@ copy_bytes_back:
         beq     @remaining          ; If no blocks, just do remaining bytes
 @next_block:
         beq     @remaining          ; No more blocks, copy remaining bytes
-        dec     copy_from+1         ; Subtract 256 from copy_from
-        dec     copy_to+1           ; and copy_to
+        dec     copy_from_ptr+1     ; Subtract 256 from copy_from_ptr
+        dec     copy_to_ptr+1       ; and copy_to_ptr
         jsr     @copy
         dex                         ; Done with this block
         bne     @next_block         ; More to copy
@@ -99,14 +99,14 @@ copy_bytes_back:
 ; Upon reaching this point, both X and Y will be zero.
 
 @remaining:
-        pla                         ; Recover original copy_from and copy_to from stack
-        sta     copy_to+1
+        pla                         ; Recover original copy_from_ptr and copy_to_ptr from stack
+        sta     copy_to_ptr+1
         pla
-        sta     copy_to
+        sta     copy_to_ptr
         pla
-        sta     copy_from+1
+        sta     copy_from_ptr+1
         pla
-        sta     copy_from
+        sta     copy_from_ptr
         ldy     copy_length         ; Number of bytes left to copy (may be 0)
         beq     @skip_copy          ; No bytes to copy, otherwise fall through to @copy
 
@@ -116,12 +116,12 @@ copy_bytes_back:
 @copy:
         dey                         ; Decrement Y
         beq     @copy_last_byte     ; Y is 0 but we still have to copy one last byte
-        lda     (copy_from),y       ; Copy one byte
-        sta     (copy_to),y  
+        lda     (copy_from_ptr),y   ; Copy one byte
+        sta     (copy_to_ptr),y  
         jmp     @copy               ; TODO: optimize for 65C02
 @copy_last_byte:
-        lda     (copy_from),y       ; Copy last byte (Y will be 0) (TODO: optimize for 65C02)
-        sta     (copy_to),y
+        lda     (copy_from_ptr),y   ; Copy last byte (Y will be 0) (TODO: optimize for 65C02)
+        sta     (copy_to_ptr),y
 @skip_copy:
         rts
 

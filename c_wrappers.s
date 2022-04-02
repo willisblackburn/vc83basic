@@ -191,11 +191,11 @@ _copy_bytes:
         sta     copy_length
         stx     copy_length+1
         jsr     popax
-        sta     copy_from
-        stx     copy_from+1
+        sta     copy_from_ptr
+        stx     copy_from_ptr+1
         jsr     popax
-        sta     copy_to
-        stx     copy_to+1
+        sta     copy_to_ptr
+        stx     copy_to_ptr+1
         jmp     copy_bytes
 
 _copy_bytes_back:
@@ -203,11 +203,11 @@ _copy_bytes_back:
         sta     copy_length
         stx     copy_length+1
         jsr     popax
-        sta     copy_from
-        stx     copy_from+1
+        sta     copy_from_ptr
+        stx     copy_from_ptr+1
         jsr     popax
-        sta     copy_to
-        stx     copy_to+1
+        sta     copy_to_ptr
+        stx     copy_to_ptr+1
         jmp     copy_bytes_back
 
 _mul10:

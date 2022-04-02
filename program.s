@@ -156,14 +156,14 @@ insert_or_update_line:
 ; actually exists.
 
         lda     line_ptr            ; Current line_ptr
-        sta     copy_to             ; will be the target of the memcpy
+        sta     copy_to_ptr             ; will be the target of the memcpy
         pha                         ; Also push it on the stack so we can restore after advancing
         lda     line_ptr+1          ; High byte
-        sta     copy_to+1
+        sta     copy_to_ptr+1
         pha
         jsr     advance_line_ptr    ; Move to line_ptr to next line (AX = line_ptr)
-        sta     copy_from           ; This will be the source for the copy
-        stx     copy_from+1
+        sta     copy_from_ptr           ; This will be the source for the copy
+        stx     copy_from_ptr+1
         jsr     calculate_bytes_to_move     ; Set copy_length to length of program from line_ptr
         jsr     copy_bytes          ; Compact the program
         pla                         ; line_ptr now points to an invalid line so restore saved value
@@ -177,18 +177,18 @@ insert_or_update_line:
 ; line_ptr points to where this new line should go.
 
 @insert:
-        lda     line_ptr            ; Initialize copy_from to line_ptr
+        lda     line_ptr            ; Initialize copy_from_ptr to line_ptr
         ldx     line_ptr+1          ; This will be the source for the copy
-        sta     copy_from                
-        stx     copy_from+1
+        sta     copy_from_ptr                
+        stx     copy_from_ptr+1
         lda     buffer_length       ; Load buffer_length, which should be <= 252
         sec
         sbc     r                   ; Subtract the buffer index to get line length
         beq     @finish             ; If they're the same, line is blank, nothing to insert
         pha                         ; Save the line length on the stack
         jsr     get_line_start_plus_a   ; Allocate space for new line plus header
-        sta     copy_to                
-        stx     copy_to+1
+        sta     copy_to_ptr                
+        stx     copy_to_ptr+1
         jsr     calculate_bytes_to_move     ; Set copy_length to length of program from line_ptr
         jsr     copy_bytes_back
         lda     @save_line_ptr
@@ -206,13 +206,13 @@ insert_or_update_line:
         clc
         lda     #<buffer            ; Buffer start address
         adc     r                   ; Add buffer index
-        sta     copy_from           ; Set source address
+        sta     copy_from_ptr           ; Set source address
         lda     #>buffer            ; Do the same for the high byte (TODO: if buffer is fixed address we can remove)
         adc     #0                  ; This will leave carry clear
-        sta     copy_from+1
+        sta     copy_from_ptr+1
         jsr     get_line_start      ; Get destination address for copy
-        sta     copy_to             ; Destination into copy_to
-        stx     copy_to+1
+        sta     copy_to_ptr             ; Destination into copy_to_ptr
+        stx     copy_to_ptr+1
         jsr     copy_bytes          ; Copy data from buffer into program space
         jsr     calculate_bytes_to_move     ; Reset copy_length
         jsr     advance_line_ptr    ; Jump over the new line
