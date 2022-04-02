@@ -45,10 +45,6 @@ _reg_y: .res 1
 
 .code
 
-; Function wrappers
-
-; Pops a word from C stack into zero-page register identified by X.
-
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
 return_carry:
@@ -59,6 +55,8 @@ return_carry:
         tax
         rol     A
         rts
+
+; Function wrappers
 
 ; encode.s
 
