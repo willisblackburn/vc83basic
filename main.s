@@ -150,7 +150,9 @@ exec_print:
 ; Prints the number in AX to the console.
 
 print_number:
+
 @save_a = tmp1
+
         sta     @save_a                 ; Keep low byte in @save_a while we use A for other things
         lda     #0                      ; Push 0 on the stack
         pha
