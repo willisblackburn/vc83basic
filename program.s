@@ -54,6 +54,7 @@ initialize_program:
         rts
 
 ; Sets line_ptr to program_ptr.
+; X SAFE, Y SAFE
 
 reset_line_ptr:
         lda     program_ptr
@@ -119,7 +120,7 @@ advance_line_ptr:
 ; The get_line_ptr_plus_a entry point adds whatever is in A to line_ptr.
 ; The get_line_start_plus_a entry point adds the size of the line header.
 ; Returns the pointer in AX.
-; Does not change Y.
+; Y SAFE
 
 get_line_start:
         lda     #0                  ; Add 0 extra bytes after header
@@ -220,9 +221,8 @@ insert_or_update_line:
         clc
         rts
 
-; Calculates the bytes to move for both compact and expand as
-; heap_ptr - line_ptr.
-; Returns the number of bytes in sreg.
+; Calculates the bytes to move for both compact and expand as heap_ptr - line_ptr.
+; Returns the number of bytes in copy_length (borrowed from util.s)
 
 calculate_bytes_to_move:
         sec                       
