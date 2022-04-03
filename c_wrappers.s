@@ -104,7 +104,6 @@ _copy_bytes:
         sta     copy_to_ptr
         stx     copy_to_ptr+1
         jmp     copy_bytes
-        jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
