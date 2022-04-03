@@ -1,7 +1,10 @@
 ; Declarations for target-specific code.
 
-.global startup, main
+; Data
 
 .global buffer, buffer_length
 
+; Functions
+
+.global startup, main
 .global initialize_target, readline, getchar, write, write_buffer, putchar, newline
