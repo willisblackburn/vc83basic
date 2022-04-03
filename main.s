@@ -56,7 +56,7 @@ main:
 
 ; Scans through the program and prints each line.
 
-list:
+exec_list:
         jsr     reset_line_ptr
 @next_line:
         ldy     #1                      ; High byte of line number
@@ -82,7 +82,7 @@ list:
 
 ; Executes the program.
 
-run:
+exec_run:
         jsr     reset_line_ptr
 @next_line:
         ldy     #1                      ; High byte of line number
