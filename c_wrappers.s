@@ -75,10 +75,10 @@ _insert_or_update_line:
         jsr     insert_or_update_line
         jmp     return_carry
 
-_parse_number:
-.export _parse_number
+_read_number:
+.export _read_number
         sta     r               ; Buffer index
-        jsr     parse_number
+        jsr     read_number
         jmp     return_carry
 
 _char_to_digit:

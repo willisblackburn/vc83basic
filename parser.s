@@ -15,7 +15,7 @@ r: .res 1
 ; r = the read index
 ; Returns the number in AX, carry clear if ok, carry set if error
 
-parse_number:
+read_number:
         jsr     skip_whitespace
         ldy     r               ; Use Y to index buffer
         lda     #0              ; Intialize the value to 0

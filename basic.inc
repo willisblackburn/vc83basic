@@ -25,7 +25,7 @@ ERR_FAIL                    = $FF   ; General failure
 .global main
 
 ; parser.s
-.global parse_number, char_to_digit
+.global read_number, char_to_digit
 .global parse_keyword
 .global skip_whitespace
 
