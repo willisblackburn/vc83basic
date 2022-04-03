@@ -39,7 +39,7 @@ main:
         ldx     #>keyword_list
         jsr     parse_keyword           ; Was it "LIST"?
         bcs     @not_list
-        jsr     list
+        jsr     exec_list
         jmp     @ready
 
 @not_list:
@@ -47,7 +47,7 @@ main:
         ldx     #>keyword_run
         jsr     parse_keyword           ; Was it "RUN"?
         bcs     @not_run
-        jsr     run
+        jsr     exec_run
         jmp     @ready
 
 @not_run:
