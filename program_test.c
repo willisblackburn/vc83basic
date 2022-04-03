@@ -47,7 +47,6 @@ static void test_find_line(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
-    fprintf(stderr, "program_ptr = %p\n", line_ptr);
 
     ASSERT_EQ(line_ptr, program_ptr);
 
