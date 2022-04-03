@@ -57,7 +57,7 @@ initialize_program:
         stx     heap_ptr+1
         rts
 
-; Sets line_ptr to program.
+; Sets line_ptr to program_ptr.
 ; X SAFE, Y SAFE
 
 reset_line_ptr:
