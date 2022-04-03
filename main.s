@@ -123,20 +123,23 @@ exec_run:
 ; Prints the number in AX to the console.
 
 print_number:
-        sta     tmp1                    ; Start with high byte in tmp1
+
+@save_a = tmp1
+
+        sta     @save_a                 ; Keep low byte in @save_a while we use A for other things
         lda     #0                      ; Push 0 on the stack
         pha
 @next_digit:
-        lda     tmp1                    ; Recover low byte from tmp1
+        lda     @save_a                 ; Recover low byte
         jsr     div10                   ; Divide AX by 10
-        sta     tmp1                    ; Save low byte in tmp1
+        sta     @save_a                 ; Save low byte
         tya                             ; Transfer remainder into A
         clc
         adc     #'0'
         pha                             ; Push digit
         txa                             ; High byte into A
-        ora     tmp1                    ; OR with low byte
-        bne     @next_digit             ; Still more to digits
+        ora     @save_a                 ; OR with saved low byte
+        bne     @next_digit             ; Still more digits
 @print_digit:
         pla                             ; Get a digit
         beq     @done                   ; If it's 0 then we're done
