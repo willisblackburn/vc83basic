@@ -5,19 +5,22 @@
 
 .zeropage
 
-; Read index.
+; Read position in buffer
 r: .res 1
 
 .code
 
-; Parses a number from the buffer.
-; If the first character is not a number, then return an error. Otherwise, parse up to the first non-digit.
-; r = the read index
+; Reads a number from the buffer.
+; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
+; r = the read position in buffer
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
+
+@digit_value = tmp1
+
         jsr     skip_whitespace
-        ldy     r               ; Use Y to index buffer
+        ldy     r               ; Use Y to index buffer (since AX will hold the number)
         lda     #0              ; Intialize the value to 0
         tax
 @next:
@@ -26,13 +29,13 @@ read_number:
         pha                     ; Save A (low byte of value)
         lda     buffer,y
         jsr     char_to_digit   ; X SAFE function
-        sta     tmp1            ; Store the digit value in tmp1
+        sta     @digit_value    ; Store the digit value
         pla                     ; Retrieve the low byte of value
         bcs     @finish         ; If there was an error in char_to_digit, stop parsing
-        iny                     ; No error, increment read index
+        iny                     ; No error, increment read position
         jsr     mul10           ; Multiply the value by 10
         clc
-        adc     tmp1            ; Add tmp1
+        adc     @digit_value    ; Add the digit value
         bcc     @next           ; If carry clear then next digit
         inx                     ; Otherwise increment high byte
         jmp     @next
@@ -40,7 +43,7 @@ read_number:
 @finish:
         cpy     r               ; Did we parse anything?
         beq     @nothing        ; Nope
-        sty     r               ; Update read index
+        sty     r               ; Update read position
         clc                     ; Clear carry to signal OK
         rts
 
@@ -49,8 +52,8 @@ read_number:
         rts
 
 ; Converts the character in A into a digit.
-; This function only uses A and does not touch X or Y.
 ; Returns the digit in A, carry clear if ok, carry set if error
+; X SAFE, Y SAFE
 
 char_to_digit:
         sec                     ; Set carry
