@@ -1,20 +1,14 @@
-; Global data
-
-.global buffer, buffer_length
-
-.globalzp r
-
-.globalzp copy_from_ptr, copy_to_ptr, copy_length
-.globalzp line_ptr
-.global program_ptr
-.global heap_ptr
+; Zero Page
 
 .globalzp status
+.globalzp r
+.globalzp copy_from_ptr, copy_to_ptr, copy_length
+.globalzp line_ptr
+; Data
 
-; Status and error codes
-
-STATUS_OK                   = $00   ; Everything OK; used to clear status
-ERR_FAIL                    = $FF   ; General failure
+.global buffer, buffer_length
+.global program_ptr
+.global heap_ptr
 
 ; Functions
 
@@ -37,6 +31,10 @@ ERR_FAIL                    = $FF   ; General failure
 .global copy_bytes, copy_bytes_back
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
+; Status and error codes
+
+STATUS_OK                   = $00   ; Everything OK; used to clear status
+ERR_FAIL                    = $FF   ; General failure
 
 ; Macros
 
