@@ -58,7 +58,7 @@ format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X", $0A, $00
 ; Since this function calls the C library function fprintf, it saves all the C zero page registers and
 ; restores them before exiting.
 ; Although calling into the C library from an interrupt handler is normally asking for trouble, since sim65
-; doesn't generate interrupts, this wil only be called by a BRK statement.
+; doesn't generate interrupts, this will only be called by a BRK statement.
 
 debug_handler:
         cld                     ; Clear decimal flag (just in case)
@@ -76,6 +76,8 @@ debug_handler:
         push16  sreg
         push8   tmp1
         push8   tmp2
+        push8   tmp3
+        push8   tmp4
         push16  ptr1
         push16  ptr2
         push16  ptr3
@@ -104,6 +106,8 @@ debug_handler:
         pull16  ptr3
         pull16  ptr2
         pull16  ptr1
+        pull8   tmp4
+        pull8   tmp3
         pull8   tmp2
         pull8   tmp1
         pull16  sreg
