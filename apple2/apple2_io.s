@@ -22,10 +22,12 @@ readline:
 @next:
         inx
         lda     buffer,x
-        and     #$7F            ; Clear high bit if it's set
+        and     #$7F            ; Clear bit 7 if it's set
         sta     buffer,x        ; Store back
         cmp     #$0D
         bne     @next
+        lda     #0
+        sta     buffer,x        ; Replace "RETURN" with 0
         stx     buffer_length
         rts
 
