@@ -34,8 +34,6 @@ _reg_y: .res 1
 
 .code
 
-; Function wrappers
-
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
 return_carry:
@@ -46,6 +44,8 @@ return_carry:
         tax
         rol     A
         rts
+
+; Function wrappers
 
 _initialize_target:
 .export _initialize_target
