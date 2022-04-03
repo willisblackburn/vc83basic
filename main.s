@@ -25,7 +25,11 @@ main:
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; Wasn't a number, maybe an immediate mode command
         pha                             ; Save line number
+        txa
+        pha
         jsr     skip_whitespace
+        pla
+        tax
         pla
         jsr     insert_or_update_line   ; Delete an existing line, if it exists
         jmp     @wait_for_input

@@ -25,7 +25,7 @@ read_number:
         beq     @finish         ; Yes, return
         pha                     ; Save A (low byte of value)
         lda     buffer,y
-        jsr     char_to_digit   ; Doesn't touch X
+        jsr     char_to_digit   ; X SAFE function
         sta     tmp1            ; Store the digit value in tmp1
         pla                     ; Retrieve the low byte of value
         bcs     @finish         ; If there was an error in char_to_digit, stop parsing
@@ -94,15 +94,17 @@ parse_keyword:
         rts
 
 ; Skip past any whitespace in the buffer.
-; r = the read index
+; This function is NOT exported because we want other modules to call parsing funtions, not this function.
+; r = the read position (modified)
+; Y SAFE
 
 skip_whitespace:
-        ldy     r               ; Use Y to index buffer
+        ldx     r               ; Use X to index buffer
 @next:
-        lda     buffer,y
-        iny
+        lda     buffer,x
+        inx
         cmp     #' '
         beq     @next
-        dey                     ; It wasn't whitespace so go back
-        sty     r               ; Update read index
+        dex                     ; It wasn't whitespace so go back
+        stx     r               ; Update read position
         rts
