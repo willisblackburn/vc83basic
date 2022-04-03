@@ -18,6 +18,8 @@ typedef struct line {
 
 extern char status;
 #pragma zpsym ("status")
+extern char r;
+#pragma zpsym ("r")
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
 

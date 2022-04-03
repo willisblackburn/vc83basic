@@ -21,6 +21,8 @@
 
 .export _status = status
 
+.export _r = r
+
 .bss
 
 ; The wrappers for functions that use the carry bit to flag errors return the carry to C and use these fields to
