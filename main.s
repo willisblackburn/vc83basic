@@ -64,13 +64,16 @@ main:
 ; A = the index of the handler in the table
 
 invoke_statement_handler:
+
+@jmpvec = ptr1
+
         asl     A                       ; Multiply index by 2
-        tax                             ; Use to look up handler and copy into ptr1
+        tax                             ; Use to look up handler and copy into @jmpvec
         lda     statement_exec_vectors,x
-        sta     ptr1
+        sta     @jmpvec
         lda     statement_exec_vectors+1,x
-        sta     ptr1+1
-        jmp     (ptr1)                  ; Jump to handler; handle will RTS to caller
+        sta     @jmpvec+1
+        jmp     (@jmpvec)               ; Jump to handler; handler will RTS to caller
 
 ; Scans through the program and prints each line.
 
@@ -109,7 +112,7 @@ exec_run:
         ldy     #2                      ; Offset of line length
         lda     (line_ptr),y            ; Get length
         sta     buffer_length           ; Store in buffer_length
-        sta     copy_length             ; and sreg
+        sta     copy_length             ; and copy_length
         lda     #0
         sta     copy_length+1
         jsr     get_line_start          ; Start of line in AX
