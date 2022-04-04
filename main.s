@@ -91,16 +91,16 @@ exec_run:
         ldy     #2                      ; Offset of line length
         lda     (line_ptr),y            ; Get length
         sta     buffer_length           ; Store in buffer_length
-        sta     sreg                    ; and sreg
+        sta     copy_length             ; and sreg
         lda     #0
-        sta     sreg+1
+        sta     copy_length+1
         jsr     get_line_start          ; Start of line in AX
-        sta     ptr1                    ; Set source for copy
-        stx     ptr1+1
+        sta     copy_from_ptr           ; Set source for copy
+        stx     copy_from_ptr+1
         lda     #<buffer                ; Set destination for copy
-        sta     ptr2
+        sta     copy_to_ptr
         lda     #>buffer
-        sta     ptr2+1
+        sta     copy_to_ptr+1
         jsr     copy_bytes              ; Copy line into buffer
         lda     #0                      ; Start reading from offset 0
         sta     r
@@ -150,7 +150,7 @@ print_number:
         rts
 
 print_ready:
-        lda     #<ready_message         ; Pass address of message in ptr1
+        lda     #<ready_message         ; Pass address of message in AX
         ldx     #>ready_message
         ldy     #ready_length
         jsr     write
@@ -160,7 +160,7 @@ print_ready:
 ; Prints an error message.
 
 print_error:
-        lda     #<error_message         ; Pass address of message in ptr1
+        lda     #<error_message         ; Pass address of message in AX
         ldx     #>error_message
         ldy     #error_length
         jsr     write
