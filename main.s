@@ -54,6 +54,22 @@ main:
         jsr     print_error
         jmp     @wait_for_input
 
+; Invokes a statement handler from a table.
+; This function does not return; it jumps to the handler, which will eventually return.
+; A = the index of the handler in the table
+
+invoke_statement_handler:
+
+@jmpvec = ptr1
+
+        asl     A                       ; Multiply index by 2
+        tax                             ; Use to look up handler and copy into @jmpvec
+        lda     statement_exec_vectors,x
+        sta     @jmpvec
+        lda     statement_exec_vectors+1,x
+        sta     @jmpvec+1
+        jmp     (@jmpvec)               ; Jump to handler; handler will RTS to caller
+
 ; Scans through the program and prints each line.
 
 exec_list:
@@ -91,7 +107,7 @@ exec_run:
         ldy     #2                      ; Offset of line length
         lda     (line_ptr),y            ; Get length
         sta     buffer_length           ; Store in buffer_length
-        sta     copy_length             ; and sreg
+        sta     copy_length             ; and copy_length
         lda     #0
         sta     copy_length+1
         jsr     get_line_start          ; Start of line in AX
