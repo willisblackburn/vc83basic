@@ -16,10 +16,10 @@ buffer_length: .res 1
 ; A single-byte buffer for the char operations
 io_char: .res 1
 
+.code 
+
 ; Reads a line from the console into the buffer.
 ; Returns the length in A and also sets buffer_length.
-
-.code 
 
 readline:
 .export readline
