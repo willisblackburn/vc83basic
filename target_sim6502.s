@@ -3,7 +3,7 @@
 .import push0, push1, pushax
 
 ; sim65 vectors
-.import _read, _write, exit
+.import _read, _write
 
 .bss
 
