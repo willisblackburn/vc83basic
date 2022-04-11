@@ -54,8 +54,8 @@ getchar:
         lda     io_char         ; Get the character into A
         rts
 
-; Writes a line to the console. Defaults to write from buffer.
-; The write_ptr1 entry point writes from the buffer address in ptr1.
+; Writes a line to the console.
+; The write_buffer entry point writes from buffer.
 ; AX = a pointer to the buffer to write (write_buffer sets this to buffer)
 ; Y = the number of bytes to write (write_buffer sets this to buffer_length)
 
@@ -64,14 +64,18 @@ write_buffer:
         ldx     #>buffer
         ldy     buffer_length
 write:
-        sta     ptr1
-        stx     ptr1+1
-        sty     tmp1            ; Park the length
+
+@save_ptr = ptr1
+
+        sta     @save_ptr
+        stx     @save_ptr+1
+        tya
+        pha                     ; Save the length on the stack
         jsr     push1           ; File descriptor 1 (stdout)
-        lda     ptr1
-        ldx     ptr1+1
+        lda     @save_ptr
+        ldx     @save_ptr+1
         jsr     pushax          ; Push buffer pointer onto C stack
-        lda     tmp1            ; Length back into A
+        pla                     ; Length back into A
         ldx     #0              ; High byte of length
         jmp     _write
 
