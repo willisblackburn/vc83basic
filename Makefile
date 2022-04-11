@@ -1,4 +1,4 @@
-SOURCES = startup.s arch_sim6502.s main.s parser.s program.s util.s
+SOURCES = startup.s target_sim6502.s main.s parser.s program.s util.s
 OBJECTS = $(SOURCES:.s=.o)
 
 TEST_COMMON_SOURCES = c_wrappers.s
