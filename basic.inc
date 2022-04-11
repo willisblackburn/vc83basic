@@ -6,6 +6,7 @@
 .globalzp r
 .globalzp copy_from_ptr, copy_to_ptr, copy_length
 .globalzp line_ptr
+
 ; Data
 
 .global program_ptr
@@ -26,6 +27,7 @@
 .global copy_bytes, copy_bytes_back
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
+
 ; Status and error codes
 
 STATUS_OK                   = $00   ; Everything OK; used to clear status
