@@ -64,7 +64,7 @@ char_to_digit:
 ; Tests the input against a keyword. The last letter of the keyword must have bit 7 set (but it is ignored
 ; in the comparison).
 ; AX = pointer to the keyword
-; r = read index into buffer
+; r = the read position in buffer
 ; Returns carry clear if the keyword matched, carry set if it didn't match.
 
 parse_keyword:
@@ -91,7 +91,7 @@ parse_keyword:
 
 @match:
         inx                     ; Move past matched character
-        stx     r               ; Update read index
+        stx     r               ; Update read position
         clc                     ; On match the carry flag will be set to have to clear it
         rts
 
