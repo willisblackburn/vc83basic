@@ -1,4 +1,4 @@
-SOURCES = startup.s io.s
+SOURCES = startup.s target_sim6502.s
 OBJECTS = $(SOURCES:.s=.o)
 
 ARCH = -t sim6502
