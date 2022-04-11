@@ -5,9 +5,7 @@ ARCH = -t sim6502
 ASMFLAGS = $(ARCH) --create-dep $(<:.s=.d)
 LDFLAGS = $(ARCH) -m $@.map
 
-TARGET = basic
-
-$(TARGET): $(OBJECTS)
+basic: $(OBJECTS)
 	cl65 $(LDFLAGS) -o $@ $^
 
 %.o: %.s
@@ -18,4 +16,4 @@ ifneq ($(MAKECMDGOALS), clean)
 endif
 
 clean:
-	rm -f $(TARGET) *.o *.d *.map
+	rm -f basic *.o *.d *.map
