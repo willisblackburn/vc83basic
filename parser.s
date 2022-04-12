@@ -20,7 +20,7 @@ read_number:
 @digit_value = tmp1
 
         jsr     skip_whitespace
-        ldy     r               ; Use Y to index buffer (since AX will hold the number)
+        ldy     r               ; Use Y for the buffer position (since AX will hold the number)
         lda     #0              ; Intialize the value to 0
         tax
 @next:
@@ -74,7 +74,7 @@ parse_keyword:
         sta     @keyword_ptr    ; Keyword pointer into @keyword_ptr        
         stx     @keyword_ptr+1
         jsr     skip_whitespace
-        ldx     r               ; Use X to index buffer in this function
+        ldx     r               ; Use X for the buffer position in this function
         ldy     #0              ; Y will index the keyword
 @compare:
         cpx     buffer_length   ; At the end of the buffer?
@@ -105,7 +105,7 @@ parse_keyword:
 ; Y SAFE
 
 skip_whitespace:
-        ldx     r               ; Use X to index buffer
+        ldx     r               ; Use X for the buffer position
 @next:
         lda     buffer,x
         inx

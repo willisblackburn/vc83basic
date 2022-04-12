@@ -176,7 +176,7 @@ insert_or_update_line:
         stx     copy_from_ptr+1
         lda     buffer_length       ; Load buffer_length, which should be <= 252
         sec
-        sbc     r                   ; Subtract the buffer index to get line length
+        sbc     r                   ; Subtract the buffer position to get line length
         beq     @finish             ; If they're the same, line is blank, nothing to insert
         pha                         ; Save the line length on the stack
         jsr     get_line_start_plus_a   ; Allocate space for new line plus header
@@ -199,7 +199,7 @@ insert_or_update_line:
         sta     copy_length+1       ; Set high byte of copy_length to 0
         clc
         lda     #<buffer            ; Buffer start address
-        adc     r                   ; Add buffer index
+        adc     r                   ; Add buffer position
         sta     copy_from_ptr       ; Set source address
         lda     #>buffer            ; Do the same for the high byte (TODO: if buffer is fixed address we can remove)
         adc     #0                  ; This will leave carry clear

@@ -72,14 +72,14 @@ _advance_line_ptr:
 
 _insert_or_update_line:
 .export _insert_or_update_line
-        sta     r               ; Buffer index
+        sta     r               
         jsr     popax           ; Line number
         jsr     insert_or_update_line
         jmp     return_carry
 
 _read_number:
 .export _read_number
-        sta     r               ; Buffer index
+        sta     r               
         jsr     read_number
         jmp     return_carry
 
@@ -90,7 +90,7 @@ _char_to_digit:
 
 _parse_keyword:
 .export _parse_keyword
-        sta     r               ; Buffer index
+        sta     r               
         jsr     popax           ; Keyword pointer
         jsr     parse_keyword
         jmp     return_carry
