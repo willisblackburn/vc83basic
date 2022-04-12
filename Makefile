@@ -9,10 +9,10 @@ TESTS = $(TEST_SOURCES:.c=)
 RUN_TESTS = $(addsuffix .run, $(TESTS))
 
 CL65 = cl65
-ARCH = -t sim6502
-ASMFLAGS = $(ARCH) --create-dep $(<:.s=.d)
-CCFLAGS = $(ARCH) --create-dep $(<:.c=.d)
-LDFLAGS = $(ARCH) -m $@.map
+TARGET = -t sim6502
+ASMFLAGS = $(TARGET) --create-dep $(<:.s=.d)
+CCFLAGS = $(TARGET) --create-dep $(<:.c=.d)
+LDFLAGS = $(TARGET) -m $@.map
 
 all: basic $(TESTS)
 
