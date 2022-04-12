@@ -15,7 +15,7 @@ CFLAGS = --create-dep $(@:.o=.d)
 LDFLAGS = -m $@.map
 
 TEST_ASMFLAGS = $(ASMFLAGS)
-TEST_CFLAGS = -W -unused-func $(CFLAGS)
+TEST_CFLAGS = $(CFLAGS)
 TEST_LDFLAGS = $(LDFLAGS)
 
 # create-target defines all the rules to build a single target.
