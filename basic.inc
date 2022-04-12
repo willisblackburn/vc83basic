@@ -13,7 +13,7 @@
 
 ; Functions
 
-; arch_sim6502.s
+; target_sim6502.s
 .global initialize_target, readline, getchar, write, write_buffer, putchar, newline
 
 ; main.s
