@@ -23,7 +23,7 @@ io_char: .res 1
 
 readline:
 .export readline
-        ldy     #0              ; Use Y to track write index
+        ldy     #0              ; Use Y to track write position
 @next:
         sty     buffer_length   ; Store buffer_length; getchar will clobber Y
         jsr     getchar         ; Read one character
@@ -31,7 +31,7 @@ readline:
         cmp     #$0A            ; EOL?
         beq     @done           ; Yes
         sta     buffer,y        ; Otherwise store character in buffer
-        iny                     ; Increment write index
+        iny                     ; Increment write position
         jmp     @next
 @done:
         tya                     ; Return buffer_length in A
