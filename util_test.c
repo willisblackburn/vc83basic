@@ -109,7 +109,7 @@ static void test_div10(void) {
 }
 
 int main(void) {
-    initialize_arch();
+    initialize_target();
     test_copy_bytes();
     test_copy_bytes_back();
     test_mul10();

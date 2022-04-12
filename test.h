@@ -40,7 +40,7 @@ extern char reg_y;
 
 // Prototypes for C wrapper functions
 
-void initialize_arch(void);
+void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);

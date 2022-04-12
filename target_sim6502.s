@@ -28,7 +28,7 @@ io_char: .res 1
 
 brk_vector := $FFFE
 
-initialize_arch:
+initialize_target:
         lda     #<debug_handler
         sta     brk_vector
         lda     #>debug_handler
