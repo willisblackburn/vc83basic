@@ -161,6 +161,11 @@ _parse_argument_separator:
 
 ; name.s
 
+_is_name_character:
+.export _is_name_character
+        jsr     is_name_character
+        jmp     return_carry
+
 _find_name:
 .export _find_name
         sta     r               ; Buffer index

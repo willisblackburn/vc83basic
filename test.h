@@ -55,6 +55,7 @@ extern char reg_y;
 // name.s
 int find_name(const char* name_ptr, char r);
 int match_character_sequence(void* name_table_entry, char y, char r);
+int is_name_character(char c);
 
 // encode.s
 int encode_number(int number, char w);

@@ -1,5 +1,44 @@
 #include "test.h"
 
+void test_is_name_character() {
+    int err;
+
+    PRINT_TEST_NAME();
+
+    err = is_name_character('$');
+    ASSERT_EQ(err, 0);
+    err = is_name_character('A');
+    ASSERT_EQ(err, 0);
+    err = is_name_character('Z');
+    ASSERT_EQ(err, 0);
+    err = is_name_character('0');
+    ASSERT_EQ(err, 0);
+    err = is_name_character('9');
+    ASSERT_EQ(err, 0);
+    err = is_name_character('#');
+    ASSERT_NE(err, 0);
+    err = is_name_character('%');
+    ASSERT_NE(err, 0);
+    err = is_name_character('@');
+    ASSERT_NE(err, 0);
+    err = is_name_character('[');
+    ASSERT_NE(err, 0);
+    err = is_name_character('/');
+    ASSERT_NE(err, 0);
+    err = is_name_character(':');
+    ASSERT_NE(err, 0);
+    err = is_name_character(' ');
+    ASSERT_NE(err, 0);
+    err = is_name_character(0);
+    ASSERT_NE(err, 0);
+    err = is_name_character(0x7F);
+    ASSERT_NE(err, 0);
+    err = is_name_character(0x80);
+    ASSERT_NE(err, 0);
+    err = is_name_character(0xFF);
+    ASSERT_NE(err, 0);
+}
+
 void test_match_character_sequence() {
     int err;
 
@@ -56,12 +95,12 @@ void test_find_name(void) {
     ASSERT_EQ(r, 0);
 
     // Input name is longer than name in table
-    // err = find_name("PRI\xCE", 0);
-    // ASSERT_NE(err, 0);
-    // ASSERT_EQ(r, 0);
-    // err = find_name("LIS\xD4PRI\xCE", 0);
-    // ASSERT_NE(err, 0);
-    // ASSERT_EQ(r, 0);
+    err = find_name("PRI\xCE", 0);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
+    err = find_name("LIS\xD4PRI\xCE", 0);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(r, 0);
 
     // Read position is not zero
     err = find_name("PRIN\xD4", 2);
@@ -71,6 +110,7 @@ void test_find_name(void) {
 
 int main(void) {
     initialize_target();
+    test_is_name_character();
     test_match_character_sequence();
     test_find_name();
     return 0;

@@ -24,8 +24,9 @@
 .global encode_byte
 
 ; name.s
-.global find_name, advance_y_next_name
+.global find_name
 .global match_character_sequence
+.global is_name_character
 
 ; parser.s
 .global read_number, char_to_digit
