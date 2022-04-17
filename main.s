@@ -108,7 +108,7 @@ exec_run:
         ldx     #>keyword_print
         jsr     parse_keyword           ; Was it "PRINT"?
         bcs     @error                  ; Nope
-        jsr     read_number            ; Get the number
+        jsr     read_number             ; Get the number
         bcs     @error                  ; Fail if not a number
         jsr     print_number            ; Print the number
         jsr     newline

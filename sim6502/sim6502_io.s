@@ -24,34 +24,34 @@ io_char: .res 1
 .code
 
 readline:
-        ldy     #0              ; Use Y to track write position
-@next:
-        sty     buffer_length   ; Store buffer_length; getchar will clobber Y
-        jsr     getchar         ; Read one character
-        ldy     buffer_length   ; Save to reload Y from buffer_length now
-        cmp     #$0A            ; EOL?
-        beq     @done           ; Yes
-        sta     buffer,y        ; Otherwise store character in buffer
-        iny                     ; Increment write position
-        jmp     @next
-@done:
-        lda     #0
-        sta     buffer,y        ; Store 0 at end of buffer
-        tya                     ; Return buffer_length in A
+        ldy     #0                      ; Use Y to track write position
+@next:      
+        sty     buffer_length           ; Store buffer_length; getchar will clobber Y
+        jsr     getchar                 ; Read one character
+        ldy     buffer_length           ; Save to reload Y from buffer_length now
+        cmp     #$0A                    ; EOL?
+        beq     @done                   ; Yes
+        sta     buffer,y                ; Otherwise store character in buffer
+        iny                             ; Increment write position
+        jmp     @next       
+@done:      
+        lda     #0      
+        sta     buffer,y                ; Store 0 at end of buffer
+        tya                             ; Return buffer_length in A
         rts
 
 ; Reads a single character from the console.
 ; Returns the character in A.
 
 getchar:
-        jsr     push0           ; File descriptor 0 (stdin)
-        lda     #<io_char       ; Load io_char address into AX
-        ldx     #>io_char
-        jsr     pushax          ; Push onto C stack
-        lda     #1              ; Length
-        ldx     #0 
-        jsr     _read
-        lda     io_char         ; Get the character into A
+        jsr     push0                   ; File descriptor 0 (stdin)
+        lda     #<io_char               ; Load io_char address into AX
+        ldx     #>io_char       
+        jsr     pushax                  ; Push onto C stack
+        lda     #1                      ; Length
+        ldx     #0      
+        jsr     _read       
+        lda     io_char                 ; Get the character into A
         rts
 
 ; Writes a line to the console.
@@ -70,26 +70,26 @@ write:
         sta     @save_ptr
         stx     @save_ptr+1
         tya
-        pha                     ; Save the length on the stack
-        jsr     push1           ; File descriptor 1 (stdout)
-        lda     @save_ptr
-        ldx     @save_ptr+1
-        jsr     pushax          ; Push buffer pointer onto C stack
-        pla                     ; Length back into A
-        ldx     #0              ; High byte of length
+        pha                             ; Save the length on the stack
+        jsr     push1                   ; File descriptor 1 (stdout)
+        lda     @save_ptr       
+        ldx     @save_ptr+1     
+        jsr     pushax                  ; Push buffer pointer onto C stack
+        pla                             ; Length back into A
+        ldx     #0                      ; High byte of length
         jmp     _write
 
 ; Starts a new line on the console.
 
 newline:
-        lda     #$0A            ; Load LF into A then fall through to putchar
+        lda     #$0A                    ; Load LF into A then fall through to putchar
 
 ; Writes a single character to the console.
 ; A = the character to output
 
 putchar:
-        sta     io_char         ; Store character in io_char
-        lda     #<io_char       ; Load io_char address into AX
+        sta     io_char                 ; Store character in io_char
+        lda     #<io_char               ; Load io_char address into AX
         ldx     #>io_char
         ldy     #1
         jmp     write

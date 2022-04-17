@@ -25,29 +25,29 @@ copy_length: .res 2
 ; copy_length = number of bytes to copy
 
 copy_bytes:
-        ldy     #0                  ; Y = 0 meaning 256 bytes per block
-        ldx     copy_length+1       ; Number of 256-byte blocks
-        beq     @remaining          ; If no blocks, just do remaining bytes
-@next_byte:
-        lda     (copy_from_ptr),y   ; Copy one byte
-        sta     (copy_to_ptr),y            
-        iny                         ; Next byte
-        bne     @next_byte          ; More to move
-        inc     copy_from_ptr+1     ; Add 256
-        inc     copy_to_ptr+1       ; to both copy_from_ptr and copy_to_ptr
-        dex                         ; Decrement number of blocks
-        bne     @next_byte          ; Move to move
+        ldy     #0                      ; Y = 0 meaning 256 bytes per block
+        ldx     copy_length+1           ; Number of 256-byte blocks
+        beq     @remaining              ; If no blocks, just do remaining bytes
+@next_byte: 
+        lda     (copy_from_ptr),y       ; Copy one byte
+        sta     (copy_to_ptr),y                
+        iny                             ; Next byte
+        bne     @next_byte              ; More to move
+        inc     copy_from_ptr+1         ; Add 256
+        inc     copy_to_ptr+1           ; to both copy_from_ptr and copy_to_ptr
+        dex                             ; Decrement number of blocks
+        bne     @next_byte              ; Move to move
 
 ; Copy the remaining bytes.
 ; Y = 0 when we first reach this point
 
 @remaining:
-        cpy     copy_length         ; Compare Y with number of remaining bytes
-        beq     @return             ; If equal then we're done
-        lda     (copy_from_ptr),y   ; Otherwise move one more byte
-        sta     (copy_to_ptr),y           
-        iny
-        jmp     @remaining          ; TODO: optimize for 65C02
+        cpy     copy_length             ; Compare Y with number of remaining bytes
+        beq     @return                 ; If equal then we're done
+        lda     (copy_from_ptr),y       ; Otherwise move one more byte
+        sta     (copy_to_ptr),y               
+        iny 
+        jmp     @remaining              ; TODO: optimize for 65C02
 
 @return:
         rts
@@ -61,8 +61,8 @@ copy_bytes:
 
 copy_bytes_back:
         clc
-        lda     copy_from_ptr       ; Add copy_length (the length) to copy_from_ptr and copy_to_ptr
-        pha                         ; and save the original values on the stack
+        lda     copy_from_ptr           ; Add copy_length (the length) to copy_from_ptr and copy_to_ptr
+        pha                             ; and save the original values on the stack
         adc     copy_length
         sta     copy_from_ptr
         lda     copy_from_ptr+1
@@ -83,21 +83,21 @@ copy_bytes_back:
 ; The current values of copy_from_ptr and copy_to_ptr are one past the end of the move ranges.
 ; The number of bytes to move is in copy_length.
 
-        ldy     #0                  ; Y = 0 meaning 256 bytes per block
-        ldx     copy_length+1       ; Number of 256-byte blocks
-        beq     @remaining          ; If no blocks, just do remaining bytes
-@next_block:
-        beq     @remaining          ; No more blocks, copy remaining bytes
-        dec     copy_from_ptr+1     ; Subtract 256 from copy_from_ptr
-        dec     copy_to_ptr+1       ; and copy_to_ptr
-        jsr     @copy
-        dex                         ; Done with this block
-        bne     @next_block         ; More to copy
+        ldy     #0                      ; Y = 0 meaning 256 bytes per block
+        ldx     copy_length+1           ; Number of 256-byte blocks
+        beq     @remaining              ; If no blocks, just do remaining bytes
+@next_block:    
+        beq     @remaining              ; No more blocks, copy remaining bytes
+        dec     copy_from_ptr+1         ; Subtract 256 from copy_from_ptr
+        dec     copy_to_ptr+1           ; and copy_to_ptr
+        jsr     @copy   
+        dex                             ; Done with this block
+        bne     @next_block             ; More to copy
 
 ; Upon reaching this point, both X and Y will be zero.
 
 @remaining:
-        pla                         ; Recover original copy_from_ptr and copy_to_ptr from stack
+        pla                             ; Recover original copy_from_ptr and copy_to_ptr from stack
         sta     copy_to_ptr+1
         pla
         sta     copy_to_ptr
@@ -105,20 +105,20 @@ copy_bytes_back:
         sta     copy_from_ptr+1
         pla
         sta     copy_from_ptr
-        ldy     copy_length         ; Number of bytes left to copy (may be 0)
-        beq     @skip_copy          ; No bytes to copy, otherwise fall through to @copy
+        ldy     copy_length             ; Number of bytes left to copy (may be 0)
+        beq     @skip_copy              ; No bytes to copy, otherwise fall through to @copy
 
 ; Copies bytes from offsets Y-1 to 0. Will copy 256 bytes if Y = 0.
 ; Y will be 0 on exit.
 
 @copy:
-        dey                         ; Decrement Y
-        beq     @copy_last_byte     ; Y is 0 but we still have to copy one last byte
-        lda     (copy_from_ptr),y   ; Copy one byte
-        sta     (copy_to_ptr),y  
-        jmp     @copy               ; TODO: optimize for 65C02
-@copy_last_byte:
-        lda     (copy_from_ptr),y   ; Copy last byte (Y will be 0) (TODO: optimize for 65C02)
+        dey                             ; Decrement Y
+        beq     @copy_last_byte         ; Y is 0 but we still have to copy one last byte
+        lda     (copy_from_ptr),y       ; Copy one byte
+        sta     (copy_to_ptr),y     
+        jmp     @copy                   ; TODO: optimize for 65C02
+@copy_last_byte:    
+        lda     (copy_from_ptr),y       ; Copy last byte (Y will be 0) (TODO: optimize for 65C02)
         sta     (copy_to_ptr),y
 @skip_copy:
         rts
@@ -153,18 +153,18 @@ mul10:
 
 @mul_tmp = regsave
 
-        sta     @mul_tmp            ; Store value in mul_tmp
-        stx     @mul_tmp+1
-        asl     A                   ; Shift A + mul_tmp+1 left 2
-        rol     @mul_tmp+1
-        asl     A                   
-        rol     @mul_tmp+1
-        clc
-        adc     @mul_tmp+0          ; Add in original value and save back
-        sta     @mul_tmp+0
-        txa
-        adc     @mul_tmp+1          ; Same thing for high byte
-        asl     @mul_tmp+0          ; Shift the value left once more; A is now the high byte
+        sta     @mul_tmp                ; Store value in mul_tmp
+        stx     @mul_tmp+1  
+        asl     A                       ; Shift A + mul_tmp+1 left 2
+        rol     @mul_tmp+1  
+        asl     A                       
+        rol     @mul_tmp+1  
+        clc 
+        adc     @mul_tmp+0              ; Add in original value and save back
+        sta     @mul_tmp+0  
+        txa 
+        adc     @mul_tmp+1              ; Same thing for high byte
+        asl     @mul_tmp+0              ; Shift the value left once more; A is now the high byte
         rol     A
         tax
         lda     @mul_tmp+0
@@ -178,22 +178,22 @@ div10:
 
 @div_tmp = regsave
 
-        sta     @div_tmp            ; Store value in div_tmp
-        stx     @div_tmp+1
-        ldx     #16                 ; 16 bits
-        lda     #0                  ; Initialize remainder to 0
-@next_bit:
-        asl     @div_tmp            ; Shift dividend left into A
-        rol     @div_tmp+1
-        rol     A
-        cmp     #10                 ; Reached 10 yet?
-        bcc     @not_10
-        sbc     #10                 ; Subtract 10 from remainder; carry is set
-        inc     @div_tmp            ; Set bit in quotient
-@not_10:
-        dex                         ; One bit down
-        bne     @next_bit           ; Some more to go
-        tay                         ; Remainder into Y
-        lda     @div_tmp            ; Divisor into AX
-        ldx     @div_tmp+1
+        sta     @div_tmp                ; Store value in div_tmp
+        stx     @div_tmp+1  
+        ldx     #16                     ; 16 bits
+        lda     #0                      ; Initialize remainder to 0
+@next_bit:  
+        asl     @div_tmp                ; Shift dividend left into A
+        rol     @div_tmp+1  
+        rol     A   
+        cmp     #10                     ; Reached 10 yet?
+        bcc     @not_10 
+        sbc     #10                     ; Subtract 10 from remainder; carry is set
+        inc     @div_tmp                ; Set bit in quotient
+@not_10:    
+        dex                             ; One bit down
+        bne     @next_bit               ; Some more to go
+        tay                             ; Remainder into Y
+        lda     @div_tmp                ; Divisor into AX
+        ldx     @div_tmp+1  
         rts
