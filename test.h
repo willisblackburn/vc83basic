@@ -41,6 +41,7 @@ extern char output_buffer_length;
 
 extern line* program_ptr;
 extern void* variable_name_table_ptr;
+extern void* value_table_ptr;
 extern void* heap_ptr;
 
 // Used by c_wrappers.s
@@ -76,6 +77,7 @@ void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
 int insert_or_update_line(int line_number, char r);
+int check_himem(void* ptr);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);

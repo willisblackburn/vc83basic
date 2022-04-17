@@ -9,7 +9,7 @@ static void test_initalize_program(void) {
     ASSERT_EQ(line_ptr->number, -1);
     ASSERT_EQ(line_ptr->length, 0);
     ASSERT_EQ(variable_name_table_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
-    ASSERT_EQ(heap_ptr, variable_name_table_ptr); // Variable name table is empty
+    ASSERT_EQ(value_table_ptr, variable_name_table_ptr); // Variable name table is empty
 }
 
 static void test_reset_line_ptr(void) {
@@ -68,10 +68,10 @@ static void test_find_line(void) {
     advance_line_ptr();
     line_ptr->number = -1;
     line_ptr->length = 0;
-    // Patch up variable_name_ptr so we know where the program ends.
+    // Patch up variable_name_table_ptr so we know where the program ends.
     advance_line_ptr();
     variable_name_table_ptr = line_ptr;
-    heap_ptr = line_ptr;
+    value_table_ptr = line_ptr;
 
     // Test if we can find each line separately.
     err = find_line(10);
@@ -119,7 +119,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
     advance_line_ptr();
     ASSERT_EQ(variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ(heap_ptr, (void*)line_ptr);
+    ASSERT_EQ(value_table_ptr, (void*)line_ptr);
 
     strcpy(buffer, "200 PRINT 3.14159");
     buffer_length = 16;
@@ -135,7 +135,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
     advance_line_ptr();
     ASSERT_EQ(variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ(heap_ptr, (void*)line_ptr);
+    ASSERT_EQ(value_table_ptr, (void*)line_ptr);
 
     // Test inserting a line before the other two.
     strcpy(buffer, "5 END");
@@ -155,7 +155,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
     advance_line_ptr();
     ASSERT_EQ(variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ(heap_ptr, (void*)line_ptr);
+    ASSERT_EQ(value_table_ptr, (void*)line_ptr);
 
     // Test deleting a line.
     strcpy(buffer, "200");
@@ -172,7 +172,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
     advance_line_ptr();
     ASSERT_EQ(variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ(heap_ptr, (void*)line_ptr);
+    ASSERT_EQ(value_table_ptr, (void*)line_ptr);
 }
 
 int main(void) {

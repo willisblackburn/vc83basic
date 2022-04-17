@@ -26,14 +26,14 @@ find_name:
 
         lda     #0              ; Name table index
         sta     @index      
-@compare_name:
+@next_name:
         ldy     #0              ; Y is the read position in the name table entry
         lda     (name_ptr),y    ; Get name character
         beq     @error          ; If it's 0 then out of names to match
         jsr     match_character_sequence
         bcc     @match
-        inc     @index          ; Increment name table index
-        jmp     @compare_name
+        inc     @index          ; Increment name table index; doesn't affect carry
+        bcs     @next_name 
 
 @error:
         sec                     ; Signal failure
@@ -46,8 +46,8 @@ find_name:
 ; Y = the current read position in the name table entry
 ; r = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On success, Y will point to the next byte past the matched word, or will point to the start of the next
-; name table entry on failure.
+; On success, Y will point to the next byte past the matched word, and name_ptr will be unchanged.
+; On failure, name_ptr will be set to the next name table entry.
 
 match_character_sequence:
 

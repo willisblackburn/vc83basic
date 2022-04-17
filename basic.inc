@@ -12,8 +12,11 @@
 ; Data
 
 .global program_ptr
+.global variable_count
 .global variable_name_table_ptr
+.global value_table_ptr
 .global heap_ptr
+.global himem_ptr
 .global statement_name_table
 .global statement_signature_table
 
@@ -34,11 +37,13 @@
 .global parse_arguments
 .global parse_expression
 .global parse_argument_separator
-.global skip_whitespace ; TODO: remove
+.global skip_whitespace
+.global add_variable
 
 ; program.s
 .global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_update_line
 .global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
+.global grow_a, grow_ay, check_himem
 
 ; util.s
 .global copy_bytes, copy_bytes_back

@@ -22,6 +22,7 @@
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
 .export _variable_name_table_ptr = variable_name_table_ptr
+.export _value_table_ptr = value_table_ptr
 .export _heap_ptr = heap_ptr
 
 .export _status = status
@@ -99,16 +100,24 @@ _advance_line_ptr:
 
 _insert_or_update_line:
 .export _insert_or_update_line
-        sta     r               ; Buffer index
-        jsr     popax           ; Line number
+        sta     r                       ; Buffer index
+        jsr     popax                   ; Line number
         jsr     insert_or_update_line
+        jmp     return_carry
+
+_check_himem:
+.export _check_himem
+        sta     regsave                 ; Swap A and X
+        txa                     
+        ldx     regsave
+        jsr     check_himem
         jmp     return_carry
 
 ; parser.s
 
 _read_number:
 .export _read_number
-        sta     r               ; Buffer index
+        sta     r                       ; Buffer index
         jsr     read_number
         jmp     return_carry
 
@@ -125,7 +134,7 @@ _parse_statement:
         jsr     popax
         sta     signature_ptr
         stx     signature_ptr+1
-        jsr     popax           ; Name table pointer
+        jsr     popax                   ; Name table pointer
         sta     name_ptr
         stx     name_ptr+1
         jsr     parse_statement
@@ -168,8 +177,8 @@ _is_name_character:
 
 _find_name:
 .export _find_name
-        sta     r               ; Buffer index
-        jsr     popax           ; Name table pointer
+        sta     r                       ; Buffer index
+        jsr     popax                   ; Name table pointer
         sta     name_ptr
         stx     name_ptr+1
         jsr     find_name
@@ -220,12 +229,12 @@ _mul10:
 _div10:
 .export _div10
         jsr     div10
-        sty     _reg_y          ; Save remainder
+        sty     _reg_y                  ; Save remainder
         rts
 
 _jsr_indexed_vector:
 .export _jsr_indexed_vector
-        sta     regsave         ; Index arrives in A; we need it in Y
-        jsr     popax           ; Address of vector array
+        sta     regsave                 ; Index arrives in A; we need it in Y
+        jsr     popax                   ; Address of vector array
         ldy     regsave
         jmp     jsr_indexed_vector
