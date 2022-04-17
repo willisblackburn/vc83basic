@@ -20,12 +20,12 @@ hello_length = * - hello
 
 startup:
 .export startup
-        cld                     ; Clear decimal flag
-        ldx     #$FF
-        txs                     ; Initialize the stack to $FF
+        cld                             ; Clear decimal flag
+        ldx     #$FF        
+        txs                             ; Initialize the stack to $FF
         lda     #<(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         sta     sp
-        stx     sp+1            ; Set up C stack
+        stx     sp+1                    ; Set up C stack
 
         jmp     main

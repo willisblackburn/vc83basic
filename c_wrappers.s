@@ -73,7 +73,7 @@ _advance_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         sta     r               
-        jsr     popax           ; Line number
+        jsr     popax                   ; Line number
         jsr     insert_or_update_line
         jmp     return_carry
 
@@ -91,7 +91,7 @@ _char_to_digit:
 _parse_keyword:
 .export _parse_keyword
         sta     r               
-        jsr     popax           ; Keyword pointer
+        jsr     popax                   ; Keyword pointer
         jsr     parse_keyword
         jmp     return_carry
 
@@ -126,5 +126,5 @@ _mul10:
 _div10:
 .export _div10
         jsr     div10
-        sty     _reg_y          ; Save remainder
+        sty     _reg_y                  ; Save remainder
         rts
