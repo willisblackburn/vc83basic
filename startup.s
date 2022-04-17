@@ -20,26 +20,26 @@ hello_length = * - hello
 
 startup:
 .export startup
-        cld                     ; Clear decimal flag
-        ldx     #$FF
-        txs                     ; Initialize the stack to $FF
+        cld                             ; Clear decimal flag
+        ldx     #$FF        
+        txs                             ; Initialize the stack to $FF
         lda     #<(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         sta     sp
-        stx     sp+1            ; Set up C stack
-
-        lda     #<message       ; Print message
-        ldx     #>message
-        ldy     #message_length
-        jsr     write           ; Write the message
-
-        jsr     readline        ; Get the user's input
-        lda     #<hello         ; Load AX with the hello pointer
-        ldx     #>hello
-        ldy     #hello_length
-        jsr     write           ; Write "hello"
-        jsr     write_buffer    ; Output name (still in buffer)
-        jsr     newline         ; Write linefeed
-        ldx     #$00
-        lda     #$00
-        jmp     exit            ; Return 0 from sim65
+        stx     sp+1                    ; Set up C stack
+        
+        lda     #<message               ; Print message
+        ldx     #>message       
+        ldy     #message_length     
+        jsr     write                   ; Write the message
+        
+        jsr     readline                ; Get the user's input
+        lda     #<hello                 ; Load AX with the hello pointer
+        ldx     #>hello     
+        ldy     #hello_length       
+        jsr     write                   ; Write "hello"
+        jsr     write_buffer            ; Output name (still in buffer)
+        jsr     newline                 ; Write linefeed
+        ldx     #$00        
+        lda     #$00        
+        jmp     exit                    ; Return 0 from sim65
