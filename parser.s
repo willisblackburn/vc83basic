@@ -81,13 +81,14 @@ char_to_digit:
 
 parse_statement:
 
-@save_y = tmp4
+; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
 
         jsr     find_name               ; Sets Y to next byte in name table entry (AX passed to find_name)
-        sty     @save_y                 ; Remember the Y position
+        debug $00
         bcs     @error  
         pha                             ; Push the returned name index
-        jsr     encode_byte             ; Encode a statement name
+        jsr     encode_byte             ; Encode the statement name
+        debug $01
         pla                             ; Get the name index back before checking error
         bcs     @error                  ; encode_byte error
         asl                             ; Calculate the address of the signature; each name gets 2 signature bytes
@@ -97,7 +98,6 @@ parse_statement:
         sta     argument_index          ; Opportunistically set argument_index to 0
         adc     signature_ptr+1
         sta     signature_ptr+1
-        ldy     @save_y
 
 ; After a character sequence, Y will point to one of:
 ; 1. 0, meaning we matched the last sequence in the last name table entry; stop.
@@ -106,6 +106,7 @@ parse_statement:
 
 @after_character_sequence:
         lda     (name_ptr),y            ; Check if there are any arguments to read
+        debug $02
         beq     @success
         and     #$60                    ; If byte AND $60 is non-zero then it's another character sequence.
         bne     @success
@@ -113,19 +114,40 @@ parse_statement:
 ; The next byte must be arguments.
 
 @arguments:
+
+        lda     name_ptr                ; Save name_ptr, signature_ptr, and Y on the stack
+        pha
+        lda     name_ptr+1
+        pha
+        lda     signature_ptr           
+        pha
+        lda     signature_ptr+1
+        pha
+        tya
+        pha     
         lda     (name_ptr),y            ; Re-read name table byte
-        pha                             ; Remember it in order to check bit 7 later
-        iny     
         and     #$0F                    ; How many arguments to parse?
-        sty     @save_y                 ; parse_arguments needs Y
-        jsr     parse_arguments     
-        pla                             ; Pop name table byte before checking for error       
-        bcs     @error      
+        debug $03
+        jsr     parse_arguments
+        debug $04
+        pla                             ; Restore vars from stack before
+        tay
+        pla
+        sta     signature_ptr+1
+        pla
+        sta     signature_ptr
+        pla
+        sta     name_ptr+1
+        pla
+        sta     name_ptr
+        bcs     @error
+        lda     (name_ptr),y            ; Re-read name table byte
         bmi     @success                ; If bit 7 set then all done
+        iny                             ; Advance Y to the next position in the name table entry
 
 ; Just finished arguments. If there's a character sequence here then parse it, otherwise parse another argument.
+; This section also uses Y to track the parse position.
 
-        ldy     @save_y
         lda     (name_ptr),y
         and     #$60                    ; Is it a character sequence?
         beq     @arguments              ; Nope, go handle more arguments (Y is good)
@@ -133,13 +155,12 @@ parse_statement:
         jsr     match_character_sequence    ; Will advance Y past the matched sequence
         bcc     @after_character_sequence   ; If matched then continue, else fall through to @error (Y is good)
 
+@success:
+        clc
+
 ; We never jump to @error without carry being set so don't have to set it again.
 
 @error:
-        rts
-
-@success:
-        clc
         rts
 
 argument_type_vectors:
@@ -150,7 +171,7 @@ argument_type_vectors:
         .word   parse_expression
         .word   parse_error
         .word   parse_error
-        .word   parse_error
+        .word   parse_expression
         .word   parse_variable
         .word   parse_error
         .word   parse_error
@@ -173,7 +194,7 @@ parse_arguments:
 @argument_count = tmp3
 
         sta     @argument_count
-        beq     @done
+        beq     @done                   ; Eject if argument count is 0
 @next_argument:
         ldy     argument_index          ; Use Y to index signature
         lda     (signature_ptr),y       ; Load argument
@@ -224,6 +245,7 @@ parse_number:
 ; If the name is not found, then extends the variable name table.
 
 parse_variable:
+        jsr     skip_whitespace
         ldx     r                       ; Load read position into X
         lda     buffer,x                ; Load current character
         sec
@@ -249,7 +271,7 @@ parse_argument_separator:
         jsr     skip_whitespace
         ldx     r
         lda     buffer,x
-        cmp     #','
+        cmp     #','                    ; Sets carry if character was ','
         bne     @error
         inx
         stx     r

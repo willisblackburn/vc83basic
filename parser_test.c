@@ -158,6 +158,7 @@ static void test_parse_statement(void) {
         'N', 'E', 'W'+0x80, 
         'G', 'R', 0x11+0x80,
         'F', 'O', 'R', 0x11, 'T', 'O', 0x11+0x80, 
+        'L', 'E', 'T', 0x11, '=', 0x11+0x80, 
         0
     };
     char signature_table[] = { 
@@ -165,6 +166,7 @@ static void test_parse_statement(void) {
         0, 0, 
         0x01, 0,
         0x01, 0x01,
+        0x08, 0x07
     };
 
     PRINT_TEST_NAME();
@@ -211,6 +213,17 @@ static void test_parse_statement(void) {
     ASSERT_EQ(output_buffer[4], 2);
     ASSERT_EQ(output_buffer[5], 16);
     ASSERT_EQ(output_buffer[6], 39);
+
+    set_buffer("LET X=100");
+    err = parse_statement(name_table, signature_table, 0, 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(r, 9);
+    ASSERT_EQ(w, 5);
+    ASSERT_EQ(output_buffer[0], 4);
+    ASSERT_EQ(output_buffer[1], 0x80);
+    ASSERT_EQ(output_buffer[2], 2);
+    ASSERT_EQ(output_buffer[3], 100);
+    ASSERT_EQ(output_buffer[4], 0);
 }
 
 int main(void) {

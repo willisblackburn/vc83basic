@@ -12,19 +12,22 @@
 
 ; Encodes a number.
 ; AX = the integer to encode
+; Y SAFE
 
 encode_number:
         sta     regsave
+        stx     regsave+1
         lda     #TOKEN_INT
         jsr     encode
         lda     regsave
         jsr     encode
-        txa
+        lda     regsave+1
         jsr     encode
         rts     
 
 ; Encodes a variable by its ID.
 ; A = the variable ID
+; Y SAFE
 
 encode_variable:
         ora     #$80                    ; Variables are encoded with the high bit set
@@ -33,6 +36,7 @@ encode_variable:
 
 ; Encodes a single byte.
 ; A = the byte to encode
+; Y SAFE
 
 encode_byte:
         jsr     encode
@@ -44,10 +48,11 @@ encode_byte:
 ; the caller doesn't have to check error status after encoding each byte error. Of course this implies the caller
 ; *can't* handle the error. Also, the caller can't have anything other than its own return address on the stack when
 ; calling this function.
+; Y SAFE
 
 encode:
-        ldy     w
-        sta     output_buffer,y
+        ldx     w
+        sta     output_buffer,x
         inc     w
         beq     @error
         clc
