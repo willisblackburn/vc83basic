@@ -43,13 +43,6 @@ static void test_read_number(void) {
     ASSERT_EQ(reg_ax, 20);
     ASSERT_EQ(r, 4);
 
-    // The function should skip inital whitespace.
-    set_buffer("  10000 PRINT X");
-    err = read_number(0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_ax, 10000);
-    ASSERT_EQ(r, 7);
-
     // The function should return carry set if an invalid number.
     set_buffer("invalid");
     err = read_number(0);
@@ -151,7 +144,7 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(output_buffer[5], 1);
 }
 
-static void test_parse_statement(void) {
+static void test_parse_element(void) {
     int err;
     char name_table[] = { 
         'P', 'L', 'O', 'T', 0x12+0x80, 
@@ -172,8 +165,9 @@ static void test_parse_statement(void) {
     PRINT_TEST_NAME();
 
     set_buffer("PLOT 10,100");
-    err = parse_statement(name_table, signature_table, 0, 0);
+    err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(r, 11);
     ASSERT_EQ(w, 7);
     ASSERT_EQ(output_buffer[0], 0);
@@ -185,15 +179,17 @@ static void test_parse_statement(void) {
     ASSERT_EQ(output_buffer[6], 0);
 
     set_buffer("NEW");
-    err = parse_statement(name_table, signature_table, 0, 0);
+    err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, 1);
     ASSERT_EQ(output_buffer[0], 1);
 
     set_buffer("GR 8");
-    err = parse_statement(name_table, signature_table, 0, 0);
+    err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 2);
     ASSERT_EQ(r, 4);
     ASSERT_EQ(w, 4);
     ASSERT_EQ(output_buffer[0], 2);
@@ -202,8 +198,9 @@ static void test_parse_statement(void) {
     ASSERT_EQ(output_buffer[3], 0);
 
     set_buffer("FOR 1 TO 10000");
-    err = parse_statement(name_table, signature_table, 0, 0);
+    err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 3);
     ASSERT_EQ(r, 14);
     ASSERT_EQ(w, 7);
     ASSERT_EQ(output_buffer[0], 3);
@@ -215,8 +212,9 @@ static void test_parse_statement(void) {
     ASSERT_EQ(output_buffer[6], 39);
 
     set_buffer("LET X=100");
-    err = parse_statement(name_table, signature_table, 0, 0);
+    err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 4);
     ASSERT_EQ(r, 9);
     ASSERT_EQ(w, 5);
     ASSERT_EQ(output_buffer[0], 4);
@@ -233,6 +231,6 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_arguments();
-    test_parse_statement();
+    test_parse_element();
     return 0;
 }

@@ -42,12 +42,8 @@ variable_count: .res 1
 ; Inserts an empty zero-length line -1 into the program space.
 
 initialize_program:
-        lda     #<(__BSS_RUN__ + __BSS_SIZE__)  ; Set program_ptr and line_ptr to end of BSS
-        sta     program_ptr
-        sta     line_ptr
-        lda     #>(__BSS_RUN__ + __BSS_SIZE__)  
-        sta     program_ptr+1
-        sta     line_ptr+1
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
+        stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
         lda     #$FF                        ; Line number = -1
         ldy     #0                          
         sta     (line_ptr),y                ; Line number low byte
@@ -70,20 +66,14 @@ initialize_program:
         ldy     #0                          ; Write index 0
         tya                                 ; Write 0
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        lda     #<(__MAIN_START__ + __MAIN_SIZE__)
-        sta     himem_ptr
-        lda     #>(__MAIN_START__ + __MAIN_SIZE__)
-        sta     himem_ptr+1
+        mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         rts
 
 ; Sets line_ptr to program_ptr.
 ; X SAFE, Y SAFE
 
 reset_line_ptr:
-        lda     program_ptr
-        sta     line_ptr
-        lda     program_ptr+1
-        sta     line_ptr+1
+        mvaa    program_ptr, line_ptr
         rts
 
 ; Resets the program state. Zeros out the variable value table and initializes the heap.
@@ -95,20 +85,18 @@ reset_program:
         rts
 
 ; Searches for a line in the program.
-; This function needs to be reasonably fast because it will be called every time
-; the program executes GOTO, GOSUB, RESTORE, or any other function that requires
-; a line number.
+; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
+; GOSUB, RESTORE, or any other function that requires a line number.
+; AX = the line number
 ; The find_line_number entry point uses the line number in line_number.
+; Carry clear if ok (the was found), carry set if error (line not found).
 ; Sets line_ptr, line_number, and line_length if the line was found.
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
-; AX = the line number
-; Carry clear if ok (the was found), carry set if error (line not found).
 
 find_line:
-        sta     line_number             ; Stash the line number
-        stx     line_number+1       
-find_line_number:       
+        stax    line_number
+find_line_number:
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
 next_line:      
         ldy     #1                      ; Set Y to 1 for getting high byte of line number
@@ -141,8 +129,7 @@ advance_line_ptr:
         ldy     #2                      ; Need offset 2 to get length
         lda     (line_ptr),y            ; Get length of current line
         jsr     get_line_start_plus_a
-        sta     line_ptr                ; Store back into line_ptr
-        stx     line_ptr+1          
+        stax    line_ptr                ; Store back into line_ptr
         rts
 
 ; Returns a pointer to the start of data for the current line (identified by line_ptr).
@@ -165,31 +152,25 @@ get_line_ptr_plus_a:
 @return:
         rts
 
-; Inserts or updates a program line.
-; buffer = the line data
-; buffer_length = the buffer length
-; AX = the line number
-; r = a pointer to the read offset in buffer 
-; Returns carry clear if okay, carry set if error (e.g., out of memory).
+; TODO: figure out how much to grow/shrink before calling either function and call grow_ay first
 
-insert_or_update_line:
-        jsr     find_line               ; Saves line number in line_number
-        bcs     @insert                 ; Not found, just insert the new line
+; Delete program line, which must have previously been found with find_line.
+; line_ptr = a pointer to the line to replace (previously set by find_line)
+; On return, line_ptr retains the same value it had before, only it is now pointing to the next line.
+
+delete_line:
 
 ; line_ptr points to a line that we have to remove.
 ; Find the next line and copy the reset of the program to where line_ptr is pointing now.
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        lda     line_ptr                ; Current line_ptr
-        sta     copy_to_ptr             ; will be the target of the memcpy
+        mva     line_ptr, copy_to_ptr   ; Current line_ptr will be the target of the memcpy
         pha                             ; Also push it on the stack so we can restore after advancing
-        lda     line_ptr+1              ; High byte
-        sta     copy_to_ptr+1
+        mva     line_ptr+1, copy_to_ptr+1   ; High byte
         pha
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
-        sta     copy_from_ptr           ; This will be the source for the copy
-        stx     copy_from_ptr+1
+        stax    copy_from_ptr           ; This will be the source for the copy
         jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     update_pointers         ; Knowing copy from and to, we can update pointers
         jsr     copy_bytes              ; Compact the program
@@ -197,24 +178,22 @@ insert_or_update_line:
         sta     line_ptr+1
         pla
         sta     line_ptr
+        rts
 
-; Insert the new line, if there is one.
-; There is a line if Y (recovered from tmp1) is less than buffer_length.
-; line_ptr points to where this new line should go.
+; Inserts a new line, or does nothing if the line to insert is empty.
+; line_number = the insertion point for the new line (previously set by find_line)
+; line_ptr = a pointer to the line to replace (previously set by find_line)
+; output_buffer = the buffer holding the tokenized data
+; w = the write position in output_buffer, which is the length of the data
+; Returns carry clear on success, carry set on error.
 
-@insert:
-        lda     line_ptr                ; Initialize copy_from_ptr to line_ptr
-        ldx     line_ptr+1              ; This will be the source for the copy
-        sta     copy_from_ptr                    
-        stx     copy_from_ptr+1     
-        lda     buffer_length           ; Load buffer_length, which should be <= 252
-        sec     
-        sbc     r                       ; Subtract the buffer index to get line length
-        beq     @finish                 ; If they're the same, line is blank, nothing to insert
+insert_line:
+        mvax    line_ptr, copy_from_ptr ; Initialize copy_from_ptr to line_ptr
+        lda     w                       ; Load the length of the token data
+        beq     @finish                 ; Line is empty
         pha                             ; Save the line length on the stack
-        jsr     get_line_start_plus_a   ; Allocate space for new line plus header
-        sta     copy_to_ptr                
-        stx     copy_to_ptr+1
+        jsr     get_line_start_plus_a   ; Calculate destination address for current line
+        stax    copy_to_ptr                
         jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     update_pointers         ; Knowing copy from and to, we can update pointers
         jsr     copy_bytes_back     
@@ -227,19 +206,12 @@ insert_or_update_line:
         pla                             ; Get the line length saved earlier
         iny     
         sta     (line_ptr),y            ; Save line length
-        sta     copy_length             ; Also save it into copy_length
-        lda     #0      
-        sta     copy_length+1           ; Set high byte of copy_length to 0
-        clc     
-        lda     #<buffer                ; Buffer start address
-        adc     r                       ; Add buffer index
-        sta     copy_from_ptr           ; Set source address
-        lda     #>buffer                ; Do the same for the high byte
-        adc     #0                      ; This will leave carry clear
-        sta     copy_from_ptr+1     
+        ldx     #0
+        stax    copy_length             ; Also save it into copy_length
+        clc
+        mvax    #output_buffer, copy_from_ptr   ; Source is output_buffer     
         jsr     get_line_start          ; Get destination address for copy
-        sta     copy_to_ptr             ; Destination into copy_to_ptr
-        stx     copy_to_ptr+1       
+        stax    copy_to_ptr             ; Destination into copy_to_ptr
         jsr     copy_bytes              ; Copy data from buffer into program space
         jsr     advance_line_ptr        ; Jump over the new line
 
@@ -310,10 +282,7 @@ grow_ay:
         sta     @candidate_ptr+1
         jsr     check_himem
         bcs     @done
-        lda     @candidate_ptr          ; Validation successful; copy candidate_ptr into value_table_ptr
-        sta     value_table_ptr
-        lda     @candidate_ptr+1
-        sta     value_table_ptr+1       ; Note carry still clear from above
+        mvax    @candidate_ptr, value_table_ptr ; Validation successful; copy candidate_ptr into value_table_ptr
 @done:
         rts
 

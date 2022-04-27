@@ -72,7 +72,7 @@ int encode_byte(char byte_value, char w);
 // parser.s
 int read_number(char r);
 int char_to_digit(char c);
-int parse_statement(const char* name_ptr, void* signature_ptr, char r, char w);
+int parse_element(const char* name_ptr, void* signature_ptr, char r, char w);
 int parse_arguments(char count, void* signature_ptr, char argument_index, char r, char w);
 int parse_expression(char r, char w);
 int parse_argument_separator(char r);
@@ -83,7 +83,8 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
-int insert_or_update_line(int line_number, char r);
+int delete_line(void);
+int insert_line(void);
 int check_himem(void* ptr);
 
 // util.s
@@ -91,10 +92,11 @@ void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
 int mul10(int value);
 int div10(int value);
-int jsr_indexed_vector(void* vectors, char index);
+int invoke_indexed_vector(void* vectors, char index);
 
 // Common functions and definitions used in tests
 
+// TODO: get rid of this and buffer_length and output_buffer_length
 void set_buffer(const char* s) {
     // strcpy adds terminating 0 to string in buffer.
     strcpy(buffer, s);
@@ -105,9 +107,9 @@ void hexdump(const char* name, const char* data, size_t length) {
     unsigned i = 0;
     fprintf(stderr, "        %s ($%04X):\n", name, data);
     while (i < length) {
-        fprintf(stderr, "        %04x  ", i);
+        fprintf(stderr, "        %04X %04X  ", i, data + i);
         do {
-            fprintf(stderr, "%02x ", data[i++]);
+            fprintf(stderr, "%02X ", data[i++]);
         } while (i < length && (i % 16));
         printf("\n");
     }

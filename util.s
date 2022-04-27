@@ -155,8 +155,7 @@ mul10:
 
 @mul_tmp = regsave
 
-        sta     @mul_tmp                ; Store value in mul_tmp
-        stx     @mul_tmp+1  
+        stax    @mul_tmp
         asl     A                       ; Shift A + mul_tmp+1 left 2
         rol     @mul_tmp+1  
         asl     A                       
@@ -180,8 +179,7 @@ div10:
 
 @div_tmp = regsave
 
-        sta     @div_tmp                ; Store value in div_tmp
-        stx     @div_tmp+1  
+        stax    @div_tmp
         ldx     #16                     ; 16 bits
         lda     #0                      ; Initialize remainder to 0
 @next_bit:  
@@ -196,26 +194,27 @@ div10:
         dex                             ; One bit down
         bne     @next_bit               ; Some more to go
         tay                             ; Remainder into Y
-        lda     @div_tmp                ; Divisor into AX
-        ldx     @div_tmp+1
+        ldax    @div_tmp
         rts
 
-; JSR to a vector selected from an array of vectors.
+; Invokes a vector selected from an array of vectors.
+; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
+; return to the caller's caller.
 ; AX = address of the vector array
 ; Y = the index of the vector
 
-jsr_indexed_vector:
+invoke_indexed_vector:
 
-@vectors = ptr2
-    
-        sta     @vectors
-        stx     @vectors+1
+@vector_ptr = ptr1
+
+        stax    @vector_ptr  
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
-        tay 
-        lda     (@vectors),y    
-        sta     jmpvec+1    
+        tay
+        lda     (@vector_ptr),y    
+        tax                             ; Store low byte of vector in X
         iny     
-        lda     (@vectors),y    
-        sta     jmpvec+2    
-        jmp     jmpvec                  ; Handler function RTS will return from *this* function
+        lda     (@vector_ptr),y    
+        sta     @vector_ptr+1           ; Reuse vector_ptr for the jump
+        stx     @vector_ptr
+        jmp     (@vector_ptr)           ; Handler function RTS will return from *this* function

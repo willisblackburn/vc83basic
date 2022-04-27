@@ -7,8 +7,7 @@
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.
 ; All functions write to the output buffer at index w and update w.
 ; All functions return carry clear if ok or carry set if out of space.
-; All functions clobber Y, so save it if you need it.
-; Functions may use regsave for temporary storage.
+; All functions clobber X, so save it if you need it.
 
 ; Encodes a number.
 ; AX = the integer to encode

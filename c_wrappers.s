@@ -101,11 +101,13 @@ _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
 
-_insert_or_update_line:
-.export _insert_or_update_line
-        sta     r                       ; Buffer index
-        jsr     popax                   ; Line number
-        jsr     insert_or_update_line
+_delete_line:
+.export _delete_line
+        jmp     delete_line
+
+_insert_line:
+.export _insert_line
+        jsr     insert_line
         jmp     return_carry
 
 _check_himem:
@@ -129,8 +131,8 @@ _char_to_digit:
         jsr     char_to_digit
         jmp     return_carry
 
-_parse_statement:
-.export _parse_statement
+_parse_element:
+.export _parse_element
         sta     w
         jsr     popa
         sta     r
@@ -140,7 +142,7 @@ _parse_statement:
         jsr     popax                   ; Name table pointer
         sta     name_ptr
         stx     name_ptr+1
-        jsr     parse_statement
+        jsr     parse_element
         jmp     return_carry
 
 _parse_arguments:
@@ -238,9 +240,9 @@ _div10:
         sty     _reg_y                  ; Save remainder
         rts
 
-_jsr_indexed_vector:
-.export _jsr_indexed_vector
+_invoke_indexed_vector:
+.export _invoke_indexed_vector
         sta     regsave                 ; Index arrives in A; we need it in Y
         jsr     popax                   ; Address of vector array
         ldy     regsave
-        jmp     jsr_indexed_vector
+        jmp     invoke_indexed_vector

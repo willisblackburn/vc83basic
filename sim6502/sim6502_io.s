@@ -68,7 +68,7 @@ write_buffer:
         ldy     buffer_length
 write:
 
-@save_ptr = ptr1
+@save_ptr = ptr1 ; regsave
 
         sta     @save_ptr
         stx     @save_ptr+1

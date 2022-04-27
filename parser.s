@@ -17,8 +17,10 @@ argument_index: .res 1
 .code
 
 ; All "parse" functions use:
+; buffer = the buffer containing the user-entered program source
 ; r = the read position in buffer (modified on success)
-; w = the token write position (modified on success)
+; output_buffer = the buffer containing the tokenized output
+; w = the token write position in output_buffer (modified on success)
 
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
@@ -29,7 +31,6 @@ read_number:
 
 @digit_value = tmp1
 
-        jsr     skip_whitespace
         ldy     r                       ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
@@ -71,26 +72,26 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-; Parses and tokenizes a statement.
-; The last byte of the buffer should be 0, which won't match anything. This avoids the need to keep checking
+; Parses and tokenizes a syntax element starting with a name.
+; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
 ; AX = pointer to the first entry of the name table
 ; signature_ptr = pointer to the first entry of the signature table
 ; Returns carry clear if the input matched a rule and the index of that rule in A, 
 ; or carry set if it didn't match any syntax rule.
 
-parse_statement:
+parse_element:
+
+@index = tmp4
 
 ; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
 
         jsr     find_name               ; Sets Y to next byte in name table entry (AX passed to find_name)
-        debug $00
         bcs     @error  
-        pha                             ; Push the returned name index
+        sta     @index                  ; Store returned name index
         jsr     encode_byte             ; Encode the statement name
-        debug $01
-        pla                             ; Get the name index back before checking error
         bcs     @error                  ; encode_byte error
+        lda     @index                  ; Get the name index back
         asl                             ; Calculate the address of the signature; each name gets 2 signature bytes
         adc     signature_ptr           ; Carry clear because encode_byte succeeded
         sta     signature_ptr   
@@ -106,7 +107,6 @@ parse_statement:
 
 @after_character_sequence:
         lda     (name_ptr),y            ; Check if there are any arguments to read
-        debug $02
         beq     @success
         and     #$60                    ; If byte AND $60 is non-zero then it's another character sequence.
         bne     @success
@@ -114,7 +114,6 @@ parse_statement:
 ; The next byte must be arguments.
 
 @arguments:
-
         lda     name_ptr                ; Save name_ptr, signature_ptr, and Y on the stack
         pha
         lda     name_ptr+1
@@ -127,9 +126,7 @@ parse_statement:
         pha     
         lda     (name_ptr),y            ; Re-read name table byte
         and     #$0F                    ; How many arguments to parse?
-        debug $03
         jsr     parse_arguments
-        debug $04
         pla                             ; Restore vars from stack before
         tay
         pla
@@ -157,6 +154,7 @@ parse_statement:
 
 @success:
         clc
+        lda     @index                  ; Load return value
 
 ; We never jump to @error without carry being set so don't have to set it again.
 
@@ -202,7 +200,7 @@ parse_arguments:
         tay
         lda     #<argument_type_vectors
         ldx     #>argument_type_vectors
-        jsr     jsr_indexed_vector
+        jsr     invoke_indexed_vector
         bcs     @error
         inc     argument_index
         dec     @argument_count
@@ -223,8 +221,10 @@ parse_error:
         rts
 
 ; Parses and tokenizes a expression.
+; This functinon handles skipping whitespace for ALL expression elements.
 
 parse_expression:
+        jsr     skip_whitespace
         jsr     parse_number
         bcc     @done
         jsr     parse_variable

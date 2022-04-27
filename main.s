@@ -11,15 +11,15 @@ error_message: .byte "ERROR"
 error_length = * - error_message
 
 statement_name_table:
-        .byte   'L', 'I', 'S', 'T', NT_2ARG | NT_END
-        .byte   'R', 'U', 'N', NT_1ARG | NT_END
-        .byte   'P', 'R', 'I', 'N', 'T', NT_2ARG | NT_END
+        .byte   'L', 'I', 'S', 'T' | NT_END_OF_ENTRY
+        .byte   'R', 'U', 'N', NT_1ARG | NT_END_OF_ENTRY
+        .byte   'P', 'R', 'I', 'N', 'T', NT_1ARG | NT_END_OF_ENTRY
         .byte   0
 
 statement_signature_table:
         .byte   TYPE_INT | TYPE_OPTIONAL, TYPE_INT | TYPE_OPTIONAL
         .byte   TYPE_INT | TYPE_OPTIONAL, TYPE_NONE
-        .byte   TYPE_CH | TYPE_OPTIONAL, TYPE_PRINT
+        .byte   TYPE_INT | TYPE_OPTIONAL
 
 statement_exec_vectors:
         .word   exec_list
@@ -27,33 +27,41 @@ statement_exec_vectors:
         .word   exec_print
 
 main:
+
         jsr     initialize_target
         jsr     initialize_program
 @ready:
         jsr     print_ready
 @wait_for_input:
         jsr     readline
-        lda     #0                      ; Initialize the read pointer
+        lda     #0                      ; Initialize read and write pointers
         sta     r
-        jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
-        bcs     @immediate_mode         ; Wasn't a number, maybe an immediate mode command
-        pha                             ; Save line number
-        txa
-        pha
+        sta     w
         jsr     skip_whitespace
-        pla
-        tax
-        pla
-        jsr     insert_or_update_line   ; Delete an existing line, if it exists
+        jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
+        bcs     @immediate_mode
+        stax    line_number
+        jsr     @get_statement
+        bcs     @error
+        jsr     find_line_number
+        bcs     @insert                 ; Line not found, just insert the new one
+        jsr     delete_line             ; Delete the existing line
+@insert:
+        jsr     insert_line             ; Insert the new line
         jmp     @wait_for_input
 
 @immediate_mode:
-        lda     #<statement_name_table
-        ldx     #>statement_name_table
-        jsr     find_name
+        jsr     @get_statement
         bcs     @error
         jsr     invoke_statement_handler
         jmp     @wait_for_input
+
+@get_statement:
+        jsr     skip_whitespace
+        mvax    #statement_signature_table, signature_ptr
+        ldax    #statement_name_table
+        jsr     parse_element
+        rts
 
 @error:
         jsr     print_error
@@ -64,16 +72,9 @@ main:
 ; A = the index of the handler in the table
 
 invoke_statement_handler:
-
-@jmpvec = ptr1
-
-        asl     A                       ; Multiply index by 2
-        tax                             ; Use to look up handler and copy into @jmpvec
-        lda     statement_exec_vectors,x
-        sta     @jmpvec
-        lda     statement_exec_vectors+1,x
-        sta     @jmpvec+1
-        jmp     (@jmpvec)               ; Jump to handler; handler will RTS to caller
+        tay
+        ldax    #statement_exec_vectors
+        jmp     invoke_indexed_vector
 
 ; Scans through the program and prints each line.
 
