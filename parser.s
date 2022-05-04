@@ -198,8 +198,7 @@ parse_arguments:
         lda     (signature_ptr),y       ; Load argument
         and     #$0F                    ; Isolate argument type
         tay
-        lda     #<argument_type_vectors
-        ldx     #>argument_type_vectors
+        ldax    #argument_type_vectors
         jsr     invoke_indexed_vector
         bcs     @error
         inc     argument_index
@@ -252,8 +251,7 @@ parse_variable:
         sbc     #'A'                    ; Check if first character is in range A-Z
         cmp     #26
         bcs     @done
-        lda     variable_name_table_ptr
-        ldx     variable_name_table_ptr+1
+        ldax    variable_name_table_ptr
         jsr     find_name
         bcc     @found
         jsr     add_variable

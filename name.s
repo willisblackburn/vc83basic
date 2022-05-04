@@ -24,8 +24,7 @@ find_name:
 
 @index = tmp2
 
-        sta     name_ptr
-        stx     name_ptr+1
+        stax    name_ptr
         lda     #0                      ; Name table index
         sta     @index              
 @next_name:     

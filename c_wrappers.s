@@ -52,8 +52,7 @@ _reg_y: .res 1
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
 return_carry:
-        sta     _reg_a
-        stx     _reg_x
+        stax    _reg_ax
         sty     _reg_y
         lda     #0
         tax
@@ -137,11 +136,9 @@ _parse_element:
         jsr     popa
         sta     r
         jsr     popax
-        sta     signature_ptr
-        stx     signature_ptr+1
+        stax    signature_ptr
         jsr     popax                   ; Name table pointer
-        sta     name_ptr
-        stx     name_ptr+1
+        stax    name_ptr
         jsr     parse_element
         jmp     return_carry
 
@@ -153,8 +150,7 @@ _parse_arguments:
         jsr     popa
         sta     argument_index
         jsr     popax
-        sta     signature_ptr
-        stx     signature_ptr+1
+        stax    signature_ptr
         jsr     popa
         jsr     parse_arguments
         jmp     return_carry
@@ -193,8 +189,7 @@ _match_character_sequence:
         jsr     popa
         sta     regsave
         jsr     popax
-        sta     name_ptr
-        stx     name_ptr+1
+        stax    name_ptr
         ldy     regsave
         jsr     match_character_sequence
         jmp     return_carry
@@ -216,26 +211,20 @@ _add_variable:
 
 _copy_bytes:
 .export _copy_bytes
-        sta     copy_length
-        stx     copy_length+1
+        stax    copy_length
         jsr     popax
-        sta     copy_from_ptr
-        stx     copy_from_ptr+1
+        stax    copy_from_ptr
         jsr     popax
-        sta     copy_to_ptr
-        stx     copy_to_ptr+1
+        stax    copy_to_ptr
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
-        sta     copy_length
-        stx     copy_length+1
+        stax    copy_length
         jsr     popax
-        sta     copy_from_ptr
-        stx     copy_from_ptr+1
+        stax    copy_from_ptr
         jsr     popax
-        sta     copy_to_ptr
-        stx     copy_to_ptr+1
+        stax    copy_to_ptr
         jmp     copy_bytes_back
 
 _mul10:
