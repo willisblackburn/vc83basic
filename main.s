@@ -81,9 +81,8 @@ exec_list:
         jsr     reset_line_ptr
 @next_line:
         jsr     update_line_fields
-        ldx     line_number+1           ; High byte of line number
+        ldax    line_number             ; Line number into AX
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        lda     line_number             ; Low byte of line number
         jsr     print_number
         lda     #' '
         jsr     putchar
@@ -149,8 +148,8 @@ exec_print:
         rts
 
 ; Outputs a syntax element.
-; Y = the index of the syntax element
 ; AX = pointer to the first entry in the name table
+; Y = the index of the syntax element
 
 list_element:
 
