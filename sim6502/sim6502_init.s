@@ -33,26 +33,6 @@ save_flags: .res 1
 
 flag_indicators: .res 8
 
-.macro  push8   value
-        lda     value
-        pha 
-.endmacro
-
-.macro  push16  value
-        push8   value
-        push8   value+1
-.endmacro
-
-.macro  pull8   value
-        pla
-        sta     value
-.endmacro
-
-.macro  pull16  value
-        pull8   value+1
-        pull8   value
-.endmacro
-
 .code
 
 format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X %.8s", $0A, $00
@@ -89,15 +69,15 @@ debug_handler:
         iny
         cpy     #8
         bne     @next_flag
-        push16  sreg        
-        push8   tmp1
-        push8   tmp2
-        push8   tmp3
-        push8   tmp4
-        push16  ptr1
-        push16  ptr2
-        push16  ptr3
-        push16  ptr4
+        ldphaa  sreg        
+        ldpha   tmp1
+        ldpha   tmp2
+        ldpha   tmp3
+        ldpha   tmp4
+        ldphaa  ptr1
+        ldphaa  ptr2
+        ldphaa  ptr3
+        ldphaa  ptr4
         lda     _stderr                 ; fprintf(stderr, ...
         ldx     _stderr+1
         jsr     pushax
@@ -120,15 +100,15 @@ debug_handler:
         jsr     pushax           
         ldy     #16                     ; 16 bytes on the C stack
         jsr     _fprintf
-        pull16  ptr4
-        pull16  ptr3
-        pull16  ptr2
-        pull16  ptr1
-        pull8   tmp4
-        pull8   tmp3
-        pull8   tmp2
-        pull8   tmp1
-        pull16  sreg
+        plstaa  ptr4
+        plstaa  ptr3
+        plstaa  ptr2
+        plstaa  ptr1
+        plsta   tmp4
+        plsta   tmp3
+        plsta   tmp2
+        plsta   tmp1
+        plstaa  sreg
         lda     save_a                  ; Restore 6502 registers
         ldx     save_x
         ldy     save_y

@@ -65,10 +65,9 @@ return_carry:
 
 _decode_number:
 .export _decode_number
-        sta     regsave
+        sta     r
         jsr     popax
         stax    line_ptr
-        ldy     regsave
         jmp     decode_number
 
 ; encode.s

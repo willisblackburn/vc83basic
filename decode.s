@@ -13,6 +13,7 @@
 ; Decodes a number and returns it in AX.
 
 decode_number:
+        ldy     r                       ; Load read position into Y
         iny                             ; Increment Y
         lda     (line_ptr),y            ; Load the high byte of the number
         tax                             ; Move into X
@@ -20,4 +21,5 @@ decode_number:
         lda     (line_ptr),y            ; Get the low byte into A
         iny
         iny                             ; Increment Y to the next position
+        sty     r                       ; Update read position
         rts     

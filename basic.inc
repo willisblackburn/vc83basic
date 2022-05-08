@@ -80,9 +80,9 @@ TYPE_REPEATED       = $20
 ; Name table definitions 
 
 NT_1ARG             = $01
-NT_2ARG             = NT_1ARG + 1
-NT_3ARG             = NT_1ARG + 2
-NT_END_OF_ENTRY     = $80
+NT_2ARG             = $02
+NT_3ARG             = $03
+NT_END              = $80
 
 ; Tokenized form constants
 
@@ -101,70 +101,3 @@ ST_PRINT    = 2
 
 STATUS_OK                   = $00   ; Everything OK; used to clear status
 ERR_FAIL                    = $FF   ; General failure
-
-; Macros
-
-; Inserts a BRK instruction followed by a value.
-; On the sim6502 platform the BRK will print the value followed by the 6502 registers.
-
-.macro debug value
-        brk
-        .byte   value
-.endmacro
-
-; Loads or stores a 16-bit value to/from AX.
-
-.macro ldax address
-    .if (.match (.left (1, {address}), #))
-            lda     #<(.right (.tcount ({address})-1, {address}))
-            ldx     #>(.right (.tcount ({address})-1, {address}))
-    .else
-            lda     address
-            ldx     address+1
-    .endif
-.endmacro
-
-.macro stax address
-        sta     address
-        stx     address+1
-.endmacro
-
-; Moves an 8-bit value through A, X, or Y.
-
-.macro mva from, to
-        lda     from
-        sta     to
-.endmacro
-
-.macro mvx from, to
-        ldx     from
-        stx     to
-.endmacro
-
-.macro mvy from, to
-        ldy     from
-        sty     to
-.endmacro
-
-; Moves a 16-bit value through A.
-
-.macro mvaa from, to
-    .if (.match (.left (1, {from}), #))
-            lda     #<(.right (.tcount ({from})-1, {from}))
-            sta     to
-            lda     #>(.right (.tcount ({from})-1, {from}))
-            sta     to+1
-    .else
-            lda     from
-            sta     to
-            lda     from+1
-            sta     to+1
-    .endif
-.endmacro
-
-; Moves a 16-bit value through AX.
-
-.macro mvax from, to
-        ldax    from
-        stax    to
-.endmacro

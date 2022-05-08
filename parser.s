@@ -6,9 +6,9 @@
 
 .zeropage
 
-; Read position in buffer
+; Read position
 r: .res 1
-; Write position in output_buffer
+; Write position
 w: .res 1
 
 signature_ptr: .res 2
@@ -75,6 +75,8 @@ char_to_digit:
 ; Parses and tokenizes a syntax element starting with a name.
 ; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
+; This function is called recursively. It sets up name_ptr and Y and saves them on the stack prior to calling
+; other functions so that those functions can call back in to this one.
 ; AX = pointer to the first entry of the name table
 ; signature_ptr = pointer to the first entry of the signature table
 ; Returns carry clear if the input matched a rule and the index of that rule in A, 
@@ -114,14 +116,8 @@ parse_element:
 ; The next byte must be arguments.
 
 @arguments:
-        lda     name_ptr                ; Save name_ptr, signature_ptr, and Y on the stack
-        pha
-        lda     name_ptr+1
-        pha
-        lda     signature_ptr           
-        pha
-        lda     signature_ptr+1
-        pha
+        ldphaa  name_ptr                ; Save name_ptr, signature_ptr, and Y on the stack
+        ldphaa  signature_ptr   
         tya
         pha     
         lda     (name_ptr),y            ; Re-read name table byte
@@ -129,14 +125,8 @@ parse_element:
         jsr     parse_arguments
         pla                             ; Restore vars from stack before
         tay
-        pla
-        sta     signature_ptr+1
-        pla
-        sta     signature_ptr
-        pla
-        sta     name_ptr+1
-        pla
-        sta     name_ptr
+        plstaa  signature_ptr
+        plstaa  name_ptr
         bcs     @error
         lda     (name_ptr),y            ; Re-read name table byte
         bmi     @success                ; If bit 7 set then all done

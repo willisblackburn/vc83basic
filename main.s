@@ -11,20 +11,23 @@ error_message: .byte "ERROR"
 error_length = * - error_message
 
 statement_name_table:
-        .byte   'L', 'I', 'S', 'T' | NT_END_OF_ENTRY
-        .byte   'R', 'U', 'N', NT_1ARG | NT_END_OF_ENTRY
-        .byte   'P', 'R', 'I', 'N', 'T', NT_1ARG | NT_END_OF_ENTRY
+        .byte   'L', 'I', 'S', 'T' | NT_END
+        .byte   'R', 'U', 'N', NT_1ARG | NT_END
+        .byte   'P', 'R', 'I', 'N', 'T', NT_1ARG | NT_END
+        .byte   'L', 'E', 'T', NT_1ARG, '=', NT_1ARG | NT_END
         .byte   0
 
 statement_signature_table:
-        .byte   TYPE_INT | TYPE_OPTIONAL, TYPE_INT | TYPE_OPTIONAL
-        .byte   TYPE_INT | TYPE_OPTIONAL, TYPE_NONE
-        .byte   TYPE_INT | TYPE_OPTIONAL
+        .byte   TYPE_NONE, TYPE_NONE
+        .byte   TYPE_NONE, TYPE_NONE
+        .byte   TYPE_INT, TYPE_NONE
+        .byte   TYPE_VAR, TYPE_INT
 
 statement_exec_vectors:
         .word   exec_list
         .word   exec_run
         .word   exec_print
+        .word   exec_let
 
 main:
         jsr     initialize_target
@@ -149,78 +152,92 @@ exec_print:
 @end:
         rts
 
+exec_let:
+        rts
+
 ; Outputs a syntax element.
+; This function is called recursively. It sets up name_ptr and Y and saves them on the stack prior to calling
+; other functions so that those functions can call back in to this one.
 ; AX = pointer to the first entry in the name table
 ; Y = the index of the syntax element
 
 list_element:
 
-@save_y = tmp3
-@last = tmp4
-
         jsr     get_name_table_entry    ; Sets name_ptr; should never fail
         ldy     #0                      ; Start at position 0
 @next_byte:
+        tya                             ; Save Y on the stack
+        pha     
         lda     (name_ptr),y            ; Load the next byte from the name table
-        sta     @last                   ; Remember it
-        iny                             ; Next position
-        sty     @save_y
         and     #$60                    ; Is it a literal character?
         beq     @handle_arguments       ; Nope
-        lda     @last                   ; It was a literal character; load the character again
+        lda     (name_ptr),y            ; It was a literal character; load the character again
         and     #$7F                    ; Clear high bit if set
         jsr     putchar                 ; Print the character
         jmp     @loop                   ; Continue
 
 @handle_arguments:
+        ldphaa  name_ptr                ; Save name_ptr on the stack
+        lda     (name_ptr),y            ; Get the byte again
+        pha                             ; Save it on the stack since putchar will clobber Y
         lda     #' '                    ; Print a space
         jsr     putchar
-        tya                             ; Move Y into A in order to
-        pha                             ; push it before calling list_arguments
-        lda     @last                   ; Get the last byte again
+        pla                             ; Recover byte
         and     #$0F                    ; Number of arguments
         jsr     list_arguments          ; List them
-        pla                             ; Pop Y value
-        tay                             ; back into Y
+        plstaa  name_ptr                ; Recover name_ptr
 @loop:
-        ldy     @save_y
-        lda     @last                   ; Load the last byte again to check if it has the high bit set
-        bpl     @next_byte              ; Next character
-        rts                             ; High bit is set; end of name table entry
+        pla                             ; Recover Y
+        tay
+        lda     (name_ptr),y            ; Load the byte again to check if it has the high bit set
+        bmi     @done                   ; High bit is set; end of name table entry
+        iny                             ; Next character
+        jmp     @next_byte              ; Keep going
+@done:
+        rts                            
 
 ; Lists statement or function arguments from the token stream.
 ; Unlike parse_arguments, this function does not use the signature table. Instead, we just print arguments using
 ; the types in the token stream.
+; A = the number of arguments to list
 ; line_ptr = pointer to the current line
 ; r = read position line (updated) 
 
 list_arguments:
 
-@argument_count = tmp2
-
-        sta     @argument_count         ; Save the argument count
+        pha                             ; Argument count at SP+1
 @next_argument:
-        jsr     list_expression         ; Assume it's an expression for now
-        dec     @argument_count
+        jsr     list_value              ; Assume it's an expression for now
+        tsx                             ; Prepare to access local variables
+        lda     $101,x
+        dec     $101,x                  ; Decrement argument count
         beq     @done
         lda     #','
         jsr     putchar
         jmp     @next_argument
 @done:
+        pla                             ; Discard stack frame
         rts
 
 ; Lists an expression from the token stream.
 ; line_ptr = pointer to the current line
 ; r = read position line (updated) 
 
-list_expression:
+list_value:
 
         ldy     r                       ; Load read position into Y
-        lda     (line_ptr),y            ; Read a byte from the stream; assume is it TOKEN_INT for now
-        iny
-        jsr     decode_number           ; Decode the number; return value in AX
+        inc     r                       ; Skip past this byte
+        lda     (line_ptr),y            ; Read a byte from the stream
+        bmi     @variable               ; It's a variable
+        jsr     decode_number           ; It must be an integer; decode the number (return value in AX)
         jsr     print_number            ; Send it right to print_number
-        sty     r
+        rts
+
+@variable:
+        and     #$7F                    ; Clear high bit leaving variable index
+        tay                             ; The variable index into Y
+        ldax    variable_name_table_ptr ; Look up name in the variable name table
+        jsr     list_element            ; Recursively call list_element to display the name        
         rts
 
 ; Prints the number in AX to the console.
