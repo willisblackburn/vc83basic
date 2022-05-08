@@ -61,6 +61,16 @@ return_carry:
 
 ; Function wrappers
 
+; decode.s
+
+_decode_number:
+.export _decode_number
+        sta     regsave
+        jsr     popax
+        stax    line_ptr
+        ldy     regsave
+        jmp     decode_number
+
 ; encode.s
 
 _encode_number:
@@ -77,44 +87,42 @@ _encode_byte:
         jsr     encode_byte
         jmp     return_carry
 
-; program.s
+; name.s
 
-_initialize_target:
-.export _initialize_target
-        jmp     initialize_target
-
-_initialize_program:
-.export _initialize_program
-        jmp     initialize_program
-
-_reset_line_ptr:
-.export _reset_line_ptr
-        jmp     reset_line_ptr
-
-_find_line:
-.export _find_line
-        jsr     find_line
+_is_name_character:
+.export _is_name_character
+        jsr     is_name_character
         jmp     return_carry
 
-_advance_line_ptr:
-.export _advance_line_ptr
-        jmp     advance_line_ptr
-
-_delete_line:
-.export _delete_line
-        jmp     delete_line
-
-_insert_line:
-.export _insert_line
-        jsr     insert_line
+_find_name:
+.export _find_name
+        sta     r                       ; Buffer index
+        jsr     popax                   ; Name table pointer
+        jsr     find_name
         jmp     return_carry
 
-_check_himem:
-.export _check_himem
-        sta     regsave                 ; Swap A and X
-        txa                     
-        ldx     regsave
-        jsr     check_himem
+_match_character_sequence:
+.export _match_character_sequence
+        sta     r
+        jsr     popa
+        sta     regsave
+        jsr     popax
+        stax    name_ptr
+        ldy     regsave
+        jsr     match_character_sequence
+        jmp     return_carry
+
+_get_name_table_entry:
+.export _get_name_table_entry
+        sta     regsave                 ; Index arrives in A; we need it in Y
+        jsr     popax                   ; Name table pointer
+        ldy     regsave                 ; Load index into Y
+        jsr     get_name_table_entry
+        jmp     return_carry
+
+_add_variable:
+.export _add_variable
+        jsr     add_variable
         jmp     return_carry
 
 ; parser.s
@@ -169,42 +177,44 @@ _parse_argument_separator:
         jsr     parse_argument_separator
         jmp     return_carry
 
-; name.s
+; program.s
 
-_is_name_character:
-.export _is_name_character
-        jsr     is_name_character
+_initialize_target:
+.export _initialize_target
+        jmp     initialize_target
+
+_initialize_program:
+.export _initialize_program
+        jmp     initialize_program
+
+_reset_line_ptr:
+.export _reset_line_ptr
+        jmp     reset_line_ptr
+
+_find_line:
+.export _find_line
+        jsr     find_line
         jmp     return_carry
 
-_find_name:
-.export _find_name
-        sta     r                       ; Buffer index
-        jsr     popax                   ; Name table pointer
-        jsr     find_name
+_advance_line_ptr:
+.export _advance_line_ptr
+        jmp     advance_line_ptr
+
+_delete_line:
+.export _delete_line
+        jmp     delete_line
+
+_insert_line:
+.export _insert_line
+        jsr     insert_line
         jmp     return_carry
 
-_match_character_sequence:
-.export _match_character_sequence
-        sta     r
-        jsr     popa
-        sta     regsave
-        jsr     popax
-        stax    name_ptr
-        ldy     regsave
-        jsr     match_character_sequence
-        jmp     return_carry
-
-_get_name_table_entry:
-.export _get_name_table_entry
-        sta     regsave                 ; Index arrives in A; we need it in Y
-        jsr     popax                   ; Name table pointer
-        ldy     regsave                 ; Load index into Y
-        jsr     get_name_table_entry
-        jmp     return_carry
-
-_add_variable:
-.export _add_variable
-        jsr     add_variable
+_check_himem:
+.export _check_himem
+        sta     regsave                 ; Swap A and X
+        txa                     
+        ldx     regsave
+        jsr     check_himem
         jmp     return_carry
 
 ; util.s

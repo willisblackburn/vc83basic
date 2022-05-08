@@ -22,6 +22,9 @@
 
 ; Functions
 
+; decode.s
+.global decode_number
+
 ; encode.s
 .global encode_number
 .global encode_variable

@@ -130,18 +130,18 @@ advance_line_ptr:
 
 ; Updates the line_number and line_length fields from line_ptr. 
 ; line_ptr = current line
-; On return, line_number and line_length are set, and Y = 2.
+; On return, line_number and line_length are set, and Y = 0.
 
 update_line_fields:
-        ldy     #0
-        lda     (line_ptr),y            ; Low byte
-        sta     line_number
-        iny
-        lda     (line_ptr),y            ; High byte
-        sta     line_number+1
-        iny
+        ldy     #2
         lda     (line_ptr),y            ; Get length of current line
         sta     line_length
+        dey
+        lda     (line_ptr),y            ; High byte of line number
+        sta     line_number+1
+        dey
+        lda     (line_ptr),y            ; Low byte of line number
+        sta     line_number
         clc                             ; In case we're wrapping up a function that clears carry on success
         rts
 

@@ -88,6 +88,8 @@ exec_list:
         jsr     putchar
         ldy     #3                      ; Start of line data
         lda     (line_ptr),y            ; Get statement token
+        iny                             ; Increment Y to 4
+        sty     r                       ; and store in the read position register
         tay
         ldax    #statement_name_table
         jsr     list_element
@@ -156,55 +158,69 @@ list_element:
 @save_y = tmp3
 @last = tmp4
 
-        jsr     get_name_table_entry    ; Sets name_ptr
+        jsr     get_name_table_entry    ; Sets name_ptr; should never fail
         ldy     #0                      ; Start at position 0
-@next_char:
-        lda     (name_ptr),y            ; Load the character
+@next_byte:
+        lda     (name_ptr),y            ; Load the next byte from the name table
         sta     @last                   ; Remember it
         iny                             ; Next position
         sty     @save_y
-        and     #$60                    ; Is it a literal?
+        and     #$60                    ; Is it a literal character?
         beq     @handle_arguments       ; Nope
-        lda     @last                   ; Load character again
+        lda     @last                   ; It was a literal character; load the character again
         and     #$7F                    ; Clear high bit if set
         jsr     putchar                 ; Print the character
-
-@loop:
-        ldy     @save_y
-        lda     @last                   ; Character again
-        bpl     @next_char              ; Next character
-        rts                             ; High bit is set; end of name table entry
+        jmp     @loop                   ; Continue
 
 @handle_arguments:
         lda     #' '                    ; Print a space
         jsr     putchar
-        lda     @last                   ; Get the last character again
+        tya                             ; Move Y into A in order to
+        pha                             ; push it before calling list_arguments
+        lda     @last                   ; Get the last byte again
         and     #$0F                    ; Number of arguments
         jsr     list_arguments          ; List them
-        jmp     @loop
+        pla                             ; Pop Y value
+        tay                             ; back into Y
+@loop:
+        ldy     @save_y
+        lda     @last                   ; Load the last byte again to check if it has the high bit set
+        bpl     @next_byte              ; Next character
+        rts                             ; High bit is set; end of name table entry
 
-; Prints statement or function arguments from the token stream.
+; Lists statement or function arguments from the token stream.
 ; Unlike parse_arguments, this function does not use the signature table. Instead, we just print arguments using
 ; the types in the token stream.
-; r = read position in token stream (updated) 
+; line_ptr = pointer to the current line
+; r = read position line (updated) 
 
 list_arguments:
 
 @argument_count = tmp2
 
         sta     @argument_count         ; Save the argument count
-        ldy     r                       ; Load read position into Y
 @next_argument:
-
-        lda     #'0'                    ; Just output 0 for each one
-        jsr     putchar
+        jsr     list_expression         ; Assume it's an expression for now
         dec     @argument_count
         beq     @done
         lda     #','
         jsr     putchar
         jmp     @next_argument
 @done:
-        stx     r
+        rts
+
+; Lists an expression from the token stream.
+; line_ptr = pointer to the current line
+; r = read position line (updated) 
+
+list_expression:
+
+        ldy     r                       ; Load read position into Y
+        lda     (line_ptr),y            ; Read a byte from the stream; assume is it TOKEN_INT for now
+        iny
+        jsr     decode_number           ; Decode the number; return value in AX
+        jsr     print_number            ; Send it right to print_number
+        sty     r
         rts
 
 ; Prints the number in AX to the console.
