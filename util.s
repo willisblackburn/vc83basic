@@ -1,7 +1,3 @@
-; cc65 runtime
-.include "zeropage.inc"
-.import jmpvec
-
 .include "target.inc"
 .include "basic.inc"
 
@@ -16,7 +12,22 @@ copy_from_ptr: .res 2
 copy_to_ptr: .res 2
 copy_length: .res 2
 
+; Additional general-purpose "registers." Register rules apply; don't expect them to be preserved unless a
+; function declares B SAFE etc. Can be used as the 16-bit pairs BC and DE. Don't alias these.
+
+BC:
+B: .res 1
+C: .res 1
+DE:
+D: .res 1
+E: .res 1
+
+util_tmp1: .res 1
+util_tmp2: .res 1
+
 .code
+
+; TODO: maybe use AX, BC, DE for copy parameters
 
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
@@ -150,51 +161,47 @@ return_status:
 ; Multiplies the value in AX by 10 by shifting left twice, adding original value, shifting left once more.
 ; AX = the value to multiply by 10
 ; Returns the product in AX
+; BC SAFE
 
 mul10:
-
-@mul_tmp = regsave
-
-        stax    @mul_tmp
-        asl     A                       ; Shift A + mul_tmp+1 left 2
-        rol     @mul_tmp+1  
+        stax    DE
+        asl     A                       ; Shift A + E left 2
+        rol     E  
         asl     A                       
-        rol     @mul_tmp+1  
+        rol     E  
         clc 
-        adc     @mul_tmp+0              ; Add in original value and save back
-        sta     @mul_tmp+0  
-        txa 
-        adc     @mul_tmp+1              ; Same thing for high byte
-        asl     @mul_tmp+0              ; Shift the value left once more; A is now the high byte
+        adc     D                       ; Add in original low byte in D and save back
+        sta     D  
+        txa                             ; Same thing for high byte
+        adc     E                      
+        asl     D                       ; Shift the value left once more; A is now the high byte
         rol     A
         tax
-        lda     @mul_tmp+0
+        lda     D
         rts
 
 ; Divides the value in AX by 10. Unfortunately we have to do "real" division; there's no clever shortcut.
 ; AX = the value to divide by 10
 ; Returns the quotient in AX and the remainder in Y
+; BC SAFE
 
 div10:
-
-@div_tmp = regsave
-
-        stax    @div_tmp
+        stax    DE
         ldx     #16                     ; 16 bits
         lda     #0                      ; Initialize remainder to 0
 @next_bit:  
-        asl     @div_tmp                ; Shift dividend left into A
-        rol     @div_tmp+1  
+        asl     D                       ; Shift dividend left into A
+        rol     E  
         rol     A   
         cmp     #10                     ; Reached 10 yet?
         bcc     @not_10 
         sbc     #10                     ; Subtract 10 from remainder; carry is set
-        inc     @div_tmp                ; Set bit in quotient
+        inc     D                       ; Set bit in quotient
 @not_10:    
         dex                             ; One bit down
         bne     @next_bit               ; Some more to go
         tay                             ; Remainder into Y
-        ldax    @div_tmp
+        ldax    DE
         rts
 
 ; Invokes a vector selected from an array of vectors.
@@ -204,17 +211,44 @@ div10:
 ; Y = the index of the vector
 
 invoke_indexed_vector:
-
-@vector_ptr = ptr1
-
-        stax    @vector_ptr  
+        stax    BC
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
-        lda     (@vector_ptr),y    
-        tax                             ; Store low byte of vector in X
+        lda     (BC),y                  ; Load low byte of vector
+        sta     D                       ; Set up DE as the jump vector                
         iny     
-        lda     (@vector_ptr),y    
-        sta     @vector_ptr+1           ; Reuse vector_ptr for the jump
-        stx     @vector_ptr
-        jmp     (@vector_ptr)           ; Handler function RTS will return from *this* function
+        lda     (BC),y    
+        sta     E
+        jmp     (DE)                    ; Handler function RTS will return from *this* function
+
+; Formats a number into output_buffer. Does not perform any error checking.
+; AX = the number to format
+; w = the position within output_buffer (updated)
+
+format_number:
+        sta     B                       ; Keep low byte in B while we use A for other things
+        lda     #0                      ; Push 0 on the stack
+        pha
+@next_digit:
+        lda     B                       ; Recover low byte
+        jsr     div10                   ; Divide AX by 10
+        sta     B                       ; Save low byte
+        tya                             ; Transfer remainder into A
+        clc
+        adc     #'0'
+        pha                             ; Push digit
+        txa                             ; High byte into A
+        ora     B                       ; OR with saved low byte
+        bne     @next_digit             ; Still more digits
+        ldx     w                       ; Load write offset into X
+@write_digit:
+        pla                             ; Get a digit
+        beq     @done                   ; If it's 0 then we're done
+        sta     output_buffer,x         ; Store in output_buffer
+        inx                             ; Update write position
+        jmp     @write_digit
+
+@done:
+        stx     w                       ; Update X
+        rts

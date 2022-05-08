@@ -132,6 +132,27 @@ static void test_invoke_indexed_vector(void) {
     ASSERT_EQ(result, 31415);
 }
 
+static void test_format_number(void) {
+    PRINT_TEST_NAME();
+
+    format_number(5, 0);
+    ASSERT_EQ(output_buffer[0], '5');
+    ASSERT_EQ(w, 1);
+
+    format_number(10, 0);
+    ASSERT_EQ(output_buffer[0], '1');
+    ASSERT_EQ(output_buffer[1], '0');
+    ASSERT_EQ(w, 2);
+    
+    format_number(32767, 0);
+    ASSERT_EQ(output_buffer[0], '3');
+    ASSERT_EQ(output_buffer[1], '2');
+    ASSERT_EQ(output_buffer[2], '7');
+    ASSERT_EQ(output_buffer[3], '6');
+    ASSERT_EQ(output_buffer[4], '7');
+    ASSERT_EQ(w, 5);
+}
+
 int main(void) {
     initialize_target();
     test_copy_bytes();
@@ -139,5 +160,6 @@ int main(void) {
     test_mul10();
     test_div10();
     test_invoke_indexed_vector();
+    test_format_number();
     return 0;
 }

@@ -30,6 +30,9 @@
 .global encode_variable
 .global encode_byte
 
+; list.s
+.global exec_list
+
 ; name.s
 .global find_name
 .global match_character_sequence
@@ -56,6 +59,7 @@
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
 .global invoke_indexed_vector
+.global format_number
 
 ; Value types
 

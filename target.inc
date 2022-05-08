@@ -1,5 +1,9 @@
 ; Declarations for target-specific code.
 
+; Zero Page
+
+.globalzp BC, B, C, DE, D, E
+
 ; Data
 
 .global buffer, buffer_length

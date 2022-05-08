@@ -252,3 +252,9 @@ _invoke_indexed_vector:
         jsr     popax                   ; Address of vector array
         ldy     regsave
         jmp     invoke_indexed_vector
+
+_format_number:
+.export _format_number
+        sta     w
+        jsr     popax
+        jmp     format_number

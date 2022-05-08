@@ -97,6 +97,7 @@ void copy_bytes_back(char* to, const char* from, size_t size);
 int mul10(int value);
 int div10(int value);
 int invoke_indexed_vector(void* vectors, char index);
+void format_number(int number, char w);
 
 // Common functions and definitions used in tests
 
