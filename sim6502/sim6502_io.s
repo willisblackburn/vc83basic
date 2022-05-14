@@ -57,18 +57,19 @@ getchar:
 ; The write_buffer entry point writes from buffer.
 ; AX = a pointer to the buffer to write (write_buffer sets this to buffer)
 ; Y = the number of bytes to write (write_buffer sets this to buffer_length)
+; B SAFE
 
 write_buffer:
         lda     #<buffer
         ldx     #>buffer
         ldy     buffer_length
 write:
-        stax    BC                      ; Save buffer pointer
-        sty     D                       ; Save length
+        stax    DE                      ; Save buffer pointer
+        sty     C                       ; Save length
         jsr     push1                   ; File descriptor 1 (stdout)
-        ldax    BC
+        ldax    DE
         jsr     pushax                  ; Push buffer pointer onto C stack
-        lda     D                       ; Low byte of length
+        lda     C                       ; Low byte of length
         ldx     #0                      ; High byte of length
         jmp     _write      
 
