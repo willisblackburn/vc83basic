@@ -192,8 +192,8 @@ delete_line:
 ; Inserts a new line, or does nothing if the line to insert is empty.
 ; line_ptr = a pointer to the insertion point (previously set by find_line)
 ; AX = the number of the new line (from find_line)
-; output_buffer = the buffer holding the tokenized data
-; w = the write position in output_buffer, which is the length of the data
+; line_buffer = the buffer holding the tokenized data
+; w = the write position in line_buffer, which is the length of the data
 ; Returns carry clear on success, carry set on error.
 
 insert_line:
@@ -219,7 +219,7 @@ insert_line:
         ldx     #0
         stax    copy_length             ; Also save it into copy_length
         clc
-        mvax    #output_buffer, copy_from_ptr   ; Source is output_buffer     
+        mvax    #line_buffer, copy_from_ptr ; Source is line_buffer     
         jsr     get_line_start          ; Get destination address for copy
         stax    copy_to_ptr             ; Destination into copy_to_ptr
         jsr     copy_bytes              ; Copy data from buffer into program space

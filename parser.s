@@ -20,8 +20,8 @@ parsed_line_number: .res 2
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; r = the read position in buffer (modified on success)
-; output_buffer = the buffer containing the tokenized output
-; w = the token write position in output_buffer (modified on success)
+; line_buffer = the buffer containing the tokenized output
+; w = the token write position in line_buffer (modified on success)
 
 ; Parses a line from the buffer.
 

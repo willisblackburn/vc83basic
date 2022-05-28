@@ -47,7 +47,7 @@ encode_byte:
 
 encode:
         ldx     w
-        sta     output_buffer,x
+        sta     line_buffer,x
         inc     w
         beq     @error
         clc

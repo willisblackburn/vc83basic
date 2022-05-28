@@ -14,7 +14,7 @@
 
 .export _buffer = buffer
 
-.export _output_buffer = output_buffer
+.export _line_buffer = line_buffer
 
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr

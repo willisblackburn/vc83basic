@@ -110,7 +110,7 @@ static void test_delete_insert_line(void) {
 
     initialize_program();
 
-    memcpy(output_buffer, tokens_1, sizeof tokens_1);
+    memcpy(line_buffer, tokens_1, sizeof tokens_1);
     w = sizeof tokens_1;
     err = find_line(10);
     ASSERT_NE(err, 0);
@@ -126,7 +126,7 @@ static void test_delete_insert_line(void) {
     ASSERT_EQ((void*)variable_name_table_ptr, (void*)line_ptr);
     ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 
-    memcpy(output_buffer, tokens_2, sizeof tokens_2);
+    memcpy(line_buffer, tokens_2, sizeof tokens_2);
     w = sizeof tokens_2;
     err = find_line(200);
     ASSERT_NE(err, 0);
@@ -145,7 +145,7 @@ static void test_delete_insert_line(void) {
     ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 
     // Test inserting a line before the other two.
-    memcpy(output_buffer, tokens_3, sizeof tokens_3);
+    memcpy(line_buffer, tokens_3, sizeof tokens_3);
     w = sizeof tokens_3;
     err = find_line(5);
     ASSERT_NE(err, 0);

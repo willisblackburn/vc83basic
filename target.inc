@@ -7,7 +7,7 @@
 ; Data
 
 .global buffer
-.global output_buffer
+.global line_buffer
 
 ; Functions
 

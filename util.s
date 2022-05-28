@@ -246,7 +246,7 @@ format_number:
 @output_digit:
         pla                             ; Get a digit
         beq     @done                   ; If it's 0 then we're done
-        sta     buffer,x                ; Store in output_buffer
+        sta     buffer,x                ; Store in line_buffer
         inx                             ; Update write position
         jmp     @output_digit
 

@@ -7,17 +7,17 @@ static void test_encode_byte(void) {
 
     err = encode_byte(2, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[0], 2);
+    ASSERT_EQ(line_buffer[0], 2);
     ASSERT_EQ(w, 1);
 
     err = encode_byte(2, 1);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[1], 2);
+    ASSERT_EQ(line_buffer[1], 2);
     ASSERT_EQ(w, 2);
 
     err = encode_byte(255, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[0], 255);
+    ASSERT_EQ(line_buffer[0], 255);
     ASSERT_EQ(w, 1);
 
     // Encode at end of buffer should fail
@@ -32,21 +32,21 @@ static void test_encode_number(void) {
 
     err = encode_number(0, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 0);
-    ASSERT_EQ(output_buffer[2], 0);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 0);
+    ASSERT_EQ(line_buffer[2], 0);
     ASSERT_EQ(w, 3);
 
     err = encode_number(256, 0);
     ASSERT_EQ(err, 0);
     err = encode_number(1000, 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 0);
-    ASSERT_EQ(output_buffer[2], 1);
-    ASSERT_EQ(output_buffer[3], 2);
-    ASSERT_EQ(output_buffer[4], 232);
-    ASSERT_EQ(output_buffer[5], 3);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 0);
+    ASSERT_EQ(line_buffer[2], 1);
+    ASSERT_EQ(line_buffer[3], 2);
+    ASSERT_EQ(line_buffer[4], 232);
+    ASSERT_EQ(line_buffer[5], 3);
     ASSERT_EQ(w, 6);
 
     // Encode at end of buffer should fail

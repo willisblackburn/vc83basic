@@ -47,7 +47,7 @@ extern char variable_count;
 
 extern char buffer[];
 
-extern char output_buffer[];
+extern char line_buffer[];
 
 // Used by c_wrappers.s
 

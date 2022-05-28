@@ -65,9 +65,9 @@ static void test_parse_expression(void) {
     strcpy(buffer, "1");
     err = parse_expression(0, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 1);
-    ASSERT_EQ(output_buffer[2], 0);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 1);
+    ASSERT_EQ(line_buffer[2], 0);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
 
@@ -116,9 +116,9 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
     ASSERT_EQ(argument_index, 1);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 1);
-    ASSERT_EQ(output_buffer[2], 0);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 1);
+    ASSERT_EQ(line_buffer[2], 0);
 
     strcpy(buffer, "1,");
     err = parse_arguments(1, signature_table, 0, 0, 0);
@@ -126,9 +126,9 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
     ASSERT_EQ(argument_index, 1);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 1);
-    ASSERT_EQ(output_buffer[2], 0);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 1);
+    ASSERT_EQ(line_buffer[2], 0);
 
     strcpy(buffer, " 1, 256");
     err = parse_arguments(2, signature_table, 0, 0, 0);
@@ -136,12 +136,12 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(r, 7);
     ASSERT_EQ(w, 6);
     ASSERT_EQ(argument_index, 2);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 1);
-    ASSERT_EQ(output_buffer[2], 0);
-    ASSERT_EQ(output_buffer[3], 2);
-    ASSERT_EQ(output_buffer[4], 0);
-    ASSERT_EQ(output_buffer[5], 1);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 1);
+    ASSERT_EQ(line_buffer[2], 0);
+    ASSERT_EQ(line_buffer[3], 2);
+    ASSERT_EQ(line_buffer[4], 0);
+    ASSERT_EQ(line_buffer[5], 1);
 }
 
 static void test_parse_element(void) {
@@ -169,54 +169,54 @@ static void test_parse_element(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 11);
     ASSERT_EQ(w, 7);
-    ASSERT_EQ(output_buffer[0], 0);
-    ASSERT_EQ(output_buffer[1], 2);
-    ASSERT_EQ(output_buffer[2], 10);
-    ASSERT_EQ(output_buffer[3], 0);
-    ASSERT_EQ(output_buffer[4], 2);
-    ASSERT_EQ(output_buffer[5], 100);
-    ASSERT_EQ(output_buffer[6], 0);
+    ASSERT_EQ(line_buffer[0], 0);
+    ASSERT_EQ(line_buffer[1], 2);
+    ASSERT_EQ(line_buffer[2], 10);
+    ASSERT_EQ(line_buffer[3], 0);
+    ASSERT_EQ(line_buffer[4], 2);
+    ASSERT_EQ(line_buffer[5], 100);
+    ASSERT_EQ(line_buffer[6], 0);
 
     strcpy(buffer, "NEW");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, 1);
-    ASSERT_EQ(output_buffer[0], 1);
+    ASSERT_EQ(line_buffer[0], 1);
 
     strcpy(buffer, "GR 8");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 4);
     ASSERT_EQ(w, 4);
-    ASSERT_EQ(output_buffer[0], 2);
-    ASSERT_EQ(output_buffer[1], 2);
-    ASSERT_EQ(output_buffer[2], 8);
-    ASSERT_EQ(output_buffer[3], 0);
+    ASSERT_EQ(line_buffer[0], 2);
+    ASSERT_EQ(line_buffer[1], 2);
+    ASSERT_EQ(line_buffer[2], 8);
+    ASSERT_EQ(line_buffer[3], 0);
 
     strcpy(buffer, "FOR 1 TO 10000");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 14);
     ASSERT_EQ(w, 7);
-    ASSERT_EQ(output_buffer[0], 3);
-    ASSERT_EQ(output_buffer[1], 2);
-    ASSERT_EQ(output_buffer[2], 1);
-    ASSERT_EQ(output_buffer[3], 0);
-    ASSERT_EQ(output_buffer[4], 2);
-    ASSERT_EQ(output_buffer[5], 16);
-    ASSERT_EQ(output_buffer[6], 39);
+    ASSERT_EQ(line_buffer[0], 3);
+    ASSERT_EQ(line_buffer[1], 2);
+    ASSERT_EQ(line_buffer[2], 1);
+    ASSERT_EQ(line_buffer[3], 0);
+    ASSERT_EQ(line_buffer[4], 2);
+    ASSERT_EQ(line_buffer[5], 16);
+    ASSERT_EQ(line_buffer[6], 39);
 
     strcpy(buffer, "LET X=100");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(r, 9);
     ASSERT_EQ(w, 5);
-    ASSERT_EQ(output_buffer[0], 4);
-    ASSERT_EQ(output_buffer[1], 0x80);
-    ASSERT_EQ(output_buffer[2], 2);
-    ASSERT_EQ(output_buffer[3], 100);
-    ASSERT_EQ(output_buffer[4], 0);
+    ASSERT_EQ(line_buffer[0], 4);
+    ASSERT_EQ(line_buffer[1], 0x80);
+    ASSERT_EQ(line_buffer[2], 2);
+    ASSERT_EQ(line_buffer[3], 100);
+    ASSERT_EQ(line_buffer[4], 0);
 }
 
 int main(void) {

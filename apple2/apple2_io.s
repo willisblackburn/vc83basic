@@ -5,7 +5,7 @@ buffer := $200
 
 .bss
 
-output_buffer: .res 256
+line_buffer: .res 256
 
 .code 
 

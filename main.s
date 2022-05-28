@@ -56,7 +56,7 @@ main:
 @immediate_mode:
         jsr     @get_statement
         bcs     @error
-        lda     output_buffer           ; Statement is in first byte of output_buffer
+        lda     line_buffer             ; Statement is in first byte of line_buffer
         jsr     invoke_statement_handler
         jmp     @wait_for_input
 
@@ -64,7 +64,7 @@ main:
         jsr     skip_whitespace
         mvax    #statement_signature_table, signature_ptr
         ldax    #statement_name_table
-        jsr     parse_element           ; Leaves the parsed statement in output_buffer
+        jsr     parse_element           ; Leaves the parsed statement in line_buffer
         rts
 
 @error:
