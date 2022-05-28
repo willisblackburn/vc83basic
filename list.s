@@ -33,8 +33,7 @@ list_line:
         ldax    line_number             ; Line number into AX
         bmi     @end                    ; If MSB of line number is set, we're at end of program
         jsr     format_number
-        lda     #' '
-        jsr     write_buffer
+        jsr     putchar_space_buffer
         ldy     #3                      ; Start of line data
         lda     (line_ptr),y            ; Get statement token
         iny                             ; Increment Y to 4
@@ -70,7 +69,7 @@ list_element:
         beq     @handle_arguments       ; Nope
         lda     (name_ptr),y            ; It was a literal character; load the character again
         and     #$7F                    ; Clear high bit if set
-        jsr     write_buffer
+        jsr     putchar_buffer
         bne     @loop                   ; Will never store 0 so this is unconditional branch
 
 @handle_arguments:
@@ -100,7 +99,7 @@ list_arguments:
         dec     argument_count          ; Done with one argument
         beq     @done                   ; Finish if no more
         lda     #','                    ; Output argument separator
-        jsr     write_buffer
+        jsr     putchar_buffer
         jmp     @next_argument
 @done:
         rts
@@ -134,9 +133,7 @@ add_whitespace:
         lda     buffer-1,x              ; Get buffer[x-1]
         jsr     is_name_character
         bcs     @done
-        lda     #' '                    ; Store a space
-        sta     buffer,x                ; at next buffer position
-        inc     w                       ; and increment write position
+        jsr     putchar_space_buffer
 @done:
         rts
 

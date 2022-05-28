@@ -260,7 +260,9 @@ format_number:
 ; w = the buffer position (updated)
 ; Y SAFE
 
-write_buffer:
+putchar_space_buffer:
+        lda     #' '
+putchar_buffer:
         ldx     w                       ; Load position
         inc     w                       ; Incrment position
         sta     buffer,x                ; Store A in buffer

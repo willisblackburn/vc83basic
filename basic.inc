@@ -66,7 +66,7 @@
 .global mul10, div10
 .global invoke_indexed_vector
 .global format_number
-.global write_buffer
+.global putchar_space_buffer, putchar_buffer
 
 ; Value types
 

@@ -87,6 +87,11 @@ _encode_byte:
 
 ; list.s
 
+_list_line:
+.export _list_line
+        stax    line_ptr
+        jmp     list_line
+
 _list_element:
 .export _list_element
         sta     w

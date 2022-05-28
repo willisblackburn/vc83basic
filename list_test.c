@@ -1,6 +1,9 @@
 #include "test.h"
 
 static void test_add_whitespace(void) {
+
+    PRINT_TEST_NAME();
+
     buffer[0] = 0;
     add_whitespace(0);
     ASSERT_EQ(w, 0);
@@ -15,6 +18,7 @@ static void test_add_whitespace(void) {
 
 static void test_list_element(void) {
     // TODO: ensure that tests use C strings appropriately; don't use C strings if the assembly doesn't.
+    // TODO: just use the built-in statement name table.
     const char name_table[] = { 
         'S', 'T', 'O', 'P'+0x80, 
         'P', 'R', 'I', 'N', 'T', 0x91,
@@ -23,6 +27,8 @@ static void test_list_element(void) {
     const char line_data_1[] = { 0x02, 0x01, 0x01 };
     const char line_data_2[] = { 0x00 };
     const char line_data_3[] = { 0x80, 0x02, 0x01, 0x00 };
+
+    PRINT_TEST_NAME();
 
     // Initialize the program memory
     initialize_program();
@@ -43,13 +49,32 @@ static void test_list_element(void) {
 
     list_element(name_table, 2, line_data_3, 0, 0);
     HEXDUMP(buffer, 16);
-    ASSERT_EQ(strncmp(buffer, "LET X= 1", 8), 0);
-    ASSERT_EQ(w, 8);
+    ASSERT_EQ(strncmp(buffer, "LET X=1", 7), 0);
+    ASSERT_EQ(w, 7);
+}
+
+static void test_list_line(void) {
+    const char line_data[] = { 0x0A, 0x00, 0x05, 0x03, 0x80, 0x02, 0x01, 0x00 };
+
+    PRINT_TEST_NAME();
+
+    // Initialize the program memory
+    initialize_program();
+    // Add the variable name X
+    strcpy(buffer, "X");
+    find_name(variable_name_table_ptr, 0);
+    add_variable();
+
+    list_line(line_data);
+    HEXDUMP(buffer, 16);
+    ASSERT_EQ(w, 10);
+    ASSERT_EQ(strncmp(buffer, "10 LET X=1", 10), 0);   
 }
 
 int main(void) {
     initialize_target();
     test_add_whitespace();
     test_list_element();
+    test_list_line();
     return 0;
 }
