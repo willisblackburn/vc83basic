@@ -61,6 +61,7 @@ extern char reg_y;
 
 // decode.s
 int decode_number(const char* line_ptr, char r);
+char decode_byte(const char* line_ptr, char r);
 
 // encode.s
 int encode_number(int number, char w);
@@ -99,6 +100,8 @@ int check_himem(void* ptr);
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
+void clear_memory(char* p, size_t size);
+int mul2(int value);
 int mul10(int value);
 int div10(int value);
 int invoke_indexed_vector(void* vectors, char index);

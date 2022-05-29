@@ -8,6 +8,7 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __STACKSIZE__
 
+.include "../macros.inc"
 .include "../target.inc"
 
 .segment "STARTUP"

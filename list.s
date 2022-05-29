@@ -1,3 +1,4 @@
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -34,10 +35,7 @@ list_line:
         bmi     @end                    ; If MSB of line number is set, we're at end of program
         jsr     format_number
         jsr     putchar_space_buffer
-        ldy     #3                      ; Start of line data
-        lda     (line_ptr),y            ; Get statement token
-        iny                             ; Increment Y to 4
-        sty     r                       ; and store in the read position register
+        jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table
         jsr     list_element
@@ -109,9 +107,7 @@ list_arguments:
 ; r = read position line (updated) 
 
 list_value:
-        ldy     r                       ; Load read position into Y
-        inc     r                       ; Skip past this byte
-        lda     (line_ptr),y            ; Read a byte from the stream
+        jsr     decode_byte             ; Get statement number
         bmi     @variable               ; It's a variable
         jsr     decode_number           ; It must be an integer; decode the number (return value in AX)
         jsr     format_number           ; Send it right to format_number

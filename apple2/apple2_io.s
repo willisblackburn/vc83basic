@@ -1,4 +1,5 @@
 .include "apple2.inc"
+.include "../macros.inc"
 .include "../target.inc"
 
 buffer := $200

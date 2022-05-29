@@ -5,6 +5,7 @@
 ; C standard library functions
 .import _fprintf, _stderr
 
+.include "../macros.inc"
 .include "../target.inc"
 
 ; Architecture-specific initializations that will be invoked from main (even for unit tests).

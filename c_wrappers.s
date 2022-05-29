@@ -7,6 +7,7 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -66,6 +67,13 @@ _decode_number:
         jsr     popax
         stax    line_ptr
         jmp     decode_number
+
+_decode_byte:
+.export _decode_byte
+        sta     r
+        jsr     popax
+        stax    line_ptr
+        jmp     decode_byte
 
 ; encode.s
 
@@ -257,6 +265,18 @@ _copy_bytes_back:
         jsr     popax
         stax    copy_to_ptr
         jmp     copy_bytes_back
+
+_clear_memory:
+.export _clear_memory
+        stax    DE                      ; Size
+        jsr     popax
+        stax    BC                      ; Get the pointer into BC
+        ldax    DE                      ; Restore size into AX
+        jmp     clear_memory
+
+_mul2:
+.export _mul2
+        jmp     mul2
 
 _mul10:
 .export _mul10

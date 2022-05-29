@@ -11,6 +11,43 @@ static void fill_test_data(size_t offset, size_t size) {
     }
 }
 
+static void test_clear_memory(void) {
+    PRINT_TEST_NAME();
+
+    // Clear <256 bytes
+    fill_test_data(0, 100);
+    HEXDUMP(test_data, 16);
+    clear_memory(test_data, 10);
+    HEXDUMP(test_data, 16);
+    // Should clear offsets 0-9, offset 10 remains the same.
+    ASSERT_EQ(test_data[0], 0);
+    ASSERT_EQ(test_data[9], 0);
+    ASSERT_EQ(test_data[10], 10);
+
+    // Clear >256 bytes
+    fill_test_data(0, 300);
+    clear_memory(test_data, 259);
+    // Should clear offsets 0-9, offset 10 remains the same.
+    ASSERT_EQ(test_data[0], 0);
+    ASSERT_EQ(test_data[258], 0);
+    ASSERT_EQ(test_data[259], 3);
+
+    // Clear even multiple of 256 bytes
+    fill_test_data(0, 1000);
+    clear_memory(test_data, 512);
+    // Should clear offsets 0-9, offset 10 remains the same.
+    ASSERT_EQ(test_data[0], 0);
+    ASSERT_EQ(test_data[511], 0);
+    ASSERT_EQ(test_data[512], 0);
+    ASSERT_EQ(test_data[513], 1);
+
+    // Clear zero bytes
+    test_data[0] = test_data[1] = 1;
+    clear_memory(test_data, 0);
+    ASSERT_EQ(test_data[0], 1);
+    ASSERT_EQ(test_data[1], 1);
+}
+
 static void verify_test_data(const char* p, size_t size) {
     // Check first 4 and last 4 bytes.
     ASSERT_EQ(p[0], 0);
@@ -69,6 +106,21 @@ static void test_copy_bytes_back(void) {
     test_copy_bytes_back_case(4000, 1);
     test_copy_bytes_back_case(4000, 100);
     test_copy_bytes_back_case(4000, 256);
+}
+
+static void test_mul2(void) {
+    int result;
+
+    PRINT_TEST_NAME();
+
+    result = mul2(0);
+    ASSERT_EQ(result, 0);
+    result = mul2(1);
+    ASSERT_EQ(result, 2);
+    result = mul2(30);
+    ASSERT_EQ(result, 60);
+    result = mul2(1000);
+    ASSERT_EQ(result, 2000);
 }
 
 static void test_mul10(void) {
@@ -155,8 +207,10 @@ static void test_format_number(void) {
 
 int main(void) {
     initialize_target();
+    test_clear_memory();
     test_copy_bytes();
     test_copy_bytes_back();
+    test_mul2();
     test_mul10();
     test_div10();
     test_invoke_indexed_vector();

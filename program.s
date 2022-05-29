@@ -2,6 +2,7 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __BSS_RUN__, __BSS_SIZE__
 
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -92,23 +93,23 @@ reset_program:
 find_line:
         stax    DE
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
-next_line:      
+        jmp     @test_line              ; Skip over first advance_line_ptr call
+@next_line:      
+        jsr     advance_line_ptr        ; Advance to the next line    
+@test_line:
         ldy     #1                      ; Set Y to 1 for getting high byte of line number
         lda     (line_ptr),y        
         cmp     E       
-        bcc     @continue               ; Line number high byte is <target; go to next line
+        bcc     @next_line              ; Line number high byte is <target; go to next line
         bne     @return                 ; Return with carry set
         dey                             ; High byte is equal; decrement Y to 0
         lda     (line_ptr),y            ; Check the low byte of line number
         cmp     D                       ; Same logic for low byte
-        bcc     @continue       
-        beq     update_line_fields      ; Update line fields and return; otherwise return with carry bit set
+        bcc     @next_line     
+        bne     @return                 ; If not the line then reutrn with carry bit set
+        clc                             ; If it was the line then return with carry clear
 @return:        
         rts     
-
-@continue:      
-        jsr     advance_line_ptr        ; Advance to the next line    
-        jmp     next_line
 
 ; Advances the current line pointer to the next line. This is called from find_line so we don't set line_number
 ; or line_length or assume they've been set, because in find_line we want to scan the program as quickly as possible.
@@ -123,22 +124,24 @@ advance_line_ptr:
         stax    line_ptr                ; Store back into line_ptr
         rts
 
-; Updates the line_number and line_length fields from line_ptr. 
+; Updates the line_number and line_length fields from line_ptr. Also sets r to 3 so that the caller can begin
+; processing the line data after the header. Y is set to 3 as a consequence of setting r.
 ; line_ptr = current line
-; On return, line_number and line_length are set, and Y = 0.
-; DE SAFE
+; On return, line_number and line_length are set, and r = Y = 3.
+; X SAFE, BC SAFE, DE SAFE
 
 update_line_fields:
-        ldy     #2
-        lda     (line_ptr),y            ; Get length of current line
-        sta     line_length
-        dey
-        lda     (line_ptr),y            ; High byte of line number
-        sta     line_number+1
-        dey
+        ldy     #0
         lda     (line_ptr),y            ; Low byte of line number
         sta     line_number
-        clc                             ; In case we're wrapping up a function that clears carry on success
+        iny
+        lda     (line_ptr),y            ; High byte of line number
+        sta     line_number+1
+        iny
+        lda     (line_ptr),y            ; Get length of current line
+        sta     line_length
+        iny                             ; Increment Y to 3
+        sty     r                       ; and leave in r
         rts
 
 ; Returns a pointer to the start of data for the current line (identified by line_ptr).

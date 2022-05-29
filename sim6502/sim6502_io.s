@@ -4,6 +4,7 @@
 ; sim65 vectors
 .import _read, _write, exit
 
+.include "../macros.inc"
 .include "../target.inc"
 
 .bss
@@ -25,11 +26,11 @@ readline:
         mva     #0, B                   ; Use B to track write position in buffer
 @next:      
         jsr     getchar                 ; Read one character
-        ldy     B                       ; Use Y for buffer index
+        ldy     B                       ; Use B for buffer index (getchar does not use it)
+        inc     B
         cmp     #$0A                    ; EOL?
         beq     @done                   ; Yes
         sta     buffer,y                ; Otherwise store character in buffer
-        iny                             ; Increment write position
         jmp     @next       
 @done:      
         lda     #0      
@@ -39,6 +40,7 @@ readline:
 
 ; Reads a single character from the console.
 ; Returns the character in A.
+; BC SAFE
 
 getchar:
         jsr     push0                   ; File descriptor 0 (stdin)

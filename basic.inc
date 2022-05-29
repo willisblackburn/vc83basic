@@ -27,6 +27,7 @@
 
 ; decode.s
 .global decode_number
+.global decode_byte
 
 ; encode.s
 .global encode_number
@@ -62,8 +63,9 @@
 
 ; util.s
 .global copy_bytes, copy_bytes_back
+.global clear_memory
 .global return_error, return_internal_error, return_status, return_status_ok
-.global mul10, div10
+.global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global format_number
 .global putchar_space_buffer, putchar_buffer

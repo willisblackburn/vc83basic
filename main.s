@@ -1,3 +1,4 @@
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -11,7 +12,7 @@ error_length = * - error_message
 
 statement_name_table:
         .byte   'L', 'I', 'S', 'T' | NT_END
-        .byte   'R', 'U', 'N', NT_1ARG | NT_END
+        .byte   'R', 'U', 'N' | NT_END
         .byte   'P', 'R', 'I', 'N', 'T', NT_1ARG | NT_END
         .byte   'L', 'E', 'T', NT_1ARG, '=', NT_1ARG | NT_END
         .byte   0
@@ -54,6 +55,9 @@ main:
         jmp     @wait_for_input
 
 @immediate_mode:
+        ldx     r                       ; Check the current read position
+        lda     buffer,x                ; Anything on the line?
+        beq     @wait_for_input         ; It's a blank line, wait for another one
         jsr     @get_statement
         bcs     @error
         lda     line_buffer             ; Statement is in first byte of line_buffer
@@ -83,49 +87,50 @@ invoke_statement_handler:
 ; Executes the program.
 
 exec_run:
+        mvaa    value_table_ptr, BC     ; Prepare to clear variable value table
+        lda     variable_count          ; Amount to clear is variable_count * 2
+        jsr     mul2a
+        jsr     clear_memory
         jsr     reset_line_ptr
 @next_line:
-        ldy     #1                      ; High byte of line number
-        lda     (line_ptr),y
+        jsr     update_line_fields
+        lda     line_number+1           ; Load high byte of line number
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        ldy     #2                      ; Offset of line length
-        lda     (line_ptr),y            ; Get length
-        sta     copy_length             ; and copy_length
-        lda     #0
-        sta     copy_length+1
-        jsr     get_line_start          ; Start of line in AX
-        sta     copy_from_ptr           ; Set source for copy
-        stx     copy_from_ptr+1
-        lda     #<buffer                ; Set destination for copy
-        sta     copy_to_ptr
-        lda     #>buffer
-        sta     copy_to_ptr+1
-        jsr     copy_bytes              ; Copy line into buffer
-        lda     #0                      ; Start reading from offset 0
-        sta     r
-        lda     #<statement_name_table    ; What statement was it?
-        ldx     #>statement_name_table
-        jsr     find_name
-        bcs     @error
+        jsr     decode_byte             ; Get statement number
         jsr     invoke_statement_handler
-        jsr     advance_line_ptr
+        ; TODO: check for error
+        jsr     advance_line_ptr        ; Advance to next line
         jmp     @next_line
 
-@error:
-        jsr     print_error
 @end:
+        rts
+
+; Gets the value for an argument and returns it in AX.
+
+get_argument_value:
+        jsr     decode_byte             ; Get statement number
+        bmi     @variable               ; It's a variable
+        jmp     decode_number           ; Decode a number instead
+
+@variable:
+        and     #$7F                    ; Clear bit 7
+        jsr     mul2a                   ; Multiply by 2
+        adc     value_table_ptr         ; Carry is clear; add to the value table offset
+        sta     B
+        txa
+        adc     value_table_ptr+1
+        sta     C                       ; Address of variable data is now in BC
+        ldy     #1
+        lda     (BC),y                  ; High byte of variable value
+        tax
+        dey
+        lda     (BC),y                  ; Low byte of variable data
         rts
 
 exec_print:
-        jsr     read_number             ; Get the number
-        bcs     @error                  ; Fail if not a number
+        jsr     get_argument_value      ; Returns value to print in AX
         jsr     print_number            ; Print the number
         jsr     newline
-        rts
-
-@error:
-        jsr     print_error
-@end:
         rts
 
 exec_let:
@@ -145,8 +150,7 @@ print_ready:
         ldx     #>ready_message
         ldy     #ready_length
         jsr     write
-        jsr     newline
-        rts
+        jmp     newline
 
 ; Prints an error message.
 
@@ -155,5 +159,4 @@ print_error:
         ldx     #>error_message
         ldy     #error_length
         jsr     write
-        jsr     newline
-        rts
+        jmp     newline

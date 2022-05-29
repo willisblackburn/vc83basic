@@ -1,4 +1,4 @@
-; cc65 runtime
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 

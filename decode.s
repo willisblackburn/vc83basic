@@ -1,3 +1,4 @@
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -10,13 +11,19 @@
 ; Decodes a number and returns it in AX.
 
 decode_number:
-        ldy     r                       ; Load read position into Y
-        iny                             ; Increment Y
+        inc     r                       ; Increment read position to high byte 
+        ldy     r                       ; Load position of high byte into Y
+        inc     r                       ; Increment read one position again
         lda     (line_ptr),y            ; Load the high byte of the number
         tax                             ; Move into X
         dey                             ; Decrement Y
-        lda     (line_ptr),y            ; Get the low byte into A
-        iny
-        iny                             ; Increment Y to the next position
-        sty     r                       ; Update read position
+        lda     (line_ptr),y            ; Get the low byte of the number into A
         rts     
+
+; Decodes a single byte and returns it in A.
+
+decode_byte:
+        ldy     r                       ; Read r into Y and increment
+        inc     r   
+        lda     (line_ptr),y            ; Load and return the byte
+        rts

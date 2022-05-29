@@ -1,3 +1,4 @@
+.include "macros.inc"
 .include "target.inc"
 .include "basic.inc"
 
@@ -21,9 +22,6 @@ C: .res 1
 DE:
 D: .res 1
 E: .res 1
-
-util_tmp1: .res 1
-util_tmp2: .res 1
 
 .code
 
@@ -136,6 +134,36 @@ copy_bytes_back:
 @skip_copy:
         rts
 
+; Clears memory to zero.
+; BC = pointer to the memory to clear
+; AX = the number of bytes to clear
+
+clear_memory:
+        stax    DE                      ; Number of bytes in DE
+        lda     #0                      ; Zero byte to write
+        tax                             ; X is the number of blocks written; initialize to 0
+        tay                             ; Y is the number of bytes written; initialize to 0
+@do_block:
+        cpx     E                       ; More blocks to copy?
+        beq     @do_remaining_byte      ; No more blocks; go copy remaining bytes
+@block_byte:
+        sta     (BC),y                  ; Write one zero
+        iny                             ; Y is the number of bytes written; when it wraps to 0 means 256 bytes
+        bne     @block_byte             ; Not rolled over yet
+        inc     C                       ; Advance write address in BC to next block
+        inx                             ; Increment number of blocks written
+        jmp     @do_block
+
+@do_remaining_byte:
+        cpy     D                       ; More?
+        beq     @done                   ; Nope
+        sta     (BC),y                  ; Write remaining byte
+        iny                             ; Y is the number of bytes written so will not be zero, ...
+        bne     @do_remaining_byte      ; therefore this is an unconditional branch
+
+@done:
+        rts
+
 ; Signals an error.
 ; Only used by functions that use err to return error information.
 ; A = the error code (set to ERR_FAILURE by return_fail)
@@ -156,6 +184,18 @@ return_ok:
 return_status:
         sta     status
         clc
+        rts
+
+; Shifts the value in AX left by 1 bit, multiplying it by 2.
+; Y SAFE
+
+mul2a:
+        ldx     #0                      ; Only multiply A by initializing high byte to 0     
+mul2:
+        stx     E                       ; Park high byte in E so we can roll into it
+        asl     A                       ; Low byte * 2
+        rol     E                       ; High byte * 2
+        ldx     E                       ; Reload X
         rts
 
 ; Multiplies the value in AX by 10 by shifting left twice, adding original value, shifting left once more.
