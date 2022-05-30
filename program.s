@@ -175,9 +175,9 @@ delete_line:
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        mva     line_ptr, DE            ;         Current line_ptr will be the target of the memcpy
+        mva     line_ptr, D             ; Current line_ptr will be the target of the memcpy
         pha                             ; Also push it on the stack so we can restore after advancing
-        mva     line_ptr+1, DE+1        ; High byte
+        mva     line_ptr+1, E           ; High byte
         pha
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
         stax    BC                      ; This will be the source for the copy
