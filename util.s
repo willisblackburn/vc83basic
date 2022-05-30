@@ -23,8 +23,6 @@ E: .res 1
 
 .code
 
-; TODO: maybe use AX, BC, DE for copy parameters
-
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
 ; source address.
