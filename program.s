@@ -177,15 +177,15 @@ delete_line:
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        mva     line_ptr, dst_ptr       ; Current line_ptr will be the target of the memcpy
+        mva     line_ptr, dst_ptr       ; Current line_ptr will be the target of the copy
         pha                             ; Also push it on the stack so we can restore after advancing
         mva     line_ptr+1, dst_ptr+1   ; High byte
         pha
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
         stax    src_ptr                 ; This will be the source for the copy
-        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
-        jsr     update_pointers         ; Knowing copy from and to, we can update pointers
-        jsr     copy_bytes              ; Compact the program
+        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
+        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
+        jsr     copy_bytes_de           ; Compact the program using length in DE
         pla                             ; line_ptr now points to an invalid line so restore saved value
         sta     line_ptr+1
         pla
@@ -200,31 +200,29 @@ delete_line:
 ; Returns carry clear on success, carry set on error.
 
 insert_line:
-        stax    DE
+        stax    line_number
         mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
         lda     w                       ; Load the length of the token data
         beq     @finish                 ; Line is empty
-        pha                             ; Save the line length on the stack
+        pha                             ; Save the line length on the stack for use later
         jsr     get_line_start_plus_a   ; Calculate destination address for current line
         stax    dst_ptr                
-        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
-        jsr     update_pointers         ; Knowing copy from and to, we can update pointers
-        jsr     copy_bytes_back     
-        lda     D                       ; Line number low byte     
+        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
+        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
+        jsr     copy_bytes_back_de  
+        mvax    #line_buffer, src_ptr   ; Source is line_buffer     
+        jsr     get_line_start          ; Get destination address for copy
+        stax    dst_ptr                 ; Destination into dst_ptr
+        lda     line_number             ; Line number low byte     
         ldy     #0      
         sta     (line_ptr),y            ; Save line item number low byte
-        lda     E                       ; Line number high byte
+        lda     line_number+1           ; Line number high byte
         iny     
         sta     (line_ptr),y            ; Save line item number high byte
         pla                             ; Get the line length saved earlier
         iny     
         sta     (line_ptr),y            ; Save line length
         ldx     #0
-        stax    copy_length             ; Also save it into copy_length
-        clc
-        mvax    #line_buffer, src_ptr   ; Source is line_buffer     
-        jsr     get_line_start          ; Get destination address for copy
-        stax    dst_ptr                 ; Destination into dst_ptr
         jsr     copy_bytes              ; Copy data from buffer into program space
         jsr     advance_line_ptr        ; Jump over the new line
 
@@ -232,17 +230,17 @@ insert_line:
         clc
         rts
 
-; Calculates the bytes to move for both compact and expand as value_table_ptr - line_ptr.
-; Returns the number of bytes in copy_length (borrowed from util.s)
+; Calculates the bytes to move for both compact and expand as (value_table_ptr - line_ptr).
+; Returns the number of bytes in DE.
 
 calculate_bytes_to_move:
         sec                       
         lda     value_table_ptr
         sbc     line_ptr
-        sta     copy_length             ; Store length
+        sta     D                       ; Store low byte of length in D
         lda     value_table_ptr+1      
         sbc     line_ptr+1      
-        sta     copy_length+1           ; Store high byte of length
+        sta     E                       ; High byte of length in E
         rts
 
 ; Updates variable_name_table_ptr and value_table_ptr by adding (dst_ptr - src_ptr).
@@ -250,6 +248,7 @@ calculate_bytes_to_move:
 ; to move the pointers up too, and vice versa. We're just shifting the pointers by however many bytes
 ; we moved the end of the program.
 ; Uses XY to store the difference value.
+; BC SAFE, DE SAFE
 
 update_pointers:
         sec           

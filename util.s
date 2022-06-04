@@ -11,7 +11,6 @@ status: .res 1
 
 src_ptr: .res 2
 dst_ptr: .res 2
-copy_length: .res 2
 
 ; Additional general-purpose "registers." Register rules apply; don't expect them to be preserved unless a
 ; function declares B SAFE etc. Can be used as the 16-bit pairs BC and DE. Don't alias these.
@@ -25,19 +24,19 @@ E: .res 1
 
 .code
 
-; TODO: maybe use AX, BC, DE for copy parameters
-
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
 ; source address.
 ; Alters src_ptr and dst_ptr.
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
-; copy_length = number of bytes to copy
+; AX = number of bytes to copy (_de entry point uses value in DE instead)
 
 copy_bytes:
+        stax    DE                      ; Length into DE
+copy_bytes_de:
         ldy     #0                      ; Y = 0 meaning 256 bytes per block
-        ldx     copy_length+1           ; Number of 256-byte blocks
+        ldx     E                       ; Number of 256-byte blocks
         beq     @remaining              ; If no blocks, just do remaining bytes
 @next_byte: 
         lda     (src_ptr),y             ; Copy one byte
@@ -53,7 +52,7 @@ copy_bytes:
 ; Y = 0 when we first reach this point
 
 @remaining:
-        cpy     copy_length             ; Compare Y with number of remaining bytes
+        cpy     D                       ; Compare Y with number of remaining bytes
         beq     @return                 ; If equal then we're done
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y               
@@ -68,34 +67,36 @@ copy_bytes:
 ; Alters src_ptr and dst_ptr.
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
-; copy_length = number of bytes to copy
+; AX = number of bytes to copy (_de entry point uses value in DE instead)
 
 copy_bytes_back:
+        stax    DE                      ; Length into DE
+copy_bytes_back_de:
         clc
-        lda     src_ptr                 ; Add copy_length (the length) to src_ptr and dst_ptr
+        lda     src_ptr                 ; Add DE (the length) to src_ptr and dst_ptr
         pha                             ; and save the original values on the stack
-        adc     copy_length
+        adc     D
         sta     src_ptr
         lda     src_ptr+1
         pha
-        adc     copy_length+1
+        adc     E
         sta     src_ptr+1
         clc
         lda     dst_ptr              
         pha                         
-        adc     copy_length
+        adc     D
         sta     dst_ptr
         lda     dst_ptr+1
         pha
-        adc     copy_length+1
+        adc     E
         sta     dst_ptr+1
 
 ; The stack contains the original src_ptr and dst_ptr; we'll use these to move the last bytes.
 ; The current values of src_ptr and dst_ptr are one past the end of the move ranges.
-; The number of bytes to move is in copy_length.
+; The number of bytes to move is in DE.
 
         ldy     #0                      ; Y = 0 meaning 256 bytes per block
-        ldx     copy_length+1           ; Number of 256-byte blocks
+        ldx     E                       ; Number of 256-byte blocks
         beq     @remaining              ; If no blocks, just do remaining bytes
 @next_block:    
         beq     @remaining              ; No more blocks, copy remaining bytes
@@ -116,7 +117,7 @@ copy_bytes_back:
         sta     src_ptr+1
         pla
         sta     src_ptr
-        ldy     copy_length             ; Number of bytes left to copy (may be 0)
+        ldy     D                       ; Number of bytes left to copy (may be 0)
         beq     @skip_copy              ; No bytes to copy, otherwise fall through to @copy
 
 ; Copies bytes from offsets Y-1 to 0. Will copy 256 bytes if Y = 0.
@@ -136,10 +137,11 @@ copy_bytes_back:
 
 ; Clears memory to zero.
 ; dst_ptr = pointer to the memory to clear
-; AX = the number of bytes to clear
+; AX = the number of bytes to clear (_de entry point uses value in DE instead)
 
 clear_memory:
         stax    DE                      ; Number of bytes in DE
+clear_memory_de:
         lda     #0                      ; Zero byte to write
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0

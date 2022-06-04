@@ -263,20 +263,22 @@ _get_variable_value_ptr:
 
 _copy_bytes:
 .export _copy_bytes
-        stax    copy_length
+        stax    DE                      ; Size
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
+        ldax    DE
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
-        stax    copy_length
+        stax    DE
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
+        ldax    DE
         jmp     copy_bytes_back
 
 _clear_memory:
