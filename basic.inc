@@ -9,7 +9,7 @@
 .globalzp argument_count
 .globalzp argument_index
 .globalzp parsed_line_number
-.globalzp copy_from_ptr, copy_to_ptr, copy_length
+.globalzp src_ptr, dst_ptr, copy_length
 .globalzp line_ptr, line_length, line_number
 .globalzp program_ptr
 .globalzp variable_name_table_ptr

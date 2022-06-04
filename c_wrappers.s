@@ -265,25 +265,25 @@ _copy_bytes:
 .export _copy_bytes
         stax    copy_length
         jsr     popax
-        stax    copy_from_ptr
+        stax    src_ptr
         jsr     popax
-        stax    copy_to_ptr
+        stax    dst_ptr
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
         stax    copy_length
         jsr     popax
-        stax    copy_from_ptr
+        stax    src_ptr
         jsr     popax
-        stax    copy_to_ptr
+        stax    dst_ptr
         jmp     copy_bytes_back
 
 _clear_memory:
 .export _clear_memory
         stax    DE                      ; Size
         jsr     popax
-        stax    BC                      ; Get the pointer into BC
+        stax    dst_ptr                 ; Get the pointer into BC
         ldax    DE                      ; Restore size into AX
         jmp     clear_memory
 

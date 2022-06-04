@@ -177,12 +177,12 @@ delete_line:
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        mva     line_ptr, copy_to_ptr   ; Current line_ptr will be the target of the memcpy
+        mva     line_ptr, dst_ptr       ; Current line_ptr will be the target of the memcpy
         pha                             ; Also push it on the stack so we can restore after advancing
-        mva     line_ptr+1, copy_to_ptr+1   ; High byte
+        mva     line_ptr+1, dst_ptr+1   ; High byte
         pha
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
-        stax    copy_from_ptr           ; This will be the source for the copy
+        stax    src_ptr                 ; This will be the source for the copy
         jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     update_pointers         ; Knowing copy from and to, we can update pointers
         jsr     copy_bytes              ; Compact the program
@@ -201,12 +201,12 @@ delete_line:
 
 insert_line:
         stax    DE
-        mvax    line_ptr, copy_from_ptr ; Initialize copy_from_ptr to line_ptr
+        mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
         lda     w                       ; Load the length of the token data
         beq     @finish                 ; Line is empty
         pha                             ; Save the line length on the stack
         jsr     get_line_start_plus_a   ; Calculate destination address for current line
-        stax    copy_to_ptr                
+        stax    dst_ptr                
         jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
         jsr     update_pointers         ; Knowing copy from and to, we can update pointers
         jsr     copy_bytes_back     
@@ -222,9 +222,9 @@ insert_line:
         ldx     #0
         stax    copy_length             ; Also save it into copy_length
         clc
-        mvax    #line_buffer, copy_from_ptr ; Source is line_buffer     
+        mvax    #line_buffer, src_ptr   ; Source is line_buffer     
         jsr     get_line_start          ; Get destination address for copy
-        stax    copy_to_ptr             ; Destination into copy_to_ptr
+        stax    dst_ptr                 ; Destination into dst_ptr
         jsr     copy_bytes              ; Copy data from buffer into program space
         jsr     advance_line_ptr        ; Jump over the new line
 
@@ -245,19 +245,19 @@ calculate_bytes_to_move:
         sta     copy_length+1           ; Store high byte of length
         rts
 
-; Updates variable_name_table_ptr and value_table_ptr by adding (copy_to_ptr - copy_from_ptr).
-; In other words, if we're moving everything to a higher address (copy_to_ptr > copy_from_ptr), then we have
+; Updates variable_name_table_ptr and value_table_ptr by adding (dst_ptr - src_ptr).
+; In other words, if we're moving everything to a higher address (dst_ptr > src_ptr), then we have
 ; to move the pointers up too, and vice versa. We're just shifting the pointers by however many bytes
 ; we moved the end of the program.
 ; Uses XY to store the difference value.
 
 update_pointers:
         sec           
-        lda     copy_to_ptr
-        sbc     copy_from_ptr
+        lda     dst_ptr
+        sbc     src_ptr
         tax                             ; Difference low byte in X
-        lda     copy_to_ptr+1       
-        sbc     copy_from_ptr+1     
+        lda     dst_ptr+1       
+        sbc     src_ptr+1     
         tay                             ; Difference high byte in Y
         clc                             ; Update variable_name_table_ptr
         txa                             

@@ -6,7 +6,7 @@
 ; Executes the program.
 
 exec_run:
-        mvaa    value_table_ptr, BC     ; Prepare to clear variable value table
+        mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
         lda     variable_count          ; Amount to clear is variable_count * 2
         jsr     mul2a
         jsr     clear_memory
