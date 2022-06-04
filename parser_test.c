@@ -57,6 +57,9 @@ static void test_read_number(void) {
 
 static void test_parse_expression(void) {
     int err;
+    
+    const char line_data_1[] = { 0x02, 0x01, 0x00 };
+    const char line_data_2[] = { 0x80 };
 
     PRINT_TEST_NAME();
 
@@ -65,15 +68,14 @@ static void test_parse_expression(void) {
     strcpy(buffer, "1");
     err = parse_expression(0, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_buffer[0], 2);
-    ASSERT_EQ(line_buffer[1], 1);
-    ASSERT_EQ(line_buffer[2], 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
 
     strcpy(buffer, "X");
     err = parse_expression(0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 1);
 }
@@ -108,40 +110,35 @@ static void test_parse_arguments(void) {
     int err;
     char signature_table[] = { 0x01, 0x01 };
 
+    const char line_data_1[] = { 0x02, 0x01, 0x00 };
+    const char line_data_2[] = { 0x02, 0x01, 0x00 };
+    const char line_data_3[] = { 0x02, 0x01, 0x00, 0x02, 0x00, 0x01 };
+
     PRINT_TEST_NAME();
 
     strcpy(buffer, "1");
     err = parse_arguments(1, signature_table, 0, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
     ASSERT_EQ(argument_index, 1);
-    ASSERT_EQ(line_buffer[0], 2);
-    ASSERT_EQ(line_buffer[1], 1);
-    ASSERT_EQ(line_buffer[2], 0);
 
     strcpy(buffer, "1,");
     err = parse_arguments(1, signature_table, 0, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, 3);
     ASSERT_EQ(argument_index, 1);
-    ASSERT_EQ(line_buffer[0], 2);
-    ASSERT_EQ(line_buffer[1], 1);
-    ASSERT_EQ(line_buffer[2], 0);
 
     strcpy(buffer, " 1, 256");
     err = parse_arguments(2, signature_table, 0, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 7);
     ASSERT_EQ(w, 6);
     ASSERT_EQ(argument_index, 2);
-    ASSERT_EQ(line_buffer[0], 2);
-    ASSERT_EQ(line_buffer[1], 1);
-    ASSERT_EQ(line_buffer[2], 0);
-    ASSERT_EQ(line_buffer[3], 2);
-    ASSERT_EQ(line_buffer[4], 0);
-    ASSERT_EQ(line_buffer[5], 1);
 }
 
 static void test_parse_element(void) {
@@ -162,61 +159,48 @@ static void test_parse_element(void) {
         0x08, 0x07
     };
 
+    const char line_data_1[] = { 0x00, 0x02, 0x0A, 0x00, 0x02, 0x64, 0x00 };
+    const char line_data_2[] = { 0x01 };
+    const char line_data_3[] = { 0x02, 0x02, 0x08, 0x00 };
+    const char line_data_4[] = { 0x03, 0x02, 0x01, 0x00, 0x02, 0x10, 0x27 };
+    const char line_data_5[] = { 0x04, 0x80, 0x02, 0x64, 0x00 };
+
     PRINT_TEST_NAME();
 
     strcpy(buffer, "PLOT 10,100");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 11);
     ASSERT_EQ(w, 7);
-    ASSERT_EQ(line_buffer[0], 0);
-    ASSERT_EQ(line_buffer[1], 2);
-    ASSERT_EQ(line_buffer[2], 10);
-    ASSERT_EQ(line_buffer[3], 0);
-    ASSERT_EQ(line_buffer[4], 2);
-    ASSERT_EQ(line_buffer[5], 100);
-    ASSERT_EQ(line_buffer[6], 0);
 
     strcpy(buffer, "NEW");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, 1);
-    ASSERT_EQ(line_buffer[0], 1);
 
     strcpy(buffer, "GR 8");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 4);
     ASSERT_EQ(w, 4);
-    ASSERT_EQ(line_buffer[0], 2);
-    ASSERT_EQ(line_buffer[1], 2);
-    ASSERT_EQ(line_buffer[2], 8);
-    ASSERT_EQ(line_buffer[3], 0);
 
     strcpy(buffer, "FOR 1 TO 10000");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_4, sizeof line_data_4);
     ASSERT_EQ(r, 14);
     ASSERT_EQ(w, 7);
-    ASSERT_EQ(line_buffer[0], 3);
-    ASSERT_EQ(line_buffer[1], 2);
-    ASSERT_EQ(line_buffer[2], 1);
-    ASSERT_EQ(line_buffer[3], 0);
-    ASSERT_EQ(line_buffer[4], 2);
-    ASSERT_EQ(line_buffer[5], 16);
-    ASSERT_EQ(line_buffer[6], 39);
 
     strcpy(buffer, "LET X=100");
     err = parse_element(name_table, signature_table, 0, 0);
     ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer, line_data_5, sizeof line_data_5);
     ASSERT_EQ(r, 9);
     ASSERT_EQ(w, 5);
-    ASSERT_EQ(line_buffer[0], 4);
-    ASSERT_EQ(line_buffer[1], 0x80);
-    ASSERT_EQ(line_buffer[2], 2);
-    ASSERT_EQ(line_buffer[3], 100);
-    ASSERT_EQ(line_buffer[4], 0);
 }
 
 int main(void) {

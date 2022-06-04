@@ -17,7 +17,6 @@ static void test_add_whitespace(void) {
 }
 
 static void test_list_element(void) {
-    // TODO: ensure that tests use C strings appropriately; don't use C strings if the assembly doesn't.
     // TODO: just use the built-in statement name table.
     const char name_table[] = { 
         'S', 'T', 'O', 'P'+0x80, 
@@ -27,6 +26,9 @@ static void test_list_element(void) {
     const char line_data_1[] = { 0x02, 0x01, 0x01 };
     const char line_data_2[] = { 0x00 };
     const char line_data_3[] = { 0x80, 0x02, 0x01, 0x00 };
+    const char line_text_1[] = { 'P', 'R', 'I', 'N', 'T', ' ', '2', '5', '7' };
+    const char line_text_2[] = { 'S', 'T', 'O', 'P', };
+    const char line_text_3[] = { 'L', 'E', 'T', ' ', 'X', '=', '1' };
 
     PRINT_TEST_NAME();
 
@@ -39,22 +41,23 @@ static void test_list_element(void) {
 
     list_element(name_table, 1, line_data_1, 0, 0);
     HEXDUMP(buffer, 16);
-    ASSERT_EQ(strncmp(buffer, "PRINT 257", 9), 0);
+    ASSERT_MEMORY_EQ(buffer, line_text_1, sizeof line_text_1);
     ASSERT_EQ(w, 9);
 
     list_element(name_table, 0, line_data_2, 0, 0);
     HEXDUMP(buffer, 16);
-    ASSERT_EQ(strncmp(buffer, "STOP", 4), 0);
+    ASSERT_MEMORY_EQ(buffer, line_text_2, sizeof line_text_2);
     ASSERT_EQ(w, 4);
 
     list_element(name_table, 2, line_data_3, 0, 0);
     HEXDUMP(buffer, 16);
-    ASSERT_EQ(strncmp(buffer, "LET X=1", 7), 0);
+    ASSERT_MEMORY_EQ(buffer, line_text_3, sizeof line_text_3);
     ASSERT_EQ(w, 7);
 }
 
 static void test_list_line(void) {
     const char line_data[] = { 0x0A, 0x00, 0x05, 0x03, 0x80, 0x02, 0x01, 0x00 };
+    const char line_text[] = { '1', '0', ' ', 'L', 'E', 'T', ' ', 'X', '=', '1' };
 
     PRINT_TEST_NAME();
 
@@ -68,7 +71,7 @@ static void test_list_line(void) {
     list_line(line_data);
     HEXDUMP(buffer, 16);
     ASSERT_EQ(w, 10);
-    ASSERT_EQ(strncmp(buffer, "10 LET X=1", 10), 0);   
+    ASSERT_MEMORY_EQ(buffer, line_text, sizeof line_text);
 }
 
 int main(void) {
