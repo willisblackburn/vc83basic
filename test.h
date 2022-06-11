@@ -31,7 +31,6 @@ extern char argument_index;
 #pragma zpsym ("argument_index")
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
-
 extern line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern const char* variable_name_table_ptr;
@@ -48,7 +47,6 @@ extern void* variable_value_ptr;
 // Data
 
 extern char buffer[];
-
 extern char line_buffer[];
 
 // Used by c_wrappers.s

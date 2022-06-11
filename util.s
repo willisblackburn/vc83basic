@@ -308,5 +308,3 @@ putchar_buffer:
         inc     w                       ; Incrment position
         sta     buffer,x                ; Store A in buffer
         rts
-
-

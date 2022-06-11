@@ -13,7 +13,6 @@
 ; Aliases for globals
 
 .export _buffer = buffer
-
 .export _line_buffer = line_buffer
 
 .export _line_ptr = line_ptr
