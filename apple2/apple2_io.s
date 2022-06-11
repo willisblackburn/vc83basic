@@ -1,9 +1,9 @@
 ; cc65 runtime
-.include "zeropage.inc"
 .import push0, push1, pushax
 
 .include "apple2.inc"
-.include "../target.inc"
+.include "../macros.inc"
+.include "../basic.inc"
 
 buffer := $200
 

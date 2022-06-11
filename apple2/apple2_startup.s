@@ -1,8 +1,6 @@
-; cc65 runtime
-.include "zeropage.inc"
-
 .include "apple2.inc"
-.include "../target.inc"
+.include "../macros.inc"
+.include "../basic.inc"
 
 .segment "STARTUP"
 
