@@ -62,7 +62,7 @@ print_ready:
 ; Prints an error message.
 
 print_error:
-        ldax     #error_message         ; Pass address of message in AX
+        ldax    #error_message          ; Pass address of message in AX
         ldy     #error_length
         jsr     write
         jmp     newline
