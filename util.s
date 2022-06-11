@@ -3,14 +3,6 @@
 
 .zeropage
 
-; Contains the error code when a function returns with the carry set
-; to signal an error. May also be used to pass information about the outcome of a function,
-; for example if a function completed successfully (carry clear) but had no effect.
-status: .res 1
-
-src_ptr: .res 2
-dst_ptr: .res 2
-
 ; Additional general-purpose "registers." Register rules apply; don't expect them to be preserved unless a
 ; function declares B SAFE etc. Can be used as the 16-bit pairs BC and DE. Don't alias these.
 
@@ -20,6 +12,14 @@ C: .res 1
 DE:
 D: .res 1
 E: .res 1
+
+; Contains the error code when a function returns with the carry set
+; to signal an error. May also be used to pass information about the outcome of a function,
+; for example if a function completed successfully (carry clear) but had no effect.
+status: .res 1
+
+src_ptr: .res 2
+dst_ptr: .res 2
 
 .code
 
