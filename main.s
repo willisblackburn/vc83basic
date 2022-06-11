@@ -26,7 +26,12 @@ main:
         phax                            ; Save line number
         jsr     skip_whitespace
         plax                            ; Restore line number
-        jsr     insert_or_update_line   ; Delete an existing line, if it exists
+        jsr     find_line
+        bcs     @insert                 ; Line not found, just insert the new one
+        jsr     delete_line             ; Delete the existing line
+@insert:
+        ldax    parsed_line_number
+        jsr     insert_line             ; Insert the new line
         jmp     @wait_for_input
 
 @immediate_mode:

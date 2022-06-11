@@ -188,14 +188,26 @@ calculate_bytes_to_move:
         sta     E                       ; High byte of length in E
         rts
 
-; Updates heap_ptr by adding copy_length to line_ptr.
+; Updates heap_ptr by adding (dst_ptr - src_ptr).
+; In other words, if we're moving everything to a higher address (dst_ptr > src_ptr), then we have
+; to move the pointers up too, and vice versa. We're just shifting the pointers by however many bytes
+; we moved the end of the program.
+; Uses XY to store the difference value.
+; BC SAFE, DE SAFE
 
 update_pointers:
-        clc
-        lda     line_ptr
-        adc     copy_length
+        sec           
+        lda     dst_ptr
+        sbc     src_ptr
+        tax                             ; Difference low byte in X
+        lda     dst_ptr+1       
+        sbc     src_ptr+1     
+        tay                             ; Difference high byte in Y
+        clc                             ; Update variable_name_table_ptr
+        txa                             
+        adc     heap_ptr
         sta     heap_ptr
-        lda     line_ptr+1
-        adc     copy_length+1
+        tya
+        adc     heap_ptr+1
         sta     heap_ptr+1
         rts

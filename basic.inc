@@ -24,7 +24,8 @@
 .global skip_whitespace
 
 ; program.s
-.global initialize_program, reset_line_ptr, find_line, advance_line_ptr, insert_or_update_line
+.global initialize_program, reset_line_ptr, find_line, advance_line_ptr
+.global delete_line, insert_line, insert_line
 .global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
 
 ; util.s
