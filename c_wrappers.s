@@ -5,15 +5,14 @@
 ; C prototypes are in test.h.
 
 ; cc65 runtime
-.include "zeropage.inc"
-.import popax, incsp2, return0, return1
+.import popa, popax, return0, return1
 
+.include "macros.inc"
 .include "basic.inc"
 
 ; Aliases for globals
 
 .export _buffer = buffer
-.export _buffer_length = buffer_length
 
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
@@ -22,10 +21,18 @@
 .export _status = status
 
 .export _r = r
+; Test access to the B, C, D, and E registers
+
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
 
 .bss
 
-; The wrappers for functions that use the carry bit to flag errors return the carry to C and use these fields to
+; The wrappers for functions that use the carry bit to flag errors return the carry and use these fields to
 ; save the register values returned from the function.
 
 _reg_ax:
@@ -39,8 +46,7 @@ _reg_y: .res 1
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
 return_carry:
-        sta     _reg_a
-        stx     _reg_x
+        stax    _reg_ax
         sty     _reg_y
         lda     #0
         tax
@@ -97,26 +103,22 @@ _parse_keyword:
 
 _copy_bytes:
 .export _copy_bytes
-        sta     copy_length
-        stx     copy_length+1
+        stax    DE                      ; Size
         jsr     popax
-        sta     copy_from_ptr
-        stx     copy_from_ptr+1
+        stax    src_ptr
         jsr     popax
-        sta     copy_to_ptr
-        stx     copy_to_ptr+1
+        stax    dst_ptr
+        ldax    DE
         jmp     copy_bytes
 
 _copy_bytes_back:
 .export _copy_bytes_back
-        sta     copy_length
-        stx     copy_length+1
+        stax    DE
         jsr     popax
-        sta     copy_from_ptr
-        stx     copy_from_ptr+1
+        stax    src_ptr
         jsr     popax
-        sta     copy_to_ptr
-        stx     copy_to_ptr+1
+        stax    dst_ptr
+        ldax    DE
         jmp     copy_bytes_back
 
 _mul10:

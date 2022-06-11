@@ -1,15 +1,8 @@
-; cc65 runtime
-.import push0, push1, pushax
-
 .include "apple2.inc"
 .include "../macros.inc"
 .include "../basic.inc"
 
 buffer := $200
-
-.bss
-
-buffer_length: .res 1
 
 .code 
 
@@ -28,22 +21,17 @@ readline:
         bne     @next       
         lda     #0      
         sta     buffer,x                ; Replace "RETURN" with 0
-        stx     buffer_length
+        txa                             ; Return buffer length in A
         rts
 
-write_buffer:
-        lda     #<buffer
-        ldx     #>buffer
-        ldy     buffer_length
 write:
-        sta     ptr1
-        stx     ptr1+1
-        sty     tmp1
+        stax    DE
+        sty     B
         ldy     #0
 @next:
-        cpy     tmp1
+        cpy     B
         beq     @done
-        lda     (ptr1),y
+        lda     (DE),y
         jsr     putchar
         iny
         jmp     @next

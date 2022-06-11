@@ -90,7 +90,6 @@ exec_run:
         bmi     @end                    ; If MSB of line number is set, we're at end of program
         ldy     #2                      ; Offset of line length
         lda     (line_ptr),y            ; Get length
-        sta     buffer_length           ; Store in buffer_length
         sta     copy_length             ; and copy_length
         lda     #0
         sta     copy_length+1

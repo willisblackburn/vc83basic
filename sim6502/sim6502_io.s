@@ -1,83 +1,67 @@
 ; cc65 runtime
-.include "zeropage.inc"
 .import push0, push1, pusha0, pushax
 
 ; sim65 vectors
 .import _read, _write, exit
 
-.include "../target.inc"
+.include "../macros.inc"
+.include "../basic.inc"
 
 .bss
 
 ; 256-byte buffer for I/O functions
 buffer := $200
 
-; The length of the data currently in the buffer
-buffer_length: .res 1
-
-; A single-byte buffer for the char operations
+; One-byte buffer for read and write
 io_char: .res 1
 
 ; Reads a line from the console into the buffer.
-; Returns the length in A and also sets buffer_length.
+; Returns the length in A.
 
 .code
 
 readline:
-        ldy     #0                      ; Use Y to track write position
+        mva     #0, B                   ; Use B to track write position in buffer
 @next:      
-        sty     buffer_length           ; Store buffer_length; getchar will clobber Y
         jsr     getchar                 ; Read one character
-        ldy     buffer_length           ; Save to reload Y from buffer_length now
+        ldy     B                       ; Use B for buffer index (getchar does not use it)
+        inc     B
         cmp     #$0A                    ; EOL?
         beq     @done                   ; Yes
         sta     buffer,y                ; Otherwise store character in buffer
-        iny                             ; Increment write position
         jmp     @next       
 @done:      
         lda     #0      
         sta     buffer,y                ; Store 0 at end of buffer
-        tya                             ; Return buffer_length in A
+        tya                             ; Return buffer length in A
         rts
 
 ; Reads a single character from the console.
 ; Returns the character in A.
+; BC SAFE
 
 getchar:
         jsr     push0                   ; File descriptor 0 (stdin)
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char       
+        ldax    #io_char                ; Load the character into B
         jsr     pushax                  ; Push onto C stack
-        lda     #1                      ; Length
-        ldx     #0      
+        ldax    #1                      ; Length
         jsr     _read       
         lda     io_char                 ; Get the character into A
         rts
 
 ; Writes a line to the console.
-; The write_buffer entry point writes from buffer.
-; AX = a pointer to the buffer to write (write_buffer sets this to buffer)
-; Y = the number of bytes to write (write_buffer sets this to buffer_length)
+; AX = a pointer to the buffer to write
+; Y = the number of bytes to write
 
-write_buffer:
-        lda     #<buffer
-        ldx     #>buffer
-        ldy     buffer_length
 write:
-
-@save_ptr = ptr1
-
-        sta     @save_ptr
-        stx     @save_ptr+1
-        tya
-        pha                             ; Save the length on the stack
+        stax    DE                      ; Save buffer pointer
+        sty     C                       ; Save length
         jsr     push1                   ; File descriptor 1 (stdout)
-        lda     @save_ptr       
-        ldx     @save_ptr+1     
+        ldax    DE
         jsr     pushax                  ; Push buffer pointer onto C stack
-        pla                             ; Length back into A
+        lda     C                       ; Low byte of length
         ldx     #0                      ; High byte of length
-        jmp     _write
+        jmp     _write      
 
 ; Starts a new line on the console.
 
@@ -88,8 +72,7 @@ newline:
 ; A = the character to output
 
 putchar:
-        sta     io_char                 ; Store character in io_char
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char
+        sta     io_char                 ; Save character into single-byte buffer
+        ldax    #io_char                ; Pointer to buffer
         ldy     #1
         jmp     write

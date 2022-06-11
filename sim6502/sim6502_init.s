@@ -1,11 +1,11 @@
 ; cc65 runtime
-.include "zeropage.inc"
 .import push0, push1, pushax, pusha0
 
 ; C standard library functions
 .import _fprintf, _stderr
 
-.include "../target.inc"
+.include "../macros.inc"
+.include "../basic.inc"
 
 ; Architecture-specific initializations that will be invoked from main (even for unit tests).
 ; We point the BRK handler to the debug_handler function here.
@@ -33,34 +33,12 @@ save_flags: .res 1
 
 flag_indicators: .res 8
 
-.macro  push8   value
-        lda     value
-        pha 
-.endmacro
-
-.macro  push16  value
-        push8   value
-        push8   value+1
-.endmacro
-
-.macro  pull8   value
-        pla
-        sta     value
-.endmacro
-
-.macro  pull16  value
-        pull8   value+1
-        pull8   value
-.endmacro
-
 .code
 
 format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X %.8s", $0A, $00
 flag_names: .byte "NV-BDIZC"
 
 ; Prints the register values to stderr.
-; Since this function calls the C library function fprintf, it saves all the C zero page registers and
-; restores them before exiting.
 ; Although calling into the C library from an interrupt handler is normally asking for trouble, since sim65
 ; doesn't generate interrupts, this will only be called by a BRK statement.
 
@@ -89,15 +67,6 @@ debug_handler:
         iny
         cpy     #8
         bne     @next_flag
-        push16  sreg        
-        push8   tmp1
-        push8   tmp2
-        push8   tmp3
-        push8   tmp4
-        push16  ptr1
-        push16  ptr2
-        push16  ptr3
-        push16  ptr4
         lda     _stderr                 ; fprintf(stderr, ...
         ldx     _stderr+1
         jsr     pushax
@@ -120,15 +89,6 @@ debug_handler:
         jsr     pushax           
         ldy     #16                     ; 16 bytes on the C stack
         jsr     _fprintf
-        pull16  ptr4
-        pull16  ptr3
-        pull16  ptr2
-        pull16  ptr1
-        pull8   tmp4
-        pull8   tmp3
-        pull8   tmp2
-        pull8   tmp1
-        pull16  sreg
         lda     save_a                  ; Restore 6502 registers
         ldx     save_x
         ldy     save_y

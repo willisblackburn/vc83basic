@@ -1,16 +1,17 @@
 ; Zero Page
 
-.include "target.inc"
-
+.globalzp BC, B, C, DE, D, E
 .globalzp status
 .globalzp r
-.globalzp copy_from_ptr, copy_to_ptr, copy_length
+.globalzp src_ptr, dst_ptr
 .globalzp line_ptr
+.globalzp program_ptr
+.globalzp heap_ptr
+
 
 ; Data
 
-.global program_ptr
-.global heap_ptr
+.global buffer
 
 ; Functions
 
@@ -24,7 +25,7 @@
 .global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
 
 ; util.s
-.global copy_bytes, copy_bytes_back
+.global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
 
@@ -32,13 +33,3 @@
 
 STATUS_OK                   = $00   ; Everything OK; used to clear status
 ERR_FAIL                    = $FF   ; General failure
-
-; Macros
-
-; Inserts a BRK instruction followed by a value.
-; On the sim6502 platform the BRK will print the value followed by the 6502 registers.
-
-.macro  debug   value
-        brk
-        .byte   value
-.endmacro

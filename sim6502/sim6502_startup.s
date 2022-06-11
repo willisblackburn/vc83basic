@@ -1,5 +1,5 @@
 ; cc65 runtime
-.include "zeropage.inc"
+.import sp
 
 ; sim65 vectors
 .import exit
@@ -8,7 +8,8 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __STACKSIZE__
 
-.include "../target.inc"
+.include "../macros.inc"
+.include "../basic.inc"
 
 .segment "STARTUP"
 
@@ -16,9 +17,6 @@ startup:
         cld                             ; Clear decimal flag
         ldx     #$FF
         txs                             ; Initialize the stack to $FF
-        lda     #<(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
-        ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
-        sta     sp
-        stx     sp+1                    ; Set up C stack
+        mvax    #(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__), sp
         jsr     main        
         jmp     exit                    ; Return 0 from sim65

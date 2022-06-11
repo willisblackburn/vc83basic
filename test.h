@@ -26,7 +26,6 @@ extern line* line_ptr;
 // Data
 
 extern char buffer[];
-extern char buffer_length;
 
 extern line* program_ptr;
 extern void* heap_ptr;
@@ -63,13 +62,20 @@ void set_buffer(const char* s) {
 }
 
 void hexdump(const char* name, const char* data, size_t length) {
-    unsigned i = 0;
+    unsigned i, j;
+    const char* p;
     fprintf(stderr, "        %s ($%04X):\n", name, data);
-    while (i < length) {
-        fprintf(stderr, "        %04x  ", i);
-        do {
-            fprintf(stderr, "%02x ", data[i++]);
-        } while (i < length && (i % 16));
+    for (i = 0; i < length; i += j) {
+        fprintf(stderr, "        %04X %04X  ", i, data + i);
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            fprintf(stderr, "%02X ", *p);
+        }
+        fprintf(stderr, " ");
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            fputc(isprint(*p) ? *p : '.', stderr);
+        }
         printf("\n");
     }
 }
