@@ -262,7 +262,7 @@ parse_argument_separator:
 ; Skip past any whitespace in the buffer.
 ; This function is NOT exported because we want other modules to call parsing funtions, not this function.
 ; r = the read position (modified)
-; Y SAFE
+; Y SAFE, BC SAFE, DE SAFE
 
 skip_whitespace:
         ldx     r                       ; Use X to index buffer

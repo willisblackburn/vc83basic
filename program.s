@@ -75,14 +75,6 @@ reset_line_ptr:
         mvaa    program_ptr, line_ptr
         rts
 
-; Resets the program state. Zeros out the variable value table and initializes the heap.
-; Invoked when the user modifies the program or invokes RUN or CLR commands.
-; Returns carry clear on success or set on error (e.g., not enough memory to initialize program state)
-
-reset_program:
-        clc
-        rts
-
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
 ; GOSUB, RESTORE, or any other function that requires a line number.
@@ -337,4 +329,3 @@ set_variable_value:
         txa
         sta     (variable_value_ptr),y  ; High byte
         rts
-
