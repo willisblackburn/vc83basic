@@ -139,7 +139,7 @@ delete_line:
 
 ; Inserts a new line, or does nothing if the line to insert is empty.
 ; line_ptr = a pointer to the insertion point (previously set by find_line)
-; AX = the number of the new line (from find_line)
+; AX = the number of the new line
 ; line_buffer = the buffer holding the tokenized data
 ; w = the write position in line_buffer, which is the length of the data
 ; Returns carry clear on success, carry set on error.
