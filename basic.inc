@@ -15,6 +15,9 @@
 
 ; Functions
 
+; main.s
+.global main
+
 ; parser.s
 .global read_number, char_to_digit
 .global parse_keyword
@@ -28,6 +31,9 @@
 .global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
+
+; target/*
+.global startup, initialize_target, readline, getchar, write, putchar, newline
 
 ; Status and error codes
 

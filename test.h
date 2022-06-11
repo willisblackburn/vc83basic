@@ -23,12 +23,14 @@ extern char r;
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
 
+extern line* program_ptr;
+#pragma zpsym ("program_ptr")
+extern void* heap_ptr;
+#pragma zpsym ("heap_ptr")
+
 // Data
 
 extern char buffer[];
-
-extern line* program_ptr;
-extern void* heap_ptr;
 
 // Used by c_wrappers.s
 
@@ -54,12 +56,6 @@ int mul10(int value);
 int div10(int value);
 
 // Common functions and definitions used in tests
-
-void set_buffer(const char* s) {
-    // strcpy adds terminating 0 to string in buffer.
-    strcpy(buffer, s);
-    buffer_length = strlen(s);
-}
 
 void hexdump(const char* name, const char* data, size_t length) {
     unsigned i, j;

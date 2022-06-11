@@ -1,6 +1,4 @@
-; cc65 runtime
-.include "zeropage.inc"
-
+.include "macros.inc"
 .include "basic.inc"
 
 ready_message: .byte "READY"
@@ -153,8 +151,7 @@ print_ready:
         ldx     #>ready_message
         ldy     #ready_length
         jsr     write
-        jsr     newline
-        rts
+        jmp     newline
 
 ; Prints an error message.
 
@@ -163,5 +160,4 @@ print_error:
         ldx     #>error_message
         ldy     #error_length
         jsr     write
-        jsr     newline
-        rts
+        jmp     newline
