@@ -40,15 +40,20 @@ extern char reg_y;
 
 // Prototypes for C wrapper functions
 
+// parser.s
+int read_number(char r);
+int char_to_digit(char c);
+
+// program.s
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
 int insert_or_update_line(int line_number, char r);
-int read_number(char r);
-int char_to_digit(char c);
 int parse_keyword(const char* keyword, char r);
+
+// util.s
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
 int mul10(int value);

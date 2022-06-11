@@ -2,6 +2,7 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __BSS_RUN__, __BSS_SIZE__
 
+.include "macros.inc"
 .include "basic.inc"
 
 .zeropage
@@ -110,85 +111,65 @@ get_line_ptr_plus_a:
 @return:
         rts
 
-; Inserts or updates a program line.
-; buffer = the line data
-; buffer_length = the buffer length
-; AX = the line number
-; r = a pointer to the read offset in buffer 
-; Returns carry clear if okay, carry set if error (e.g., out of memory).
+; Delete program line, which must have previously been found with find_line.
+; line_ptr = a pointer to the line to replace (previously set by find_line)
+; On return, line_ptr retains the same value it had before, only it is now pointing to the next line.
 
-insert_or_update_line:
-        jsr     find_line               ; Saves line number in line_number
-        bcs     @insert                 ; Not found, just insert the new line
+delete_line:
 
 ; line_ptr points to a line that we have to remove.
 ; Find the next line and copy the reset of the program to where line_ptr is pointing now.
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        lda     line_ptr                ; Current line_ptr
-        sta     copy_to_ptr             ; will be the target of the memcpy
+        mva     line_ptr, dst_ptr       ; Current line_ptr will be the target of the copy
         pha                             ; Also push it on the stack so we can restore after advancing
-        lda     line_ptr+1              ; High byte
-        sta     copy_to_ptr+1   
-        pha 
+        mva     line_ptr+1, dst_ptr+1   ; High byte
+        pha
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
-        sta     copy_from_ptr           ; This will be the source for the copy
-        stx     copy_from_ptr+1
-        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
-        jsr     copy_bytes              ; Compact the program
+        stax    src_ptr                 ; This will be the source for the copy
+        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
+        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
+        jsr     copy_bytes_de           ; Compact the program using length in DE
         pla                             ; line_ptr now points to an invalid line so restore saved value
         sta     line_ptr+1
         pla
         sta     line_ptr
-        jsr     update_pointers
+        rts
 
-; Insert the new line, if there is one.
-; There is a line if Y (recovered from tmp1) is less than buffer_length.
-; line_ptr points to where this new line should go.
+; Inserts a new line, or does nothing if the line to insert is empty.
+; line_ptr = a pointer to the insertion point (previously set by find_line)
+; AX = the number of the new line (from find_line)
+; line_buffer = the buffer holding the tokenized data
+; w = the write position in line_buffer, which is the length of the data
+; Returns carry clear on success, carry set on error.
 
-@insert:
-        lda     line_ptr                ; Initialize copy_from_ptr to line_ptr
-        ldx     line_ptr+1              ; This will be the source for the copy
-        sta     copy_from_ptr                    
-        stx     copy_from_ptr+1 
-        lda     buffer_length           ; Load buffer_length, which should be <= 252
-        sec 
-        sbc     r                       ; Subtract the buffer position to get line length
-        beq     @finish                 ; If they're the same, line is blank, nothing to insert
-        pha                             ; Save the line length on the stack
-        jsr     get_line_start_plus_a   ; Allocate space for new line plus header
-        sta     copy_to_ptr                
-        stx     copy_to_ptr+1
-        jsr     calculate_bytes_to_move ; Set copy_length to length of program from line_ptr
-        jsr     update_pointers         ; Knowing copy from and to, we can update pointers
-        jsr     copy_bytes_back 
-        lda     line_number 
-        ldy     #0  
+insert_line:
+        stax    line_number
+        mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
+        lda     w                       ; Load the length of the token data
+        beq     @finish                 ; Line is empty
+        pha                             ; Save the line length on the stack for use later
+        jsr     get_line_start_plus_a   ; Calculate destination address for current line
+        stax    dst_ptr                
+        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
+        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
+        jsr     copy_bytes_back_de  
+        mvax    #line_buffer, src_ptr   ; Source is line_buffer     
+        jsr     get_line_start          ; Get destination address for copy
+        stax    dst_ptr                 ; Destination into dst_ptr
+        lda     line_number             ; Line number low byte     
+        ldy     #0      
         sta     (line_ptr),y            ; Save line item number low byte
-        lda     line_number+1   
-        iny 
+        lda     line_number+1           ; Line number high byte
+        iny     
         sta     (line_ptr),y            ; Save line item number high byte
         pla                             ; Get the line length saved earlier
-        iny 
+        iny     
         sta     (line_ptr),y            ; Save line length
-        sta     copy_length             ; Also save it into copy_length
-        lda     #0  
-        sta     copy_length+1           ; Set high byte of copy_length to 0
-        clc 
-        lda     #<buffer                ; Buffer start address
-        adc     r                       ; Add buffer position
-        sta     copy_from_ptr           ; Set source address
-        lda     #>buffer                ; Do the same for the high byte (TODO: if buffer is fixed address we can remove)
-        adc     #0                      ; This will leave carry clear
-        sta     copy_from_ptr+1
-        jsr     get_line_start          ; Get destination address for copy
-        sta     copy_to_ptr             ; Destination into copy_to_ptr
-        stx     copy_to_ptr+1   
+        ldx     #0
         jsr     copy_bytes              ; Copy data from buffer into program space
-        jsr     calculate_bytes_to_move ; Reset copy_length to the length from line_ptr to original heap_ptr
         jsr     advance_line_ptr        ; Jump over the new line
-        jsr     update_pointers         ; Update program end
 
 @finish:
         clc
@@ -199,10 +180,10 @@ insert_or_update_line:
 
 calculate_bytes_to_move:
         sec                       
-        lda     value_table_ptr
+        lda     heap_ptr
         sbc     line_ptr
         sta     D                       ; Store low byte of length in D
-        lda     value_table_ptr+1      
+        lda     heap_ptr+1      
         sbc     line_ptr+1      
         sta     E                       ; High byte of length in E
         rts

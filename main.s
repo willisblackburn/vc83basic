@@ -22,7 +22,7 @@ main:
         sta     r
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
-        bcs     @immediate_mode         ; Wasn't a number, maybe an immediate mode command
+        bcs     @immediate_mode         ; No line number; execute in immediate mode
         phax                            ; Save line number
         jsr     skip_whitespace
         plax                            ; Restore line number
@@ -83,21 +83,16 @@ exec_run:
         bmi     @end                    ; If MSB of line number is set, we're at end of program
         ldy     #2                      ; Offset of line length
         lda     (line_ptr),y            ; Get length
-        sta     copy_length             ; and copy_length
+        sta     D                       ; Store length to copy in DE
         lda     #0
-        sta     copy_length+1
+        sta     E
         jsr     get_line_start          ; Start of line in AX
-        sta     copy_from_ptr           ; Set source for copy
-        stx     copy_from_ptr+1
-        lda     #<buffer                ; Set destination for copy
-        sta     copy_to_ptr
-        lda     #>buffer
-        sta     copy_to_ptr+1
-        jsr     copy_bytes              ; Copy line into buffer
+        stax    src_ptr                 ; Set source for copy
+        mvaa    #buffer, dst_ptr        ; Set destination for copy 
+        jsr     copy_bytes_de           ; Copy line into buffer
         lda     #0                      ; Start reading from offset 0
         sta     r
-        lda     #<keyword_print         ; Check if the keyword is print
-        ldx     #>keyword_print
+        ldax    #keyword_print          ; Check if the keyword is print
         jsr     parse_keyword           ; Was it "PRINT"?
         bcs     @error                  ; Nope
         jsr     read_number             ; Get the number
