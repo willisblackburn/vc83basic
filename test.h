@@ -22,7 +22,6 @@ extern char r;
 #pragma zpsym ("r")
 extern line* line_ptr;
 #pragma zpsym ("line_ptr")
-
 extern line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern void* heap_ptr;
