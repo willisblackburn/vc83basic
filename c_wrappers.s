@@ -8,7 +8,6 @@
 .import popa, popax, return0, return1
 
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ; Aliases for globals
@@ -23,6 +22,7 @@
 .export _value_table_ptr = value_table_ptr
 .export _heap_ptr = heap_ptr
 .export _variable_count = variable_count
+.export _variable_value_ptr = variable_value_ptr
 
 .export _status = status
 
@@ -255,9 +255,9 @@ _check_himem:
         jsr     check_himem
         jmp     return_carry
 
-_get_variable_value_ptr:
-.export _get_variable_value_ptr
-        jmp     get_variable_value_ptr
+_set_variable_value_ptr:
+.export _set_variable_value_ptr
+        jmp     set_variable_value_ptr
 
 ; util.s
 

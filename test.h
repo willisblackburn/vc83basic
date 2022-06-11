@@ -42,6 +42,8 @@ extern void* heap_ptr;
 #pragma zpsym ("heap_ptr")
 extern char variable_count;
 #pragma zpsym ("variable_count")
+extern void* variable_value_ptr;
+#pragma zpsym ("variable_value_ptr")
 
 // Data
 
@@ -102,7 +104,7 @@ void advance_line_ptr(void);
 int delete_line(void);
 int insert_line(int line_number);
 int check_himem(void* ptr);
-void* get_variable_value_ptr(char variable);
+void set_variable_value_ptr(char variable);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);

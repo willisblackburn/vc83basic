@@ -1,5 +1,6 @@
 ; Zero Page
 
+.globalzp BC, B, C, DE, D, E
 .globalzp status
 .globalzp r
 .globalzp w
@@ -17,11 +18,12 @@
 .globalzp heap_ptr
 .globalzp himem_ptr
 .globalzp variable_count
+.globalzp variable_value_ptr
 
 ; Data
 
-.global statement_name_table
-.global statement_signature_table
+.global buffer
+.global line_buffer
 
 ; Functions
 
@@ -42,6 +44,9 @@
 .global list_line
 .global list_element
 .global add_whitespace
+
+; main.s
+.global main
 
 ; name.s
 .global find_name
@@ -66,7 +71,8 @@
 .global delete_line, insert_line, insert_line
 .global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
 .global grow_a, grow_ay, check_himem
-.global get_variable_value_ptr
+.global set_variable_value_ptr
+.global set_variable_value
 
 ; run.s
 .global exec_run
@@ -86,6 +92,9 @@
 .global invoke_indexed_vector
 .global format_number
 .global putchar_space_buffer, putchar_buffer
+
+; target/*
+.global startup, initialize_target, readline, getchar, write, putchar, newline
 
 ; Value types
 
@@ -126,6 +135,7 @@ TOKEN_INT                   = $02
 ST_LIST     = 0
 ST_RUN      = 1
 ST_PRINT    = 2
+ST_LET      = 3
 
 ; Status and error codes
 

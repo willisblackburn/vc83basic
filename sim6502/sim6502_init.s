@@ -6,7 +6,7 @@
 .import _fprintf, _stderr
 
 .include "../macros.inc"
-.include "../target.inc"
+.include "../basic.inc"
 
 ; Architecture-specific initializations that will be invoked from main (even for unit tests).
 ; We point the BRK handler to the debug_handler function here.

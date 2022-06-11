@@ -1,6 +1,6 @@
 .include "apple2.inc"
 .include "../macros.inc"
-.include "../target.inc"
+.include "../basic.inc"
 
 .segment "STARTUP"
 

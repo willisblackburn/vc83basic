@@ -1,5 +1,4 @@
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.

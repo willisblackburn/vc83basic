@@ -9,7 +9,7 @@
 .import __STACKSIZE__
 
 .include "../macros.inc"
-.include "../target.inc"
+.include "../basic.inc"
 
 .segment "STARTUP"
 

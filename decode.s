@@ -1,5 +1,4 @@
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ; Functions to decode values from the token stream.

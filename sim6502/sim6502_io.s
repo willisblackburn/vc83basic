@@ -5,7 +5,7 @@
 .import _read, _write, exit
 
 .include "../macros.inc"
-.include "../target.inc"
+.include "../basic.inc"
 
 .bss
 

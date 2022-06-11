@@ -3,7 +3,6 @@
 .import __BSS_RUN__, __BSS_SIZE__
 
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 .zeropage
@@ -31,8 +30,11 @@ heap_ptr: .res 2
 ; The address of "high memory" that will not be touched by the interpreter
 himem_ptr: .res 2
 
-; The number of variables in the program.
+; The number of variables in the program
 variable_count: .res 1
+
+; Pointer to the variable value set by a statement like LET, INPUT, and READ
+variable_value_ptr: .res 2
 
 .code
 
@@ -310,19 +312,29 @@ check_himem:
 @done:
         rts
 
-; Calculates the offset of a variable in the value table.
+; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
 ; The variable token passed in A will always be <= 127 since there can only be 128 variables, but it possibly
 ; has the high bit set, so we AND with $7F first.
 ; A = the variable token
 ; Returns the value address in AX.
 
-get_variable_value_ptr:
+set_variable_value_ptr:
         and     #$7F                    ; Clear MSB
         jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
         adc     value_table_ptr         ; Add to the value table offset
-        pha                             ; Store low byte
+        sta     variable_value_ptr      ; Store low byte
         txa                             
         adc     value_table_ptr+1
-        tax                             ; High byte back into X
-        pla                             ; Recover low byte
+        sta     variable_value_ptr+1    ; High byte back into X
         rts
+
+; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
+
+set_variable_value:
+        ldy     #0                      ; Index variable value with Y
+        sta     (variable_value_ptr),y  ; Low byte
+        iny
+        txa
+        sta     (variable_value_ptr),y  ; High byte
+        rts
+
