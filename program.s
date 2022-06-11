@@ -1,6 +1,3 @@
-; cc65 runtime
-.include "zeropage.inc"
-
 .import __BSS_RUN__, __BSS_SIZE__
 
 .include "basic.inc"

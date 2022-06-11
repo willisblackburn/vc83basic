@@ -1,6 +1,3 @@
-; cc65 runtime
-.include "zeropage.inc"
-
 .include "basic.inc"
 
 ready_message: .byte "READY"
@@ -123,22 +120,19 @@ exec_run:
 ; Prints the number in AX to the console.
 
 print_number:
-
-@save_a = tmp1
-
-        sta     @save_a                 ; Keep low byte in @save_a while we use A for other things
+        sta     B                       ; Keep low byte in B while we use A for other things
         lda     #0                      ; Push 0 on the stack
         pha
 @next_digit:
-        lda     @save_a                 ; Recover low byte
+        lda     B                       ; Recover low byte
         jsr     div10                   ; Divide AX by 10
-        sta     @save_a                 ; Save low byte
+        sta     B                       ; Save low byte
         tya                             ; Transfer remainder into A
         clc
         adc     #'0'
         pha                             ; Push digit
         txa                             ; High byte into A
-        ora     @save_a                 ; OR with saved low byte
+        ora     B                       ; OR with saved low byte
         bne     @next_digit             ; Still more digits
 @print_digit:
         pla                             ; Get a digit

@@ -1,5 +1,6 @@
 ; Zero Page
 
+.globalzp BC, B, C, DE, D, E
 .globalzp status
 .globalzp r
 .globalzp copy_from_ptr, copy_to_ptr, copy_length

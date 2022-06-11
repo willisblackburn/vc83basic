@@ -1,6 +1,3 @@
-; cc65 runtime
-.include "zeropage.inc"
-
 .include "basic.inc"
 
 .zeropage
@@ -16,9 +13,6 @@ r: .res 1
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
-
-@digit_value = tmp1
-
         jsr     skip_whitespace
         ldy     r               ; Use Y for the buffer position (since AX will hold the number)
         lda     #0              ; Intialize the value to 0
@@ -29,13 +23,13 @@ read_number:
         pha                     ; Save A (low byte of value)
         lda     buffer,y
         jsr     char_to_digit   ; X SAFE function
-        sta     @digit_value    ; Store the digit value
+        sta     B               ; Store the digit value
         pla                     ; Retrieve the low byte of value
         bcs     @finish         ; If there was an error in char_to_digit, stop parsing
         iny                     ; No error, increment read position
         jsr     mul10           ; Multiply the value by 10
         clc
-        adc     @digit_value    ; Add the digit value
+        adc     B               ; Add the digit value
         bcc     @next           ; If carry clear then next digit
         inx                     ; Otherwise increment high byte
         jmp     @next
@@ -68,22 +62,19 @@ char_to_digit:
 ; Returns carry clear if the keyword matched, carry set if it didn't match.
 
 parse_keyword:
-
-@keyword_ptr = ptr1
-
-        sta     @keyword_ptr    ; Keyword pointer into @keyword_ptr        
-        stx     @keyword_ptr+1
+        sta     D               ; Keyword pointer into DE      
+        stx     E
         jsr     skip_whitespace
         ldx     r               ; Use X for the buffer position in this function
         ldy     #0              ; Y will index the keyword
 @compare:
         cpx     buffer_length   ; At the end of the buffer?
         beq     @not_match      ; Yep
-        lda     (@keyword_ptr),y    ; Get keyword character
+        lda     (DE),y          ; Get keyword character
         and     #$7F            ; Mask out the high bit
         cmp     buffer,x        ; Compare with character from buffer
         bne     @not_match      ; It's not a match (carry flag will be uncertain)
-        lda     (@keyword_ptr),y    ; Get keyword character again
+        lda     (DE),y          ; Get keyword character again
         bmi     @match          ; Last character so it's a match; carry will be set from cmp above
         inx                     ; Next position
         iny                     
