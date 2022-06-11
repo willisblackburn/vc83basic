@@ -1,5 +1,4 @@
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ready_message: .byte "READY"

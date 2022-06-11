@@ -3,7 +3,6 @@
 .import __BSS_RUN__, __BSS_SIZE__
 
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 .zeropage

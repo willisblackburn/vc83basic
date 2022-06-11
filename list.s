@@ -1,5 +1,4 @@
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ; Functions that decode the tokenized program for display on the console.

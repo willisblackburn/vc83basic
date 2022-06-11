@@ -194,8 +194,6 @@ static void test_delete_insert_line(void) {
 }
 
 static void test_set_variable_value_ptr(void) {
-    void* ptr;
-
     PRINT_TEST_NAME();
 
     initialize_program();

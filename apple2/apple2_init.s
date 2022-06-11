@@ -1,5 +1,5 @@
 .include "../macros.inc"
-.include "../target.inc"
+.include "../basic.inc"
 
 initialize_target:
         rts

@@ -8,7 +8,6 @@
 .import popa, popax, return0, return1
 
 .include "macros.inc"
-.include "target.inc"
 .include "basic.inc"
 
 ; Aliases for globals

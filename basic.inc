@@ -1,5 +1,6 @@
 ; Zero Page
 
+.globalzp BC, B, C, DE, D, E
 .globalzp status
 .globalzp r
 .globalzp w
@@ -18,6 +19,11 @@
 .globalzp himem_ptr
 .globalzp variable_count
 .globalzp variable_value_ptr
+
+; Data
+
+.global buffer
+.global line_buffer
 
 ; Functions
 
@@ -46,6 +52,9 @@
 .global list_line
 .global list_element
 .global add_whitespace
+
+; main.s
+.global main
 
 ; name.s
 .global find_name
@@ -91,6 +100,9 @@
 .global invoke_indexed_vector
 .global format_number
 .global putchar_space_buffer, putchar_buffer
+
+; target/*
+.global startup, initialize_target, readline, getchar, write, putchar, newline
 
 ; Value types
 
