@@ -64,16 +64,13 @@ write_buffer:
         ldy     buffer_length
 write:
 .export write
-
-@save_ptr = ptr1
-
-        sta     @save_ptr
-        stx     @save_ptr+1
+        sta     ptr1
+        stx     ptr1+1
         tya
         pha                             ; Save the length on the stack
         jsr     push1                   ; File descriptor 1 (stdout)
-        lda     @save_ptr       
-        ldx     @save_ptr+1     
+        lda     ptr1       
+        ldx     ptr1+1     
         jsr     pushax                  ; Push buffer pointer onto C stack
         pla                             ; Length back into A
         ldx     #0                      ; High byte of length
