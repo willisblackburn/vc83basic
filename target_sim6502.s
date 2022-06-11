@@ -5,6 +5,10 @@
 ; sim65 vectors
 .import _read, _write
 
+.zeropage
+
+hold_ptr: .res 2
+
 .bss
 
 ; 256-byte buffer for I/O functions
@@ -64,13 +68,13 @@ write_buffer:
         ldy     buffer_length
 write:
 .export write
-        sta     ptr1
-        stx     ptr1+1
+        sta     hold_ptr
+        stx     hold_ptr+1
         tya
         pha                             ; Save the length on the stack
         jsr     push1                   ; File descriptor 1 (stdout)
-        lda     ptr1       
-        ldx     ptr1+1     
+        lda     hold_ptr       
+        ldx     hold_ptr+1     
         jsr     pushax                  ; Push buffer pointer onto C stack
         pla                             ; Length back into A
         ldx     #0                      ; High byte of length
