@@ -139,8 +139,7 @@ print_number:
         rts
 
 print_ready:
-        lda     #<ready_message         ; Pass address of message in AX
-        ldx     #>ready_message
+        ldax    #ready_message          ; Pass address of message in AX
         ldy     #ready_length
         jsr     write
         jmp     newline
@@ -148,8 +147,7 @@ print_ready:
 ; Prints an error message.
 
 print_error:
-        lda     #<error_message         ; Pass address of message in AX
-        ldx     #>error_message
+        ldax     #error_message         ; Pass address of message in AX
         ldy     #error_length
         jsr     write
         jmp     newline
