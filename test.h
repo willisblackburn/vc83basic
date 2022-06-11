@@ -63,7 +63,6 @@ extern char reg_d;
 extern char reg_e;
 
 // Prototypes for C wrapper functions
-// Parameter that should be passed in AX should appear first, then any value for Y, then others
 
 // decode.s
 int decode_number(const char* line_ptr, char r);

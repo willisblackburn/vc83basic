@@ -23,9 +23,6 @@ parsed_line_number: .res 2
 ; line_buffer = the buffer containing the tokenized output
 ; w = the token write position in line_buffer (modified on success)
 
-; Parses a line from the buffer.
-
-
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
 ; r = the read position in buffer
