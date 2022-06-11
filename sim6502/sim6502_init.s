@@ -1,5 +1,4 @@
 ; cc65 runtime
-.include "zeropage.inc"
 .import push0, push1, pushax, pusha0
 
 ; C standard library functions

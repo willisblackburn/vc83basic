@@ -1,5 +1,5 @@
 ; cc65 runtime
-.include "zeropage.inc"
+.import sp
 
 ; sim65 vectors
 .import exit
