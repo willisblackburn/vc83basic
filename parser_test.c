@@ -70,14 +70,14 @@ static void test_parse_expression(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, 3);
+    ASSERT_EQ(w, offsetof(Line, data) + 3);
 
     strcpy(buffer, "X");
     err = parse_expression(0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + 1);
 }
 
 static void test_parse_argument_separator(void) {
@@ -121,7 +121,7 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, 3);
+    ASSERT_EQ(w, offsetof(Line, data) + 3);
     ASSERT_EQ(argument_index, 1);
 
     strcpy(buffer, "1,");
@@ -129,7 +129,7 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, 3);
+    ASSERT_EQ(w, offsetof(Line, data) + 3);
     ASSERT_EQ(argument_index, 1);
 
     strcpy(buffer, " 1, 256");
@@ -137,7 +137,7 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 7);
-    ASSERT_EQ(w, 6);
+    ASSERT_EQ(w, offsetof(Line, data) + 6);
     ASSERT_EQ(argument_index, 2);
 }
 
@@ -172,35 +172,35 @@ static void test_parse_element(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 11);
-    ASSERT_EQ(w, 7);
+    ASSERT_EQ(w, offsetof(Line, data) + 7);
 
     strcpy(buffer, "NEW");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + 1);
 
     strcpy(buffer, "GR 8");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 4);
-    ASSERT_EQ(w, 4);
+    ASSERT_EQ(w, offsetof(Line, data) + 4);
 
     strcpy(buffer, "FOR 1 TO 10000");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
     ASSERT_EQ(r, 14);
-    ASSERT_EQ(w, 7);
+    ASSERT_EQ(w, offsetof(Line, data) + 7);
 
     strcpy(buffer, "LET X=100");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
     ASSERT_EQ(r, 9);
-    ASSERT_EQ(w, 5);
+    ASSERT_EQ(w, offsetof(Line, data) + 5);
 }
 
 int main(void) {
