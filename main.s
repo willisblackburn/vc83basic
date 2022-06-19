@@ -14,15 +14,15 @@ main:
         jsr     print_ready
 @wait_for_input:
         jsr     readline
-        lda     #0                      ; Initialize read and write pointers
-        sta     r
-        sta     w
+        mva     #0, r                   ; Initialize the read pointer
+        mva     #Line::data, w          ; Initialize write pointer
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
         stax    line_buffer+Line::number
         jsr     @get_statement
         bcs     @error
+        mva     w, line_buffer+Line::next_line_offset   ; Write position is next statement offset
         jsr     insert_or_update_line   ; Update the program
         jmp     @wait_for_input
 
