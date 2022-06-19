@@ -1,5 +1,5 @@
 ; cc65 runtime
-.import sp
+.importzp sp
 
 ; sim65 vectors
 .import exit
