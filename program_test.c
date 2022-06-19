@@ -54,8 +54,8 @@ static void test_find_line(void) {
 
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
-    line_ptr->number = 10;
     line_ptr->next_line_offset = 5;
+    line_ptr->number = 10;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
     advance_line_ptr();
