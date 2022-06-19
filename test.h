@@ -45,6 +45,7 @@ extern char reg_y;
 // parser.s
 int read_number(char r);
 int char_to_digit(char c);
+int parse_keyword(const char* keyword, char r);
 
 // program.s
 void initialize_target(void);
@@ -53,7 +54,6 @@ void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
 int insert_or_update_line(void);
-int parse_keyword(const char* keyword, char r);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
