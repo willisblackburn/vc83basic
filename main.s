@@ -18,8 +18,7 @@ main:
         jsr     print_ready
 @wait_for_input:
         jsr     readline
-        lda     #0                      ; Initialize the read pointer
-        sta     r
+        mva     #0, r                   ; Initialize the read pointer
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
