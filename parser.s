@@ -12,9 +12,6 @@ signature_ptr: .res 2
 argument_index: .res 1
 argument_count: .res 1
 
-; The line number we read from the input line
-parsed_line_number: .res 2
-
 .code
 
 ; All "parse" functions use:
