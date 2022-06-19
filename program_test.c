@@ -98,7 +98,7 @@ static void test_find_line(void) {
 }
 
 static void set_line_buffer(int number, const char* data, char data_length) {
-    line_buffer.next_line_offset = (line_buffer.data + data_length) - (const char*)&line_buffer;
+    line_buffer.next_line_offset = offsetof(Line, data) + data_length;
     line_buffer.number = number;
     memcpy(line_buffer.data, data, data_length);
 }
