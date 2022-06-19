@@ -6,8 +6,8 @@ static void test_initalize_program(void) {
     initialize_program();
 
     ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_EQ(line_ptr->length, 0);
     ASSERT_EQ(heap_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
 }
 
@@ -31,14 +31,16 @@ static void test_advance_line_ptr(void) {
     advance_line_ptr();
     ASSERT_EQ((void*)line_ptr, heap_ptr);
 
-    // If we put in a fake line with various lengths then line_ptr should advance by that much plus the header.
+    // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
+    // Note that we're charging into unallocated memory here, but that's okay since we own memory space
+    // after the BSS.
     initialize_program();
-    line_ptr->length = 10;
+    line_ptr->next_line_offset = 10;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13);
-    line_ptr->length = 250;
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10);
+    line_ptr->next_line_offset = 250;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13 + 253);
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
 
 static void test_find_line(void) {
@@ -52,21 +54,19 @@ static void test_find_line(void) {
 
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
+    line_ptr->next_line_offset = 5;
     line_ptr->number = 10;
-    line_ptr->length = 5;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
-    // Note that we're charging into unallocated memory here, but that's okay since we own memory space
-    // after the BSS.
     advance_line_ptr();
+    line_ptr->next_line_offset = 250;
     line_ptr->number = 256;
-    line_ptr->length = 250;
     advance_line_ptr();
+    line_ptr->next_line_offset = 10;
     line_ptr->number = 10000;
-    line_ptr->length = 10;
     advance_line_ptr();
+    line_ptr->next_line_offset = 0;
     line_ptr->number = -1;
-    line_ptr->length = 0;
     // Patch up the program end.
     advance_line_ptr();
     heap_ptr = line_ptr;
@@ -97,66 +97,71 @@ static void test_find_line(void) {
     ASSERT_EQ(line_ptr->number, 10);
 }
 
+static void set_line_buffer(int number, const char* data, char data_length) {
+    line_buffer.next_line_offset = offsetof(Line, data) + data_length;
+    line_buffer.number = number;
+    memcpy(line_buffer.data, data, data_length);
+}
+
 static void test_insert_or_update_line(void) {
     int err;
+    const char line_5_data[] = { 'E', 'N', 'D' };
+    const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
+    const char line_200_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '3', '.', '1', '4', '1', '5', '9' };
 
     PRINT_TEST_NAME();
 
     initialize_program();
 
-    strcpy(buffer, "10 PRINT 1");
-    buffer_length = 10;
-    err = insert_or_update_line(10, 3);
+    set_line_buffer(10, line_10_data, sizeof line_10_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);  
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, 7);  
-    ASSERT_MEMORY_EQ(line_ptr->data, "PRINT 1", line_ptr->length);  
+    ASSERT_MEMORY_EQ(line_ptr->data, line_10_data, sizeof line_10_data);  
     
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
 
-    strcpy(buffer, "200 PRINT 3.14159");
-    buffer_length = 16;
-    err = insert_or_update_line(200, 4);
+    set_line_buffer(200, line_200_data, sizeof line_200_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 10);    
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, 7);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
-    ASSERT_EQ(line_ptr->length, 12);    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test inserting a line before the other two.
-    strcpy(buffer, "5 END");
-    buffer_length = 5;
-    err = insert_or_update_line(5, 2);
+    set_line_buffer(5, line_5_data, sizeof line_5_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(line_ptr->number, 5);    
-    ASSERT_EQ(line_ptr->length, 3);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);    
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, 7);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
-    ASSERT_EQ(line_ptr->length, 12);    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test deleting a line.
-    strcpy(buffer, "200");
-    buffer_length = 3;
-    err = insert_or_update_line(200, 3);
+    set_line_buffer(200, line_200_data, 0);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 6);    
     ASSERT_EQ(line_ptr->number, 5);    
-    ASSERT_EQ(line_ptr->length, 3);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 10);    
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, 7);    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
 }

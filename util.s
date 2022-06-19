@@ -1,3 +1,4 @@
+.include "macros.inc"
 .include "basic.inc"
 
 .zeropage
@@ -31,8 +32,7 @@ dst_ptr: .res 2
 ; AX = number of bytes to copy (_de entry point uses value in DE instead)
 
 copy_bytes:
-        sta     D                       ; Length into DE
-        stx     E
+        stax    DE                      ; Length into DE
 copy_bytes_de:
         ldy     #0                      ; Y = 0 meaning 256 bytes per block
         ldx     E                       ; Number of 256-byte blocks
@@ -69,8 +69,7 @@ copy_bytes_de:
 ; AX = number of bytes to copy (_de entry point uses value in DE instead)
 
 copy_bytes_back:
-        sta     D                       ; Length into DE
-        stx     E
+        stax    DE                      ; Length into DE
 copy_bytes_back_de:
         clc
         lda     src_ptr                 ; Add DE (the length) to src_ptr and dst_ptr
@@ -163,8 +162,7 @@ return_status:
 ; Y SAFE, BC SAFE
 
 mul10:
-        sta     D                       
-        stx     E
+        stax    DE
         asl     A                       ; Shift A + E left 2
         rol     E
         asl     A
@@ -186,8 +184,7 @@ mul10:
 ; BC SAFE
 
 div10:
-        sta     D                       
-        stx     E
+        stax    DE
         ldx     #16                     ; 16 bits
         lda     #0                      ; Initialize remainder to 0
 @next_bit:  
@@ -202,6 +199,5 @@ div10:
         dex                             ; One bit down
         bne     @next_bit               ; Some more to go
         tay                             ; Remainder into Y
-        lda     D
-        ldx     E
+        ldax    DE
         rts

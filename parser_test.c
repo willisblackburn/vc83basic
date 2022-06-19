@@ -30,33 +30,26 @@ static void test_read_number(void) {
 
     PRINT_TEST_NAME();
 
-    set_buffer("10 PRINT X");
+    strcpy(buffer, "10 PRINT X");
     err = read_number(0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 10);
     ASSERT_EQ(r, 2);
 
     // The function should honor the current read position.
-    set_buffer("1020 PRINT X");
+    strcpy(buffer, "1020 PRINT X");
     err = read_number(2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 20);
     ASSERT_EQ(r, 4);
 
-    // The function should skip inital whitespace.
-    set_buffer("  10000 PRINT X");
-    err = read_number(0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_ax, 10000);
-    ASSERT_EQ(r, 7);
-
     // The function should return carry set if an invalid number.
-    set_buffer("invalid");
+    strcpy(buffer, "invalid");
     err = read_number(0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(r, 0);
 
-    set_buffer("");
+    strcpy(buffer, "");
     err = read_number(0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(r, 0);
@@ -68,7 +61,7 @@ static void test_parse_keyword(void) {
 
     PRINT_TEST_NAME();
 
-    set_buffer("PRINT");
+    strcpy(buffer, "PRINT");
     err = parse_keyword("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
     ASSERT_EQ(err, 0);
     err = parse_keyword("LIS\xD4", 0);

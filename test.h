@@ -3,16 +3,17 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 // Types
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
 // the assembly language code in order to make unit testing easier.
 
-typedef struct line {
+typedef struct Line {
+    char next_line_offset;
     int number;
-    char length;
     char data[];
-} line;
+} Line;
 
 // Zero Page
 
@@ -20,16 +21,17 @@ extern char status;
 #pragma zpsym ("status")
 extern char r;
 #pragma zpsym ("r")
-extern line* line_ptr;
+extern Line* line_ptr;
 #pragma zpsym ("line_ptr")
+extern Line* program_ptr;
+#pragma zpsym ("program_ptr")
+extern void* heap_ptr;
+#pragma zpsym ("heap_ptr")
 
 // Data
 
 extern char buffer[];
-extern char buffer_length;
-
-extern line* program_ptr;
-extern void* heap_ptr;
+extern Line line_buffer;
 
 // Used by c_wrappers.s
 
@@ -37,24 +39,23 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
-extern int reg_bc;
-extern char reg_b;
-extern char reg_c;
-extern int reg_de;
-extern char reg_d;
-extern char reg_e;
 
 // Prototypes for C wrapper functions
 
+// parser.s
+int read_number(char r);
+int char_to_digit(char c);
+int parse_keyword(const char* keyword, char r);
+
+// program.s
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
-int insert_or_update_line(int line_number, char r);
-int read_number(char r);
-int char_to_digit(char c);
-int parse_keyword(const char* keyword, char r);
+int insert_or_update_line(void);
+
+// util.s
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_back(char* to, const char* from, size_t size);
 int mul10(int value);
@@ -62,20 +63,21 @@ int div10(int value);
 
 // Common functions and definitions used in tests
 
-void set_buffer(const char* s) {
-    // strcpy adds terminating 0 to string in buffer.
-    strcpy(buffer, s);
-    buffer_length = strlen(s);
-}
-
 void hexdump(const char* name, const char* data, size_t length) {
-    unsigned i = 0;
+    unsigned i, j;
+    const char* p;
     fprintf(stderr, "        %s ($%04X):\n", name, data);
-    while (i < length) {
-        fprintf(stderr, "        %04x  ", i);
-        do {
-            fprintf(stderr, "%02x ", data[i++]);
-        } while (i < length && (i % 16));
+    for (i = 0; i < length; i += j) {
+        fprintf(stderr, "        %04X %04X  ", i, data + i);
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            fprintf(stderr, "%02X ", *p);
+        }
+        fprintf(stderr, " ");
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            fputc(isprint(*p) ? *p : '.', stderr);
+        }
         printf("\n");
     }
 }
