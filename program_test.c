@@ -56,22 +56,20 @@ static void test_find_line(void) {
 
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
-    line_ptr->number = 10;
     line_ptr->next_line_offset = 5;
+    line_ptr->number = 10;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
-    // Note that we're charging into unallocated memory here, but that's okay since we own memory space
-    // after the BSS.
     advance_line_ptr();
+    line_ptr->next_line_offset = 250;
     line_ptr->number = 256;
-    line_ptr->length = 250;
     advance_line_ptr();
+    line_ptr->next_line_offset = 10;
     line_ptr->number = 10000;
-    line_ptr->length = 10;
     advance_line_ptr();
+    line_ptr->next_line_offset = 0;
     line_ptr->number = -1;
-    line_ptr->length = 0;
-    // Patch up variable_name_table_ptr so we know where the program ends.
+    // Patch up the program end.
     advance_line_ptr();
     variable_name_table_ptr = (const char*)line_ptr;
     value_table_ptr = line_ptr;
@@ -102,97 +100,73 @@ static void test_find_line(void) {
     ASSERT_EQ(line_ptr->number, 10);
 }
 
-static void test_delete_insert_line(void) {
+static void set_line_buffer(int number, const char* data, char data_length) {
+    line_buffer.next_line_offset = (line_buffer.data + data_length) - (const char*)&line_buffer;
+    line_buffer.number = number;
+    memcpy(line_buffer.data, data, data_length);
+}
+
+static void test_insert_or_update_line(void) {
     int err;
-    char tokens_1[] = { 59, 12, 10, 55 };
-    char tokens_2[] = { 0, 3, 11 };
-    char tokens_3[] = { 10, 255, 128, 32, 19 };
+    const char line_5_data[] = { 'E', 'N', 'D' };
+    const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
+    const char line_200_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '3', '.', '1', '4', '1', '5', '9' };
 
     PRINT_TEST_NAME();
 
     initialize_program();
 
-    memcpy(line_buffer, tokens_1, sizeof tokens_1);
-    w = sizeof tokens_1;
-    err = find_line(10);
-    ASSERT_NE(err, 0);
-    err = insert_line(10);
+    set_line_buffer(10, line_10_data, sizeof line_10_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);  
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_1);  
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_1, line_ptr->length);  
+    ASSERT_MEMORY_EQ(line_ptr->data, line_10_data, sizeof line_10_data);  
+    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
-    advance_line_ptr();
-    ASSERT_EQ((void*)variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 
-    memcpy(line_buffer, tokens_2, sizeof tokens_2);
-    w = sizeof tokens_2;
-    err = find_line(200);
-    ASSERT_NE(err, 0);
-    err = insert_line(200);
+    set_line_buffer(200, line_200_data, sizeof line_200_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 10);    
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_1);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_2);    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
-    advance_line_ptr();
-    ASSERT_EQ((void*)variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 
     // Test inserting a line before the other two.
-    memcpy(line_buffer, tokens_3, sizeof tokens_3);
-    w = sizeof tokens_3;
-    err = find_line(5);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(line_ptr->number, 10);    
-    err = insert_line(5);
+    set_line_buffer(5, line_5_data, sizeof line_5_data);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(line_ptr->number, 5);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_3);    
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_3, line_ptr->length);  
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);    
     ASSERT_EQ(line_ptr->number, 10);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_1); 
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_1, line_ptr->length);  
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_2);    
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_2, line_ptr->length);  
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
-    advance_line_ptr();
-    ASSERT_EQ((void*)variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 
     // Test deleting a line.
-    HEXDUMP(program_ptr, 64);
-    err = find_line(10);
+    set_line_buffer(200, "", 0);
+    err = insert_or_update_line();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_ptr->number, 10);    
-    delete_line();
-    HEXDUMP(program_ptr, 64);
-    ASSERT_EQ(line_ptr->number, 200);    
     reset_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 6);    
     ASSERT_EQ(line_ptr->number, 5);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_3);    
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_3, line_ptr->length);  
     advance_line_ptr();
-    ASSERT_EQ(line_ptr->number, 200);    
-    ASSERT_EQ(line_ptr->length, sizeof tokens_2);    
-    ASSERT_MEMORY_EQ(line_ptr->data, tokens_2, line_ptr->length);  
+    ASSERT_EQ(line_ptr->next_line_offset, 10);    
+    ASSERT_EQ(line_ptr->number, 10);    
     advance_line_ptr();
     ASSERT_EQ(line_ptr->number, -1);    
-    advance_line_ptr();
-    ASSERT_EQ((void*)variable_name_table_ptr, (void*)line_ptr);
-    ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1));
 }
 
 static void test_set_variable_value_ptr(void) {
