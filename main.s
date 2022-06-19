@@ -20,16 +20,10 @@ main:
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
-        stax    parsed_line_number
+        stax    line_buffer+Line::number
         jsr     @get_statement
         bcs     @error
-        ldax    parsed_line_number
-        jsr     find_line
-        bcs     @insert                 ; Line not found, just insert the new one
-        jsr     delete_line             ; Delete the existing line
-@insert:
-        ldax    parsed_line_number
-        jsr     insert_line             ; Insert the new line
+        jsr     insert_or_update_line   ; Update the program
         jmp     @wait_for_input
 
 @immediate_mode:
@@ -38,7 +32,7 @@ main:
         beq     @wait_for_input         ; It's a blank line, wait for another one
         jsr     @get_statement
         bcs     @error
-        lda     line_buffer             ; Statement is in first byte of line_buffer
+        lda     line_buffer+Line::data  ; Statement is in line_buffer.data
         jsr     invoke_statement_handler
         jmp     @wait_for_input
 

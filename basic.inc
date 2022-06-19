@@ -1,3 +1,11 @@
+; Data structures
+.struct Line
+    next_line_offset .res 1
+    number .res 2
+    ; data consists of next_statement_offset followed by tokenized data
+    data .res 1
+.endstruct
+
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E

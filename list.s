@@ -10,7 +10,7 @@
 
 exec_list:
         jsr     reset_line_ptr
-@next_line:
+@line_one_line:
         jsr     list_line
         bcs     @end
         ldax    #buffer
@@ -18,7 +18,7 @@ exec_list:
         jsr     write
         jsr     newline
         jsr     advance_line_ptr
-        jmp     @next_line
+        jmp     @line_one_line
 
 @end:
         rts
@@ -28,12 +28,16 @@ exec_list:
 ; Returns with carry flag set if line_pointer points past the end of the program.
 
 list_line:
-        jsr     update_line_fields
         mva     #0, w                   ; Initialize write position
-        ldax    line_number             ; Line number into AX
+        ldy     #Line::number+1         ; Position of line number high byte
+        lda     (line_ptr),y            ; Into A
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        jsr     format_number
+        tax                             ; Move into X
+        dey                             ; Position of line number low byte
+        lda     (line_ptr),y
+        jsr     format_number           ; Format into buffer
         jsr     putchar_space_buffer
+        mva     #Line::data, r          ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table

@@ -10,15 +10,16 @@ exec_run:
         jsr     mul2a
         jsr     clear_memory
         jsr     reset_line_ptr
-@next_line:
-        jsr     update_line_fields
-        lda     line_number+1           ; Load high byte of line number
+@run_one_line:
+        ldy     #Line::number+1         ; Position of line number high byte
+        lda     (line_ptr),y            ; Into A
         bmi     @end                    ; If MSB of line number is set, we're at end of program
+        mva     #Line::data, r          ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement number
         jsr     invoke_statement_handler
         ; TODO: check for error
         jsr     advance_line_ptr        ; Advance to next line
-        jmp     @next_line
+        jmp     @run_one_line
 
 @end:
         rts

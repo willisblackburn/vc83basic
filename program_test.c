@@ -6,8 +6,8 @@ static void test_initalize_program(void) {
     initialize_program();
 
     ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_EQ(line_ptr->length, 0);
     ASSERT_EQ((void*)variable_name_table_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
     ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1)); // Variable name table is empty with terminating 0
     ASSERT_EQ(*variable_name_table_ptr, 0);
@@ -33,14 +33,16 @@ static void test_advance_line_ptr(void) {
     advance_line_ptr();
     ASSERT_EQ((void*)line_ptr, (void*)variable_name_table_ptr);
 
-    // If we put in a fake line with various lengths then line_ptr should advance by that much plus the header.
+    // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
+    // Note that we're charging into unallocated memory here, but that's okay since we own memory space
+    // after the BSS.
     initialize_program();
-    line_ptr->length = 10;
+    line_ptr->next_line_offset = 10;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13);
-    line_ptr->length = 250;
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10);
+    line_ptr->next_line_offset = 250;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 13 + 253);
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
 
 static void test_find_line(void) {
@@ -55,7 +57,7 @@ static void test_find_line(void) {
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
     line_ptr->number = 10;
-    line_ptr->length = 5;
+    line_ptr->next_line_offset = 5;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
     // Note that we're charging into unallocated memory here, but that's okay since we own memory space
