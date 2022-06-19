@@ -191,7 +191,7 @@ int main(void) {
     test_reset_line_ptr();
     test_advance_line_ptr();
     test_find_line();
-    test_delete_insert_line();
+    test_insert_or_update_line();
     test_set_variable_value_ptr();
     return 0;
 }

@@ -40,17 +40,14 @@ static void test_list_element(void) {
     add_variable();
 
     list_element(name_table, 1, line_data_1, 0, 0);
-    HEXDUMP(buffer, 16);
     ASSERT_MEMORY_EQ(buffer, line_text_1, sizeof line_text_1);
     ASSERT_EQ(w, 9);
 
     list_element(name_table, 0, line_data_2, 0, 0);
-    HEXDUMP(buffer, 16);
     ASSERT_MEMORY_EQ(buffer, line_text_2, sizeof line_text_2);
     ASSERT_EQ(w, 4);
 
     list_element(name_table, 2, line_data_3, 0, 0);
-    HEXDUMP(buffer, 16);
     ASSERT_MEMORY_EQ(buffer, line_text_3, sizeof line_text_3);
     ASSERT_EQ(w, 7);
 }
@@ -69,9 +66,8 @@ static void test_list_line(void) {
     add_variable();
 
     list_line(line_data);
-    HEXDUMP(buffer, 16);
-    ASSERT_EQ(w, 10);
     ASSERT_MEMORY_EQ(buffer, line_text, sizeof line_text);
+    ASSERT_EQ(w, 10);
 }
 
 int main(void) {
