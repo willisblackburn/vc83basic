@@ -11,7 +11,7 @@
 .globalzp argument_index
 .globalzp parsed_line_number
 .globalzp src_ptr, dst_ptr
-.globalzp line_ptr, line_length, line_number
+.globalzp line_ptr
 .globalzp program_ptr
 .globalzp variable_name_table_ptr
 .globalzp value_table_ptr
@@ -67,9 +67,12 @@
 .global exec_print
 
 ; program.s
-.global initialize_program, reset_line_ptr, find_line, find_line, advance_line_ptr, update_line_fields
-.global delete_line, insert_line, insert_line
-.global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
+.global initialize_program
+.global reset_line_ptr
+.global find_line
+.global advance_line_ptr
+.global add_line_ptr_offset
+.global insert_or_update_line
 .global grow_a, grow_ay, check_himem
 .global set_variable_value_ptr
 .global set_variable_value

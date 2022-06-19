@@ -12,8 +12,6 @@
 ; 256-byte buffer for I/O functions
 buffer := $200
 
-line_buffer: .res 256
-
 ; One-byte buffer for read and write
 io_char: .res 1
 

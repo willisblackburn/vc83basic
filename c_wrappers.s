@@ -237,13 +237,9 @@ _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
 
-_delete_line:
-.export _delete_line
-        jmp     delete_line
-
-_insert_line:
-.export _insert_line
-        jsr     insert_line
+_insert_or_update_line:
+.export _insert_or_update_line
+        jsr     insert_or_update_line
         jmp     return_carry
 
 _check_himem:

@@ -4,10 +4,6 @@
 
 buffer := $200
 
-.bss
-
-line_buffer: .res 256
-
 .code 
 
 getchar = KEYIN

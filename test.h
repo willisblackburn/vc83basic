@@ -9,11 +9,11 @@
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
 // the assembly language code in order to make unit testing easier.
 
-typedef struct line {
+typedef struct Line {
+    char next_line_offset;
     int number;
-    char length;
     char data[];
-} line;
+} Line;
 
 // Zero Page
 
@@ -29,9 +29,9 @@ extern void* signature_ptr;
 #pragma zpsym ("signature_ptr")
 extern char argument_index;
 #pragma zpsym ("argument_index")
-extern line* line_ptr;
+extern Line* line_ptr;
 #pragma zpsym ("line_ptr")
-extern line* program_ptr;
+extern Line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern const char* variable_name_table_ptr;
 #pragma zpsym ("variable_name_table_ptr")
@@ -47,7 +47,7 @@ extern void* variable_value_ptr;
 // Data
 
 extern char buffer[];
-extern char line_buffer[];
+extern Line line_buffer;
 
 // Used by c_wrappers.s
 
@@ -98,8 +98,7 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
-int delete_line(void);
-int insert_line(int line_number);
+int insert_or_update_line(void);
 int check_himem(void* ptr);
 void set_variable_value_ptr(char variable);
 
