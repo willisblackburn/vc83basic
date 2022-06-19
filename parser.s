@@ -60,7 +60,6 @@ char_to_digit:
 ; Returns carry clear if the keyword matched, carry set if it didn't match.
 
 parse_keyword:
-
         stax    BC                      ; Keyword pointer into BC      
         jsr     skip_whitespace     
         ldx     r                       ; Use X for the buffer position in this function

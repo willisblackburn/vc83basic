@@ -43,13 +43,6 @@ static void test_read_number(void) {
     ASSERT_EQ(reg_ax, 20);
     ASSERT_EQ(r, 4);
 
-    // The function should skip inital whitespace.
-    strcpy(buffer, "  10000 PRINT X");
-    err = read_number(0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_ax, 10000);
-    ASSERT_EQ(r, 7);
-
     // The function should return carry set if an invalid number.
     strcpy(buffer, "invalid");
     err = read_number(0);

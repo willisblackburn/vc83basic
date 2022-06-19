@@ -13,6 +13,7 @@
 ; Aliases for globals
 
 .export _buffer = buffer
+.export _line_buffer = line_buffer
 
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
@@ -78,8 +79,6 @@ _advance_line_ptr:
 
 _insert_or_update_line:
 .export _insert_or_update_line
-        sta     r               
-        jsr     popax                   ; Line number
         jsr     insert_or_update_line
         jmp     return_carry
 

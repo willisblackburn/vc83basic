@@ -1,3 +1,11 @@
+; Data structures
+.struct Line
+    next_line_offset .res 1
+    number .res 2
+    ; data consists of next_statement_offset followed by tokenized data
+    data .res 1
+.endstruct
+
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
@@ -8,10 +16,10 @@
 .globalzp program_ptr
 .globalzp heap_ptr
 
-
 ; Data
 
 .global buffer
+.global line_buffer
 
 ; Functions
 
@@ -24,9 +32,12 @@
 .global skip_whitespace
 
 ; program.s
-.global initialize_program, reset_line_ptr, find_line, advance_line_ptr
-.global delete_line, insert_line, insert_line
-.global get_line_start, get_line_start_plus_a, get_line_ptr_plus_a
+.global initialize_program
+.global reset_line_ptr
+.global find_line
+.global advance_line_ptr
+.global add_line_ptr_offset
+.global insert_or_update_line
 
 ; util.s
 .global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de

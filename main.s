@@ -23,15 +23,21 @@ main:
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
-        phax                            ; Save line number
+        stax    line_buffer+Line::number
         jsr     skip_whitespace
-        plax                            ; Restore line number
-        jsr     find_line
-        bcs     @insert                 ; Line not found, just insert the new one
-        jsr     delete_line             ; Delete the existing line
-@insert:
-        ldax    parsed_line_number
-        jsr     insert_line             ; Insert the new line
+        ldx     r                       ; Read position in to X
+        ldy     #Line::data             ; Start writing into line_buffer at the position of the line_data field
+@copy_one_char:        
+        lda     buffer,x                ; Load next char from buffer
+        beq     @copy_done              ; Finished loading into line buffer
+        sta     line_buffer,y           ; Store character in y line buffer
+        inx
+        iny
+        jmp     @copy_one_char
+
+@copy_done:
+        sty     line_buffer+Line::next_line_offset  ; Store Y, which is the line length, into next_line_offset
+        jsr     insert_or_update_line   ; Update the program
         jmp     @wait_for_input
 
 @immediate_mode:
@@ -57,19 +63,22 @@ main:
 exec_list:
         jsr     reset_line_ptr
 @next_line:
-        ldy     #1                      ; High byte of line number
+        ldy     #Line::number+1         ; High byte of line number
         lda     (line_ptr),y
         bmi     @end                    ; If MSB of line number is set, we're at end of program
         tax
-        dey
+        dey                             ; Index of line number low byte
         lda     (line_ptr),y            ; Low byte of line number
         jsr     print_number
         lda     #' '
         jsr     putchar
-        ldy     #2                      ; Line length
+        ldy     #Line::next_line_offset ; Line length
         lda     (line_ptr),y
+        sec
+        sbc     #Line::data             ; Subtract the size of the header
         tay
-        jsr     get_line_start          ; Puts pointer to start of line data in AX
+        lda     #Line::data
+        jsr     add_line_ptr_offset     ; Puts pointer to start of line data in AX
         jsr     write
         jsr     newline
         jsr     advance_line_ptr
@@ -83,23 +92,24 @@ exec_list:
 exec_run:
         jsr     reset_line_ptr
 @next_line:
-        ldy     #1                      ; High byte of line number
+        ldy     #Line::number+1         ; High byte of line number
         lda     (line_ptr),y
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        ldy     #2                      ; Offset of line length
-        lda     (line_ptr),y            ; Get length
-        sta     D                       ; Store length to copy in DE
-        lda     #0
-        sta     E
-        jsr     get_line_start          ; Start of line in AX
-        stax    src_ptr                 ; Set source for copy
-        mvaa    #buffer, dst_ptr        ; Set destination for copy 
-        jsr     copy_bytes_de           ; Copy line into buffer
-        lda     #0                      ; Start reading from offset 0
-        sta     r
+        lda     #Line::data
+        jsr     add_line_ptr_offset     ; Puts pointer to start of line data in AX
+        stax    src_ptr                 ; Copy from there
+        mvaa    #buffer, dst_ptr        ; Into buffer
+        ldy     #Line::next_line_offset ; Offset of line length
+        lda     (line_ptr),y            ; Get next line offset
+        sec
+        sbc     #Line::data             ; Subtract the offset of the data field
+        ldx     #0                      ; High byte of the length is 0
+        jsr     copy_bytes              ; Copy the line data into buffer
+        mva     #0, r                   ; Start reading from offset 0
         ldax    #keyword_print          ; Check if the keyword is print
         jsr     parse_keyword           ; Was it "PRINT"?
         bcs     @error                  ; Nope
+        jsr     skip_whitespace
         jsr     read_number             ; Get the number
         bcs     @error                  ; Fail if not a number
         jsr     print_number            ; Print the number

@@ -10,16 +10,16 @@
 ; A pointer to the current program line
 line_ptr: .res 2
 
-; The length of the current line
-line_length: .res 1
-; The curent line number; also used to store line number sought in find_line
-line_number: .res 2
-
 ; A pointer to the start of the program
 program_ptr: .res 2
 
 ; The start of the heap
 heap_ptr: .res 2
+
+.bss
+
+; The program line produced by the parser
+line_buffer: .res 256
 
 .code
 
@@ -27,17 +27,23 @@ heap_ptr: .res 2
 ; Inserts an empty zero-length line -1 into the program space.
 
 initialize_program:
+
+; This function makes assumptions about these offsets
+
+.assert Line::next_line_offset = 0, error
+.assert Line::number = 1, error
+
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
+        ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
         lda     #$FF                        ; Line number = -1
-        ldy     #0                      
+        sta     (line_ptr),y                ; Save line number high byte
+        dey
         sta     (line_ptr),y                ; Line number low byte
-        iny     
-        sta     (line_ptr),y                ; Line number high byte
-        lda     #0      
-        iny 
-        sta     (line_ptr),y                ; Line length
-        jsr     get_line_start_plus_a       ; Adding header + A (0) to line_start gives variable_name_table_ptr in AX
+        dey     
+        lda     #Line::data                 ; This is the offset of the next line if this line has no data
+        sta     (line_ptr),y                ; Save as next line offset
+        jsr     add_line_ptr_offset         ; Adding A to line_ptr gives heap_ptr value in AX
         stax    heap_ptr
         rts
 
@@ -64,12 +70,12 @@ find_line:
 @next_line:      
         jsr     advance_line_ptr        ; Advance to the next line    
 @test_line:
-        ldy     #1                      ; Set Y to 1 for getting high byte of line number
+        ldy     #Line::number+1         ; Index of high byte of line number (expected to be 2)
         lda     (line_ptr),y        
         cmp     E       
         bcc     @next_line              ; Line number high byte is <target; go to next line
         bne     @return                 ; Return with carry set
-        dey                             ; High byte is equal; decrement Y to 0
+        dey                             ; High byte is equal; decrement Y to get low byte of line number
         lda     (line_ptr),y            ; Check the low byte of line number
         cmp     D                       ; Same logic for low byte
         bcc     @next_line     
@@ -82,100 +88,83 @@ find_line:
 ; or line_length or assume they've been set, because in find_line we want to scan the program as quickly as possible.
 ; line_ptr = current line (updated)
 ; Returns new line_ptr value in AX.
-; DE SAFE
+; BC SAFE, DE SAFE
 
 advance_line_ptr:
-        ldy     #2                      ; Need offset 2 to get length
+        ldy     #0                      ; Need offset 2 to get length
         lda     (line_ptr),y            ; Get length of current line
-        jsr     get_line_start_plus_a
-        stax    line_ptr                ; Store back into line_ptr
+        jsr     add_line_ptr_offset
+        stax    line_ptr
         rts
 
-; Returns a pointer to the start of data for the current line (identified by line_ptr).
-; The get_line_ptr_plus_a entry point adds whatever is in A to line_ptr.
-; The get_line_start_plus_a entry point adds the size of the line header.
-; Returns the pointer in AX.
-; Y SAFE, DE SAFE
+; Adds A to line_ptr.
+; Returns result in AX.
+; Y SAFE, BC SAFE, DE SAFE
 
-get_line_start:
-        lda     #0                      ; Add 0 extra bytes after header
-get_line_start_plus_a:  
-        clc 
-        adc     #3                      ; Add 3 bytes for header
-get_line_ptr_plus_a:    
-        clc 
-        adc     line_ptr                ; Add whatever's in A to line_ptr
-        ldx     line_ptr+1
-        bcc     @return
-        inx
-@return:
+add_line_ptr_offset:
+        clc
+        adc     line_ptr                ; Add line length to low byte of line_ptr
+        ldx     line_ptr+1              ; High byte into X
+        bcc     @no_carry               ; Don't need to add the carry to X
+        inx                             ; Add the carry to X
+@no_carry:
         rts
 
-; Delete program line, which must have previously been found with find_line.
-; line_ptr = a pointer to the line to replace (previously set by find_line)
-; On return, line_ptr retains the same value it had before, only it is now pointing to the next line.
+; Inserts or updates a program line.
+; line = the line data
+; Returns carry clear if okay, carry set if error (e.g., out of memory).
 
-delete_line:
+insert_or_update_line:
+        ldax    line_buffer+Line::number    ; Load line number into AX
+        jsr     find_line               ; Go find it
+        bcs     @insert                 ; Not found, just insert the new line
 
 ; line_ptr points to a line that we have to remove.
 ; Find the next line and copy the reset of the program to where line_ptr is pointing now.
 ; There will always be a next line becasue we'll only be here if the line to delete
 ; actually exists.
 
-        mva     line_ptr, dst_ptr       ; Current line_ptr will be the target of the copy
+        lda     line_ptr                ; Current line_ptr
+        sta     dst_ptr                 ; will be the target of the memcpy
         pha                             ; Also push it on the stack so we can restore after advancing
-        mva     line_ptr+1, dst_ptr+1   ; High byte
-        pha
+        lda     line_ptr+1              ; High byte
+        sta     dst_ptr+1   
+        pha 
         jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
         stax    src_ptr                 ; This will be the source for the copy
         jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
-        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
-        jsr     copy_bytes_de           ; Compact the program using length in DE
+        jsr     update_pointers         ; Knowing copy from and to, we can update pointers
+        jsr     copy_bytes_de           ; Compact the program
         pla                             ; line_ptr now points to an invalid line so restore saved value
         sta     line_ptr+1
         pla
         sta     line_ptr
-        rts
 
-; Inserts a new line, or does nothing if the line to insert is empty.
-; line_ptr = a pointer to the insertion point (previously set by find_line)
-; AX = the number of the new line
-; line_buffer = the buffer holding the tokenized data
-; w = the write position in line_buffer, which is the length of the data
-; Returns carry clear on success, carry set on error.
+; Insert the new line, if there is one.
+; There is a line if next_line_offset is greater than the offset of the data field.
+; line_ptr points to where this new line should go.
 
-insert_line:
-        stax    line_number
+@insert:
         mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
-        lda     w                       ; Load the length of the token data
-        beq     @finish                 ; Line is empty
-        pha                             ; Save the line length on the stack for use later
-        jsr     get_line_start_plus_a   ; Calculate destination address for current line
-        stax    dst_ptr                
+        lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
+        cmp     #Line::data             ; Compare next line offset with the offset of the data field
+        beq     @finish                 ; If they're the same, line is blank, nothing to insert
+        jsr     add_line_ptr_offset     ; Add next_line_offset to line_ptr to get new address of current line
+        stax    dst_ptr                 ; Store in dst_ptr
         jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
-        jsr     update_pointers         ; Knowing src_ptr and dest_ptr, we can update other pointers
-        jsr     copy_bytes_back_de  
-        mvax    #line_buffer, src_ptr   ; Source is line_buffer     
-        jsr     get_line_start          ; Get destination address for copy
-        stax    dst_ptr                 ; Destination into dst_ptr
-        lda     line_number             ; Line number low byte     
-        ldy     #0      
-        sta     (line_ptr),y            ; Save line item number low byte
-        lda     line_number+1           ; Line number high byte
-        iny     
-        sta     (line_ptr),y            ; Save line item number high byte
-        pla                             ; Get the line length saved earlier
-        iny     
-        sta     (line_ptr),y            ; Save line length
-        ldx     #0
-        jsr     copy_bytes              ; Copy data from buffer into program space
-        jsr     advance_line_ptr        ; Jump over the new line
+        jsr     update_pointers
+        jsr     copy_bytes_back_de      ; Make room for the new line
+        mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
+        mvaa    line_ptr, dst_ptr
+        lda     line_buffer+Line::next_line_offset  ; Length of the new line
+        ldx     #0                      ; High byte of length is always 0
+        jsr     copy_bytes              ; Copy the line into the program
 
 @finish:
         clc
         rts
 
-; Calculates the bytes to move for both compact and expand as (value_table_ptr - line_ptr).
+; Calculates the bytes to move for both compact and expand as (heap_ptr - line_ptr).
 ; Returns the number of bytes in DE.
 
 calculate_bytes_to_move:
