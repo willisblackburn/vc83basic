@@ -8,30 +8,26 @@ TEST_OBJECTS = $(TEST_SOURCES:.c=.o)
 TESTS = $(TEST_SOURCES:.c=)
 RUN_TESTS = $(addsuffix .run, $(TESTS))
 
-CL65 = cl65
 TARGET = -t sim6502
-ASMFLAGS = $(TARGET) --create-dep $(<:.s=.d)
-CCFLAGS = $(TARGET) --create-dep $(<:.c=.d)
-LDFLAGS = $(TARGET) -m $@.map
 
 all: basic $(TESTS)
 
 basic: $(OBJECTS)
-	$(CL65) $(LDFLAGS) -o $@ $^
+	cl65 $(TARGET) -m $@.map -o $@ $^
 
 test: $(RUN_TESTS)
 
 $(TESTS): %: %.o $(TEST_COMMON_OBJECTS) $(filter-out startup.o, $(OBJECTS))
-	$(CL65) $(LDFLAGS) -o $@ $^
+	cl65 $(TARGET) -m $@.map -o $@ $^
 
 $(RUN_TESTS): %.run: %
 	sim65 $^
 
 %.o: %.s
-	$(CL65) -c $(ASMFLAGS) -o $@ $<
+	cl65 -c $(TARGET) --create-dep $(<:.s=.d) -o $@ $<
 
 %.o: %.c
-	$(CL65) -c $(CCFLAGS) -o $@ $<
+	cl65 -c $(TARGET) --create-dep $(<:.c=.d) -o $@ $<
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(SOURCES:.s=.d)

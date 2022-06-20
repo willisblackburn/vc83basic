@@ -1,5 +1,5 @@
 ; cc65 runtime
-.import push0, push1, pushax, pusha0
+.import pushax, pusha0
 
 ; C standard library functions
 .import _fprintf, _stderr

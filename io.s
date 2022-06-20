@@ -12,13 +12,13 @@
 ; 256-byte buffer for I/O functions
 buffer := $200
 
-; One-byte buffer for read and write
+; A single-byte buffer for the char operations
 io_char: .res 1
+
+.code
 
 ; Reads a line from the console into the buffer.
 ; Returns the length in A.
-
-.code
 
 readline:
         mva     #0, B                   ; Use B to track write position in buffer
@@ -72,7 +72,7 @@ newline:
 ; A = the character to output
 
 putchar:
-        sta     io_char                 ; Save character into single-byte buffer
+        sta     io_char                 ; Store character in io_char
         ldax    #io_char                ; Pointer to buffer
         ldy     #1
         jmp     write
