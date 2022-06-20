@@ -12,6 +12,11 @@ hold_ptr: .res 2
 
 ; 256-byte buffer for I/O functions
 buffer: .res 256
+.export buffer
+
+; Length of data in buffer
+buffer_length: .res 1
+.export buffer_length
 
 ; A single-byte buffer for the char operations
 io_char: .res 1
@@ -23,15 +28,15 @@ io_char: .res 1
 
 readline:
 .export readline
-        ldy     #0                      ; Use Y to track write position
+        lda     #0                      ; Initialize buffer_length to 0
+        sta     buffer_length
 @next:      
-        sty     buffer_length           ; Store buffer_length; getchar will clobber Y
         jsr     getchar                 ; Read one character
-        ldy     buffer_length           ; Save to reload Y from buffer_length now
+        ldy     buffer_length           ; Use buffer_length as index
         cmp     #$0A                    ; EOL?
         beq     @done                   ; Yes
         sta     buffer,y                ; Otherwise store character in buffer
-        iny                             ; Increment write position
+        inc     buffer_length           ; Increment buffer_length
         jmp     @next       
 @done:      
         tya                             ; Return buffer_length in A

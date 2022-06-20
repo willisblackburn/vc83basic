@@ -8,7 +8,8 @@
 .import __MAIN_START__, __MAIN_SIZE__
 .import __STACKSIZE__
 
-.import readline, write, write_buffer, newline
+.import buffer, buffer_length
+.import readline, write, newline
 
 .segment "STARTUP"
 
@@ -39,8 +40,8 @@ startup:
         jsr     write                   ; Write "hello"
         lda     #<buffer
         ldx     #>buffer
-        ldy     
-        jsr     write_buffer            ; Output name (still in buffer)
+        ldy     buffer_length
+        jsr     write                   ; Output name (still in buffer)
         jsr     newline                 ; Write linefeed
         ldx     #$00        
         lda     #$00        
