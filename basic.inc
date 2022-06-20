@@ -44,8 +44,11 @@
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
 
-; target_sim6502.s
-.global initialize_target, readline, getchar, write, write_buffer, putchar, newline
+; init.s
+.global initialize_target
+
+; io.s
+.global readline, getchar, write, putchar, newline
 
 ; startup.s
 .global startup

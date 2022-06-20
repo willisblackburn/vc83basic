@@ -2,91 +2,66 @@
 .import push0, push1, pusha0, pushax
 
 ; sim65 vectors
-.import _read, _write
+.import _read, _write, exit
 
-; C standard library functions
-.import _fprintf, _stderr
-
+.include "macros.inc"
 .include "basic.inc"
 
 .bss
 
 ; 256-byte buffer for I/O functions
-buffer: .res 256
+buffer := $200
 
-; The length of the data currently in the buffer
-buffer_length: .res 1
-
-; A single-byte buffer for the char operations
+; One-byte buffer for read and write
 io_char: .res 1
+
+; Reads a line from the console into the buffer.
+; Returns the length in A.
 
 .code
 
-; Architecture-specific initializations
-; We point the BRK handler to the brk_handler function here.
-
-brk_vector := $FFFE
-
-initialize_target:
-        lda     #<debug_handler
-        sta     brk_vector
-        lda     #>debug_handler
-        sta     brk_vector+1
-        rts
-
-; Reads a line from the console into the buffer.
-; Returns the length in A and also sets buffer_length.
-
 readline:
-        ldy     #0                      ; Use Y to track write position
+        mva     #0, B                   ; Use B to track write position in buffer
 @next:      
-        sty     buffer_length           ; Store buffer_length; getchar will clobber Y
         jsr     getchar                 ; Read one character
-        ldy     buffer_length           ; Save to reload Y from buffer_length now
+        ldy     B                       ; Use B for buffer index (getchar does not use it)
+        inc     B
         cmp     #$0A                    ; EOL?
         beq     @done                   ; Yes
         sta     buffer,y                ; Otherwise store character in buffer
-        iny                             ; Increment write position
         jmp     @next       
 @done:      
-        tya                             ; Return buffer_length in A
-        rts     
+        lda     #0      
+        sta     buffer,y                ; Store 0 at end of buffer
+        tya                             ; Return buffer length in A
+        rts
 
 ; Reads a single character from the console.
 ; Returns the character in A.
+; BC SAFE
 
 getchar:
         jsr     push0                   ; File descriptor 0 (stdin)
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char       
+        ldax    #io_char                ; Load the character into B
         jsr     pushax                  ; Push onto C stack
-        lda     #1                      ; Length
-        ldx     #0      
+        ldax    #1                      ; Length
         jsr     _read       
         lda     io_char                 ; Get the character into A
         rts
 
 ; Writes a line to the console.
-; The write_buffer entry point writes from buffer.
-; AX = a pointer to the buffer to write (write_buffer sets this to buffer)
-; Y = the number of bytes to write (write_buffer sets this to buffer_length)
+; AX = a pointer to the buffer to write
+; Y = the number of bytes to write
 
-write_buffer:
-        lda     #<buffer
-        ldx     #>buffer
-        ldy     buffer_length
 write:
-        sta     D
-        stx     E
-        tya
-        pha                             ; Save the length on the stack
+        stax    DE                      ; Save buffer pointer
+        sty     C                       ; Save length
         jsr     push1                   ; File descriptor 1 (stdout)
-        lda     D       
-        ldx     E     
+        ldax    DE
         jsr     pushax                  ; Push buffer pointer onto C stack
-        pla                             ; Length back into A
+        lda     C                       ; Low byte of length
         ldx     #0                      ; High byte of length
-        jmp     _write
+        jmp     _write      
 
 ; Starts a new line on the console.
 
@@ -97,87 +72,7 @@ newline:
 ; A = the character to output
 
 putchar:
-        sta     io_char                 ; Store character in io_char
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char
+        sta     io_char                 ; Save character into single-byte buffer
+        ldax    #io_char                ; Pointer to buffer
         ldy     #1
         jmp     write
-
-; Debugging helpers
-
-.zeropage
-
-save_pc: .res 2
-
-.bss
-
-save_a: .res 1
-save_x: .res 1
-save_y: .res 1
-save_sp: .res 1
-save_flags: .res 1
-
-flag_indicators: .res 8
-
-.code
-
-format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X %.8s", $0A, $00
-flag_names: .byte "NV-BDIZC"
-
-; Prints the register values to stderr.
-; Since this function calls the C library function fprintf, it saves all the C zero page registers and
-; restores them before exiting.
-; Although calling into the C library from an interrupt handler is normally asking for trouble, since sim65
-; doesn't generate interrupts, this will only be called by a BRK statement.
-
-debug_handler:
-        cld                             ; Clear decimal flag (just in case)
-        sta     save_a                  ; Save 6502 registers
-        stx     save_x      
-        sty     save_y      
-        tsx                             ; Get stack pointer into X
-        stx     save_sp                 ; Save it so we can print it
-        ldy     $102,x                  ; PC low byte
-        sty     save_pc     
-        ldy     $103,x                  ; PC high byte
-        dey                             ; Subtract 256 from PC; we will index with Y = 255 to get PC-1
-        sty     save_pc+1       
-        lda     $101,x                  ; Flags
-        sta     save_flags
-        ldy     #0
-@next_flag:
-        lda     flag_names,y            ; Store name in indicator string if flag on
-        rol     save_flags
-        bcs     @on
-        lda     #'-'                    ; Store '-' indicator string if flag off
-@on:
-        sta     flag_indicators,y
-        iny
-        cpy     #8
-        bne     @next_flag
-        lda     _stderr                 ; fprintf(stderr, ...
-        ldx     _stderr+1
-        jsr     pushax
-        lda     #<format                ; format, ...
-        ldx     #>format
-        jsr     pushax
-        ldy     #$FF
-        lda     (save_pc),y             ; id, ...
-        jsr     pusha0          
-        lda     save_a                  ; A, ...
-        jsr     pusha0
-        lda     save_x                  ; X, ...
-        jsr     pusha0
-        lda     save_y                  ; Y, ...
-        jsr     pusha0
-        lda     save_sp                 ; SP, ...
-        jsr     pusha0
-        lda     #<flag_indicators       ; flag_indicators)
-        ldx     #>flag_indicators
-        jsr     pushax           
-        ldy     #16                     ; 16 bytes on the C stack
-        jsr     _fprintf
-        lda     save_a                  ; Restore 6502 registers
-        ldx     save_x
-        ldy     save_y
-        rti
