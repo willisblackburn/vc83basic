@@ -20,6 +20,7 @@
 .export _variable_name_table_ptr = variable_name_table_ptr
 .export _value_table_ptr = value_table_ptr
 .export _heap_ptr = heap_ptr
+.export _himem_ptr = himem_ptr
 .export _variable_count = variable_count
 .export _variable_value_ptr = variable_value_ptr
 
@@ -240,6 +241,11 @@ _advance_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
+        jmp     return_carry
+
+_grow_variable_name_table:
+.export _grow_variable_name_table
+        jsr     grow_variable_name_table
         jmp     return_carry
 
 _check_himem:
