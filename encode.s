@@ -58,8 +58,3 @@ encode:
         pla     
         sec
         rts                             ; Return to the caller's caller
-
-
-
-        
-
