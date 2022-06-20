@@ -2,14 +2,12 @@ SOURCES = io.s startup.s
 OBJECTS = $(SOURCES:.s=.o)
 
 TARGET = -t sim6502
-ASMFLAGS = $(TARGET) --create-dep $(<:.s=.d)
-LDFLAGS = $(TARGET) -m $@.map
 
 basic: $(OBJECTS)
-	cl65 $(LDFLAGS) -o $@ $^
+	cl65 $(TARGET) -m $@.map -o $@ $^
 
 %.o: %.s
-	cl65 -c $(ASMFLAGS) -o $@ $<
+	cl65 -c $(TARGET) --create-dep $(<:.s=.d) -o $@ $<
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(SOURCES:.s=.d)
