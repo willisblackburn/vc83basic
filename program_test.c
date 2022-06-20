@@ -156,7 +156,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test deleting a line.
-    set_line_buffer(200, "", 0);
+    set_line_buffer(200, line_200_data, 0);
     err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_line_ptr();
