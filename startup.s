@@ -1,6 +1,5 @@
 ; cc65 runtime
-.include "zeropage.inc"
-.import push0, push1, pushax
+.importzp sp
 
 ; sim65 vectors
 .import exit
@@ -38,6 +37,9 @@ startup:
         ldx     #>hello     
         ldy     #hello_length       
         jsr     write                   ; Write "hello"
+        lda     #<buffer
+        ldx     #>buffer
+        ldy     
         jsr     write_buffer            ; Output name (still in buffer)
         jsr     newline                 ; Write linefeed
         ldx     #$00        

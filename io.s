@@ -1,5 +1,4 @@
 ; cc65 runtime
-.include "zeropage.inc"
 .import push0, push1, pushax
 
 ; sim65 vectors
@@ -13,9 +12,6 @@ hold_ptr: .res 2
 
 ; 256-byte buffer for I/O functions
 buffer: .res 256
-
-; The length of the data currently in the buffer
-buffer_length: .res 1
 
 ; A single-byte buffer for the char operations
 io_char: .res 1
@@ -57,15 +53,9 @@ getchar:
         rts
 
 ; Writes a line to the console.
-; The write_buffer entry point writes from buffer.
-; AX = a pointer to the buffer to write (write_buffer sets this to buffer)
-; Y = the number of bytes to write (write_buffer sets this to buffer_length)
+; AX = a pointer to the buffer to write
+; Y = the number of bytes to write
 
-write_buffer:
-.export write_buffer
-        lda     #<buffer
-        ldx     #>buffer
-        ldy     buffer_length
 write:
 .export write
         sta     hold_ptr

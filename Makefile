@@ -1,4 +1,4 @@
-SOURCES = startup.s target_sim6502.s
+SOURCES = io.s startup.s
 OBJECTS = $(SOURCES:.s=.o)
 
 TARGET = -t sim6502
