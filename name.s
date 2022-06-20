@@ -193,31 +193,29 @@ add_variable:
         jsr     is_name_character
         bcc     @find_end               ; Still a name character
         txa                             ; Carry guaranteed to be set; handy!
+        sta     B                       ; Store index of end of name in B
         sbc     r                       ; Subtract r to find length of name
-        sta     B                       ; Save length in B
-        jsr     grow_a                  ; Increase variable_value_ptr
+        jsr     grow_varible_name_table ; Increase variable_value_ptr
         bcs     @fail
         ldx     r                       ; Reload r
-        ldy     #0                      ; Write position relative to name_ptr
+        ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment
 @copy:
+        iny                             ; Increment to next write position in name table
         lda     buffer,x                ; Load one char       
         sta     (name_ptr),y            ; Store it
         inx
-        iny
-        dec     B                       ; Use DEC here to decrement length so carry isn't modified
+        cpx     B                       ; Check for end of name
         bne     @copy
         stx     r                       ; Update r
         ora     #$80                    ; Set high bit in last value
-        dey
         sta     (name_ptr),y            ; Save it again
         iny
         lda     #0
         sta     (name_ptr),y            ; Store 0
         lda     variable_count          ; This will become the return value
-        tax
-        inx
-        stx     variable_count          ; Add one to variable count
-        rts                             ; Notice carry still clear from grow_a check
+        inc     variable_count          ; Add one to variable count
+        clc                             ; Signal success
+        rts                             
 
 @fail:
         sec
