@@ -80,7 +80,7 @@
 .global advance_line_ptr
 .global add_line_ptr_offset
 .global insert_or_update_line
-.global grow_varible_name_table, check_himem
+.global grow_variable_name_table, check_himem
 .global set_variable_value_ptr
 .global set_variable_value
 

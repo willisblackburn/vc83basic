@@ -39,6 +39,8 @@ extern void* value_table_ptr;
 #pragma zpsym ("value_table_ptr")
 extern void* heap_ptr;
 #pragma zpsym ("heap_ptr")
+extern void* himem_ptr;
+#pragma zpsym ("himem_ptr")
 extern char variable_count;
 #pragma zpsym ("variable_count")
 extern void* variable_value_ptr;
@@ -100,6 +102,7 @@ int find_line(int line_number);
 void advance_line_ptr(void);
 int insert_or_update_line(void);
 int check_himem(void* ptr);
+int grow_variable_name_table(char amount);
 void set_variable_value_ptr(char variable);
 
 // util.s

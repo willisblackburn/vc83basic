@@ -195,7 +195,7 @@ add_variable:
         txa                             ; Carry guaranteed to be set; handy!
         sta     B                       ; Store index of end of name in B
         sbc     r                       ; Subtract r to find length of name
-        jsr     grow_varible_name_table ; Increase variable_value_ptr
+        jsr     grow_variable_name_table    ; Increase variable_value_ptr
         bcs     @fail
         ldx     r                       ; Reload r
         ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment

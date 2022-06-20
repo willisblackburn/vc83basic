@@ -169,6 +169,48 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
+void test_check_himem(void) {
+    char err;
+
+    PRINT_TEST_NAME();
+
+    himem_ptr = (void*)0x1000;
+
+    err = check_himem((void*)0x0F00);
+    ASSERT_EQ(err, 0);
+
+    err = check_himem((void*)0x1F00);
+    ASSERT_NE(err, 0);
+
+    himem_ptr = (void*)0xF000;
+
+    err = check_himem((void*)0xEF00);
+    ASSERT_EQ(err, 0);
+
+    err = check_himem((void*)0xFF00);
+    ASSERT_NE(err, 0);
+}
+
+void test_grow_variable_name_table(void) {
+
+    char err;
+
+    PRINT_TEST_NAME();
+
+    value_table_ptr = (void*)0x0FF0;
+    himem_ptr = (void*)0x1000;
+
+    err = grow_variable_name_table(8);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(value_table_ptr, (void*)0x0FF8);
+    ASSERT_EQ(himem_ptr, (void*)0x1000);
+
+    err = grow_variable_name_table(32);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(value_table_ptr, (void*)0x0FF8);
+    ASSERT_EQ(himem_ptr, (void*)0x1000);
+}
+
 static void test_set_variable_value_ptr(void) {
     PRINT_TEST_NAME();
 
@@ -192,6 +234,8 @@ int main(void) {
     test_advance_line_ptr();
     test_find_line();
     test_insert_or_update_line();
+    test_check_himem();
+    test_grow_variable_name_table();
     test_set_variable_value_ptr();
     return 0;
 }
