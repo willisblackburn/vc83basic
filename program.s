@@ -137,45 +137,9 @@ add_line_ptr_offset:
 @no_carry:
         rts
 
-; Updates the line_number and line_length fields from line_ptr. Also sets r to 3 so that the caller can begin
-; processing the line data after the header. Y is set to 3 as a consequence of setting r.
-; line_ptr = current line
-; On return, line_number and line_length are set, and r = Y = 3.
-; X SAFE, BC SAFE, DE SAFE
-
-; update_line_fields:
-;         ldy     #0
-;         lda     (line_ptr),y            ; Low byte of line number
-;         sta     line_number
-;         iny
-;         lda     (line_ptr),y            ; High byte of line number
-;         sta     line_number+1
-;         iny
-;         lda     (line_ptr),y            ; Get length of current line
-;         sta     line_length
-;         iny                             ; Increment Y to 3
-;         sty     r                       ; and leave in r
-;         rts
-
-; Returns a pointer to the start of data for the current line (identified by line_ptr).
-; The get_line_ptr_plus_a entry point adds whatever is in A to line_ptr.
-; The get_line_start_plus_a entry point adds the size of the line header.
-; Returns the pointer in AX.
-; Y SAFE, DE SAFE
-
-; get_line_start:
-;         lda     #0                      ; Add 0 extra bytes after header
-; get_line_start_plus_a:      
-;         clc     
-;         adc     #3                      ; Add 3 bytes for header
-; get_line_ptr_plus_a:        
-;         clc     
-;         adc     line_ptr                ; Add whatever's in A to line_ptr
-;         ldx     line_ptr+1
-;         bcc     @return
-;         inx
-; @return:
-;         rts
+; Updates the program based on the information in line_buffer.
+; If the line number in line_buffer is in the program, remove it.
+; If line_buffer contains a new line, then insert it into the program.
 
 insert_or_update_line:
         ldax    line_buffer+Line::number    ; Load line number into AX
