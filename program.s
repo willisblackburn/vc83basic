@@ -140,9 +140,9 @@ insert_or_update_line:
         pla
         sta     line_ptr
 
-; Insert the new line, if there is one.
-; There is a line if next_line_offset is greater than the offset of the data field.
-; line_ptr points to where this new line should go.
+; Updates the program based on the information in line_buffer.
+; If the line number in line_buffer is in the program, remove it.
+; If line_buffer contains a new line, then insert it into the program.
 
 @insert:
         mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
