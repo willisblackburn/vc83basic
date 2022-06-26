@@ -10,6 +10,7 @@ exec_run:
         jsr     mul2a
         jsr     clear_memory
         jsr     reset_line_ptr
+        jsr     exec_restore            ; Implied RESTORE at the beginning of the program
 @run_one_line:
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A

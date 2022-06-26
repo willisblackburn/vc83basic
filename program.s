@@ -75,10 +75,11 @@ initialize_program:
         rts
 
 ; Sets line_ptr to program_ptr.
-; X SAFE, Y SAFE, DE SAFE
+; Returns line_ptr in AX.
+; Y SAFE, BC SAFE, DE SAFE
 
 reset_line_ptr:
-        mvaa    program_ptr, line_ptr
+        mvax    program_ptr, line_ptr
         rts
 
 ; Searches for a line in the program.
