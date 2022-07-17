@@ -238,6 +238,21 @@ static void test_parse_element(void) {
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
     ASSERT_EQ(r, 16);
     ASSERT_EQ(w, offsetof(Line, data) + 8);
+
+    // Test that adding spaces here and there doesn't mix up the parser.
+
+    strcpy(buffer, "PLOT   10,100");
+    err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    strcpy(buffer, "  PLOT 10 ,   100");
+    err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    strcpy(buffer, "FOR Y = 1 TO 10000");
+    err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    strcpy(buffer, "  FOR Y=1 TO 10000");
+    err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
 }
 
 int main(void) {
