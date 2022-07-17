@@ -21,6 +21,9 @@
 #define TYPE_REQUIRED 0x40
 #define TYPE_END 0x80
 
+#define TYPE_MASK_TYPE_ONLY 0x0F
+#define TYPE_MASK_CLEAR_REPEATED 0xDF
+
 // Name table definitions 
 
 #define NT_END 0x80
