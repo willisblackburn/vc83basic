@@ -108,7 +108,7 @@ static void test_parse_argument_separator(void) {
 
 static void test_parse_arguments(void) {
     int err;
-    char signature_table[] = { 0x01, 0x01 };
+    char signature_table[] = { TYPE_INT, TYPE_INT };
 
     const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
     const char line_data_2[] = { TOKEN_INT, 0x01, 0x00 };
@@ -143,7 +143,7 @@ static void test_parse_arguments(void) {
 
 static void test_parse_repeated_arguments(void) {
     int err;
-    char signature_table[] = { 0x21 };
+    char signature_table[] = { TYPE_INT | TYPE_REQUIRED | TYPE_REPEATED };
 
     const char line_data_1[] = { 0x01, TOKEN_INT, 0x01, 0x00 };
     // const char line_data_2[] = { TOKEN_INT, 0x01, 0x00 };
@@ -244,13 +244,13 @@ static void test_parse_element(void) {
     strcpy(buffer, "PLOT   10,100");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
-    strcpy(buffer, "  PLOT 10 ,   100");
+    strcpy(buffer, "  PLOT 10 ,   100  ");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     strcpy(buffer, "FOR Y = 1 TO 10000");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
-    strcpy(buffer, "  FOR Y=1 TO 10000");
+    strcpy(buffer, "  FOR Y=1 TO 10000  ");
     err = parse_element(name_table, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
 }

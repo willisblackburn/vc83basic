@@ -101,7 +101,6 @@ parse_element:
 
 @after_character_sequence:
         lda     (name_ptr),y            ; Check if there are any arguments to read
-        debug $00
         beq     @success
         and     #$60                    ; If byte AND $60 is non-zero then it's another character sequence.
         bne     @success
@@ -111,10 +110,8 @@ parse_element:
 @arguments:
         sty     n                       ; Save y (then name table entry position) in n
         lda     (name_ptr),y            ; Re-read name table byte
-        debug $10
         jsr     parse_arguments
         ldy     n                       
-        debug $01
         bcs     @error
         lda     (name_ptr),y            ; Re-read name table byte
         bmi     @success                ; If bit 7 set then all done
@@ -128,7 +125,6 @@ parse_element:
         beq     @arguments              ; Nope, go handle more arguments (Y is good)
         jsr     skip_whitespace
         jsr     match_character_sequence    ; Will advance Y past the matched sequence
-        debug $02
         bcs     @error
         jmp     @after_character_sequence   ; If matched then continue, else fall through to @error (Y is good)
 
@@ -175,19 +171,15 @@ parse_arguments:
 
         and     #$07                    ; Isolate the count
         sta     argument_count
-        debug $20
         mva     #0, argument_index      ; Initialize argument_index to 0
         jsr     parse_argument_value
-        debug $21
         bcs     @parse_failed
 @value:
         inc     argument_index
         lda     argument_index
-        debug $50
         cmp     argument_count
         beq     @success                ; All done parsing arguments
         jsr     parse_following_argument
-        debug $22
         bcc     @value                  ; If separator parsed then continue with value, otherwise fail
 @parse_failed:
         ldy     argument_index          ; Use Y to index signature
@@ -206,7 +198,6 @@ parse_arguments:
 @success:
         clc
         lda     argument_count          ; Get argument count to add to signature_ptr
-        debug $40
         adc     signature_ptr           ; Add to signature_ptr
         sta     signature_ptr
         bcc     @done                   ; If carry not set then don't increment high byte
@@ -249,7 +240,6 @@ parse_argument_value:
 ; A = the argument type
 
 parse_value:
-        debug $30
         and     #$0F                    ; Isolate argument type
         tay
         ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr

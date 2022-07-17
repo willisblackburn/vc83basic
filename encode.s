@@ -47,7 +47,6 @@ encode_byte:
 
 encode:
         ldx     w
-        debug $60
         sta     line_buffer,x
         inc     w
         beq     @error
