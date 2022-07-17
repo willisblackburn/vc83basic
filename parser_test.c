@@ -108,7 +108,8 @@ static void test_parse_argument_separator(void) {
 
 static void test_parse_arguments(void) {
     int err;
-    char signature_table[] = { TYPE_INT, TYPE_INT };
+
+    const char signature_table[] = { TYPE_INT, TYPE_INT };
 
     const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
     const char line_data_2[] = { TOKEN_INT, 0x01, 0x00 };
@@ -117,63 +118,100 @@ static void test_parse_arguments(void) {
     PRINT_TEST_NAME();
 
     strcpy(buffer, "1");
-    err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
+    err = parse_arguments(1, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + 3);
-    ASSERT_EQ(argument_index, 1);
 
     strcpy(buffer, "1,");
-    err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
+    err = parse_arguments(1, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + 3);
-    ASSERT_EQ(argument_index, 1);
 
     strcpy(buffer, "1,256");
-    err = parse_arguments(2, signature_table, 0, 0, offsetof(Line, data));
+    err = parse_arguments(2, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 5);
     ASSERT_EQ(w, offsetof(Line, data) + 6);
-    ASSERT_EQ(argument_index, 2);
 }
 
-static void test_parse_repeated_arguments(void) {
+static void test_parse_optional_arguments(void) {
     int err;
-    char signature_table[] = { TYPE_INT | TYPE_REQUIRED | TYPE_REPEATED };
 
-    const char line_data_1[] = { 0x01, TOKEN_INT, 0x01, 0x00 };
-    // const char line_data_2[] = { TOKEN_INT, 0x01, 0x00 };
-    // const char line_data_3[] = { TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x00, 0x01 };
+    const char signature_table[] = { 
+        TYPE_INT, TYPE_INT | TYPE_OPTIONAL,
+        TYPE_INT | TYPE_OPTIONAL, TYPE_INT | TYPE_OPTIONAL,
+    };
+
+    const char line_data_1[] = { TOKEN_INT, 0x01, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
     strcpy(buffer, "1");
-    err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
+    err = parse_arguments(2, signature_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + 3);
-    ASSERT_EQ(argument_index, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
-    // strcpy(buffer, "1,");
-    // err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
-    // ASSERT_EQ(err, 0);
-    // ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    // ASSERT_EQ(r, 1);
-    // ASSERT_EQ(w, offsetof(Line, data) + 3);
-    // ASSERT_EQ(argument_index, 1);
+    strcpy(buffer, "1,");
+    err = parse_arguments(2, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
-    // strcpy(buffer, " 1, 256");
-    // err = parse_arguments(2, signature_table, 0, 0, offsetof(Line, data));
-    // ASSERT_EQ(err, 0);
-    // ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    // ASSERT_EQ(r, 7);
-    // ASSERT_EQ(w, offsetof(Line, data) + 6);
-    // ASSERT_EQ(argument_index, 2);
+    strcpy(buffer, "1,");
+    err = parse_arguments(2, signature_table + 2, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+
+    strcpy(buffer, "");
+    err = parse_arguments(2, signature_table + 2, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
+    ASSERT_EQ(r, 0);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+}
+
+static void test_parse_repeated_arguments(void) {
+    int err;
+
+    const char signature_table[] = { TYPE_INT | TYPE_REPEATED };
+
+    const char line_data_1[] = { 1, TOKEN_INT, 0x01, 0x00 };
+    const char line_data_2[] = { 1, TOKEN_INT, 0x01, 0x00 };
+    const char line_data_3[] = { 2, TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x00, 0x01 };
+
+    PRINT_TEST_NAME();
+
+    strcpy(buffer, "1");
+    err = parse_arguments(1, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + 4);
+
+    strcpy(buffer, "1,");
+    err = parse_arguments(1, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + 4);
+
+    strcpy(buffer, " 1, 256");
+    err = parse_arguments(1, signature_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
+    ASSERT_EQ(r, 7);
+    ASSERT_EQ(w, offsetof(Line, data) + 7);
 }
 
 static void test_parse_element(void) {
@@ -188,12 +226,12 @@ static void test_parse_element(void) {
         0
     };
     char signature_table[] = { 
-        TYPE_INT | TYPE_REQUIRED,   TYPE_INT | TYPE_REQUIRED,
-        TYPE_NONE,                  TYPE_NONE, 
-        TYPE_INT | TYPE_REQUIRED,   TYPE_NONE,
-        TYPE_VAR | TYPE_REQUIRED,   TYPE_INT | TYPE_REQUIRED,
-        TYPE_INT | TYPE_REQUIRED,   TYPE_NONE | TYPE_REQUIRED,
-        TYPE_VAR | TYPE_REQUIRED,   TYPE_INT | TYPE_REQUIRED,
+        TYPE_INT,   TYPE_INT,
+        TYPE_NONE,  TYPE_NONE, 
+        TYPE_INT,   TYPE_NONE,
+        TYPE_VAR,   TYPE_INT,
+        TYPE_INT,   TYPE_NONE,
+        TYPE_VAR,   TYPE_INT,
     };
 
     const char line_data_1[] = { 0x00, TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x64, 0x00 };
@@ -262,7 +300,8 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_arguments();
-    // test_parse_repeated_arguments();
+    test_parse_repeated_arguments();
+    test_parse_optional_arguments();
     test_parse_element();
     return 0;
 }

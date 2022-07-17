@@ -168,7 +168,7 @@ argument_type_vectors:
 parse_arguments:
 
 .assert TYPE_REPEATED = $20, error
-.assert TYPE_REQUIRED = $40, error
+.assert TYPE_OPTIONAL = $40, error
 
         and     #$07                    ; Isolate the count
         sta     argument_count
@@ -185,17 +185,22 @@ parse_arguments:
         bcc     @value                  ; If separator parsed then continue with value, otherwise fail
 @parse_failed:
         lda     argument_type           ; Load the argument type set by parse_argument_value
-        rol     A                       ; Shifts required bit to MSB
-        rol     A                       ; Shifts the required bit to carry
-        bcs     @done                   ; Lets us just branch to error if the missing argument was required
+        asl                             ; Shifts optional bit to MSB
+        sec                             ; Set carry to prepare for @missing_optional SBC or return error
+        bmi     @missing_optional       ; If it was optional then go record "no value"
+        rts
+
+@missing_optional:
+        lda     argument_count
+        sbc     argument_index
+        tay
 @no_value:
         lda     #TOKEN_NO_VALUE
         jsr     encode_byte             ; Encode the "no value" token
         bcs     @done                   ; encode_byte error
-        inc     argument_index
-        lda     argument_index
-        cmp     argument_count
-        bne     @no_value               ; Keep encoding "no value" until out of arguments
+        lda     argument_index          ; Load argument_index to check vs. count; remember it
+        dey
+        bpl     @no_value               ; 
 @success:
         clc
         lda     argument_count          ; Get argument count to add to signature_ptr
@@ -270,9 +275,9 @@ parse_argument_value:
 parse_repeated_argument:
         lda     argument_type           ; Load the argument type
         and     #TYPE_MASK_CLEAR_REPEATED   ; Clear the TYPE_REPEATED bit
-        sta     argument_type           ; Store back
+        sta     argument_type           ; Store back so we don't recursively try to parse a repeated value
         ldpha   w                       ; Save the w value to restore in case we fail to parse anything
-        lda     #0
+        lda     #0                      
         jsr     encode_byte             ; Create a placeholder for the number of arguments; this will be at position w
         jsr     parse_argument_value    ; Parse the first value
         bcc     @value                  ; Succees; continue parsing values
@@ -282,10 +287,11 @@ parse_repeated_argument:
 @value:
         tsx                           
         lda     $101,x                  ; Get the w that we saved on the stack earlier
-        tax
-        inc     buffer,x                ; Increment the argument count that we saved at that position
+        tax                             ; w into X register
+        inc     line_buffer,x           ; Increment the argument count that we saved at that position
         jsr     parse_following_argument
         bcc     @value                  ; Keep parsing until we run out of arguments
+        pla                             ; Pop the original w value from the stack and discard it
         clc                             ; Clear carry since it's set
         rts
 

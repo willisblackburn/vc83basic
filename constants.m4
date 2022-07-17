@@ -20,7 +20,7 @@ def(TYPE_IGNORE,        hex(0E))
 comment Type modifiers
 
 def(TYPE_REPEATED,      hex(20))
-def(TYPE_REQUIRED,      hex(40))
+def(TYPE_OPTIONAL,      hex(40))
 def(TYPE_END,           hex(80))
 
 def(TYPE_MASK_TYPE_ONLY,        hex(0F))

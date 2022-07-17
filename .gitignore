@@ -5,3 +5,5 @@
 *.map
 basic_*
 *_test
+constants.inc
+constants.h

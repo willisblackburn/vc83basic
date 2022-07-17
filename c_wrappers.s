@@ -193,8 +193,6 @@ _parse_arguments:
         sta     w
         jsr     popa
         sta     r
-        jsr     popa
-        sta     argument_index
         jsr     popax
         stax    signature_ptr
         jsr     popa
