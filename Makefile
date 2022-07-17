@@ -31,11 +31,11 @@ basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
 	cl65 -t $1 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^
 
 # Builds a target-specific object from a common source
-$1/%.o: %.s
+$1/%.o: %.s constants.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 # Builds a target-specific object from a target-specific source
-$1/%.o: $1/%.s
+$1/%.o: $1/%.s constants.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 -include $$(TARGET_$1_SOURCES:.s=.d)
@@ -66,19 +66,26 @@ all: $(addprefix basic_,$(TARGETS)) $(TESTS)
 
 test: $(addprefix run_,$(TESTS))
 
+# Rules for building the constants files:
+constants.inc: constants.m4
+	m4 $< >$@
+
+constants.h: constants.m4
+	m4 -DC $< >$@
+
 $(foreach TARGET,$(TARGETS),$(eval $(call create-target,$(TARGET))))
 
 $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 
 # Builds a common object from a common assembly language source; used by tests
-%.o: %.s
+%.o: %.s constants.inc
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_ASMFLAGS) -o $@ $<
 
 # Same but for a C source
-%.o: %.c
+%.o: %.c constants.h
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_CFLAGS) -o $@ $<
 
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f *.o *.d *.map
+	rm -f constants.inc constants.h *.o *.d *.map

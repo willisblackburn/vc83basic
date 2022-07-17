@@ -3,12 +3,12 @@
 statement_name_table:
         .byte   'L', 'I', 'S', 'T' | NT_END
         .byte   'R', 'U', 'N' | NT_END
-        .byte   'P', 'R', 'I', 'N', 'T', NT_1ARG | NT_END
-        .byte   'L', 'E', 'T', NT_1ARG, '=', NT_1ARG | NT_END
-        .byte   'I', 'N', 'P', 'U', 'T', NT_1ARG | NT_END
-        .byte   'D', 'A', 'T', 'A', NT_1ARG | NT_END
-        .byte   'R', 'E', 'A', 'D', NT_1ARG | NT_END
-        .byte   'R', 'E', 'S', 'T', 'O', 'R', 'E', NT_1ARG | NT_END
+        .byte   'P', 'R', 'I', 'N', 'T', 1 | NT_END
+        .byte   'L', 'E', 'T', 1, '=', 1 | NT_END
+        .byte   'I', 'N', 'P', 'U', 'T', 1 | NT_END
+        .byte   'D', 'A', 'T', 'A', 1 | NT_END
+        .byte   'R', 'E', 'A', 'D', 1 | NT_END
+        .byte   'R', 'E', 'S', 'T', 'O', 'R', 'E', 1 | NT_END
         .byte   0
 
 statement_signature_table:
@@ -17,7 +17,7 @@ statement_signature_table:
         .byte   TYPE_INT, TYPE_NONE
         .byte   TYPE_VAR, TYPE_INT
         .byte   TYPE_VAR, TYPE_NONE
-        .byte   TYPE_INT, TYPE_NONE
+        .byte   TYPE_INT | TYPE_REPEATED, TYPE_NONE
         .byte   TYPE_VAR, TYPE_NONE
         .byte   TYPE_INT, TYPE_NONE
 

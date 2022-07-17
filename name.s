@@ -1,6 +1,8 @@
 .include "macros.inc"
 .include "basic.inc"
 
+; TODO: maybe call this syntax.s
+
 .zeropage
 
 ; Pointer to current name table entry
@@ -69,7 +71,7 @@ match_character_sequence:
 
         jsr     check_name_continuation
         bcs     @match
-        jmp     @continued_name
+        bcc     @continued_name         ; Will always branch
 
 ; We're reached a non-literal character and everything has matched so far.
 ; Check for name continuation. If the name continues, then advance to next entry and return no match.

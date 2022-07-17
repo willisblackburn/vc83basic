@@ -12,6 +12,9 @@ signature_ptr: .res 2
 argument_index: .res 1
 argument_count: .res 1
 
+; The write position of the repeated argument count in line_buffer
+repeated_argument_count_w: .res 1
+
 .code
 
 ; All "parse" functions use:
@@ -73,6 +76,7 @@ char_to_digit:
 ; AX = pointer to the first entry of the name table
 ; signature_ptr = pointer to the first entry of the signature table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
+; TODO: parse_syntax or parse_syntax_element?
 
 parse_element:
 
@@ -87,10 +91,8 @@ parse_element:
         asl                             ; Calculate the address of the signature; each name gets 2 signature bytes
         adc     signature_ptr           ; Carry already clear because encode_byte succeeded
         sta     signature_ptr   
-        lda     #0  
-        sta     argument_index          ; Opportunistically set argument_index to 0
-        adc     signature_ptr+1
-        sta     signature_ptr+1
+        bcc     @after_character_sequence   ; Carry clear so don't need to increment high byte
+        inc     signature_ptr+1
 
 ; After a character sequence, Y will point to one of:
 ; 1. 0, meaning we matched the last sequence in the last name table entry; stop.
@@ -99,6 +101,7 @@ parse_element:
 
 @after_character_sequence:
         lda     (name_ptr),y            ; Check if there are any arguments to read
+        debug $00
         beq     @success
         and     #$60                    ; If byte AND $60 is non-zero then it's another character sequence.
         bne     @success
@@ -106,17 +109,18 @@ parse_element:
 ; The next byte must be arguments.
 
 @arguments:
-        ldphaa  name_ptr                ; Save name_ptr, signature_ptr, and Y on the stack
-        ldphaa  signature_ptr
-        tya
-        pha     
+        sty     n                       ; Save y (then name table entry position) in n
+        ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
+        ; ldpha   n
+        ; ldphaa  signature_ptr
         lda     (name_ptr),y            ; Re-read name table byte
-        and     #$0F                    ; How many arguments to parse?
+        debug $10
         jsr     parse_arguments
-        pla                             ; Restore vars from stack before
-        tay
-        plstaa  signature_ptr
+        ; plstaa  signature_ptr
+        ; plsta   n
         plstaa  name_ptr
+        ldy     n                       
+        debug $01
         bcs     @error
         lda     (name_ptr),y            ; Re-read name table byte
         bmi     @success                ; If bit 7 set then all done
@@ -130,7 +134,9 @@ parse_element:
         beq     @arguments              ; Nope, go handle more arguments (Y is good)
         jsr     skip_whitespace
         jsr     match_character_sequence    ; Will advance Y past the matched sequence
-        bcc     @after_character_sequence   ; If matched then continue, else fall through to @error (Y is good)
+        debug $02
+        bcs     @error
+        jmp     @after_character_sequence   ; If matched then continue, else fall through to @error (Y is good)
 
 @success:
         clc
@@ -141,53 +147,115 @@ parse_element:
         rts
 
 argument_type_vectors:
-        .word   parse_error
-        .word   parse_expression
-        .word   parse_expression
-        .word   parse_expression
-        .word   parse_expression
-        .word   parse_error
-        .word   parse_error
-        .word   parse_expression
-        .word   parse_variable
-        .word   parse_error
-        .word   parse_error
-        .word   parse_error
-        .word   parse_error
-        .word   parse_error
-        .word   parse_error
-        .word   parse_error
+        .word   parse_error             ; TYPE_NONE
+        .word   parse_expression        ; TYPE_INT
+        .word   parse_expression        ; TYPE_FLOAT
+        .word   parse_expression        ; TYPE_INT | TYPE_FLOAT
+        .word   parse_expression        ; TYPE_STRING
+        .word   parse_error             ; TYPE_STRING | TYPE_INT
+        .word   parse_error             ; TYPE_STRING | TYPE_FLOAT
+        .word   parse_expression        ; TYPE_ANY
+        .word   parse_variable          ; TYPE_VAR
+        .word   parse_error             ; TYPE_CH
+        .word   parse_error             ; TYPE_PROMPT
+        .word   parse_error             ; TYPE_PRINT
+        .word   parse_error             ; TYPE_THEN
+        .word   parse_error             ; TYPE_STEP
+        .word   parse_error             ; TYPE_TEXT
+        .word   parse_error             ; unused
 
 ; Parses arguments from the buffer and tokenizes them.
 ; Arguments must be separated by ','.
 ; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
 ; number of arguments based on the types in the signature table.
-; A = the number of arguments to parse
+; ARGUMENT COUNT MUST BE AT LEAST 1 (although that argument can be optional).
+; A = the value from the name table, in the format xxxxpnnn, p is true if we should
+; parse parentheses around the arguments, and nn is the number of arguments
 ; signature_ptr = the address of the signature
 ; argument_index = where to start reading arguments from signature table (modified)
 
 parse_arguments:
+
+.assert TYPE_REPEATED = $20, error
+.assert TYPE_REQUIRED = $40, error
+
+        and     #$07                    ; Isolate the count
         sta     argument_count
-        beq     @done                   ; Eject if argument count is 0
-@next_argument:
-        ldy     argument_index          ; Use Y to index signature
-        lda     (signature_ptr),y       ; Load argument
-        and     #$0F                    ; Isolate argument type
-        tay
-        ldax    #argument_type_vectors
-        jsr     invoke_indexed_vector
-        bcs     @error
+        debug $20
+        mva     #0, argument_index      ; Initialize argument_index to 0
+        jsr     parse_argument_value
+        debug $21
+        bcs     @parse_failed
+@value:
         inc     argument_index
-        dec     argument_count
-        beq     @done                   ; Note carry must be clear here
-        jsr     parse_argument_separator
-        jmp     @next_argument
+        lda     argument_index
+        cmp     argument_count
+        beq     @success                ; All done parsing arguments
+        jsr     parse_following_argument
+        debug $22
+        bcc     @value                  ; If separator parsed then continue with value, otherwise fail
+@parse_failed:
+        ldy     argument_index          ; Use Y to index signature
+        lda     (signature_ptr),y       ; Load argument type
+        rol     A                       ; Shifts required bit to MSB
+        rol     A                       ; Shifts the required bit to carry
+        bcs     @done                   ; Lets us just branch to error if the missing argument was required
+@no_value:
+        lda     #TOKEN_NO_VALUE
+        jsr     encode_byte             ; Encode the "no value" token
+        bcs     @done                   ; encode_byte error
+        inc     argument_index
+        lda     argument_index
+        cmp     argument_count
+        bne     @no_value
+@success:
+        clc
+        lda     argument_count          ; Get argument count to add to signature_ptr
+        debug $40
+        adc     signature_ptr           ; Add to signature_ptr
+        sta     signature_ptr
+        bcc     @done                   ; If carry not set then don't increment high byte
+        inc     signature_ptr+1
+        clc
 @done:
         rts
 
-@error:
-        sec
+; Parses an argument separator followed by an argument.
+; Reverts the read and write positions if parsing either the separator or argument fails.
+; A = the argument type
+
+parse_following_argument:
+        ldpha   r                       ; Save read position
+        jsr     parse_argument_separator
+        bcs     @error
+        jsr     parse_argument_value
+        bcs     @error
+        pla                             ; Pop and discard the saved read position
         rts
+
+@error:
+        plsta   r                       ; Restore r
+        rts
+
+; Looks up the argument type, then parses a value of that type.
+; signature_ptr = pointer to the type of the first argument
+; argument_index = the index of this argument
+
+parse_argument_value:
+        ldy     argument_index          ; Use Y to index signature
+        lda     (signature_ptr),y       ; Load argument type
+
+; Fall through to parse_value...
+
+; Parses a single argument value.
+; A = the argument type
+
+parse_value:
+        debug $30
+        and     #$0F                    ; Isolate argument type
+        tay
+        ldax    #argument_type_vectors
+        jmp     invoke_indexed_vector
 
 ; Placeholder handler that just signals an error.
 
@@ -196,7 +264,7 @@ parse_error:
         rts
 
 ; Parses and tokenizes a expression.
-; This functinon handles skipping whitespace for ALL expression elements.
+; This function handles skipping whitespace for ALL expression elements.
 
 parse_expression:
         jsr     skip_whitespace

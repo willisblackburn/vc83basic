@@ -1,0 +1,85 @@
+
+program_line ::= number _ statement (_ ':' _ statement)* _ '\n'
+
+statement ::=
+      assert_statement
+    | goto_statement
+    | let_statement
+    | ...
+
+# ASSERT value [, error-message]
+assert_statement ::= 'ASSERT' _ expression _ (_ ',' _ expression)? 
+
+# DATA text
+data_statement ::= 'DATA' _ text
+
+# GOTO line-number
+goto_statement ::= 'GOTO' _ repeated_number
+
+# INPUT [# channel] [prompt ;] var [, var] ...
+input_statement ::= 'INPUT' (_ channel)? (_ string ';')? _ repeated_var 
+
+# LET var = value
+let_statement ::= 'LET'? _ var _ '=' expression
+
+# LIST start-line-number, end-line-number
+list_statement ::= 'LIST' (_ number (_ ',' _ number)?)? 
+
+# ON value GOTO line-number [, line_number] ...
+on_goto_statement ::= 'ON' _ expression _ 'GOTO' _ repeated_number
+
+# PRINT print-value
+print_statement ::= 'PRINT' (_ channel)? _ print_expression
+
+# READ var [, var] ...
+read_statement ::= 'READ' _ repeated_var
+
+# REM text
+rem_statement ::= 'REM' _ text
+
+repeated_number = number (_ ',' _ number)*
+
+repeated_var = var (_ ',' _ var)*
+
+expression ::= number | string | var
+    | function
+    | '(' _ expression _ ')'
+    | expression _ op _ expression
+
+print_expression ::= expression
+    | print_expression _ ',' (_ expression)?
+    | print_expression _ ';' (_ expression)?
+
+function ::=
+      len_function
+    | min_function
+    | max_function
+
+# LEN(string-value)
+len_function ::= 'LEN' _ '(' _ expression _ ')'
+
+# MAX(value, value)
+# MIN(value, value)
+max_function ::= 'MAX' _ '(' _ expression _ ',' _ expression _ ')'
+min_function ::= 'MIN' _ '(' _ expression _ ',' _ expression _ ')'
+
+op ::= '<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR'
+
+var ::= letter (letter | digit | '_')*
+
+number ::= sign? digit+ ('.' digit*)? ('E' sign? digit+)
+
+string ::= '"' ([^"] | '""')* '"' 
+
+channel ::= '#' number
+
+letter ::= [A-Z]
+
+digit ::= [0-9]
+
+sign ::= [-+]
+
+_ ::= [ \t]*
+
+text ::= [^\n]
+

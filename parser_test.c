@@ -132,31 +132,66 @@ static void test_parse_arguments(void) {
     ASSERT_EQ(w, offsetof(Line, data) + 3);
     ASSERT_EQ(argument_index, 1);
 
-    strcpy(buffer, " 1, 256");
+    strcpy(buffer, "1,256");
     err = parse_arguments(2, signature_table, 0, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    ASSERT_EQ(r, 7);
+    ASSERT_EQ(r, 5);
     ASSERT_EQ(w, offsetof(Line, data) + 6);
     ASSERT_EQ(argument_index, 2);
+}
+
+static void test_parse_repeated_arguments(void) {
+    int err;
+    char signature_table[] = { 0x21 };
+
+    const char line_data_1[] = { 0x01, 0x02, 0x01, 0x00 };
+    // const char line_data_2[] = { 0x02, 0x01, 0x00 };
+    // const char line_data_3[] = { 0x02, 0x01, 0x00, 0x02, 0x00, 0x01 };
+
+    PRINT_TEST_NAME();
+
+    strcpy(buffer, "1");
+    err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + 3);
+    ASSERT_EQ(argument_index, 1);
+
+    // strcpy(buffer, "1,");
+    // err = parse_arguments(1, signature_table, 0, 0, offsetof(Line, data));
+    // ASSERT_EQ(err, 0);
+    // ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
+    // ASSERT_EQ(r, 1);
+    // ASSERT_EQ(w, offsetof(Line, data) + 3);
+    // ASSERT_EQ(argument_index, 1);
+
+    // strcpy(buffer, " 1, 256");
+    // err = parse_arguments(2, signature_table, 0, 0, offsetof(Line, data));
+    // ASSERT_EQ(err, 0);
+    // ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
+    // ASSERT_EQ(r, 7);
+    // ASSERT_EQ(w, offsetof(Line, data) + 6);
+    // ASSERT_EQ(argument_index, 2);
 }
 
 static void test_parse_element(void) {
     int err;
     char name_table[] = { 
-        'P', 'L', 'O', 'T', 0x12+0x80, 
-        'N', 'E', 'W'+0x80, 
-        'G', 'R', 0x11+0x80,
-        'F', 'O', 'R', 0x11, 'T', 'O', 0x11+0x80, 
-        'L', 'E', 'T', 0x11, '=', 0x11+0x80, 
+        'P', 'L', 'O', 'T', 2 + NT_END, 
+        'N', 'E', 'W' + NT_END, 
+        'G', 'R', 1 + NT_END,
+        'F', 'O', 'R', 1, 'T', 'O', 1 + NT_END, 
+        'L', 'E', 'T', 1, '=', 1 + NT_END, 
         0
     };
     char signature_table[] = { 
-        0x01, 0x01,
-        0, 0, 
-        0x01, 0,
-        0x01, 0x01,
-        0x08, 0x07
+        TYPE_INT,   TYPE_INT,
+        TYPE_NONE,  TYPE_NONE, 
+        TYPE_INT,   TYPE_NONE,
+        TYPE_INT,   TYPE_INT,
+        TYPE_VAR,   TYPE_ANY
     };
 
     const char line_data_1[] = { 0x00, 0x02, 0x0A, 0x00, 0x02, 0x64, 0x00 };
@@ -210,6 +245,7 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_arguments();
+    // test_parse_repeated_arguments();
     test_parse_element();
     return 0;
 }
