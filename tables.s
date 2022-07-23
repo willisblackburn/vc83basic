@@ -18,7 +18,7 @@ statement_signature_table:
         .byte   TYPE_VAR, TYPE_INT
         .byte   TYPE_VAR, TYPE_NONE
         .byte   TYPE_INT | TYPE_REPEATED, TYPE_NONE
-        .byte   TYPE_VAR, TYPE_NONE
+        .byte   TYPE_VAR | TYPE_REPEATED, TYPE_NONE
         .byte   TYPE_INT, TYPE_NONE
 
 statement_exec_vectors:

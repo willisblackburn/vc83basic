@@ -15,7 +15,7 @@ def(TYPE_PROMPT,        hex(0A))
 def(TYPE_PRINT,         hex(0B))
 def(TYPE_THEN,          hex(0C))
 def(TYPE_STEP,          hex(0D))
-def(TYPE_IGNORE,        hex(0E))
+def(TYPE_TEXT,          hex(0E))
 
 comment Type modifiers
 
@@ -29,6 +29,8 @@ def(TYPE_MASK_CLEAR_REPEATED,   hex(DF))
 comment Name table definitions 
 
 def(NT_END,             hex(80))
+
+def(NT_MASK_ARGUMENT_COUNT,     hex(0F))
 
 comment Tokenized form constants
 

@@ -89,11 +89,7 @@ parse_element:
         jsr     encode_byte             ; Encode the statement name
         pla                             ; Recover the name index (doesn't affect carry)
         bcs     @error                  ; encode_byte error
-        asl                             ; Calculate the address of the signature; each name gets 2 signature bytes
-        adc     signature_ptr           ; Carry already clear because encode_byte succeeded
-        sta     signature_ptr   
-        bcc     @after_character_sequence   ; Carry clear so don't need to increment high byte
-        inc     signature_ptr+1
+        jsr     skip_signature_entries  ; Move signature_ptr to point to the signature for this element
 
 ; After a character sequence, Y will point to one of:
 ; 1. 0, meaning we matched the last sequence in the last name table entry; stop.
@@ -170,7 +166,7 @@ parse_arguments:
 .assert TYPE_REPEATED = $20, error
 .assert TYPE_OPTIONAL = $40, error
 
-        and     #$07                    ; Isolate the count
+        and     #NT_MASK_ARGUMENT_COUNT ; Isolate the count
         sta     argument_count
         mva     #0, argument_index      ; Initialize argument_index to 0
         jsr     set_argument_type       ; A is set to argument_index
@@ -200,15 +196,11 @@ parse_arguments:
         bcs     @done                   ; encode_byte error
         lda     argument_index          ; Load argument_index to check vs. count; remember it
         dey
-        bpl     @no_value               ; 
+        bpl     @no_value             
 @success:
-        clc
         lda     argument_count          ; Get argument count to add to signature_ptr
-        adc     signature_ptr           ; Add to signature_ptr
-        sta     signature_ptr
-        bcc     @done                   ; If carry not set then don't increment high byte
-        inc     signature_ptr+1
-        clc
+        jsr     skip_signature_arguments    ; Skip to the next set of arguments
+        clc                             ; Signal no error
 @done:
         rts
 
@@ -376,4 +368,20 @@ skip_whitespace:
         beq     @next       
         dex                             ; It wasn't whitespace so go back
         stx     r                       ; Update read position
+        rts
+
+; Moves signature_ptr forward by a certain number of entries of 2 bytes each (skip_signature_entries entry point)
+; or by a certain number of argumnets of 1 byte each (skip_signature_arguments).
+; A = the number of entries or arguments to skip (must be <128)
+
+skip_signature_entries:
+        asl                             ; Multiply the input value by 2.
+
+skip_signature_arguments:
+        clc
+        adc     signature_ptr           
+        sta     signature_ptr   
+        bcc     @no_carry               ; Carry clear so don't need to increment high byte
+        inc     signature_ptr+1
+@no_carry:
         rts

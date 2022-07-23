@@ -1,5 +1,4 @@
-
-program_line ::= number _ statement (_ ':' _ statement)* _ '\n'
+program_line ::= number _ statement (_ ':' _ statement)*
 
 statement ::=
       assert_statement
@@ -8,10 +7,15 @@ statement ::=
     | ...
 
 # ASSERT value [, error-message]
-assert_statement ::= 'ASSERT' _ expression _ (_ ',' _ expression)? 
+assert_statement ::= 'ASSERT' _ expression_2_1
 
 # DATA text
 data_statement ::= 'DATA' _ text
+
+# FOR var = start-value TO end-value STEP step-value
+for_statement ::= 'FOR' _ var _ '=' _ expression_1_1 _ 'TO' _ expression_1_1 _ step?
+
+step ::= 'STEP' _ expression
 
 # GOTO line-number
 goto_statement ::= 'GOTO' _ repeated_number
@@ -20,7 +24,7 @@ goto_statement ::= 'GOTO' _ repeated_number
 input_statement ::= 'INPUT' (_ channel)? (_ string ';')? _ repeated_var 
 
 # LET var = value
-let_statement ::= 'LET'? _ var _ '=' expression
+let_statement ::= 'LET'? _ var _ '=' expression_1_0
 
 # LIST start-line-number, end-line-number
 list_statement ::= 'LIST' (_ number (_ ',' _ number)?)? 
@@ -41,6 +45,24 @@ repeated_number = number (_ ',' _ number)*
 
 repeated_var = var (_ ',' _ var)*
 
+expression_1_0 = expression?
+
+expression_1_1 = expression
+
+expression_2_0 = (expression (_ ',' _ expression)?)?
+
+expression_2_1 = expression (_ ',' _ expression)?
+
+expression_2_2 = expression _ ',' _ expression
+
+expression_3_0 = (expression (_ ',' _ expression (_ ',' _ expression)?)?)?
+
+expression_3_1 = expression (_ ',' _ expression (_ ',' _ expression)?)?
+
+expression_3_2 = expression _ ',' _ expression (_ ',' _ expression)?
+
+expression_3_3 = expression _ ',' _ expression _ ',' _ expression
+
 expression ::= number | string | var
     | function
     | '(' _ expression _ ')'
@@ -52,16 +74,17 @@ print_expression ::= expression
 
 function ::=
       len_function
-    | min_function
     | max_function
+    | min_function
+    | ...
 
 # LEN(string-value)
-len_function ::= 'LEN' _ '(' _ expression _ ')'
+len_function ::= 'LEN' _ '(' _ expression_1_1 _ ')'
 
 # MAX(value, value)
 # MIN(value, value)
-max_function ::= 'MAX' _ '(' _ expression _ ',' _ expression _ ')'
-min_function ::= 'MIN' _ '(' _ expression _ ',' _ expression _ ')'
+max_function ::= 'MAX' _ '(' _ expression_2_2 _ ')'
+min_function ::= 'MIN' _ '(' _ expression_2_2 ')'
 
 op ::= '<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR'
 

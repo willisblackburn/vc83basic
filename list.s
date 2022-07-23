@@ -88,13 +88,14 @@ list_element:
 ; Lists statement or function arguments from the token stream.
 ; Unlike parse_arguments, this function does not use the signature table. Instead, we just print arguments using
 ; the types in the token stream.
+; ARGUMENT COUNT MUST BE AT LEAST 1 (although that argument can be optional).
 ; A = the number of arguments to list
 ; line_ptr = pointer to the current line
 ; r = read position line (updated) 
 
 list_arguments:
+        and     #NT_MASK_ARGUMENT_COUNT ; Isolate the count
         sta     argument_count          ; Re-use argument_count from parser module
-        beq     @done                   ; Eject if argument count is 0
 @next_argument:
         jsr     list_value              ; Assume it's an expression for now
         dec     argument_count          ; Done with one argument
