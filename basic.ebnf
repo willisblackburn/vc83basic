@@ -12,6 +12,11 @@ assert_statement ::= 'ASSERT' _ expression_2_1
 # DATA text
 data_statement ::= 'DATA' _ text
 
+# DIM A$(100)
+# DIM A$(100,100)
+# DIM A$(100,100,100)
+dim_statement ::= 'DIM' _ var _ '(' expression (_ ',' _ expression ( _ ',' _ expression)?)? _ ')' 
+
 # FOR var = start-value TO end-value STEP step-value
 for_statement ::= 'FOR' _ var _ '=' _ expression_1_1 _ 'TO' _ expression_1_1 _ step?
 

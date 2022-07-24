@@ -18,7 +18,6 @@
 .globalzp n
 .globalzp signature_ptr
 .globalzp argument_count
-.globalzp argument_index
 .globalzp src_ptr, dst_ptr
 .globalzp line_ptr
 .globalzp program_ptr

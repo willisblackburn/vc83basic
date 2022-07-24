@@ -32,7 +32,6 @@
 .export _name_ptr = name_ptr
 
 .export _signature_ptr = signature_ptr
-.export _argument_index = argument_index
 
 ; Test access to the B, C, D, and E registers
 
@@ -193,8 +192,6 @@ _parse_arguments:
         sta     w
         jsr     popa
         sta     r
-        jsr     popax
-        stax    signature_ptr
         jsr     popa
         jsr     parse_arguments
         jmp     return_carry

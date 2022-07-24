@@ -9,9 +9,7 @@ r: .res 1
 w: .res 1
 
 signature_ptr: .res 2
-argument_index: .res 1
 argument_count: .res 1
-argument_type: .res 1
 
 ; The write position of the repeated argument count in line_buffer
 repeated_argument_count_w: .res 1
@@ -105,11 +103,11 @@ parse_element:
 ; The next byte must be arguments.
 
 @arguments:
-        sty     n                       ; Save y (then name table entry position) in n
+        sty     n                       ; Save y (the name table entry position) in n
         lda     (name_ptr),y            ; Re-read name table byte
         jsr     parse_arguments
-        ldy     n                       
         bcs     @error
+        ldy     n                       
         lda     (name_ptr),y            ; Re-read name table byte
         bmi     @success                ; If bit 7 set then all done
         iny                             ; Advance Y to the next position in the name table entry
@@ -154,65 +152,36 @@ argument_type_vectors:
 ; Parses arguments from the buffer and tokenizes them.
 ; Arguments must be separated by ','.
 ; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
-; number of arguments based on the types in the signature table.
-; ARGUMENT COUNT MUST BE AT LEAST 1 (although that argument can be optional).
-; A = the value from the name table, in the format xxxxpnnn, p is true if we should
-; parse parentheses around the arguments, and nn is the number of arguments
-; signature_ptr = the address of the signature
-; argument_index = where to start reading arguments from signature table (modified)
+; number of arguments.
+; ARGUMENT COUNT MUST BE AT LEAST 1.
+; A = the number of arguments to parse; bit 3 is true if these arguments are optional
 
 parse_arguments:
-
-.assert TYPE_REPEATED = $20, error
-.assert TYPE_OPTIONAL = $40, error
-
-        and     #NT_MASK_ARGUMENT_COUNT ; Isolate the count
         sta     argument_count
-        mva     #0, argument_index      ; Initialize argument_index to 0
-        jsr     set_argument_type       ; A is set to argument_index
-        jsr     parse_argument_value    ; Parse the argument value; sets argument_type
+        jsr     parse_argument_expression   ; Parse the argument value; sets argument_type
         bcs     @parse_failed
 @value:
-        lda     argument_index
-        cmp     argument_count
+        dec     argument_count          ; One argument done
         beq     @success                ; All done parsing arguments
-        jsr     set_argument_type       ; A is set to argument_index
         jsr     parse_following_argument    ; Parse the next argument value; resets argument_type
         bcc     @value                  ; If separator parsed then continue with value, otherwise fail
 @parse_failed:
-        lda     argument_type           ; Load the argument type set by parse_argument_value
-        asl                             ; Shifts optional bit to MSB
-        sec                             ; Set carry to prepare for @missing_optional SBC or return error
-        bmi     @missing_optional       ; If it was optional then go record "no value"
-        rts
-
-@missing_optional:
-        lda     argument_count
-        sbc     argument_index
-        tay
+        lda     argument_count          ; Load the argument count
+        and     #NT_OPTIONAL            ; Mask the optional argument flag
+        beq     @done                   ; Result was 0 so optional flag not set; fail
+        lda     argument_count          ; Optional was set so prepare to store "no value" tokens
+        and     #NT_MASK_ARGUMENT_COUNT ; Isolate the count
+        tay                             ; Store in Y
 @no_value:
         lda     #TOKEN_NO_VALUE
         jsr     encode_byte             ; Encode the "no value" token
         bcs     @done                   ; encode_byte error
-        lda     argument_index          ; Load argument_index to check vs. count; remember it
-        dey
-        bpl     @no_value             
+        dey                             ; Done with one "no value"
+        bne     @no_value               ; Loop if more
 @success:
-        lda     argument_count          ; Get argument count to add to signature_ptr
-        jsr     skip_signature_arguments    ; Skip to the next set of arguments
         clc                             ; Signal no error
 @done:
-        rts
-
-
-; Sets argument_type to the next value from the signature and increments argument_index.
-; A = the current argument_index value
-
-set_argument_type:
-        tay                             ; Tranfer argument index into Y to index signature
-        inc     argument_index          ; Increment argument index
-        lda     (signature_ptr),y       ; Load argument type
-        sta     argument_type           ; Store the provided argument type for reference later
+        debug $20
         rts
 
 ; Parses an argument separator followed by an argument.
@@ -223,7 +192,7 @@ parse_following_argument:
         ldpha   r                       ; Save read position
         jsr     parse_argument_separator
         bcs     @error
-        jsr     parse_argument_value
+        jsr     parse_argument_expression
         bcs     @error
         pla                             ; Pop and discard the saved read position
         rts
@@ -232,31 +201,18 @@ parse_following_argument:
         plsta   r                       ; Restore r
         rts
 
-; Parses a single argument value.
+; Parses an argument expression.
 ; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
 ; save the current values to the stack first.
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
-; argument_type = the type of the argument
 
-parse_argument_value:
-        lda     argument_type
-        and     #TYPE_REPEATED          ; Is it a repeated type?
-        bne     parse_repeated_argument ; If so then parse as a repeated value
-        lda     argument_type           ; Reload argument type
-        and     #TYPE_MASK_TYPE_ONLY    ; Isolate argument type
-        tay
+parse_argument_expression:
         ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
         ldpha   n
-        ldphaa  signature_ptr
-        ldpha   argument_index
         ldpha   argument_count
-        ldpha   argument_type
         ldax    #argument_type_vectors
-        jsr     invoke_indexed_vector
-        plsta   argument_type
+        jsr     parse_expression
         plsta   argument_count          
-        plsta   argument_index
-        plstaa  signature_ptr
         plsta   n
         plstaa  name_ptr                ; Recover variables from stack
         rts
@@ -264,28 +220,28 @@ parse_argument_value:
 ; Parse repeated values separated by delimiters.
 ; argument_type = the type of the argument, which will have the TYPE_REPEATED bit set
 
-parse_repeated_argument:
-        lda     argument_type           ; Load the argument type
-        and     #TYPE_MASK_CLEAR_REPEATED   ; Clear the TYPE_REPEATED bit
-        sta     argument_type           ; Store back so we don't recursively try to parse a repeated value
-        ldpha   w                       ; Save the w value to restore in case we fail to parse anything
-        lda     #0                      
-        jsr     encode_byte             ; Create a placeholder for the number of arguments; this will be at position w
-        jsr     parse_argument_value    ; Parse the first value
-        bcc     @value                  ; Succees; continue parsing values
-        plsta   w                       ; Restore w (doesn't affect carry)
-        rts
+; parse_repeated_argument:
+;         lda     argument_type           ; Load the argument type
+;         and     #TYPE_MASK_CLEAR_REPEATED   ; Clear the TYPE_REPEATED bit
+;         sta     argument_type           ; Store back so we don't recursively try to parse a repeated value
+;         ldpha   w                       ; Save the w value to restore in case we fail to parse anything
+;         lda     #0                      
+;         jsr     encode_byte             ; Create a placeholder for the number of arguments; this will be at position w
+;         jsr     parse_argument_expression   ; Parse the first value
+;         bcc     @value                  ; Succees; continue parsing values
+;         plsta   w                       ; Restore w (doesn't affect carry)
+;         rts
 
-@value:
-        tsx                           
-        lda     $101,x                  ; Get the w that we saved on the stack earlier
-        tax                             ; w into X register
-        inc     line_buffer,x           ; Increment the argument count that we saved at that position
-        jsr     parse_following_argument
-        bcc     @value                  ; Keep parsing until we run out of arguments
-        pla                             ; Pop the original w value from the stack and discard it
-        clc                             ; Clear carry since it's set
-        rts
+; @value:
+;         tsx                           
+;         lda     $101,x                  ; Get the w that we saved on the stack earlier
+;         tax                             ; w into X register
+;         inc     line_buffer,x           ; Increment the argument count that we saved at that position
+;         jsr     parse_following_argument
+;         bcc     @value                  ; Keep parsing until we run out of arguments
+;         pla                             ; Pop the original w value from the stack and discard it
+;         clc                             ; Clear carry since it's set
+;         rts
 
 ; Placeholder handler that just signals an error.
 

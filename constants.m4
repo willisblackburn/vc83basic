@@ -28,9 +28,10 @@ def(TYPE_MASK_CLEAR_REPEATED,   hex(DF))
 
 comment Name table definitions 
 
+def(NT_OPTIONAL,        hex(40))
 def(NT_END,             hex(80))
 
-def(NT_MASK_ARGUMENT_COUNT,     hex(0F))
+def(NT_MASK_ARGUMENT_COUNT,     hex(07))
 
 comment Tokenized form constants
 
