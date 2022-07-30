@@ -117,26 +117,28 @@ static void test_parse_multiple_arguments(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     strcpy(buffer, "1");
     err = parse_multiple_arguments(1, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + 3);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,");
     err = parse_multiple_arguments(1, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + 3);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,256");
     err = parse_multiple_arguments(2, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 5);
-    ASSERT_EQ(w, offsetof(Line, data) + 6);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
 
     strcpy(buffer, "1");
     err = parse_multiple_arguments(2, 0, offsetof(Line, data));
@@ -147,7 +149,7 @@ static void test_parse_multiple_arguments(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_parse_optional_arguments(void) {
+static void test_parse_optional_multiple_arguments(void) {
     int err;
 
     const char line_data_1[] = { TOKEN_INT, 0x01, 0x00, TOKEN_NO_VALUE };
@@ -156,36 +158,38 @@ static void test_parse_optional_arguments(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     strcpy(buffer, "1");
-    err = parse_multiple_arguments(2 + NT_OPTIONAL, 0, offsetof(Line, data));
+    err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,");
-    err = parse_multiple_arguments(2 + NT_OPTIONAL, 0, offsetof(Line, data));
+    err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,");
-    err = parse_multiple_arguments(2 + NT_OPTIONAL, 0, offsetof(Line, data));
+    err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "");
-    err = parse_multiple_arguments(2 + NT_OPTIONAL, 0, offsetof(Line, data));
+    err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 0);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 
     strcpy(buffer, "1,2,3,4");
-    err = parse_multiple_arguments(1 + NT_OPTIONAL, 0, offsetof(Line, data));
+    err = parse_multiple_arguments(1 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 1);
@@ -208,31 +212,63 @@ static void test_parse_optional_arguments(void) {
 //     ASSERT_EQ(err, 0);
 //     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
 //     ASSERT_EQ(r, 1);
-//     ASSERT_EQ(w, offsetof(Line, data) + 4);
+//     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
 //     strcpy(buffer, "1,");
 //     err = parse_multiple_arguments(1, signature_table, 0, offsetof(Line, data));
 //     ASSERT_EQ(err, 0);
 //     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
 //     ASSERT_EQ(r, 1);
-//     ASSERT_EQ(w, offsetof(Line, data) + 4);
+//     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 
 //     strcpy(buffer, " 1, 256");
 //     err = parse_multiple_arguments(1, signature_table, 0, offsetof(Line, data));
 //     ASSERT_EQ(err, 0);
 //     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
 //     ASSERT_EQ(r, 7);
-//     ASSERT_EQ(w, offsetof(Line, data) + 7);
+//     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
 // }
+
+static void test_parse_single_argument(void) {
+    int err;
+
+    const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
+    const char line_data_2[] = { 0x80 };
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    strcpy(buffer, "1");
+    err = parse_argument(NT_EXPRESSION, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+
+    strcpy(buffer, "1");
+    err = parse_argument(NT_NUMBER, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+
+    strcpy(buffer, "X");
+    err = parse_argument(NT_VAR, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
+    ASSERT_EQ(r, 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+}
 
 static void test_parse_element(void) {
     int err;
     char name_table[] = { 
-        'P', 'L', 'O', 'T', 2 + NT_END, 
-        'N', 'E', 'W' + NT_END, 
-        'G', 'R', 1 + NT_END,
-        'F', 'O', 'R', NT_VAR, '=', 1, 'T', 'O', 1 + NT_END,
-        'L', 'E', 'T', NT_VAR, '=', 1 + NT_END, 
+        'P', 'L', 'O', 'T', 2 | NT_END, 
+        'N', 'E', 'W' | NT_END, 
+        'G', 'R', 1 | NT_END,
+        'F', 'O', 'R', NT_VAR, '=', 1, 'T', 'O', 1 | NT_END,
+        'L', 'E', 'T', NT_VAR, '=', 1 | NT_END, 
         0
     };
     const char line_data_1[] = { 0x00, TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x64, 0x00 };
@@ -243,40 +279,42 @@ static void test_parse_element(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     strcpy(buffer, "PLOT 10,100");
     err = parse_element(name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 11);
-    ASSERT_EQ(w, offsetof(Line, data) + 7);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "NEW");
     err = parse_element(name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, offsetof(Line, data) + 1);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 
     strcpy(buffer, "GR 8");
     err = parse_element(name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 4);
-    ASSERT_EQ(w, offsetof(Line, data) + 4);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
 
     strcpy(buffer, "LET X=100");
     err = parse_element(name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
     ASSERT_EQ(r, 9);
-    ASSERT_EQ(w, offsetof(Line, data) + 5);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_4);
 
     strcpy(buffer, "FOR Y=1 TO 10000");
     err = parse_element(name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
     ASSERT_EQ(r, 16);
-    ASSERT_EQ(w, offsetof(Line, data) + 8);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_5);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 
@@ -301,8 +339,9 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_multiple_arguments();
-    test_parse_optional_arguments();
+    test_parse_optional_multiple_arguments();
     // test_parse_repeated_arguments();
+    test_parse_single_argument();
     test_parse_element();
     return 0;
 }

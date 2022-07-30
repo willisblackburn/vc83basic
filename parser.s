@@ -175,6 +175,7 @@ parse_multiple_arguments:
 @value:
         dec     argument_count          ; One argument done
         beq     @success                ; All done parsing arguments
+        lda     #NT_EXPRESSION
         jsr     parse_following_argument    ; Parse the next argument value
         bcc     @value                  ; If separator parsed then continue with value, otherwise fail
 @parse_failed:
@@ -195,12 +196,14 @@ parse_multiple_arguments:
 
 ; Parses an argument separator followed by an argument.
 ; Reverts the read and write positions if parsing either the separator or argument fails.
+; A = the type of argument to parse (as a name table directive)
 
 parse_following_argument:
+        tay                             ; Save the argument type directive
         ldpha   r                       ; Save read position
         jsr     parse_argument_separator
         bcs     @error
-        lda     #NT_EXPRESSION
+        tya                             ; Pass the argument type directive to parse_argument
         jsr     parse_argument
         bcs     @error
         pla                             ; Pop and discard the saved read position
@@ -252,9 +255,9 @@ parse_expression:
 
 parse_number:
         jsr     read_number
-        bcs     @error
+        bcs     @done
         jsr     encode_number           ; Will set carry if fail
-@error:
+@done:
         rts
 
 ; Parses a variable name.
@@ -290,9 +293,6 @@ parse_rpt_number:
 parse_rpt_variable:
         sec
         rts
-
-parse_channel:
-        jsr     skip_whitespace
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
 ; Returns carry clear if the ',' was found or carry set if it was not.

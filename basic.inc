@@ -75,6 +75,7 @@
 .global read_number, char_to_digit
 .global parse_element
 .global parse_multiple_arguments
+.global parse_argument
 .global parse_expression
 .global parse_argument_separator
 .global skip_whitespace
