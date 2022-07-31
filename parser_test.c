@@ -345,6 +345,8 @@ static void test_parse_element(void) {
         'G', 'R', 1 | NT_END,
         'F', 'O', 'R', NT_VAR, '=', 1, 'T', 'O', 1 | NT_END,
         'L', 'E', 'T', NT_VAR, '=', 1 | NT_END, 
+        'D', 'A', 'T', 'A', NT_RPT_DATA | NT_END, 
+        'R', 'E', 'S', 'T', 'O', 'R', 'E', 1 | NT_OPTIONAL | NT_END, 
         0
     };
     const char line_data_1[] = { 0x00, TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x64, 0x00 };
@@ -352,6 +354,7 @@ static void test_parse_element(void) {
     const char line_data_3[] = { 0x02, TOKEN_INT, 0x08, 0x00 };
     const char line_data_4[] = { 0x04, 0x80, TOKEN_INT, 0x64, 0x00 };
     const char line_data_5[] = { 0x03, 0x81, TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x10, 0x27 };
+    const char line_data_6[] = { 0x05, TOKEN_INT, 0xFF, 0x00, TOKEN_INT, 0x0E, 0x00, TOKEN_INT, 0x00, 0x04, TOKEN_END_REPEAT};
 
     PRINT_TEST_NAME();
 
@@ -391,6 +394,13 @@ static void test_parse_element(void) {
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
     ASSERT_EQ(r, 16);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_5);
+
+    strcpy(buffer, "DATA 255,14,1024");
+    err = parse_element(name_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_6, sizeof line_data_6);
+    ASSERT_EQ(r, 16);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_6);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 

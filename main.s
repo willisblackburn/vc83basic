@@ -18,7 +18,6 @@ main:
         jsr     readline
         mva     #0, r                   ; Initialize the read pointer
         mva     #Line::data, w          ; Initialize write pointer
-        jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
         stax    line_buffer+Line::number
@@ -39,7 +38,6 @@ main:
         jmp     @wait_for_input
 
 @get_statement:
-        jsr     skip_whitespace
         ldax    #statement_name_table
         jsr     parse_element           ; Leaves the parsed statement in line_buffer
         rts

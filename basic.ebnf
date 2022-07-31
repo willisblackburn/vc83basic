@@ -1,16 +1,16 @@
-program_line ::= number _ statement (_ ':' _ statement)*
+program_line ::= number statement (_ ':' statement)*
 
-statement ::=
+statement ::= _ (
       assert_statement
     | goto_statement
     | let_statement
-    | ...
+    | ... )
 
 # ASSERT value [, error-message]
-assert_statement ::= 'ASSERT' _ opt_expression_2
+assert_statement ::= 'ASSERT' opt_expression_2
 
 # DATA text
-data_statement ::= 'DATA' _ repeated_data
+data_statement ::= 'DATA' repeated_data
 
 repeated_data ::= data (_ ',' data)*
 
@@ -19,83 +19,84 @@ data ::= number | string
 # DIM A$(100)
 # DIM A$(100,100)
 # DIM A$(100,100,100)
-dim_statement ::= 'DIM' _ var _ '(' _ expression (_ ',' _ expression (_ ',' _ expression)?)? _ ')' 
+dim_statement ::= 'DIM' var _ '(' expression (_ ',' expression (_ ',' expression)?)? _ ')' 
 
 # FOR var = start-value TO end-value STEP step-value
-for_statement ::= 'FOR' _ var _ '=' _ expression_1 _ 'TO' _ expression_1 _ step?
+for_statement ::= 'FOR' var _ '=' expression_1 _ 'TO' expression_1 step?
 
-step ::= 'STEP' _ expression
+step ::= _ 'STEP' expression
 
 # GOTO line-number
-goto_statement ::= 'GOTO'? _ number
+goto_statement ::= 'GOTO'? number
 
 # INPUT [# channel] [prompt ;] var [, var] ...
-input_statement ::= 'INPUT' channel prompt _ repeated_var 
+input_statement ::= 'INPUT' channel prompt repeated_var 
 
 # LET var = value
-let_statement ::= 'LET'? _ var _ '=' _ expression_1
+let_statement ::= 'LET'? var _ '=' expression_1
 
 # LIST start-line-number, end-line-number
-list_statement ::= 'LIST' _ opt_expression_2 
+list_statement ::= 'LIST' opt_expression_2 
 
 # ON value GOTO line-number [, line_number] ...
-on_goto_statement ::= 'ON' _ expression1 _ 'GOTO' _ repeated_number
+on_goto_statement ::= 'ON' expression1 _ 'GOTO' repeated_number
 
 # PRINT print-value
-print_statement ::= 'PRINT' channel _ print_expression
+print_statement ::= 'PRINT' channel print_expression
 
 # READ var [, var] ...
-read_statement ::= 'READ' _ repeated_var
+read_statement ::= 'READ' repeated_var
 
 # REM text
-rem_statement ::= 'REM' _ text
+rem_statement ::= 'REM' text
 
 expression_1 = expression
 
-expression_2 = expression _ ',' _ expression
+expression_2 = expression _ ',' expression
 
-expression_3 = expression _ ',' _ expression _ ',' _ expression
+expression_3 = expression _ ',' expression _ ',' expression
 
 opt_expression_1 = expression?
 
-opt_expression_2 = (expression (_ ',' _ expression)?)?
+opt_expression_2 = (expression (_ ',' expression)?)?
 
-opt_expression_3 = (expression (_ ',' _ expression (_ ',' _ expression)?)?)?
+opt_expression_3 = (expression (_ ',' expression (_ ',' expression)?)?)?
 
 expression ::= number | string | var
     | function
-    | '(' _ expression _ ')'
-    | expression _ op _ expression
+    | _ '(' expression _ ')'
+    | expression op expression
 
 print_expression ::= expression
-    | print_expression _ ',' (_ expression)?
-    | print_expression _ ';' (_ expression)?
+    | print_expression print_op print_expression
 
-function ::=
+function ::= _ (
       len_function
     | max_function
     | min_function
-    | ...
+    | ... )
 
 # LEN(string-value)
-len_function ::= 'LEN' _ '(' _ expression_1 _ ')'
+len_function ::= 'LEN' _ '(' expression_1 _ ')'
 
 # MAX(value, value)
 # MIN(value, value)
-max_function ::= 'MAX' _ '(' _ expression_2 _ ')'
-min_function ::= 'MIN' _ '(' _ expression_2 ')'
+max_function ::= 'MAX' _ '(' expression_2 _ ')'
+min_function ::= 'MIN' _ '(' expression_2 _ ')'
 
-op ::= '<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR'
+op ::= _ ('<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR')
 
-repeated_number = number (_ ',' _ number)*
+print_op ::= _ (',' | ';')
 
-repeated_var = var (_ ',' _ var)*
+repeated_number = number (_ ',' number)*
 
-var ::= letter (letter | digit | '_')*
+repeated_var = var (_ ',' var)*
 
-number ::= sign? digit+ ('.' digit*)? ('E' sign? digit+)
+var ::= _ letter (letter | digit | '_')*
 
-string ::= '"' ([^"] | '""')* '"' 
+number ::= _ sign? digit+ ('.' digit*)? ('E' sign? digit+)
+
+string ::= _ '"' ([^"] | '""')* '"' 
 
 channel ::= _ ('#' number)?
 
@@ -110,4 +111,3 @@ sign ::= [-+]
 _ ::= [ \t]*
 
 text ::= [^\n]
-

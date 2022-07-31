@@ -51,6 +51,7 @@ find_name:
 ; B SAFE
 
 match_character_sequence:
+        jsr     skip_whitespace
         ldx     r                       ; Load read position into X
 @next_character:        
         lda     (name_ptr),y            ; Get name character
