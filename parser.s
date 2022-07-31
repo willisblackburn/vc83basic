@@ -80,10 +80,6 @@ argument_type_vectors:
         .word   parse_error      
         .word   parse_error      
         .word   parse_error      
-        .word   parse_error      
-        .word   parse_error      
-        .word   parse_error      
-        .word   parse_error      
 
 ; Parses and tokenizes a syntax element starting with a name.
 ; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
@@ -120,31 +116,41 @@ parse_element:
         bmi     @success                ; Success if the end bit set
         iny                             ; Back to previous position
         lda     (name_ptr),y            ; Get the next byte
-        tax                             ; Save in X temporarily
-        and     #$70                    ; Isolate bits 4-7 which tells us what to do here
-        beq     @multiple               ; If 000 then it's a multiple arguments directive
-        cmp     #$10                    ; If 001 then it's a single argument
-        beq     @single                 ; If so then go parse a special argument
+        tax                             ; Save in X since we're going to be checking it a lot
+        and     #$60                    ; Figure out if this is a chracter sequence or a directive
+        beq     @directive              ; It's a directive
         jsr     skip_whitespace         ; Else this is a new character sequence to match
         jsr     match_character_sequence    ; Will advance Y past the matched sequence
         bcs     @error                  ; If not matched then error
         bcc     @next                   ; If matched then continue
 
+@directive:
+        txa                             ; Get the original byte
+        and     #$70                    ; Check if it's a multiple-argument directive
+        beq     @multiple               ; Yes
+        txa                             ; Get the byte again
+        eor     #$C0                    ; Check if it's repeated
+        beq     @repeated               ; Yes
+        txa                             ; It's not multiple and not repeated, must be a single argument
+        jsr     parse_argument
+        bcs     @error
+        inc     n                       ; Recover saved name table entry position
+        ldy     n                       ; Advance 1
+        bcc     @next
+
 ; Handle arguments.
 
 @multiple:
-        txa                             ; Recover name table entry value
+        txa                             ; Get original byte
         jsr     parse_multiple_arguments
         bcs     @error
         inc     n                       ; Recover saved name table entry position
         ldy     n                       ; Advance 1
         bcc     @next
 
-; Parse a special argument based on the argument type.
-
-@single:
-        txa                             ; Recover name table entry value
-        jsr     parse_argument
+@repeated:
+        txa                             ; Get original byte
+        jsr     parse_repeated_argument
         bcs     @error
         inc     n                       ; Recover saved name table entry position
         ldy     n                       ; Advance 1
@@ -166,7 +172,7 @@ parse_element:
 ; A = the number of arguments to parse, from 1 to 7; bit 3 is true if these arguments are optional
 
 parse_multiple_arguments:
-        sta     directive               ; Save the argument possibly containing the optional flag
+        sta     directive
         and     #$07
         sta     argument_count
         lda     #NT_EXPRESSION
@@ -194,6 +200,52 @@ parse_multiple_arguments:
 @done:
         rts
 
+; Parses a repeated value.
+; A = the directive from the name table entry
+
+.assert (NT_EXPRESSION & $0F) = (NT_RPT_EXPRESSION & $03), error
+.assert (NT_NUMBER & $0F) = (NT_RPT_NUMBER & $03), error
+.assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
+.assert (NT_DATA & $0F) = (NT_RPT_DATA & $03), error
+
+parse_repeated_argument:
+        sta     directive
+        and     #$03
+        debug $10
+        jsr     parse_argument
+        bcs     @done
+@next:
+        lda     directive
+        and     #$03
+        jsr     parse_following_argument
+        bcc     @next
+@done:
+        lda     #TOKEN_END_REPEAT
+        jmp     encode_byte
+
+; Parses a single argument.
+; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
+; save the current values to the stack first.
+; A = the type of argument to parse (as a name table directive)
+; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
+
+parse_argument:
+        debug $00
+        and     #$0F                    ; Isolate just the type
+        tay                             ; Prepare too use type as vector index
+        debug $01
+        ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
+        ldpha   n
+        ldpha   directive
+        ldpha   argument_count
+        ldax    #argument_type_vectors
+        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
+        plsta   argument_count          
+        plsta   directive
+        plsta   n
+        plstaa  name_ptr                ; Recover variables from stack
+        rts
+
 ; Parses an argument separator followed by an argument.
 ; Reverts the read and write positions if parsing either the separator or argument fails.
 ; A = the type of argument to parse (as a name table directive)
@@ -211,27 +263,6 @@ parse_following_argument:
 
 @error:
         plsta   r                       ; Restore r
-        rts
-
-; Parses a single argument.
-; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
-; save the current values to the stack first.
-; A = the type of argument to parse (as a name table directive)
-; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
-
-parse_argument:
-        and     #$0F                    ; Isolate just the type
-        tay                             ; Prepare too use type as vector index
-        ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
-        ldpha   n
-        ldpha   directive
-        ldpha   argument_count
-        ldax    #argument_type_vectors
-        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-        plsta   argument_count          
-        plsta   directive
-        plsta   n
-        plstaa  name_ptr                ; Recover variables from stack
         rts
 
 ; Placeholder handler that just signals an error.
@@ -283,16 +314,7 @@ parse_variable:
         rts
 
 parse_data:
-        sec
-        rts
-
-parse_rpt_number:
-        sec
-        rts
-
-parse_rpt_variable:
-        sec
-        rts
+        jmp     parse_number
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
 ; Returns carry clear if the ',' was found or carry set if it was not.

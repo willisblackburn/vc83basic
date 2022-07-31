@@ -71,7 +71,7 @@ constants.inc: constants.m4
 	m4 $< >$@
 
 constants.h: constants.m4
-	m4 -DC $< >$@
+	m4 -D__C__ $< >$@
 
 $(foreach TARGET,$(TARGETS),$(eval $(call create-target,$(TARGET))))
 

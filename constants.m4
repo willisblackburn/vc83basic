@@ -1,4 +1,4 @@
-ifdef(`C',
+ifdef(`__C__',
     `define(`def', `#define $1 $2') define(`hex', `0x$1') define(`comment', `//')',
     `define(`def', `$1 = $2') define(`hex', `$$1') define(`comment', `;')')
 
@@ -40,7 +40,7 @@ def(NT_END,             hex(80))
 
 comment Tokenized form constants
 
-def(TOKEN_END_OF_LINE,  hex(00))
+def(TOKEN_END_REPEAT,   hex(00))
 def(TOKEN_NO_VALUE,     hex(01))
 def(TOKEN_INT,          hex(02))
 def(TOKEN_FLOAT,        hex(03))
