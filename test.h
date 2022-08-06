@@ -39,6 +39,12 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
+extern int reg_bc;
+extern char reg_b;
+extern char reg_c;
+extern int reg_de;
+extern char reg_d;
+extern char reg_e;
 
 // Prototypes for C wrapper functions
 
