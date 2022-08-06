@@ -52,8 +52,3 @@
 
 ; startup.s
 .global startup
-
-; Status and error codes
-
-STATUS_OK                   = $00   ; Everything OK; used to clear status
-ERR_FAIL                    = $FF   ; General failure

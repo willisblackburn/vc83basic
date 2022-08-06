@@ -1,0 +1,113 @@
+program_line ::= number statement (_ ':' statement)*
+
+statement ::= _ (
+      assert_statement
+    | goto_statement
+    | let_statement
+    | ... )
+
+# ASSERT value [, error-message]
+assert_statement ::= 'ASSERT' opt_expression_2
+
+# DATA text
+data_statement ::= 'DATA' repeated_data
+
+repeated_data ::= data (_ ',' data)*
+
+data ::= number | string
+
+# DIM A$(100)
+# DIM A$(100,100)
+# DIM A$(100,100,100)
+dim_statement ::= 'DIM' var _ '(' expression (_ ',' expression (_ ',' expression)?)? _ ')' 
+
+# FOR var = start-value TO end-value STEP step-value
+for_statement ::= 'FOR' var _ '=' expression_1 _ 'TO' expression_1 step?
+
+step ::= _ 'STEP' expression
+
+# GOTO line-number
+goto_statement ::= 'GOTO'? number
+
+# INPUT [# channel] [prompt ;] var [, var] ...
+input_statement ::= 'INPUT' channel prompt repeated_var 
+
+# LET var = value
+let_statement ::= 'LET'? var _ '=' expression_1
+
+# LIST start-line-number, end-line-number
+list_statement ::= 'LIST' opt_expression_2 
+
+# ON value GOTO line-number [, line_number] ...
+on_goto_statement ::= 'ON' expression1 _ 'GOTO' repeated_number
+
+# PRINT print-value
+print_statement ::= 'PRINT' channel print_expression
+
+# READ var [, var] ...
+read_statement ::= 'READ' repeated_var
+
+# REM text
+rem_statement ::= 'REM' text
+
+expression_1 = expression
+
+expression_2 = expression _ ',' expression
+
+expression_3 = expression _ ',' expression _ ',' expression
+
+opt_expression_1 = expression?
+
+opt_expression_2 = (expression (_ ',' expression)?)?
+
+opt_expression_3 = (expression (_ ',' expression (_ ',' expression)?)?)?
+
+expression ::= number | string | var
+    | function
+    | _ '(' expression _ ')'
+    | expression op expression
+
+print_expression ::= expression
+    | print_expression print_op print_expression
+
+function ::= _ (
+      len_function
+    | max_function
+    | min_function
+    | ... )
+
+# LEN(string-value)
+len_function ::= 'LEN' _ '(' expression_1 _ ')'
+
+# MAX(value, value)
+# MIN(value, value)
+max_function ::= 'MAX' _ '(' expression_2 _ ')'
+min_function ::= 'MIN' _ '(' expression_2 _ ')'
+
+op ::= _ ('<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR')
+
+print_op ::= _ (',' | ';')
+
+repeated_number = number (_ ',' number)*
+
+repeated_var = var (_ ',' var)*
+
+var ::= _ letter (letter | digit | '_')*
+
+number ::= _ sign? digit+ ('.' digit*)? ('E' sign? digit+)
+
+string ::= _ '"' ([^"] | '""')* '"' 
+
+channel ::= _ ('#' number)?
+
+prompt ::= _ (string _ ';')?
+
+letter ::= [A-Z]
+
+digit ::= [0-9]
+
+sign ::= [-+]
+
+_ ::= [ \t]*
+
+text ::= [^\n]

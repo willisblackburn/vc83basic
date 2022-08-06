@@ -48,10 +48,11 @@ initialize_program:
         rts
 
 ; Sets line_ptr to program_ptr.
-; X SAFE, Y SAFE, DE SAFE
+; Returns line_ptr in AX.
+; Y SAFE, BC SAFE, DE SAFE
 
 reset_line_ptr:
-        mvaa    program_ptr, line_ptr
+        mvax    program_ptr, line_ptr
         rts
 
 ; Searches for a line in the program.
@@ -110,9 +111,9 @@ add_line_ptr_offset:
 @no_carry:
         rts
 
-; Inserts or updates a program line.
-; line = the line data
-; Returns carry clear if okay, carry set if error (e.g., out of memory).
+; Updates the program based on the information in line_buffer.
+; If the line number in line_buffer is in the program, remove it.
+; If line_buffer contains a new line, then insert it into the program.
 
 insert_or_update_line:
         ldax    line_buffer+Line::number    ; Load line number into AX
@@ -140,9 +141,9 @@ insert_or_update_line:
         pla
         sta     line_ptr
 
-; Updates the program based on the information in line_buffer.
-; If the line number in line_buffer is in the program, remove it.
-; If line_buffer contains a new line, then insert it into the program.
+; Insert the new line, if there is one.
+; There is a line if next_line_offset is greater than the offset of the data field.
+; line_ptr points to where this new line should go.
 
 @insert:
         mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
