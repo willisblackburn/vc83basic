@@ -1,5 +1,3 @@
-.include "constants.inc"
-
 ; Data structures
 .struct Line
     next_line_offset .res 1
@@ -43,7 +41,6 @@
 
 ; util.s
 .global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de
-.global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
 
 ; target/*

@@ -134,27 +134,6 @@ copy_bytes_back_de:
 @skip_copy:
         rts
 
-; Signals an error.
-; Only used by functions that use err to return error information.
-; A = the error code (set to ERR_FAILURE by return_fail)
-
-return_fail:
-        lda     #ERR_FAIL
-return_error:
-        sec
-        sta     status
-        rts
-
-; Signals that a function completed successfully.
-; Only used by functions that use err to signal status.
-; A = the status code (set to STATUS_OK by return_ok)
-
-return_ok:
-        lda     #STATUS_OK
-return_status:
-        sta     status
-        clc
-        rts
 
 ; Multiplies the value in AX by 10 by shifting left twice, adding original value, shifting left once more.
 ; AX = the value to multiply by 10
