@@ -53,8 +53,3 @@ def(ST_RUN,             0)
 def(ST_PRINT,           1)
 def(ST_LET,             2)
 def(ST_INPUT,           3)
-
-comment Status and error codes
-
-def(STATUS_OK,          hex(00))
-def(ERR_FAIL,           hex(FF))
