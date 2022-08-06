@@ -144,23 +144,23 @@ clear_memory_de:
         lda     #0                      ; Zero byte to write
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0
-@do_block:
+@next_block:
         cpx     E                       ; More blocks to copy?
-        beq     @do_remaining_byte      ; No more blocks; go copy remaining bytes
+        beq     @remaining_byte         ; No more blocks; go copy remaining bytes
 @block_byte:
         sta     (dst_ptr),y             ; Write one zero
         iny                             ; Y is the number of bytes written; when it wraps to 0 means 256 bytes
         bne     @block_byte             ; Not rolled over yet
         inc     dst_ptr+1               ; Advance write address in BC to next block
         inx                             ; Increment number of blocks written
-        jmp     @do_block
+        jmp     @next_block
 
-@do_remaining_byte:
+@remaining_byte:
         cpy     D                       ; More?
         beq     @done                   ; Nope
         sta     (dst_ptr),y             ; Write remaining byte
         iny                             ; Y is the number of bytes written so will not be zero, ...
-        bne     @do_remaining_byte      ; therefore this is an unconditional branch
+        bne     @remaining_byte         ; therefore this is an unconditional branch
 
 @done:
         rts
@@ -297,7 +297,8 @@ format_number:
 
 ; Writes a single byte to buffer at position w and increments w.
 ; Does not check for buffer overflow; we assume this can't happen.
-; A = the byte to write
+; STA is the last operation so zero flag will be set if we wrote zero.
+; A = the byte to write (preserved)
 ; w = the buffer position (updated)
 ; Y SAFE
 

@@ -20,6 +20,7 @@ decode_number:
         rts     
 
 ; Decodes a single byte and returns it in A.
+; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
 
 decode_byte:
         ldy     r                       ; Read r into Y and increment

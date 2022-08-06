@@ -192,13 +192,13 @@ _parse_multiple_arguments:
         jsr     parse_multiple_arguments
         jmp     return_carry
 
-_parse_repeated_argument:
-.export _parse_repeated_argument
+_parse_repeated_arguments:
+.export _parse_repeated_arguments
         sta     w
         jsr     popa
         sta     r
         jsr     popa
-        jsr     parse_repeated_argument
+        jsr     parse_repeated_arguments
         jmp     return_carry
 
 _parse_argument:

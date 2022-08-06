@@ -5,10 +5,10 @@ statement_name_table:
         .byte   'R', 'U', 'N' | NT_END
         .byte   'P', 'R', 'I', 'N', 'T', 1 | NT_END
         .byte   'L', 'E', 'T', 1, '=', 1 | NT_END
-        .byte   'I', 'N', 'P', 'U', 'T', 1 | NT_END
-        .byte   'D', 'A', 'T', 'A', 1 | NT_END
-        .byte   'R', 'E', 'A', 'D', 1 | NT_END
-        .byte   'R', 'E', 'S', 'T', 'O', 'R', 'E', 1 | NT_END
+        .byte   'I', 'N', 'P', 'U', 'T', NT_RPT_VAR | NT_END
+        .byte   'D', 'A', 'T', 'A', NT_RPT_DATA | NT_END
+        .byte   'R', 'E', 'A', 'D', NT_RPT_VAR | NT_END
+        .byte   'R', 'E', 'S', 'T', 'O', 'R', 'E', 1 | NT_OPTIONAL | NT_END
         .byte   0
 
 statement_exec_vectors:

@@ -19,9 +19,9 @@ static void test_add_whitespace(void) {
 static void test_list_element(void) {
     // TODO: just use the built-in statement name table.
     const char name_table[] = { 
-        'S', 'T', 'O', 'P'+0x80, 
-        'P', 'R', 'I', 'N', 'T', 0x91,
-        'L', 'E', 'T', 0x11, '=', 0x91
+        'S', 'T', 'O', 'P' | NT_END, 
+        'P', 'R', 'I', 'N', 'T', 1 | NT_END,
+        'L', 'E', 'T', NT_VAR, '=', 1 | NT_END,
     } ;
     const char line_data_1[] = { 0x02, 0x01, 0x01 };
     const char line_data_2[] = { 0x00 };
@@ -34,6 +34,7 @@ static void test_list_element(void) {
 
     // Initialize the program memory
     initialize_program();
+    
     // Add the variable name X
     strcpy(buffer, "X");
     find_name(variable_name_table_ptr, 0);

@@ -281,56 +281,56 @@ static void test_parse_repeated_argument(void) {
     initialize_program();
 
     strcpy(buffer, "1");
-    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,1");
-    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 
     strcpy(buffer, "1");
-    err = parse_repeated_argument(NT_RPT_NUMBER, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_NUMBER, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,1");
-    err = parse_repeated_argument(NT_RPT_NUMBER, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_NUMBER, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 
     strcpy(buffer, "X");
-    err = parse_repeated_argument(NT_RPT_VAR, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_VAR, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
 
     strcpy(buffer, "X,Y");
-    err = parse_repeated_argument(NT_RPT_VAR, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_VAR, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_4);
 
     strcpy(buffer, "1");
-    err = parse_repeated_argument(NT_RPT_DATA, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_DATA, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(r, 1);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,1");
-    err = parse_repeated_argument(NT_RPT_DATA, 0, offsetof(Line, data));
+    err = parse_repeated_arguments(NT_RPT_DATA, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(r, 3);

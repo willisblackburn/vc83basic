@@ -59,6 +59,7 @@
 .global exec_list
 .global list_line
 .global list_element
+.global list_argument
 .global add_whitespace
 
 ; main.s
@@ -76,7 +77,7 @@
 .global parse_line
 .global parse_element
 .global parse_multiple_arguments
-.global parse_repeated_argument
+.global parse_repeated_arguments
 .global parse_argument
 .global parse_expression
 .global parse_argument_separator

@@ -119,7 +119,6 @@ parse_element:
 ; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
 
         jsr     find_name               ; Sets Y to next byte in name table entry (AX passed to find_name)
-        debug $00
         bcs     @error
         jsr     encode_byte             ; Encode the statement name
         bcs     @error                  ; encode_byte error
@@ -136,11 +135,9 @@ parse_element:
         sty     n                       ; Save name table entry position in n
         dey                             ; Back up 1
         lda     (name_ptr),y            ; Check for the end bit
-        debug $01
         bmi     @success                ; Success if the end bit set
         iny                             ; Back to previous position
         lda     (name_ptr),y            ; Get the next byte
-        debug $02
         tax                             ; Save in X since we're going to be checking it a lot
         and     #$60                    ; Figure out if this is a chracter sequence or a directive
         beq     @directive              ; It's a directive (x00x xxxx)
@@ -151,12 +148,10 @@ parse_element:
 @directive:
         txa                             ; Get the original byte
         and     #$70                    ; Check if it's a multiple-argument directive (x000 xxxx)
-        debug $03
         beq     @multiple               ; Yes
         txa                             ; Get the byte again
         and     #$0C                    ; Check if it's repeated (xxxx 11xx)
         cmp     #$0C
-        debug $04
         beq     @repeated               ; Yes
         txa                             ; It's not multiple and not repeated, must be a single argument
         jsr     parse_argument
@@ -177,7 +172,7 @@ parse_element:
 
 @repeated:
         txa                             ; Get original byte
-        jsr     parse_repeated_argument
+        jsr     parse_repeated_arguments
         bcs     @error
         inc     n                       ; Recover saved name table entry position
         ldy     n                       ; Advance 1
@@ -235,19 +230,15 @@ parse_multiple_arguments:
 .assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
 .assert (NT_DATA & $0F) = (NT_RPT_DATA & $03), error
 
-parse_repeated_argument:
+parse_repeated_arguments:
         sta     directive
         and     #$03
-        debug $20
         jsr     parse_argument
-        debug $21
         bcs     @done
 @next:
         lda     directive
         and     #$03
-        debug $22
         jsr     parse_following_argument
-        debug $23
         bcc     @next
 @done:
         lda     #TOKEN_END_REPEAT
@@ -260,10 +251,8 @@ parse_repeated_argument:
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
 
 parse_argument:
-        debug $10
         and     #$0F                    ; Isolate just the type
         tay                             ; Prepare too use type as vector index
-        debug $11
         ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
         ldpha   n
         ldpha   directive
@@ -343,7 +332,6 @@ parse_variable:
         rts
 
 parse_data:
-        debug $30
         jmp     parse_number
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
