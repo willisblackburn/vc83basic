@@ -7,7 +7,6 @@ ready_length = * - ready_message
 error_message: .byte "ERROR"
 error_length = * - error_message
 
-keyword_list: .byte 'L', 'I', 'S', 'T'+$80
 keyword_run: .byte 'R', 'U', 'N'+$80
 keyword_print: .byte 'P', 'R', 'I', 'N', 'T'+$80
 
@@ -40,13 +39,6 @@ main:
         jmp     @wait_for_input
 
 @immediate_mode:
-        ldax    #keyword_list
-        jsr     parse_keyword           ; Was it "LIST"?
-        bcs     @not_list
-        jsr     exec_list
-        jmp     @ready
-
-@not_list:
         ldax    #keyword_run
         jsr     parse_keyword           ; Was it "RUN"?
         bcs     @not_run
@@ -56,35 +48,6 @@ main:
 @not_run:
         jsr     print_error
         jmp     @wait_for_input
-
-; Scans through the program and prints each line.
-
-exec_list:
-        jsr     reset_line_ptr
-@next_line:
-        ldy     #Line::number+1         ; High byte of line number
-        lda     (line_ptr),y
-        bmi     @end                    ; If MSB of line number is set, we're at end of program
-        tax
-        dey                             ; Index of line number low byte
-        lda     (line_ptr),y            ; Low byte of line number
-        jsr     print_number
-        lda     #' '
-        jsr     putchar
-        ldy     #Line::next_line_offset ; Line length
-        lda     (line_ptr),y
-        sec
-        sbc     #Line::data             ; Subtract the size of the header
-        tay
-        lda     #Line::data
-        jsr     add_line_ptr_offset     ; Puts pointer to start of line data in AX
-        jsr     write
-        jsr     newline
-        jsr     advance_line_ptr
-        jmp     @next_line
-
-@end:
-        rts
 
 ; Executes the program.
 
