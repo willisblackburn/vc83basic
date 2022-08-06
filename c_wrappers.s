@@ -97,31 +97,6 @@ _encode_byte:
         jsr     encode_byte
         jmp     return_carry
 
-; list.s
-
-_list_line:
-.export _list_line
-        stax    line_ptr
-        jmp     list_line
-
-_list_element:
-.export _list_element
-        sta     w
-        jsr     popa
-        sta     r
-        jsr     popax
-        stax    line_ptr
-        jsr     popa
-        sta     B                       ; Name table entry
-        jsr     popax
-        ldy     B
-        jmp     list_element
-
-_add_whitespace:
-.export _add_whitespace
-        sta     w
-        jsr     add_whitespace
-
 ; name.s
 
 _is_name_character:

@@ -35,11 +35,6 @@
 
 ; Functions
 
-; data.s
-.global exec_read
-.global exec_restore
-.global exec_data
-
 ; decode.s
 .global decode_number
 .global decode_byte
@@ -54,13 +49,6 @@
 
 ; let.s
 .global exec_let
-
-; list.s
-.global exec_list
-.global list_line
-.global list_element
-.global list_argument
-.global add_whitespace
 
 ; main.s
 .global main

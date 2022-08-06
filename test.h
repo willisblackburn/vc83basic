@@ -74,11 +74,6 @@ char decode_byte(const char* line_ptr, char r);
 int encode_number(int number, char w);
 int encode_byte(char byte_value, char w);
 
-// list.s
-void list_line(const char* line_ptr);
-void list_element(const char* name_ptr, char index, const char* line_ptr, char r, char w);
-void add_whitespace(char w);
-
 // name.s
 int find_name(const char* name_ptr, char r);
 int match_character_sequence(const char* name_ptr, char y, char r);

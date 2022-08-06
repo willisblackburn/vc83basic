@@ -49,14 +49,10 @@ def(TOKEN_STRING,       hex(04))
 comment Statements
 comment Must match statement_name_table.
 
-def(ST_LIST,            0)
-def(ST_RUN,             1)
-def(ST_PRINT,           2)
-def(ST_LET,             3)
-def(ST_INPUT,           4)
-def(ST_DATA,            5)
-def(ST_READ,            6)
-def(ST_RESTORE,         7)
+def(ST_RUN,             0)
+def(ST_PRINT,           1)
+def(ST_LET,             2)
+def(ST_INPUT,           3)
 
 comment Status and error codes
 
