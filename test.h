@@ -94,7 +94,7 @@ void hexdump(const char* name, const char* data, size_t length) {
 #define ASSERT_GT(a, b) ASSERT_OP(a, b, >)
 #define ASSERT_GE(a, b) ASSERT_OP(a, b, >=)
 #define ASSERT_STRING_EQ(a, b)  do { fprintf(stderr, "  %u  assert \"%s\" == \"%s\": ", __LINE__, (a), (b)); assert(strcmp((a), (b)) == 0); fputs("OK\n", stderr); } while (0)
-#define ASSERT_MEMORY_EQ(a, b, length)  do { fprintf(stderr, "  %u  assert memory equals:\n", __LINE__); HEXDUMP(a, length); HEXDUMP(b, length); assert(memcmp((a), (b), (length)) == 0); fputs("OK\n", stderr); } while (0)
+#define ASSERT_MEMORY_EQ(a, b, length)  do { fprintf(stderr, "  %u  assert %u byte(s) memory equals:\n", __LINE__, (length)); HEXDUMP(a, length); HEXDUMP(b, length); assert(memcmp((a), (b), (length)) == 0); fputs("OK\n", stderr); } while (0)
 #define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %u  assert %s (%u, $%X) %s NULL: ", __LINE__, #a, (a), (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
