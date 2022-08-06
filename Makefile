@@ -14,6 +14,10 @@ ASMFLAGS = --create-dep $(@:.o=.d)
 CFLAGS = --create-dep $(@:.o=.d)
 LDFLAGS = -m $@.map
 
+TEST_ASMFLAGS = $(ASMFLAGS)
+TEST_CFLAGS = $(CFLAGS)
+TEST_LDFLAGS = $(LDFLAGS)
+
 # create-target defines all the rules to build a single target.
 
 define create-target
@@ -27,11 +31,11 @@ basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
 	cl65 -t $1 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^
 
 # Builds a target-specific object from a common source
-$1/%.o: %.s
+$1/%.o: %.s constants.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 # Builds a target-specific object from a target-specific source
-$1/%.o: $1/%.s
+$1/%.o: $1/%.s constants.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 -include $$(TARGET_$1_SOURCES:.s=.d)
@@ -49,7 +53,7 @@ run_$1: $1
 	sim65 $1
 
 $1: $1.o $$(TEST_COMMON_OBJECTS) $$(COMMON_OBJECTS)
-	cl65 -t $$(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(LDFLAGS) -o $$@ $$^
+	cl65 -t $$(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(TEST_LDFLAGS) -o $$@ $$^
 
 -include $1.d
 
@@ -62,19 +66,26 @@ all: $(addprefix basic_,$(TARGETS)) $(TESTS)
 
 test: $(addprefix run_,$(TESTS))
 
+# Rules for building the constants files:
+constants.inc: constants.m4
+	m4 $< >$@
+
+constants.h: constants.m4
+	m4 -D__C__ $< >$@
+
 $(foreach TARGET,$(TARGETS),$(eval $(call create-target,$(TARGET))))
 
 $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 
 # Builds a common object from a common assembly language source; used by tests
-%.o: %.s
-	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(ASMFLAGS) -o $@ $<
+%.o: %.s constants.inc
+	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_ASMFLAGS) -o $@ $<
 
 # Same but for a C source
-%.o: %.c
-	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(CFLAGS) -o $@ $<
+%.o: %.c constants.h
+	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_CFLAGS) -o $@ $<
 
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f *.o *.d *.map
+	rm -f constants.inc constants.h *.o *.d *.map

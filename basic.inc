@@ -1,3 +1,5 @@
+.include "constants.inc"
+
 ; Data structures
 .struct Line
     next_line_offset .res 1
@@ -46,8 +48,3 @@
 
 ; target/*
 .global startup, initialize_target, readline, getchar, write, putchar, newline
-
-; Status and error codes
-
-STATUS_OK                   = $00   ; Everything OK; used to clear status
-ERR_FAIL                    = $FF   ; General failure
