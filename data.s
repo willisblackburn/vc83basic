@@ -19,9 +19,14 @@ data_count: .res 1
 
 ; READ statement:
 
+; When reading we're in one of several states.
+; Seeking: Just after executing RUN or RESTORE, data_r will be 0, meaning we need to look for a DATA
+; statement on this or subsequent lines.
+; Reading: data_r points to the next value to read, which will either an actual value, or TOKEN_END_REPEAT (0).
+
 exec_read:
         jsr     decode_byte             ; Read the variable
-        jsr     set_variable_value_ptr  ; Address of variable data in AX
+        jsr     set_variable_value_ptr  ; Sets variable_value_ptr to the storage area for the variable
         ldphaa  line_ptr                ; Save line_ptr and r to the stack
         ldpha   r                       
         mvaa    data_line_ptr, line_ptr ; Replace line_ptr and r with data versions

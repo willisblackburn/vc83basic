@@ -277,7 +277,6 @@ check_himem:
 ; The variable token passed in A will always be <= 127 since there can only be 128 variables, but it possibly
 ; has the high bit set, so we AND with $7F first.
 ; A = the variable token
-; Returns the value address in AX.
 
 set_variable_value_ptr:
         and     #$7F                    ; Clear MSB
@@ -286,7 +285,7 @@ set_variable_value_ptr:
         sta     variable_value_ptr      ; Store low byte
         txa                             
         adc     value_table_ptr+1
-        sta     variable_value_ptr+1    ; High byte back into X
+        sta     variable_value_ptr+1
         rts
 
 ; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
