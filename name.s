@@ -1,6 +1,8 @@
 .include "macros.inc"
 .include "basic.inc"
 
+; TODO: maybe call this syntax.s
+
 .zeropage
 
 ; Pointer to current name table entry
