@@ -46,12 +46,6 @@
 ; let.s
 .global exec_let
 
-; list.s
-.global exec_list
-.global list_line
-.global list_element
-.global add_whitespace
-
 ; main.s
 .global main
 

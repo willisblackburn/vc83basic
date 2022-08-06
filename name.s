@@ -13,11 +13,11 @@ n: .res 1
 ; Matches the input against names from a table.
 ; Each name table entry consists of a name, which is a sequence of character bytes in the range $20-$5F,
 ; followed by any number of extra data bytes. The last byte of the name table entry must have bit 7 set.
-; AX = pointer to the first entry of the name table
+; AX = pointer to the first entry of the name table; saved into name_ptr
 ; r = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On match, returns the number of the matched name in A and the next position in the name table
-; after the matched name in Y.
+; On match, updates name_ptr to point to the matched name, and returns the number of the matched name in A and
+; the next position in the name table after the matched name in Y.
 ; If no match, then A is the number of names in the name table and name_ptr points to the 0 at the end of the table.
 
 find_name:
@@ -69,7 +69,7 @@ match_character_sequence:
 
         jsr     check_name_continuation
         bcs     @match
-        jmp     @continued_name
+        bcc     @continued_name         ; Will always branch
 
 ; We're reached a non-literal character and everything has matched so far.
 ; Check for name continuation. If the name continues, then advance to next entry and return no match.
