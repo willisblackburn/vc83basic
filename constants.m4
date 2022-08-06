@@ -45,11 +45,3 @@ def(TOKEN_NO_VALUE,     hex(01))
 def(TOKEN_INT,          hex(02))
 def(TOKEN_FLOAT,        hex(03))
 def(TOKEN_STRING,       hex(04))
-
-comment Statements
-comment Must match statement_name_table.
-
-def(ST_RUN,             0)
-def(ST_PRINT,           1)
-def(ST_LET,             2)
-def(ST_INPUT,           3)
