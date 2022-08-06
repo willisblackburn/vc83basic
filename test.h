@@ -5,6 +5,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "constants.h"
+
 // Types
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
 // the assembly language code in order to make unit testing easier.
