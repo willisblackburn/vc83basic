@@ -11,9 +11,6 @@ w: .res 1
 directive: .res 1
 argument_count: .res 1
 
-; The write position of the repeated argument count in line_buffer
-repeated_argument_count_w: .res 1
-
 .code
 
 ; All "parse" functions use:
