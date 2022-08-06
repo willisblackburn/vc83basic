@@ -14,34 +14,16 @@ main:
         jsr     print_ready
 @wait_for_input:
         jsr     readline
-        mva     #0, r                   ; Initialize the read pointer
-        mva     #Line::data, w          ; Initialize write pointer
-        jsr     skip_whitespace
-        jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
-        bcs     @immediate_mode         ; No line number; execute in immediate mode
-        stax    line_buffer+Line::number
-        jsr     @get_statement
-        bcs     @error
-        mva     w, line_buffer+Line::next_line_offset   ; Write position is next statement offset
+        jsr     parse_line
+        lda     line_buffer+Line::number+1  ; Get high byte of line number
+        bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
         jsr     insert_or_update_line   ; Update the program
         jmp     @wait_for_input
 
 @immediate_mode:
-        ldx     r                       ; Check the current read position
-        lda     buffer,x                ; Anything on the line?
-        beq     @wait_for_input         ; It's a blank line, wait for another one
-        jsr     @get_statement
-        bcs     @error
         lda     line_buffer+Line::data  ; Statement is in line_buffer.data
         jsr     invoke_statement_handler
         jmp     @wait_for_input
-
-@get_statement:
-        jsr     skip_whitespace
-        mvax    #statement_signature_table, signature_ptr
-        ldax    #statement_name_table
-        jsr     parse_element           ; Leaves the parsed statement in line_buffer
-        rts
 
 @error:
         jsr     print_error
