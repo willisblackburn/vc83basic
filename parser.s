@@ -127,6 +127,8 @@ parse_element:
         bcs     @error                  ; If not matched then error
         bcc     @next                   ; If matched then continue
 
+; Handle arguments.
+
 @directive:
         txa                             ; Get the original byte
         and     #$0C                    ; Check if it's repeated (xxxx 11xx)
@@ -135,8 +137,6 @@ parse_element:
         txa                             ; It's not multiple and not repeated, must be a single argument
         jsr     parse_argument
         jmp     @loop
-
-; Handle arguments.
 
 @repeated:
         txa                             ; Get original byte
