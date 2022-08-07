@@ -15,10 +15,10 @@ buffer := $200
 ; One-byte buffer for read and write
 io_char: .res 1
 
+.code
+
 ; Reads a line from the console into the buffer.
 ; Returns the length in A.
-
-.code
 
 readline:
         mva     #0, B                   ; Use B to track write position in buffer
