@@ -200,8 +200,6 @@ static void test_parse_element(void) {
     const char line_data_1[] = { 0x00 };
     const char line_data_2[] = { 0x01, TOKEN_INT, 0x08, 0x00 };
     const char line_data_3[] = { 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
-    const char line_data_4[] = { 0x02, 0x81, TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x10, 0x27 };
-    const char line_data_5[] = { 0x04, TOKEN_INT, 0xFF, 0x00, TOKEN_INT, 0x0E, 0x00, TOKEN_INT, 0x00, 0x04, TOKEN_END_REPEAT};
 
     PRINT_TEST_NAME();
 
