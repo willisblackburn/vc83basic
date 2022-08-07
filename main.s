@@ -22,8 +22,7 @@ main:
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
         stax    line_buffer+Line::number
-        jsr     skip_whitespace
-        ldx     bp                      ; Read position in to X
+        jsr     skip_whitespace         ; Leaves bp in X
         ldy     #Line::data             ; Start writing into line_buffer at the position of the line_data field
 @copy_one_char:        
         lda     buffer,x                ; Load next char from buffer

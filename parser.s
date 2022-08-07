@@ -58,8 +58,7 @@ char_to_digit:
 
 parse_keyword:
         stax    BC                      ; Keyword pointer into BC      
-        jsr     skip_whitespace     
-        ldx     bp                      ; Use X for the buffer position in this function
+        jsr     skip_whitespace         ; Leaves BP in X
         ldy     #0                      ; Y will index the keyword
 @compare:       
         lda     (BC),y                  ; Get keyword character
@@ -83,7 +82,8 @@ parse_keyword:
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A, and also sets the zero flag if
-; that character is zero. Callers can use this to detect if there is anything left to read.
+; that character is zero. Callers can use this to detect if there is anything left to read. The final value of
+; bp is also left in X.
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
