@@ -77,7 +77,7 @@ parse_line:
         tax
 @store_line_number:
         stax    line_buffer+Line::number
-        jsr     skip_whitespace         ; Detect a blank line
+        jsr     skip_whitespace         ; Detect a blank line; returns non-blank character in A, may be zero
         clc
         beq     @blank_line
         ldax    #statement_name_table
@@ -93,7 +93,6 @@ parse_line:
 ; other functions so that those functions can call back in to this one.
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
-; TODO: parse_syntax or parse_syntax_element?
 
 parse_element:
 
@@ -135,19 +134,15 @@ parse_element:
         beq     @repeated               ; Yes
         txa                             ; It's not multiple and not repeated, must be a single argument
         jsr     parse_argument
-
-; TODO: merge with code below
-
-        bcs     @error
-        inc     np                      ; Recover saved name table entry position
-        ldy     np                      ; Advance 1
-        bcc     @next
+        jmp     @loop
 
 ; Handle arguments.
 
 @repeated:
         txa                             ; Get original byte
         jsr     parse_repeated_argument
+
+@loop:
         bcs     @error
         inc     np                      ; Recover saved name table entry position
         ldy     np                      ; Advance 1
@@ -252,9 +247,7 @@ parse_number:
 ; If the name is not found, then extends the variable name table.
 
 parse_variable:
-        jsr     skip_whitespace
-        ldx     bp                      ; Load read position into X
-        lda     buffer,x                ; Load current character
+        jsr     skip_whitespace         ; Leaves next character in A
         sec
         sbc     #'A'                    ; Check if first character is in range A-Z
         cmp     #26
@@ -277,16 +270,10 @@ parse_data:
 ; Y SAFE
 
 parse_argument_separator:
-        jsr     skip_whitespace
-
-; TOOD: don't need to re-load character; also modify parse_variable; check other cases
-
-        ldx     bp
-        lda     buffer,x
+        jsr     skip_whitespace         ; Leaves next character in A
         cmp     #','                    ; Sets carry if character was ','
         bne     @error
-        inx
-        stx     bp
+        inc     bp
         clc
         rts
 
@@ -295,7 +282,8 @@ parse_argument_separator:
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A, and also sets the zero flag if
-; that character is zero. Callers can use this to detect if there is anything left to read.
+; that character is zero. Callers can use this to detect if there is anything left to read. The final value of
+; bp is also left in X.
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
