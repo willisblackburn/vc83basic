@@ -51,6 +51,8 @@ extern void* variable_value_ptr;
 extern char buffer[];
 extern Line line_buffer;
 
+extern const char statement_name_table[];
+
 // Used by c_wrappers.s
 
 extern int reg_ax;
@@ -85,8 +87,7 @@ int add_variable(void);
 int read_number(char r);
 int char_to_digit(char c);
 int parse_element(const char* name_ptr, char r, char w);
-int parse_multiple_arguments(char directive, char r, char w);
-int parse_repeated_arguments(char directive, char r, char w);
+int parse_repeated_argument(char directive, char r, char w);
 int parse_argument(char directive, char r, char w);
 int parse_expression(char r, char w);
 int parse_argument_separator(char r);

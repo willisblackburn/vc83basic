@@ -15,6 +15,8 @@
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
+.export _statement_name_table = statement_name_table
+
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
 .export _variable_name_table_ptr = variable_name_table_ptr
@@ -158,22 +160,13 @@ _parse_element:
         jsr     parse_element
         jmp     return_carry
 
-_parse_multiple_arguments:
-.export _parse_multiple_arguments
+_parse_repeated_argument:
+.export _parse_repeated_argument
         sta     w
         jsr     popa
         sta     r
         jsr     popa
-        jsr     parse_multiple_arguments
-        jmp     return_carry
-
-_parse_repeated_arguments:
-.export _parse_repeated_arguments
-        sta     w
-        jsr     popa
-        sta     r
-        jsr     popa
-        jsr     parse_repeated_arguments
+        jsr     parse_repeated_argument
         jmp     return_carry
 
 _parse_argument:
