@@ -4,7 +4,6 @@
 .zeropage
 
 directive: .res 1
-argument_count: .res 1
 
 .code
 
@@ -157,10 +156,8 @@ parse_argument:
         ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
         ldpha   np
         ldpha   directive
-        ldpha   argument_count
         ldax    #argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-        plsta   argument_count          
         plsta   directive
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
