@@ -147,6 +147,7 @@ static void test_parse_repeated_argument(void) {
     const char line_data_2[] = { TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x01, 0x00, TOKEN_END_REPEAT };
     const char line_data_3[] = { 0x80, TOKEN_END_REPEAT };
     const char line_data_4[] = { 0x80, 0x81, TOKEN_END_REPEAT };
+    const char line_data_5[] = { TOKEN_END_REPEAT };
 
     PRINT_TEST_NAME();
 
@@ -193,6 +194,21 @@ static void test_parse_repeated_argument(void) {
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
     ASSERT_EQ(r, 3);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_4);
+
+    strcpy(buffer, "");
+    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
+    ASSERT_EQ(r, 0);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_5);
+
+    strcpy(buffer, ",");
+    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
+    ASSERT_EQ(r, 0);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_5);
+
 }
 
 static void test_parse_element(void) {
@@ -200,6 +216,7 @@ static void test_parse_element(void) {
     const char line_data_1[] = { 0x00 };
     const char line_data_2[] = { 0x01, TOKEN_INT, 0x08, 0x00 };
     const char line_data_3[] = { 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
+    const char line_data_4[] = { 0x03, 0x80, 0x81, TOKEN_END_REPEAT };
 
     PRINT_TEST_NAME();
 
@@ -225,6 +242,13 @@ static void test_parse_element(void) {
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(r, 9);
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
+
+    strcpy(buffer, "INPUT X,Y");
+    err = parse_element(statement_name_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
+    ASSERT_EQ(r, 9);
+    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_4);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 
