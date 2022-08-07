@@ -17,10 +17,8 @@ typedef struct Line {
 
 // Zero Page
 
-extern char status;
-#pragma zpsym ("status")
-extern char r;
-#pragma zpsym ("r")
+extern char bp;
+#pragma zpsym ("bp")
 extern Line* line_ptr;
 #pragma zpsym ("line_ptr")
 extern Line* program_ptr;
@@ -39,19 +37,13 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
-extern int reg_bc;
-extern char reg_b;
-extern char reg_c;
-extern int reg_de;
-extern char reg_d;
-extern char reg_e;
 
 // Prototypes for C wrapper functions
 
 // parser.s
-int read_number(char r);
+int read_number(char bp);
 int char_to_digit(char c);
-int parse_keyword(const char* keyword, char r);
+int parse_keyword(const char* keyword, char bp);
 
 // program.s
 void initialize_target(void);
