@@ -127,6 +127,8 @@ parse_element:
         bcs     @error                  ; If not matched then error
         bcc     @next                   ; If matched then continue
 
+; Handle arguments.
+
 @directive:
         txa                             ; Get the original byte
         jsr     parse_argument
