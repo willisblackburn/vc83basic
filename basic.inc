@@ -9,8 +9,7 @@
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
-.globalzp status
-.globalzp r
+.globalzp bp
 .globalzp src_ptr, dst_ptr
 .globalzp line_ptr
 .globalzp program_ptr

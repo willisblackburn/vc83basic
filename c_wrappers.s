@@ -12,25 +12,13 @@
 
 ; Aliases for globals
 
+.export _bp = bp;
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
 .export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
 .export _heap_ptr = heap_ptr
-
-.export _status = status
-
-.export _r = r
-
-; Test access to the B, C, D, and E registers
-
-.export _reg_bc = BC
-.export _reg_b = B
-.export _reg_c = C
-.export _reg_de = DE
-.export _reg_d = D
-.export _reg_e = E
 
 .bss
 
@@ -85,7 +73,7 @@ _insert_or_update_line:
 
 _read_number:
 .export _read_number
-        sta     r               
+        sta     bp               
         jsr     read_number
         jmp     return_carry
 
@@ -96,7 +84,7 @@ _char_to_digit:
 
 _parse_keyword:
 .export _parse_keyword
-        sta     r               
+        sta     bp              
         jsr     popax                   ; Keyword pointer
         jsr     parse_keyword
         jmp     return_carry

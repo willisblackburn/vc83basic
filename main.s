@@ -17,13 +17,13 @@ main:
         jsr     print_ready
 @wait_for_input:
         jsr     readline
-        mva     #0, r                   ; Initialize the read pointer
+        mva     #0, bp                  ; Initialize the read pointer
         jsr     skip_whitespace
         jsr     read_number             ; Leaves line number in AX and Y points to next character in buffer
         bcs     @immediate_mode         ; No line number; execute in immediate mode
         stax    line_buffer+Line::number
         jsr     skip_whitespace
-        ldx     r                       ; Read position in to X
+        ldx     bp                      ; Read position in to X
         ldy     #Line::data             ; Start writing into line_buffer at the position of the line_data field
 @copy_one_char:        
         lda     buffer,x                ; Load next char from buffer
@@ -67,7 +67,7 @@ exec_run:
         sbc     #Line::data             ; Subtract the offset of the data field
         ldx     #0                      ; High byte of the length is 0
         jsr     copy_bytes              ; Copy the line data into buffer
-        mva     #0, r                   ; Start reading from offset 0
+        mva     #0, bp                  ; Start reading from offset 0
         ldax    #keyword_print          ; Check if the keyword is print
         jsr     parse_keyword           ; Was it "PRINT"?
         bcs     @error                  ; Nope

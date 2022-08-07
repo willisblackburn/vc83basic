@@ -13,10 +13,8 @@ DE:
 D: .res 1
 E: .res 1
 
-; Contains the error code when a function returns with the carry set
-; to signal an error. May also be used to pass information about the outcome of a function,
-; for example if a function completed successfully (carry clear) but had no effect.
-status: .res 1
+; Read/write position in buffer
+bp: .res 1
 
 src_ptr: .res 2
 dst_ptr: .res 2
