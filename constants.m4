@@ -6,6 +6,7 @@ comment Generated from __file__
 
 comment Name table definitions 
 
+def(NT_OPTIONAL,        hex(08))
 def(NT_EXPRESSION,      hex(10))
 def(NT_NUMBER,          hex(11))
 def(NT_VAR,             hex(12))
@@ -16,5 +17,5 @@ def(NT_END,             hex(80))
 
 comment Tokenized form constants
 
-def(TOKEN_END_REPEAT,   hex(00))
+def(TOKEN_NO_VALUE,     hex(00))
 def(TOKEN_INT,          hex(01))

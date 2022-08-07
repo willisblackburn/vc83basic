@@ -4,6 +4,7 @@
 .zeropage
 
 directive: .res 1
+argument_count: .res 1
 
 .code
 
@@ -130,11 +131,19 @@ parse_element:
 
 @directive:
         txa                             ; Get the original byte
+        and     #$70                    ; Check if it's a multiple-argument directive (x000 xxxx)
+        beq     @multiple               ; Yes
+        txa                             ; Get the byte again
         and     #$0C                    ; Check if it's repeated (xxxx 11xx)
         cmp     #$0C
         beq     @repeated               ; Yes
         txa                             ; It's not multiple and not repeated, must be a single argument
         jsr     parse_argument
+        jmp     @loop
+
+@multiple:
+        txa                             ; Get original byte
+        jsr     parse_multiple_arguments
         jmp     @loop
 
 @repeated:
@@ -155,6 +164,42 @@ parse_element:
 @error:
         rts
 
+; Parses arguments from the buffer and tokenizes them.
+; Arguments must be separated by ','.
+; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
+; number of arguments.
+; ARGUMENT COUNT MUST BE AT LEAST 1.
+; A = the number of arguments to parse, from 1 to 7; bit 3 is true if these arguments are optional
+
+parse_multiple_arguments:
+        sta     directive
+        and     #$07
+        sta     argument_count
+        lda     #NT_EXPRESSION
+        jsr     parse_argument          ; Parse the argument value
+        bcs     @parse_failed
+@value:
+        dec     argument_count          ; One argument done
+        beq     @success                ; All done parsing arguments
+        lda     #NT_EXPRESSION
+        jsr     parse_following_argument    ; Parse the next argument value
+        bcc     @value                  ; If separator parsed then continue with value, otherwise fail
+@parse_failed:
+        lda     directive               ; Get the original parse directive
+        and     #NT_OPTIONAL            ; Mask the optional argument flag
+        beq     @done                   ; Result was 0 so optional flag not set; fail
+        ldy     argument_count          ; Optional was set so prepare to store "no value" tokens
+@no_value:
+        lda     #TOKEN_NO_VALUE
+        jsr     encode_byte             ; Encode the "no value" token
+        bcs     @done                   ; encode_byte error
+        dey                             ; Done with one "no value"
+        bne     @no_value               ; Loop if more
+@success:
+        clc                             ; Signal no error
+@done:
+        rts
+
 ; Parses a repeated value.
 ; A = the directive from the name table entry
 
@@ -173,7 +218,7 @@ parse_repeated_argument:
         jsr     parse_following_argument
         bcc     @next
 @done:
-        lda     #TOKEN_END_REPEAT
+        lda     #TOKEN_NO_VALUE
         jmp     encode_byte
 
 ; Parses a single argument.
