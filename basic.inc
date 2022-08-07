@@ -61,7 +61,7 @@
 .global read_number, char_to_digit
 .global parse_line
 .global parse_element
-.global parse_repeated_arguments
+.global parse_repeated_argument
 .global parse_argument
 .global parse_expression
 .global parse_argument_separator
@@ -88,7 +88,6 @@
 
 ; tables.s
 .global statement_name_table
-.global statement_signature_table
 .global statement_exec_vectors
 
 ; util.s

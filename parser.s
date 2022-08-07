@@ -149,7 +149,7 @@ parse_element:
 
 @repeated:
         txa                             ; Get original byte
-        jsr     parse_repeated_arguments
+        jsr     parse_repeated_argument
         bcs     @error
         inc     n                       ; Recover saved name table entry position
         ldy     n                       ; Advance 1
