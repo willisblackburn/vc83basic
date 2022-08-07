@@ -13,7 +13,6 @@
 .globalzp BC, B, C, DE, D, E
 .globalzp bp
 .globalzp directive
-.globalzp argument_count
 .globalzp name_ptr
 .globalzp np
 .globalzp src_ptr, dst_ptr
