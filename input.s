@@ -9,7 +9,7 @@ exec_input:
         lda     #'?'                    ; Prepare to print '?' prompt
         jsr     putchar
         jsr     readline
-        mva     #0, r                   ; Reset the read position
+        mva     #0, bp                  ; Reset the read position
         jsr     decode_byte             ; Read the variable
         beq     @done                   ; It was TOKEN_END_REPEAT, nothing more to read
 @next_var:
