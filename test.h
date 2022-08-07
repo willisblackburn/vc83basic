@@ -19,14 +19,12 @@ typedef struct Line {
 
 // Zero Page
 
-extern char status;
-#pragma zpsym ("status")
-extern char r;
-#pragma zpsym ("r")
-extern char w;
-#pragma zpsym ("w")
+extern char bp;
+#pragma zpsym ("bp")
 extern const char* name_ptr;
 #pragma zpsym ("name_ptr")
+extern char np;
+#pragma zpsym ("np")
 extern void* signature_ptr;
 #pragma zpsym ("signature_ptr")
 extern Line* line_ptr;
@@ -45,6 +43,8 @@ extern char variable_count;
 #pragma zpsym ("variable_count")
 extern void* variable_value_ptr;
 #pragma zpsym ("variable_value_ptr")
+extern char lp;
+#pragma zpsym ("lp")
 
 // Data
 
@@ -59,37 +59,31 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
-extern int reg_bc;
-extern char reg_b;
-extern char reg_c;
-extern int reg_de;
-extern char reg_d;
-extern char reg_e;
 
 // Prototypes for C wrapper functions
 
 // decode.s
-int decode_number(const char* line_ptr, char r);
-char decode_byte(const char* line_ptr, char r);
+int decode_number(const char* line_ptr, char lp);
+char decode_byte(const char* line_ptr, char lp);
 
 // encode.s
-int encode_number(int number, char w);
-int encode_byte(char byte_value, char w);
+int encode_number(int number, char lp);
+int encode_byte(char byte_value, char lp);
 
 // name.s
-int find_name(const char* name_ptr, char r);
-int match_character_sequence(const char* name_ptr, char y, char r);
+int find_name(const char* name_ptr, char bp);
+int match_character_sequence(const char* name_ptr, char y, char bp);
 int is_name_character(char c);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
 
 // parser.s
-int read_number(char r);
+int read_number(char bp);
 int char_to_digit(char c);
-int parse_element(const char* name_ptr, char r, char w);
-int parse_argument(char directive, char r, char w);
-int parse_expression(char r, char w);
-int parse_argument_separator(char r);
+int parse_element(const char* name_ptr, char bp, char lp);
+int parse_argument(char directive, char bp, char lp);
+int parse_expression(char bp, char lp);
+int parse_argument_separator(char bp);
 
 // program.s
 void initialize_target(void);
@@ -110,7 +104,7 @@ int mul2(int value);
 int mul10(int value);
 int div10(int value);
 int invoke_indexed_vector(void* vectors, char index);
-void format_number(int number, char w);
+void format_number(int number, char bp);
 
 // Common functions and definitions used in tests
 

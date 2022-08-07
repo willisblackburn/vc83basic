@@ -34,25 +34,25 @@ static void test_read_number(void) {
     err = read_number(0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 10);
-    ASSERT_EQ(r, 2);
+    ASSERT_EQ(bp, 2);
 
     // The function should honor the current read position.
     strcpy(buffer, "1020 PRINT X");
     err = read_number(2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 20);
-    ASSERT_EQ(r, 4);
+    ASSERT_EQ(bp, 4);
 
     // The function should return carry set if an invalid number.
     strcpy(buffer, "invalid");
     err = read_number(0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
 
     strcpy(buffer, "");
     err = read_number(0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
 }
 
 static void test_parse_expression(void) {
@@ -69,15 +69,15 @@ static void test_parse_expression(void) {
     err = parse_expression(0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + 3);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + 3);
 
     strcpy(buffer, "X");
     err = parse_expression(0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + 1);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + 1);
 
     // TODO: add more tests
 }
@@ -90,22 +90,22 @@ static void test_parse_argument_separator(void) {
     strcpy(buffer, ",");
     err = parse_argument_separator(0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(r, 1);
+    ASSERT_EQ(bp, 1);
 
     strcpy(buffer, "  ,");
     err = parse_argument_separator(0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(r, 3);
+    ASSERT_EQ(bp, 3);
 
     strcpy(buffer, "x");
     err = parse_argument_separator(0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
 
     strcpy(buffer, ",");
     err = parse_argument_separator(1);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 1);
+    ASSERT_EQ(bp, 1);
 }
 
 static void test_parse_argument(void) {
@@ -122,22 +122,22 @@ static void test_parse_argument(void) {
     err = parse_argument(NT_EXPRESSION, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1");
     err = parse_argument(NT_NUMBER, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "X");
     err = parse_argument(NT_VAR, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 }
 
 static void test_parse_element(void) {
@@ -154,22 +154,22 @@ static void test_parse_element(void) {
     err = parse_element(statement_name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+    ASSERT_EQ(bp, 3);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "PRINT 8");
     err = parse_element(statement_name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(r, 7);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+    ASSERT_EQ(bp, 7);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     strcpy(buffer, "LET X=100");
     err = parse_element(statement_name_table, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    ASSERT_EQ(r, 9);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
+    ASSERT_EQ(bp, 9);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_3);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 

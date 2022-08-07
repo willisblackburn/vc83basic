@@ -12,6 +12,7 @@
 
 ; Aliases for globals
 
+.export _bp = bp;
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
@@ -25,22 +26,10 @@
 .export _himem_ptr = himem_ptr
 .export _variable_count = variable_count
 .export _variable_value_ptr = variable_value_ptr
-
-.export _status = status
-
-.export _r = r
-.export _w = w
+.export _lp = lp;
 
 .export _name_ptr = name_ptr
-
-; Test access to the B, C, D, and E registers
-
-.export _reg_bc = BC
-.export _reg_b = B
-.export _reg_c = C
-.export _reg_de = DE
-.export _reg_d = D
-.export _reg_e = E
+.export _np = np;
 
 .bss
 
@@ -71,14 +60,14 @@ return_carry:
 
 _decode_number:
 .export _decode_number
-        sta     r
+        sta     lp
         jsr     popax
         stax    line_ptr
         jmp     decode_number
 
 _decode_byte:
 .export _decode_byte
-        sta     r
+        sta     lp
         jsr     popax
         stax    line_ptr
         jmp     decode_byte
@@ -87,14 +76,14 @@ _decode_byte:
 
 _encode_number:
 .export _encode_number
-        sta     w
+        sta     lp
         jsr     popax
         jsr     encode_number
         jmp     return_carry
 
 _encode_byte:
 .export _encode_byte
-        sta     w
+        sta     lp
         jsr     popa
         jsr     encode_byte
         jmp     return_carry
@@ -108,14 +97,14 @@ _is_name_character:
 
 _find_name:
 .export _find_name
-        sta     r                       ; Buffer index
+        sta     bp                      ; Buffer index
         jsr     popax                   ; Name table pointer
         jsr     find_name
         jmp     return_carry
 
 _match_character_sequence:
 .export _match_character_sequence
-        sta     r
+        sta     bp
         jsr     popa
         sta     B      
         jsr     popax
@@ -141,7 +130,7 @@ _add_variable:
 
 _read_number:
 .export _read_number
-        sta     r                       ; Buffer index
+        sta     bp                      ; Buffer index
         jsr     read_number
         jmp     return_carry
 
@@ -152,9 +141,9 @@ _char_to_digit:
 
 _parse_element:
 .export _parse_element
-        sta     w
+        sta     lp
         jsr     popa
-        sta     r
+        sta     bp
         jsr     popax                   ; Name table pointer
         stax    name_ptr
         jsr     parse_element
@@ -162,24 +151,24 @@ _parse_element:
 
 _parse_argument:
 .export _parse_argument
-        sta     w
+        sta     lp
         jsr     popa
-        sta     r
+        sta     bp
         jsr     popa
         jsr     parse_argument
         jmp     return_carry
 
 _parse_expression:
 .export _parse_expression
-        sta     w
+        sta     lp
         jsr     popa
-        sta     r
+        sta     bp
         jsr     parse_expression
         jmp     return_carry
 
 _parse_argument_separator:
 .export _parse_argument_separator
-        sta     r
+        sta     bp
         jsr     parse_argument_separator
         jmp     return_carry
 
@@ -281,6 +270,6 @@ _invoke_indexed_vector:
 
 _format_number:
 .export _format_number
-        sta     w
+        sta     bp
         jsr     popax
         jmp     format_number

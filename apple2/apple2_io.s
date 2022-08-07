@@ -4,6 +4,11 @@
 
 buffer := $200
 
+.zeropage
+
+; Read/write position in buffer
+bp: .res 1
+
 .code 
 
 getchar = KEYIN

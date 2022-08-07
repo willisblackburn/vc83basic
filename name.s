@@ -8,7 +8,7 @@
 ; Pointer to current name table entry
 name_ptr: .res 2
 ; Read position in the name table entry
-n: .res 1
+np: .res 1
 
 .code
 
@@ -16,7 +16,7 @@ n: .res 1
 ; Each name table entry consists of a name, which is a sequence of character bytes in the range $20-$5F,
 ; followed by any number of extra data bytes. The last byte of the name table entry must have bit 7 set.
 ; AX = pointer to the first entry of the name table; saved into name_ptr
-; r = read position in buffer (updated on success)
+; bp = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On match, updates name_ptr to point to the matched name, and returns the number of the matched name in A and
 ; the next position in the name table after the matched name in Y.
@@ -43,8 +43,8 @@ find_name:
 
 ; Matches a character sequence from the name table with characters from buffer.
 ; name_ptr = pointer to the current name table entry
-; Y = the current read position in the name table entry
-; r = read position in buffer (updated on success)
+; Y = the current read position in the name table entry (FIXME: use np)
+; bp = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On success, Y will point to the next byte past the matched word, and name_ptr will be unchanged.
 ; On failure, name_ptr will be set to the next name table entry.
@@ -52,7 +52,7 @@ find_name:
 
 match_character_sequence:
         jsr     skip_whitespace
-        ldx     r                       ; Load read position into X
+        ldx     bp                      ; Load read position into X
 @next_character:        
         lda     (name_ptr),y            ; Get name character
         sta     C                       ; Store last character in C
@@ -88,7 +88,7 @@ match_character_sequence:
         rts     
         
 @match:     
-        stx     r                       ; Update r
+        stx     bp                      ; Update bp
         clc                             ; Signal success
         rts
 
@@ -156,7 +156,7 @@ advance_name_ptr:
 ; AX = pointer to the first entry in the name table
 ; Y = the index of the entry to find
 ; Returns carry clear on success, carry set on error. On success, name_ptr points to the name table entry and both Y
-; and n are reset to zero.
+; and np are reset to zero.
 
 get_name_table_entry:
         stax    name_ptr                ; Initialize name_ptr
@@ -173,7 +173,7 @@ get_name_table_entry:
 @found:
         clc
         ldy     #0
-        sty     n
+        sty     np
         rts
 @not_found:
         sec
@@ -181,7 +181,7 @@ get_name_table_entry:
         
 ; Extends the variable name table by adding a new name.
 ; This will clobber the current program state and prevent the user from using CONT to resume execution.
-; The new name consists of all the name characters from buffer starting with the position in r.
+; The new name consists of all the name characters from buffer starting with the position in bp.
 ; name_ptr = a pointer to the 0 at the end of the variable name table (left there by find_name)
 ; Returns carry clear on success or carry set on failure.
 ; On success, updates variable_value_table and variable_count, and returns ID of new variable in A.
@@ -189,7 +189,7 @@ get_name_table_entry:
 add_variable:
         lda     variable_count          ; Check if too many variables already
         bmi     @fail                   ; variable_count >= 128
-        ldx     r                       ; Read position in buffer
+        ldx     bp                      ; Read position in buffer
 @find_end:
         inx                             ; We'll never have a zero-length name so inc first
         lda     buffer,x                ; Look for non-name character
@@ -197,10 +197,10 @@ add_variable:
         bcc     @find_end               ; Still a name character
         txa                             ; Carry guaranteed to be set; handy!
         sta     B                       ; Store index of end of name in B
-        sbc     r                       ; Subtract r to find length of name
+        sbc     bp                      ; Subtract bp to find length of name
         jsr     grow_variable_name_table    ; Increase variable_value_ptr
         bcs     @fail
-        ldx     r                       ; Reload r
+        ldx     bp                      ; Reload read position
         ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment
 @copy:
         iny                             ; Increment to next write position in name table
@@ -209,7 +209,7 @@ add_variable:
         inx
         cpx     B                       ; Check for end of name
         bne     @copy
-        stx     r                       ; Update r
+        stx     bp                      ; Update bp
         ora     #$80                    ; Set high bit in last value
         sta     (name_ptr),y            ; Save it again
         iny

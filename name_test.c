@@ -48,17 +48,17 @@ void test_match_character_sequence() {
     err = match_character_sequence("PRIN\xD4", 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     err = match_character_sequence("PRINT\x11", 0, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
 
     strcpy(buffer, "LET X=1");
     err = match_character_sequence("LET\x11=\x91", 4, 5);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 6);
+    ASSERT_EQ(bp, 6);
 }
 
 void test_find_name(void) {
@@ -82,19 +82,19 @@ void test_find_name(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_1);
     err = find_name(name_table_2, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_2);
     err = find_name(name_table_3, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_3 + 4);
 
     // Make sure find_name matches and skips names that have some extra data.
@@ -102,11 +102,11 @@ void test_find_name(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_4 + 4);
     err = find_name(name_table_5, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(r, 5);
+    ASSERT_EQ(bp, 5);
     ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(reg_y, 5);
     ASSERT_EQ(name_ptr, name_table_5 + 5);
@@ -114,35 +114,35 @@ void test_find_name(void) {
     // Name not found
     err = find_name(name_table_6, 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
     ASSERT_EQ(name_ptr, name_table_6 + 4);
 
     // Name in name table is longer than input namne
     err = find_name(name_table_7, 0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
     ASSERT_EQ(name_ptr, name_table_7 + 7);
     err = find_name(name_table_8, 0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(reg_a, 2);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
     ASSERT_EQ(name_ptr, name_table_8 + 11);
 
     // Input name is longer than name in table
     err = find_name(name_table_9, 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
     ASSERT_EQ(name_ptr, name_table_9 + 4);
     err = find_name(name_table_10, 0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(name_ptr, name_table_10 + 8);
-    ASSERT_EQ(r, 0);
+    ASSERT_EQ(bp, 0);
 
     // Read position is not zero
     err = find_name(name_table_1, 2);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(r, 2);
+    ASSERT_EQ(bp, 2);
     ASSERT_EQ(name_ptr, name_table_1 + 5);
 }
 
@@ -160,20 +160,20 @@ static void test_find_name_operators(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(reg_y, 2);
-    ASSERT_EQ(r, 2);
+    ASSERT_EQ(bp, 2);
     ASSERT_EQ(name_ptr, name_table_1);
     // We expect operators to prefix match; that is, the ">" in ">=" should match first ">"
     err = find_name(name_table_2, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(reg_y, 1);
-    ASSERT_EQ(r, 1);
+    ASSERT_EQ(bp, 1);
     ASSERT_EQ(name_ptr, name_table_2);
     err = find_name(name_table_3, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(reg_y, 2);
-    ASSERT_EQ(r, 2);
+    ASSERT_EQ(bp, 2);
     ASSERT_EQ(name_ptr, name_table_3 + 1);
 }
 
@@ -209,14 +209,14 @@ static void test_add_variable(void) {
     initialize_program();
     ASSERT_EQ(*variable_name_table_ptr, 0);
 
-    // add_variable is used after find_name, which sets up name_ptr and r.
+    // add_variable is used after find_name, which sets up name_ptr.
     strcpy(buffer, "X");
     err = find_name(variable_name_table_ptr, 0);
     ASSERT_NE(err, 0);
     err = add_variable();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(r, 1);
+    ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 1);
 }
 

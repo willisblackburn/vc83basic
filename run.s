@@ -14,7 +14,7 @@ exec_run:
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        mva     #Line::data, r          ; Initialize read position to start of data
+        mva     #Line::data, lp         ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement number
         jsr     invoke_statement_handler
         ; TODO: check for error

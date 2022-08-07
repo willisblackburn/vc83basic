@@ -189,12 +189,12 @@ static void test_format_number(void) {
 
     format_number(5, 0);
     ASSERT_EQ(buffer[0], '5');
-    ASSERT_EQ(w, 1);
+    ASSERT_EQ(bp, 1);
 
     format_number(10, 0);
     ASSERT_EQ(buffer[0], '1');
     ASSERT_EQ(buffer[1], '0');
-    ASSERT_EQ(w, 2);
+    ASSERT_EQ(bp, 2);
     
     format_number(32767, 0);
     ASSERT_EQ(buffer[0], '3');
@@ -202,7 +202,7 @@ static void test_format_number(void) {
     ASSERT_EQ(buffer[2], '7');
     ASSERT_EQ(buffer[3], '6');
     ASSERT_EQ(buffer[4], '7');
-    ASSERT_EQ(w, 5);
+    ASSERT_EQ(bp, 5);
 }
 
 int main(void) {

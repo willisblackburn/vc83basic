@@ -3,11 +3,6 @@
 
 .zeropage
 
-; Read position
-r: .res 1
-; Write position
-w: .res 1
-
 directive: .res 1
 argument_count: .res 1
 
@@ -15,18 +10,18 @@ argument_count: .res 1
 
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
-; r = the read position in buffer (modified on success)
+; bp = the read position in buffer (modified on success)
 ; line_buffer = the buffer containing the tokenized output
-; w = the token write position in line_buffer (modified on success)
+; lp = the token write position in line_buffer (modified on success)
 
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
-; r = the read position in buffer
+; bp = the read position in buffer
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
         jsr     skip_whitespace
-        ldy     r                       ; Use Y to index buffer (since AX will hold the number)
+        ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
 @next:
@@ -45,9 +40,9 @@ read_number:
         jmp     @next
 
 @finish:
-        cpy     r                       ; Did we parse anything?
+        cpy     bp                      ; Did we parse anything?
         beq     @nothing                ; Nope
-        sty     r                       ; Update read position
+        sty     bp                      ; Update read position
         clc                             ; Clear carry to signal OK
         rts
 
@@ -74,9 +69,9 @@ argument_type_vectors:
 ; If the line number is missing, set it to -1.
 
 parse_line:
-        mva     #0, r                   ; Initialize the read pointer
-        mva     #Line::data, w          ; Initialize write pointer
-        jsr     read_number             ; Leaves line number in AX and r points to next character in buffer
+        mva     #0, bp                  ; Initialize the read pointer
+        mva     #Line::data, lp         ; Initialize write pointer
+        jsr     read_number             ; Leaves line number in AX and bp points to next character in buffer
         bcc     @store_line_number      ; Line number was provided so store it
         lda     #$FF                    ; Otherwise store -1 ($FFFF) instead
         tax
@@ -88,7 +83,7 @@ parse_line:
         ldax    #statement_name_table
         jsr     parse_element           ; Leaves the parsed statement in line_buffer and sets/clears carry
 @blank_line:
-        mva     w, line_buffer+Line::next_line_offset   ; Write position is next statement offset
+        mva     lp, line_buffer+Line::next_line_offset  ; Write position is next statement offset
         rts
 
 ; Parses and tokenizes a syntax element starting with a name.
@@ -120,7 +115,7 @@ parse_element:
 ; Upon entry to this block, Y must point to the next character in the name table entry.
 
 @next:
-        sty     n                       ; Save name table entry position in n
+        sty     np                      ; Save name table entry position in np
         dey                             ; Back up 1
         lda     (name_ptr),y            ; Check for the end bit
         bmi     @success                ; Success if the end bit set
@@ -136,9 +131,12 @@ parse_element:
 @directive:
         txa                             ; Get the original byte
         jsr     parse_argument
+
+; TODO: merge with code below
+
         bcs     @error
-        inc     n                       ; Recover saved name table entry position
-        ldy     n                       ; Advance 1
+        inc     np                      ; Recover saved name table entry position
+        ldy     np                      ; Advance 1
         bcc     @next
 
 @success:
@@ -158,15 +156,15 @@ parse_element:
 parse_argument:
         and     #$0F                    ; Isolate just the type
         tay                             ; Prepare too use type as vector index
-        ldphaa  name_ptr                ; Save name_ptr, n, and signature_ptr
-        ldpha   n
+        ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
+        ldpha   np
         ldpha   directive
         ldpha   argument_count
         ldax    #argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
         plsta   argument_count          
         plsta   directive
-        plsta   n
+        plsta   np
         plstaa  name_ptr                ; Recover variables from stack
         rts
 
@@ -176,7 +174,7 @@ parse_argument:
 
 parse_following_argument:
         tay                             ; Save the argument type directive
-        ldpha   r                       ; Save read position
+        ldpha   bp                      ; Save read position
         jsr     parse_argument_separator
         bcs     @error
         tya                             ; Pass the argument type directive to parse_argument
@@ -186,7 +184,7 @@ parse_following_argument:
         rts
 
 @error:
-        plsta   r                       ; Restore r
+        plsta   bp                      ; Restore read position
         rts
 
 ; Placeholder handler that just signals an error.
@@ -215,12 +213,12 @@ parse_number:
         rts
 
 ; Parses a variable name.
-; Tries to match the current buffer at position r with the names in the variable name table.
+; Tries to match the current buffer at position bp with the names in the variable name table.
 ; If the name is not found, then extends the variable name table.
 
 parse_variable:
         jsr     skip_whitespace
-        ldx     r                       ; Load read position into X
+        ldx     bp                      ; Load read position into X
         lda     buffer,x                ; Load current character
         sec
         sbc     #'A'                    ; Check if first character is in range A-Z
@@ -245,12 +243,15 @@ parse_data:
 
 parse_argument_separator:
         jsr     skip_whitespace
-        ldx     r
+
+; TOOD: don't need to re-load character; also modify parse_variable; check other cases
+
+        ldx     bp
         lda     buffer,x
         cmp     #','                    ; Sets carry if character was ','
         bne     @error
         inx
-        stx     r
+        stx     bp
         clc
         rts
 
@@ -260,17 +261,17 @@ parse_argument_separator:
 
 ; Skip past any whitespace in the buffer. Returns the next character in A, and also sets the zero flag if
 ; that character is zero. Callers can use this to detect if there is anything left to read.
-; r = the read position (modified)
+; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
 skip_whitespace:
-        ldx     r                       ; Use X to index buffer
+        ldx     bp                      ; Use X to index buffer
 @next:      
         lda     buffer,x        
         inx     
         cmp     #' '        
         beq     @next       
         dex                             ; It wasn't whitespace so go back
-        stx     r                       ; Update read position
+        stx     bp                      ; Update read position
         lda     buffer,x                ; Return next character
         rts

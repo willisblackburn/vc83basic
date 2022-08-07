@@ -11,17 +11,17 @@ static void test_encode_byte(void) {
     err = encode_byte(2, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     err = encode_byte(2, offsetof(Line, data) + 1);
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data + 1, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1 + 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1 + 1);
 
     err = encode_byte(255, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     // Encode at end of buffer should fail
     err = encode_number(100, 255);
@@ -39,14 +39,14 @@ static void test_encode_number(void) {
     err = encode_number(0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     err = encode_number(256, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     err = encode_number(1000, offsetof(Line, data) + 3);
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     // Encode at end of buffer should fail
     err = encode_number(100, 253);

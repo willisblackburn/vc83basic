@@ -31,6 +31,9 @@ variable_count: .res 1
 ; Pointer to the variable value set by a statement like LET, INPUT, and READ
 variable_value_ptr: .res 2
 
+; Read/write position in line
+lp: .res 1
+
 .bss
 
 ; The program line produced by the parser

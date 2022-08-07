@@ -5,14 +5,14 @@
 ; Sometimes these functions will be called when one value has already been read and is in the A register;
 ; this will be noted.
 ; We don't have to worry about errors since we're decoding what we previously encoded.
-; For all functions, Y is the read position in line_ptr.
+; For all functions, lp is the read position in line_ptr.
 
 ; Decodes a number and returns it in AX.
 
 decode_number:
-        inc     r                       ; Increment read position to high byte 
-        ldy     r                       ; Load position of high byte into Y
-        inc     r                       ; Increment read one position again
+        inc     lp                      ; Increment read position to high byte 
+        ldy     lp                      ; Load position of high byte into Y
+        inc     lp                      ; Increment read one position again
         lda     (line_ptr),y            ; Load the high byte of the number
         tax                             ; Move into X
         dey                             ; Decrement Y
@@ -23,7 +23,7 @@ decode_number:
 ; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
 
 decode_byte:
-        ldy     r                       ; Read r into Y and increment
-        inc     r   
+        ldy     lp                      ; Read lp into Y and increment
+        inc     lp  
         lda     (line_ptr),y            ; Load and return the byte
         rts

@@ -13,10 +13,8 @@ DE:
 D: .res 1
 E: .res 1
 
-; Contains the error code when a function returns with the carry set
-; to signal an error. May also be used to pass information about the outcome of a function,
-; for example if a function completed successfully (carry clear) but had no effect.
-status: .res 1
+; Read/write position in buffer
+bp: .res 1
 
 src_ptr: .res 2
 dst_ptr: .res 2
@@ -242,9 +240,9 @@ invoke_indexed_vector:
         jmp     (DE)                    ; Handler function RTS will return from *this* function
 
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
-; in buffer (i.e., it is equal to w).
+; in buffer (i.e., it is equal to bp).
 ; AX = the number to format
-; w = the position within buffer (updated)
+; bp = the position within buffer (updated)
 
 format_number:
         sta     B                       ; Keep low byte in B while we use A for other things
@@ -261,7 +259,7 @@ format_number:
         txa                             ; High byte into A
         ora     B                       ; OR with saved low byte
         bne     @next_digit             ; Still more digits
-        ldx     w                       ; Load write offset into X
+        ldx     bp                      ; Load write offset into X
 @output_digit:
         pla                             ; Get a digit
         beq     @done                   ; If it's 0 then we're done
@@ -270,20 +268,20 @@ format_number:
         jmp     @output_digit
 
 @done:
-        stx     w                       ; Update X
+        stx     bp                      ; Update X
         rts
 
-; Writes a single byte to buffer at position w and increments w.
+; Writes a single byte to buffer at position bp and increments bp.
 ; Does not check for buffer overflow; we assume this can't happen.
 ; STA is the last operation so zero flag will be set if we wrote zero.
 ; A = the byte to write (preserved)
-; w = the buffer position (updated)
+; bp = the buffer position (updated)
 ; Y SAFE
 
 putchar_space_buffer:
         lda     #' '
 putchar_buffer:
-        ldx     w                       ; Load position
-        inc     w                       ; Incrment position
+        ldx     bp                      ; Load position
+        inc     bp                      ; Incrment position
         sta     buffer,x                ; Store A in buffer
         rts

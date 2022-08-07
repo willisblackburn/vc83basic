@@ -2,7 +2,7 @@
 .include "basic.inc"
 
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.
-; All functions write to the output buffer at index w and update w.
+; All functions write to the output buffer at index lp and update lp.
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
@@ -46,9 +46,9 @@ encode_byte:
 ; Y SAFE, BC SAFE
 
 encode:
-        ldx     w
+        ldx     lp
         sta     line_buffer,x
-        inc     w
+        inc     lp
         beq     @error
         clc
         rts

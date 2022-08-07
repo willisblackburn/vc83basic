@@ -11,13 +11,11 @@
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
-.globalzp status
-.globalzp r
-.globalzp w
+.globalzp bp
 .globalzp directive
 .globalzp argument_count
 .globalzp name_ptr
-.globalzp n
+.globalzp np
 .globalzp src_ptr, dst_ptr
 .globalzp line_ptr
 .globalzp program_ptr
@@ -27,6 +25,7 @@
 .globalzp himem_ptr
 .globalzp variable_count
 .globalzp variable_value_ptr
+.globalzp lp
 
 ; Data
 
