@@ -43,7 +43,7 @@ find_name:
 
 ; Matches a character sequence from the name table with characters from buffer.
 ; name_ptr = pointer to the current name table entry
-; Y = the current read position in the name table entry (FIXME: use np)
+; Y = the current read position in the name table entry (TODO: use np)
 ; bp = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On success, Y will point to the next byte past the matched word, and name_ptr will be unchanged.
@@ -51,8 +51,7 @@ find_name:
 ; B SAFE
 
 match_character_sequence:
-        jsr     skip_whitespace
-        ldx     bp                      ; Load read position into X
+        jsr     skip_whitespace         ; Leaves read position in X
 @next_character:        
         lda     (name_ptr),y            ; Get name character
         sta     C                       ; Store last character in C
