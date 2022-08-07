@@ -135,21 +135,7 @@ parse_element:
 
 @directive:
         txa                             ; Get the original byte
-        and     #$0C                    ; Check if it's repeated (xxxx 11xx)
-        cmp     #$0C
-        beq     @repeated               ; Yes
-        txa                             ; It's not multiple and not repeated, must be a single argument
         jsr     parse_argument
-        bcs     @error
-        inc     n                       ; Recover saved name table entry position
-        ldy     n                       ; Advance 1
-        bcc     @next
-
-; Handle arguments.
-
-@repeated:
-        txa                             ; Get original byte
-        jsr     parse_repeated_argument
         bcs     @error
         inc     n                       ; Recover saved name table entry position
         ldy     n                       ; Advance 1
@@ -162,27 +148,6 @@ parse_element:
 
 @error:
         rts
-
-; Parses a repeated value.
-; A = the directive from the name table entry
-
-.assert (NT_EXPRESSION & $0F) = (NT_RPT_EXPRESSION & $03), error
-.assert (NT_NUMBER & $0F) = (NT_RPT_NUMBER & $03), error
-.assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
-
-parse_repeated_argument:
-        sta     directive
-        and     #$03
-        jsr     parse_argument
-        bcs     @done
-@next:
-        lda     directive
-        and     #$03
-        jsr     parse_following_argument
-        bcc     @next
-@done:
-        lda     #TOKEN_END_REPEAT
-        jmp     encode_byte
 
 ; Parses a single argument.
 ; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,

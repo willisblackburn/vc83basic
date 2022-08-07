@@ -140,68 +140,11 @@ static void test_parse_argument(void) {
     ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
 }
 
-static void test_parse_repeated_argument(void) {
-    int err;
-
-    const char line_data_1[] = { TOKEN_INT, 0x01, 0x00, TOKEN_END_REPEAT };
-    const char line_data_2[] = { TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x01, 0x00, TOKEN_END_REPEAT };
-    const char line_data_3[] = { 0x80, TOKEN_END_REPEAT };
-    const char line_data_4[] = { 0x80, 0x81, TOKEN_END_REPEAT };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    strcpy(buffer, "1");
-    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
-
-    strcpy(buffer, "1,1");
-    err = parse_repeated_argument(NT_RPT_EXPRESSION, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
-
-    strcpy(buffer, "1");
-    err = parse_repeated_argument(NT_RPT_NUMBER, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_1);
-
-    strcpy(buffer, "1,1");
-    err = parse_repeated_argument(NT_RPT_NUMBER, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_2);
-
-    strcpy(buffer, "X");
-    err = parse_repeated_argument(NT_RPT_VAR, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    ASSERT_EQ(r, 1);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_3);
-
-    strcpy(buffer, "X,Y");
-    err = parse_repeated_argument(NT_RPT_VAR, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
-    ASSERT_EQ(r, 3);
-    ASSERT_EQ(w, offsetof(Line, data) + sizeof line_data_4);
-}
-
 static void test_parse_element(void) {
     int err;
     const char line_data_1[] = { 0x00 };
     const char line_data_2[] = { 0x01, TOKEN_INT, 0x08, 0x00 };
     const char line_data_3[] = { 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
-    const char line_data_4[] = { 0x02, 0x81, TOKEN_INT, 0x01, 0x00, TOKEN_INT, 0x10, 0x27 };
-    const char line_data_5[] = { 0x04, TOKEN_INT, 0xFF, 0x00, TOKEN_INT, 0x0E, 0x00, TOKEN_INT, 0x00, 0x04, TOKEN_END_REPEAT};
 
     PRINT_TEST_NAME();
 
@@ -248,7 +191,6 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_argument();
-    test_parse_repeated_argument();
     test_parse_element();
     return 0;
 }
