@@ -149,6 +149,15 @@ _parse_element:
         jsr     parse_element
         jmp     return_carry
 
+_parse_multiple_arguments:
+.export _parse_multiple_arguments
+        sta     lp
+        jsr     popa
+        sta     bp
+        jsr     popa
+        jsr     parse_multiple_arguments
+        jmp     return_carry
+
 _parse_repeated_argument:
 .export _parse_repeated_argument
         sta     lp
