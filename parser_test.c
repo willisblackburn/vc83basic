@@ -308,10 +308,10 @@ static void test_parse_optional_multiple_arguments(void) {
 
 static void test_parse_element(void) {
     int err;
-    const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x01, TOKEN_INT, 0x08, 0x00 };
-    const char line_data_3[] = { 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
-    const char line_data_4[] = { 0x03, 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_1[] = { ST_RUN };
+    const char line_data_2[] = { ST_PRINT, TOKEN_INT, 0x08, 0x00 };
+    const char line_data_3[] = { ST_LET, 0x80, TOKEN_INT, 0x64, 0x00 };
+    const char line_data_4[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -361,8 +361,8 @@ static void test_parse_element(void) {
 static void test_parse_line(void) {
     int err;
 
-    const char line_data_1[] = { 8, 0x0A, 0x00, 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
-    const char line_data_2[] = { 10, 0xFF, 0xFF, 0x04, TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x14, 0x00 };
+    const char line_data_1[] = { 8, 0x0A, 0x00, ST_LET, 0x80, TOKEN_INT, 0x64, 0x00 };
+    const char line_data_2[] = { 10, 0xFF, 0xFF, ST_LIST, TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x14, 0x00 };
 
     PRINT_TEST_NAME();
 

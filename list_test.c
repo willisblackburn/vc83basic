@@ -111,27 +111,27 @@ static void test_list_element(void) {
     initialize_program();
     create_varibles();
 
-    list_element(statement_name_table, 0, line_data_1, 0, 0);
+    list_element(statement_name_table, ST_RUN, line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
     ASSERT_EQ(lp, 0);
 
-    list_element(statement_name_table, 2, line_data_2, 0, 0);
+    list_element(statement_name_table, ST_LET, line_data_2, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
     ASSERT_EQ(lp, sizeof line_data_2);
 
-    list_element(statement_name_table, 4, line_data_3, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_3, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
     ASSERT_EQ(lp, sizeof line_data_3);
 
-    list_element(statement_name_table, 4, line_data_4, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_4, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
     ASSERT_EQ(bp, sizeof list_4 - 1);
     ASSERT_EQ(lp, sizeof line_data_4);
 
-    list_element(statement_name_table, 4, line_data_5, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_5, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
     ASSERT_EQ(bp, sizeof list_5 - 1);
     ASSERT_EQ(lp, sizeof line_data_5);
@@ -140,8 +140,8 @@ static void test_list_element(void) {
 static void test_list_line(void) {
     int err;
 
-    const char line_data_1[] = { 7, 0x0A, 0x00, 0x01, TOKEN_INT, 0x01, 0x01 };
-    const char line_data_2[] = { 3, 0x90, 0x01, 0x02, 0x80, TOKEN_INT, 0xFF, 0x7F };
+    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_INT, 0x01, 0x01 };
+    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_INT, 0xFF, 0x7F };
     const char line_data_end[] = { 3, 0xFF, 0xFF };
     
     const char list_1[] = "10 PRINT 257";
