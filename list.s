@@ -56,7 +56,6 @@ list_line:
 ; Y = the index of the syntax element
 
 list_element:
-        debug $00
         jsr     get_name_table_entry    ; Sets name_ptr and resets n; should never fail
         ldpha   #0                      ; Pretend that the last-seen name table entry byte was zero
 @loop:
@@ -65,7 +64,6 @@ list_element:
         ldy     np
         inc     np                      ; Next position
         lda     (name_ptr),y            ; Load the next byte from the name table
-        debug $01
         pha                             ; Put on the stack in order to check high bit next time through
         tax                             ; Temporarily store in X
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
