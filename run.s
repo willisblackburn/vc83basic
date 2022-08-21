@@ -22,6 +22,7 @@ exec_run:
 
 @program_end:
         mva     #PROGRAM_STATE_NOT_RUNNING, program_state
+        clc
 
 @done:
         rts
