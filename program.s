@@ -44,13 +44,14 @@ line_buffer: .res 256
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 
-initialize_program:
-
 ; This function makes assumptions about these offsets
 
 .assert Line::next_line_offset = 0, error
 .assert Line::number = 1, error
 
+initialize_program:
+
+        mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
         ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
@@ -63,18 +64,16 @@ initialize_program:
         sta     (line_ptr),y                ; Save as next line offset
         jsr     add_line_ptr_offset         ; Adding A to line_ptr gives variable_name_table_ptr in AX
         stax    variable_name_table_ptr
-        tay                                 ; Add 1 to variable_name_table_ptr for ending 0
-        iny
-        sty     value_table_ptr
-        bne     @no_carry                   ; Low byte did not wrap around to 0
-        inx                                 ; Increment high byte in X
-@no_carry:
-        stx     value_table_ptr+1           ; Save high byte
+        clc                                 ; Add 1 to value_table_ptr
+        adc     #1
+        sta     value_table_ptr
+        txa
+        adc     #0
+        sta     value_table_ptr+1
         lda     #0                          ; Load zero into A
         tay                                 ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     variable_count              ; Initialize number of variables to 0
-        mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         rts
 
 ; Sets line_ptr to program_ptr.
@@ -184,7 +183,7 @@ insert_or_update_line:
         stax    dst_ptr                 ; Store in dst_ptr
         jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
         jsr     update_pointers
-        jsr     copy_bytes_back_de      ; Make room for the new line
+        jsr     copy_bytes_higher_de      ; Make room for the new line
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         mvaa    line_ptr, dst_ptr
         lda     line_buffer+Line::next_line_offset  ; Length of the new line

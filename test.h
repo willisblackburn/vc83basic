@@ -98,7 +98,7 @@ void set_variable_value_ptr(char variable);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
-void copy_bytes_back(char* to, const char* from, size_t size);
+void copy_bytes_higher(char* to, const char* from, size_t size);
 void clear_memory(char* p, size_t size);
 int mul2(int value);
 int mul10(int value);
