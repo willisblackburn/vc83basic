@@ -154,7 +154,7 @@ insert_or_update_line:
         stax    dst_ptr                 ; Store in dst_ptr
         jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
         jsr     update_pointers
-        jsr     copy_bytes_back_de      ; Make room for the new line
+        jsr     copy_bytes_higher_de      ; Make room for the new line
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         mvaa    line_ptr, dst_ptr
         lda     line_buffer+Line::next_line_offset  ; Length of the new line

@@ -99,15 +99,15 @@ _copy_bytes:
         ldax    DE
         jmp     copy_bytes
 
-_copy_bytes_back:
-.export _copy_bytes_back
+_copy_bytes_higher:
+.export _copy_bytes_higher
         stax    DE
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_bytes_back
+        jmp     copy_bytes_higher
 
 _mul10:
 .export _mul10

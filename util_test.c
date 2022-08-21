@@ -47,28 +47,28 @@ static void test_copy_bytes(void) {
     test_copy_bytes_case(4000, 256);
 }
 
-static void test_copy_bytes_back_case(size_t size, size_t offset) {
+static void test_copy_bytes_higher_case(size_t size, size_t offset) {
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
     HEXDUMP(test_data, 16);
-    copy_bytes_back(test_data + offset, test_data, size);
+    copy_bytes_higher(test_data + offset, test_data, size);
     HEXDUMP(test_data + offset, 16);
     verify_test_data(test_data + offset, size);
 }
 
-static void test_copy_bytes_back(void) {
+static void test_copy_bytes_higher(void) {
     PRINT_TEST_NAME();
 
-    test_copy_bytes_back_case(10, 1);
-    test_copy_bytes_back_case(10, 100);
-    test_copy_bytes_back_case(10, 256);
-    test_copy_bytes_back_case(256, 1);
-    test_copy_bytes_back_case(256, 100);
-    test_copy_bytes_back_case(256, 256);
-    test_copy_bytes_back_case(4000, 1);
-    test_copy_bytes_back_case(4000, 100);
-    test_copy_bytes_back_case(4000, 256);
+    test_copy_bytes_higher_case(10, 1);
+    test_copy_bytes_higher_case(10, 100);
+    test_copy_bytes_higher_case(10, 256);
+    test_copy_bytes_higher_case(256, 1);
+    test_copy_bytes_higher_case(256, 100);
+    test_copy_bytes_higher_case(256, 256);
+    test_copy_bytes_higher_case(4000, 1);
+    test_copy_bytes_higher_case(4000, 100);
+    test_copy_bytes_higher_case(4000, 256);
 }
 
 static void test_mul10(void) {
@@ -111,7 +111,7 @@ static void test_div10(void) {
 int main(void) {
     initialize_target();
     test_copy_bytes();
-    test_copy_bytes_back();
+    test_copy_bytes_higher();
     test_mul10();
     test_div10();
     return 0;
