@@ -55,7 +55,7 @@ int insert_or_update_line(void);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
-void copy_bytes_back(char* to, const char* from, size_t size);
+void copy_bytes_higher(char* to, const char* from, size_t size);
 int mul10(int value);
 int div10(int value);
 

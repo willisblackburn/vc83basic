@@ -39,7 +39,7 @@
 .global insert_or_update_line
 
 ; util.s
-.global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de
+.global copy_bytes, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_de
 .global return_error, return_internal_error, return_status, return_status_ok
 .global mul10, div10
 
