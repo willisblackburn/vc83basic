@@ -7,6 +7,7 @@ exec_print:
         jsr     get_argument_value      ; Returns value to print in AX
         jsr     print_number            ; Print the number
         jsr     newline
+        clc                             ; Print always succeeds
         rts
 
 ; Stop-gap function...
@@ -17,4 +18,3 @@ print_number:
         ldax    #buffer
         ldy     bp
         jmp     write
-

@@ -91,7 +91,7 @@
 .global statement_exec_vectors
 
 ; util.s
-.global copy_bytes, copy_bytes_de, copy_bytes_back, copy_bytes_back_de
+.global copy_bytes, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_de
 .global clear_memory
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
