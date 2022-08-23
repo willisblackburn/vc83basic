@@ -70,14 +70,14 @@ static void test_parse_expression(void) {
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + 3);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "X");
     err = parse_expression(0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     // TODO: add more tests
 }
