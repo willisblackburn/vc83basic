@@ -1,6 +1,6 @@
 ifdef(`__C__',
-    `define(`def', `#define $1 $2') define(`hex', `0x$1') define(`comment', `//')',
-    `define(`def', `$1 = $2') define(`hex', `$$1') define(`comment', `;')')
+    `define(`def', ``#define $1 $2'') define(`hex', `0x$1') define(`comment', `//')',
+    `define(`def', ``$1 = $2'') define(`hex', `$$1') define(`comment', `;')')
 
 comment Generated from __file__
 

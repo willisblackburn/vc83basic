@@ -189,7 +189,6 @@ parse_error:
         rts
 
 ; Parses and tokenizes a expression.
-; This function handles skipping whitespace for ALL expression elements.
 
 parse_expression:
         jsr     parse_number
