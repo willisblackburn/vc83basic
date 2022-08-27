@@ -13,7 +13,7 @@
 exec_list:
         ldphaa  line_ptr
         jsr     reset_line_ptr
-@line_one_line:
+@list_one_line:
         jsr     list_line
         bcs     @done
         ldax    #buffer
@@ -21,7 +21,7 @@ exec_list:
         jsr     write
         jsr     newline
         jsr     advance_line_ptr
-        jmp     @line_one_line
+        jmp     @list_one_line
 
 @done:
         plstaa  line_ptr
