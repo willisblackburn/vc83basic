@@ -64,8 +64,6 @@ reset_line_ptr:
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
 
-.assert Line::number = 1, error
-
 find_line:
         stax    DE
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
@@ -73,7 +71,7 @@ find_line:
 @next_line:      
         jsr     advance_line_ptr        ; Advance to the next line    
 @test_line:
-        ldy     #Line::number+1         ; Index of high byte of line number (expected to be 2)
+        ldy     #Line::number+1         ; Index of high byte of line number
         lda     (line_ptr),y        
         cmp     E       
         bcc     @next_line              ; Line number high byte is <target; go to next line
