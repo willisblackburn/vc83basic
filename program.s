@@ -56,7 +56,6 @@ line_buffer: .res 256
 .assert Line::number = 1, error
 
 initialize_program:
-
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
