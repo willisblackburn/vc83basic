@@ -122,7 +122,7 @@ find_line:
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
-        ldy     #0                      ; Need offset 2 to get length
+        ldy     #Line::next_line_offset ; Index of next line offset in buffer
         lda     (line_ptr),y            ; Get length of current line
         jsr     add_line_ptr_offset
         stax    line_ptr
