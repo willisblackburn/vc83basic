@@ -281,14 +281,14 @@ static void test_parse_optional_multiple_arguments(void) {
     err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(bp, 2);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1,");
     err = parse_multiple_arguments(2 | NT_OPTIONAL, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(bp, 2);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "");
