@@ -253,17 +253,14 @@ parse_argument:
 
 parse_following_argument:
         tay                             ; Save the argument type directive
-        ldpha   bp                      ; Save read position
         jsr     parse_argument_separator
         bcs     @error
         tya                             ; Pass the argument type directive to parse_argument
         jsr     parse_argument
         bcs     @error
-        pla                             ; Pop and discard the saved read position
         rts
 
 @error:
-        plsta   bp                      ; Restore read position
         rts
 
 ; Placeholder handler that just signals an error.
