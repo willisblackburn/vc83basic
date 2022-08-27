@@ -117,7 +117,7 @@ reset_line_ptr:
 ; GOSUB, RESTORE, or any other function that requires a line number.
 ; AX = the line number
 ; Carry clear if ok (the was found), carry set if error (line not found).
-; Sets line_ptr, line_number, and line_length if the line was found.
+; Sets line_ptr if the line was found.
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
 
@@ -142,8 +142,7 @@ find_line:
 @return:        
         rts     
 
-; Advances the current line pointer to the next line. This is called from find_line so we don't set line_number
-; or line_length or assume they've been set, because in find_line we want to scan the program as quickly as possible.
+; Advances the current line pointer to the next line.
 ; line_ptr = current line (updated)
 ; Returns new line_ptr value in AX.
 ; BC SAFE, DE SAFE
