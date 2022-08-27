@@ -180,9 +180,10 @@ list_no_value:
 list_number:
         jsr     decode_number           ; It must be an integer; decode the number (return value in AX)
         jmp     format_number           ; Send it right to format_number
+        rts
 
 ; Adds whitespace to the output if necessary.
-; Whitespace is necessary if w > 0 and if buffer[w-1] is a name character.
+; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character.
 ; Y SAFE
 
 add_whitespace:
