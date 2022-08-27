@@ -95,6 +95,8 @@ _encode_byte:
 
 _list_line:
 .export _list_line
+        sta     next_line_offset
+        jsr     popax
         stax    line_ptr
         jsr     list_line
         jmp     return_carry
@@ -104,6 +106,8 @@ _list_element:
         sta     lp
         jsr     popa
         sta     bp
+        jsr     popax
+        sta     next_line_offset
         jsr     popax
         stax    line_ptr
         jsr     popa
@@ -118,6 +122,8 @@ _list_argument:
         jsr     popa
         sta     bp
         jsr     popax
+        sta     next_line_offset
+        jsr     popax
         stax    line_ptr
         jmp     list_argument
 
@@ -126,6 +132,8 @@ _list_multiple_arguments:
         sta     lp
         jsr     popa
         sta     bp
+        jsr     popax
+        sta     next_line_offset
         jsr     popax
         stax    line_ptr
         jsr     popa
@@ -137,8 +145,21 @@ _list_repeated_argument:
         jsr     popa
         sta     bp
         jsr     popax
+        sta     next_line_offset
+        jsr     popax
         stax    line_ptr
         jmp     list_repeated_argument
+
+_list_expression:
+.export _list_expression
+        sta     lp
+        jsr     popa
+        sta     bp
+        jsr     popax
+        sta     next_line_offset
+        jsr     popax
+        stax    line_ptr
+        jmp     list_expression
 
 ; name.s
 
@@ -269,6 +290,14 @@ _find_line:
 _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
+
+_set_line_ptr:
+.export _set_line_ptr
+        jmp     set_line_ptr            ; New line_ptr value is already in AX
+
+_set_line_variables:
+.export _set_line_variables
+        jmp     set_line_variables
 
 _insert_or_update_line:
 .export _insert_or_update_line

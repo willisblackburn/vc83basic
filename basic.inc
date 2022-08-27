@@ -26,6 +26,7 @@
 .globalzp variable_value_ptr
 .globalzp lp
 .globalzp program_state
+.globalzp next_line_offset
 .globalzp argument_count
 
 ; Data
@@ -55,9 +56,10 @@
 .global exec_list
 .global list_line
 .global list_element
-.global list_argument
 .global list_multiple_arguments
 .global list_repeated_argument
+.global list_argument
+.global list_expression
 
 ; main.s
 .global main
@@ -88,8 +90,8 @@
 .global reset_program_state
 .global reset_line_ptr
 .global find_line
-.global advance_line_ptr
-.global add_line_ptr_offset
+.global advance_line_ptr, advance_line_ptr_a
+.global set_line_ptr, set_line_variables
 .global insert_or_update_line
 .global set_variable_value_ptr
 .global set_variable_value

@@ -158,12 +158,20 @@ list_argument:
         jsr     add_whitespace
         ldphaa  name_ptr                ; Save existing value of name_ptr
         ldpha   np                      ; Save existing name entry read position
+        jsr     list_expression
+        plsta   np                      ; Recover values previously saved on stack
+        plstaa  name_ptr
+        rts
+
+; Lists an expression.
+
+list_expression:
         jsr     decode_byte             ; Get the identifier of the next value
         bmi     @variable               ; It's a variable
         tay                             ; Transfer token into Y for vector lookup
         ldax    #list_argument_vectors
         jsr     invoke_indexed_vector   ; Invoke the list function for the token type
-        jmp     @done
+        jmp     @try_operator
 
 @variable:
         and     #$7F                    ; Clear high bit leaving variable index
@@ -171,15 +179,39 @@ list_argument:
         ldax    variable_name_table_ptr ; Look up name in the variable name table
         jsr     list_element            ; Recursively call list_element to display the name        
 
+@try_operator:
+        lda     lp                      ; Before looking for an operator, check if we're at the end of the line
+        cmp     next_line_offset
+        beq     @done
+        tay                             ; Transfer into Y to use as lookup
+        lda     (line_ptr),y            ; Check the next byte
+        tay                             ; Store original value (TODO: move this into "peek" operation)
+        and     #<~(TOKEN_OPERATOR - 1) ; Check if it's an operator
+        cmp     #TOKEN_OPERATOR         ; All the bits except the op bits have to equal TOKEN_OPERATOR
+        beq     @operator               ; It is, handle an operator
 @done:
-        plsta   np                      ; Recover values previously saved on stack
-        plstaa  name_ptr
-list_no_value:
         rts
+
+@operator:
+        inc     lp                      ; Have to incrmement lp since we consumed the operator
+        tya                             ; Retrieve operator value from Y
+        and     #<(TOKEN_OPERATOR - 1)  ; Isolate just the op bits
+        tay                             ; Back to Y
+        ldax    #operator_name_table
+        jsr     list_element            ; Operator is already in Y
+        jmp     list_expression         ; There has to be another expression after the operator
+
+; Decodes and lists a number.
 
 list_number:
         jsr     decode_number           ; It must be an integer; decode the number (return value in AX)
         jmp     format_number           ; Send it right to format_number
+
+; Fall through
+
+; Lists nothing and should never be called unless for some reason we try to list a TOKEN_NO_VALUE.
+
+list_no_value:
         rts
 
 ; Adds whitespace to the output if necessary.

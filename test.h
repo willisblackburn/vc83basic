@@ -77,11 +77,12 @@ int encode_number(int number, char lp);
 int encode_byte(char byte_value, char lp);
 
 // list.s
-int list_line(const char* line_ptr);
-void list_element(const char* name_ptr, char index, const char* line_ptr, char bp, char lp);
-void list_argument(const char* line_ptr, char bp, char lp);
-void list_multiple_arguments(char directive, const char* line_ptr, char bp, char lp);
-void list_repeated_argument(const char* line_ptr, char bp, char lp);
+int list_line(const char* line_ptr, size_t length);
+void list_element(const char* name_ptr, char index, const char* line_ptr, size_t length, char bp, char lp);
+void list_argument(const char* line_ptr, size_t length, char bp, char lp);
+void list_multiple_arguments(char directive, const char* line_ptr, size_t length, char bp, char lp);
+void list_repeated_argument(const char* line_ptr, size_t length, char bp, char lp);
+void list_expression(const char* line_ptr, size_t length, char bp, char lp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
@@ -107,6 +108,8 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
+void set_line_ptr(void* line_ptr);
+void set_line_variables(void);
 int insert_or_update_line(void);
 void set_variable_value_ptr(char variable);
 int expand(void* ptr, size_t size);

@@ -12,32 +12,61 @@ static void create_varibles(void) {
     ASSERT_EQ(err, 0);
 }
 
-static void test_list_argument(void) {
+static void test_list_expression(void) {
 
     const char line_data_1[] = { TOKEN_INT, 0x10, 0x10 };
     const char line_data_2[] = { 0x80 };
     const char line_data_3[] = { TOKEN_NO_VALUE };
+    const char line_data_4[] = { TOKEN_INT, 0x16, 0x00, TOKEN_OPERATOR | OP_DIV, TOKEN_INT, 0x07, 0x00 };
 
     const char list_1[] = { "4112" };
     const char list_2[] = { "X" };
     const char list_3[] = { "" };
+    const char list_4[] = { "22/7" };
 
     PRINT_TEST_NAME();
 
     initialize_program();
     create_varibles();
 
-    list_argument(line_data_1, 0, 0);
+    list_expression(line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 
-    list_argument(line_data_2, 0, 0);
+    list_expression(line_data_2, sizeof line_data_2, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
-    list_argument(line_data_3, 0, 0);
+    list_expression(line_data_3, sizeof line_data_3, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
+
+    list_expression(line_data_4, sizeof line_data_4, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
+    ASSERT_EQ(bp, sizeof list_4 - 1);
+
+    // Verify that LIST ignores a byte that looks like an operator after the end of the line.
+    // The important thing is that bp (the buffer length) is 2 (i.e., the operator was not rendered).
+    list_expression(line_data_4, 3, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_4, 2);
+    ASSERT_EQ(bp, 2);
+}
+
+static void test_list_argument(void) {
+
+    // list_argument just delegates to list_expression, so just do a quick sanity check.
+
+    const char line_data_1[] = { TOKEN_INT, 0x10, 0x10 };
+
+    const char list_1[] = { "4112" };
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    list_argument(line_data_1, sizeof line_data_1, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
+    ASSERT_EQ(bp, sizeof list_1 - 1);
 }
 
 static void test_list_repeated_argument(void) {
@@ -51,7 +80,7 @@ static void test_list_repeated_argument(void) {
     initialize_program();
     create_varibles();
 
-    list_repeated_argument(line_data_1, 0, 0);
+    list_repeated_argument(line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 }
@@ -73,21 +102,21 @@ static void test_list_multiple_arguments(void) {
     initialize_program();
     create_varibles();
 
-    list_multiple_arguments(1, line_data_1, 0, 0);
+    list_multiple_arguments(1, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1_1, sizeof list_1_1 - 1);
     ASSERT_EQ(bp, sizeof list_1_1 - 1);
-    list_multiple_arguments(2, line_data_1, 0, 0);
+    list_multiple_arguments(2, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1_2, sizeof list_1_2 - 1);
     ASSERT_EQ(bp, sizeof list_1_2 - 1);
-    list_multiple_arguments(3, line_data_1, 0, 0);
+    list_multiple_arguments(3, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1_3, sizeof list_1_3 - 1);
     ASSERT_EQ(bp, sizeof list_1_3 - 1);
 
-    list_multiple_arguments(3, line_data_2, 0, 0);
+    list_multiple_arguments(3, line_data_2, sizeof line_data_2, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
-    list_multiple_arguments(3, line_data_3, 0, 0);
+    list_multiple_arguments(3, line_data_3, sizeof line_data_3, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
 }
@@ -111,27 +140,27 @@ static void test_list_element(void) {
     initialize_program();
     create_varibles();
 
-    list_element(statement_name_table, ST_RUN, line_data_1, 0, 0);
+    list_element(statement_name_table, ST_RUN, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
     ASSERT_EQ(lp, 0);
 
-    list_element(statement_name_table, ST_LET, line_data_2, 0, 0);
+    list_element(statement_name_table, ST_LET, line_data_2, sizeof line_data_2, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
     ASSERT_EQ(lp, sizeof line_data_2);
 
-    list_element(statement_name_table, ST_LIST, line_data_3, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_3, sizeof line_data_3, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
     ASSERT_EQ(lp, sizeof line_data_3);
 
-    list_element(statement_name_table, ST_LIST, line_data_4, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_4, sizeof line_data_4, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
     ASSERT_EQ(bp, sizeof list_4 - 1);
     ASSERT_EQ(lp, sizeof line_data_4);
 
-    list_element(statement_name_table, ST_LIST, line_data_5, 0, 0);
+    list_element(statement_name_table, ST_LIST, line_data_5, sizeof line_data_5, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
     ASSERT_EQ(bp, sizeof list_5 - 1);
     ASSERT_EQ(lp, sizeof line_data_5);
@@ -152,30 +181,31 @@ static void test_list_line(void) {
     initialize_program();
     create_varibles();
 
-    err = list_line(line_data_1);
+    err = list_line(line_data_1, sizeof line_data_1);
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 
-    err = list_line(line_data_2);
+    err = list_line(line_data_2, sizeof line_data_2);
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 
-    err = list_line(line_data_end);
+    err = list_line(line_data_end, sizeof line_data_end);
     ASSERT_NE(err, 0);
 }
 
 int main(void) {
 
     initialize_target();
-    test_list_argument();
-    test_list_repeated_argument();
-    test_list_multiple_arguments();
-    test_list_element();
-    test_list_line();
+    test_list_expression();
+    // test_list_argument();
+    // test_list_repeated_argument();
+    // test_list_multiple_arguments();
+    // test_list_element();
+    // test_list_line();
 
     return 0;
 }
