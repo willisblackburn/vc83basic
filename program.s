@@ -26,13 +26,12 @@ line_buffer: .res 256
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 
-initialize_program:
-
 ; This function makes assumptions about these offsets
 
 .assert Line::next_line_offset = 0, error
 .assert Line::number = 1, error
 
+initialize_program:
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
         ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
