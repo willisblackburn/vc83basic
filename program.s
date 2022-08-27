@@ -93,6 +93,8 @@ reset_line_ptr:
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
 
+.assert Line::number = 1, error
+
 find_line:
         stax    DE
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
