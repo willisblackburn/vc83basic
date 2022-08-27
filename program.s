@@ -150,7 +150,7 @@ find_line:
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
-        ldy     #0                      ; Need offset 2 to get length
+        ldy     #Line::next_line_offset ; Index of next line offset in buffer
         lda     (line_ptr),y            ; Get length of current line
 advance_line_ptr_a:
         jsr     add_line_ptr_offset
@@ -182,7 +182,7 @@ insert_or_update_line:
 ; line_ptr points to a line that we have to remove.
 ; Temporarily store the offset of the next line, advance line_ptr, then compact to remove the line.
 
-        ldy     #0                      ; Prepare to get next line offset
+        ldy     #Line::next_line_offset ; Prepare to get next line offset
         lda     (line_ptr),y            ; Get it
         pha                             ; Save on stack
         jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
