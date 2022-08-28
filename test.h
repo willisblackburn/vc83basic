@@ -78,10 +78,10 @@ int encode_byte(char byte_value, char lp);
 
 // list.s
 int list_line(const char* line_ptr);
-void list_element(const char* name_ptr, char index, const char* line_ptr, char bp, char lp);
-void list_argument(const char* line_ptr, char bp, char lp);
-void list_multiple_arguments(char directive, const char* line_ptr, char bp, char lp);
-void list_repeated_argument(const char* line_ptr, char bp, char lp);
+void list_element(const char* name_ptr, char index, const char* line_ptr, char lp, char bp);
+void list_argument(const char* line_ptr, char lp, char bp);
+void list_multiple_arguments(char directive, const char* line_ptr, char lp, char bp);
+void list_repeated_argument(const char* line_ptr, char lp, char bp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);

@@ -101,9 +101,9 @@ _list_line:
 
 _list_element:
 .export _list_element
-        sta     lp
-        jsr     popa
         sta     bp
+        jsr     popa
+        sta     lp
         jsr     popax
         stax    line_ptr
         jsr     popa
@@ -114,18 +114,18 @@ _list_element:
 
 _list_argument:
 .export _list_argument
-        sta     lp
-        jsr     popa
         sta     bp
+        jsr     popa
+        sta     lp
         jsr     popax
         stax    line_ptr
         jmp     list_argument
 
 _list_multiple_arguments:
 .export _list_multiple_arguments
-        sta     lp
-        jsr     popa
         sta     bp
+        jsr     popa
+        sta     lp
         jsr     popax
         stax    line_ptr
         jsr     popa
@@ -133,9 +133,9 @@ _list_multiple_arguments:
 
 _list_repeated_argument:
 .export _list_repeated_argument
-        sta     lp
-        jsr     popa
         sta     bp
+        jsr     popa
+        sta     lp
         jsr     popax
         stax    line_ptr
         jmp     list_repeated_argument
