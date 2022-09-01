@@ -30,11 +30,18 @@ encode_variable:
         rts
 
 ; Encodes an operator.
+
+encode_operator:
+        ora     #TOKEN_OP               ; OR the value with the operator token
+        jsr     encode
+        rts
+
+; Encodes a binary operator.
 ; A = the operator ID
 ; Y SAFE, C SAFE
 
-encode_operator:
-        ora     #TOKEN_OPERATOR         ; OR the value with the operator token
+encode_binary_operator:
+        ora     #TOKEN_BINARY_OP        ; OR the value with the binary operator token
         jsr     encode
         rts
 

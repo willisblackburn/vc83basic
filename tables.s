@@ -16,6 +16,15 @@ statement_exec_vectors:
         .word   exec_list
 
 operator_name_table:
+        .byte '-' | NT_END
+        .byte 'N', 'O', 'T' | NT_END
+        .byte ',' | NT_END
+        .byte ';' | NT_END
+        .byte '(' | NT_END
+        .byte ')' | NT_END
+        .byte 0
+
+binary_operator_name_table:
         .byte '+' | NT_END
         .byte '-' | NT_END
         .byte '*' | NT_END

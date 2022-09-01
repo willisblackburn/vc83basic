@@ -20,7 +20,7 @@ argument_count: .res 1
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
-        jsr     skip_whitespace
+        jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
         ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
@@ -268,19 +268,44 @@ parse_error:
 ; Parses and tokenizes a expression.
 
 parse_expression:
+        jsr     parse_parentheses       ; Look for an expression in parentheses
+        bcc     @try_operator
         jsr     parse_number
         bcc     @try_operator
         jsr     parse_variable
         bcs     @done                   ; Not a number or a variable; must be an error
 @try_operator:
-        ldax    #operator_name_table    ; Try to parse an operator from here
+        ldax    #binary_operator_name_table ; Try to parse an operator from here
         jsr     find_name               ; Carry will be clear if one was found
         bcs     @no_operator            ; Not found; expression ends here
-        jsr     encode_operator         ; The operator ID is in A; encode it
+        jsr     encode_binary_operator  ; The operator ID is in A; encode it
         jmp     parse_expression        ; Otherwise parse the following expression
 @no_operator:
         clc                             ; Not finding an operator is okay; still success
 @done:
+        rts
+
+; Parses an expression in parentheses.
+
+parse_parentheses:
+        jsr     skip_whitespace         ; Skip whitespace and return the next character
+        cmp     #'('                    ; Is is a left paren?
+        bne     @error                  ; This is not an expression in parentheses
+        lda     #OP_LPAREN              ; Encode the left paren
+        jsr     encode_operator
+        inc     bp                      ; Skip over the left paren
+        jsr     parse_expression        ; Parse the expression in the parentheses
+        jsr     skip_whitespace         ; Find the next character, ...
+        cmp     #')'                    ; which had better be a right parenthesis
+        bne     @error                  ; But it wasn't
+        lda     #OP_RPAREN              ; It was; encode it
+        jsr     encode_operator
+        inc     bp                      ; Skip over the close paren
+        clc                             ; Clear carry to indicate success
+        rts
+    
+@error:
+        sec                             ; Set carry to indicate error and return
         rts
 
 ; Parses a number from the buffer.

@@ -9,7 +9,7 @@ static void create_varibles(void) {
     err = find_name(variable_name_table_ptr, 0);
     ASSERT_NE(err, 0);
     err = add_variable();
-    strcpy(buffer, "BLINK182");
+    strcpy(buffer, "Y");
     err = find_name(variable_name_table_ptr, 0);
     ASSERT_NE(err, 0);
     err = add_variable();
@@ -21,15 +21,18 @@ static void test_list_expression(void) {
     const char line_data_1[] = { TOKEN_INT, 0x10, 0x10 };
     const char line_data_2[] = { 0x80 };
     const char line_data_3[] = { TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_INT, 0x16, 0x00, TOKEN_OPERATOR | OP_DIV, TOKEN_INT, 0x07, 0x00 };
-    const char line_data_5[] = { 0x80, TOKEN_OPERATOR | OP_LE, TOKEN_INT, 0x07, 0x00, TOKEN_OPERATOR | OP_OR,
-        0x81, TOKEN_OPERATOR | OP_EQ, TOKEN_INT, 0x10, 0x10 };
+    const char line_data_4[] = { TOKEN_INT, 0x16, 0x00, TOKEN_BINARY_OP | OP_DIV, TOKEN_INT, 0x07, 0x00 };
+    const char line_data_5[] = { 0x80, TOKEN_BINARY_OP | OP_LE, TOKEN_INT, 0x07, 0x00, TOKEN_BINARY_OP | OP_OR,
+        0x81, TOKEN_BINARY_OP | OP_EQ, TOKEN_INT, 0x10, 0x10 };
+    const char line_data_6[] = { TOKEN_OP | OP_LPAREN, 0x80, TOKEN_BINARY_OP | OP_ADD, TOKEN_INT, 0x03, 0x00,
+        TOKEN_OP | OP_RPAREN, TOKEN_BINARY_OP | OP_MUL, 0x81 };
 
-    const char list_1[] = { "4112" };
-    const char list_2[] = { "X" };
-    const char list_3[] = { "" };
-    const char list_4[] = { "22/7" };
-    const char list_5[] = { "X<=7 OR BLINK182=4112" };
+    const char list_1[] = "4112";
+    const char list_2[] = "X";
+    const char list_3[] = "";
+    const char list_4[] = "22/7";
+    const char list_5[] = "X<=7 OR Y=4112";
+    const char list_6[] = "(X+3)*Y";
 
     PRINT_TEST_NAME();
 
@@ -61,6 +64,10 @@ static void test_list_expression(void) {
     list_expression(line_data_5, sizeof line_data_5, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
     ASSERT_EQ(bp, sizeof list_5 - 1);
+
+    list_expression(line_data_6, sizeof line_data_6, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_6, sizeof list_6 - 1);
+    ASSERT_EQ(bp, sizeof list_6 - 1);
 }
 
 static void test_list_argument(void) {
