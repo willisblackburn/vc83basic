@@ -36,7 +36,7 @@ invoke_statement_handler:
 ; Gets the value for an argument and returns it in AX.
 
 get_argument_value:
-        jsr     decode_byte             ; Get statement number
+        jsr     decode_byte             ; Get the next token
         bmi     @variable               ; It's a variable
         jmp     decode_number           ; Decode a number instead
 
