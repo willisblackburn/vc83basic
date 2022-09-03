@@ -89,7 +89,6 @@
 
 ; tables.s
 .global statement_name_table
-.global statement_exec_vectors
 
 ; util.s
 .global copy_bytes, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_de
