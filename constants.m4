@@ -55,6 +55,7 @@ def(OP_OR,             13)
 
 comment Program states
 
-def(PROGRAM_STATE_NOT_RUNNING,  hex(00))    comment Variables initalized to 0
-def(PROGRAM_STATE_RUNNING,      hex(01))    comment STOP command stops program; END resets
+def(PROGRAM_STATE_INITIALIZED,  hex(00))    comment Variables initalized to 0
+def(PROGRAM_STATE_RUNNING,      hex(01))    comment STOP command stops program; END ends
 def(PROGRAM_STATE_STOPPED,      hex(02))    comment CONT command continues; CLR resets
+def(PROGRAM_STATE_ENDED,        hex(03))    comment Program has ended; CONT doen't work

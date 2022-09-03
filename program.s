@@ -103,7 +103,7 @@ reset_program_state:
         adc     value_table_ptr+1
         sta     heap_ptr+1
         sta     free_ptr+1
-        mva     #PROGRAM_STATE_NOT_RUNNING, program_state   ; Set the program state to not running
+        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
 
 ; Fall through
 

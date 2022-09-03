@@ -7,7 +7,7 @@
 exec_run:
         lda     program_state
         cmp     #PROGRAM_STATE_RUNNING  ; Don't re-run if we're already running
-        beq     @done
+        beq     @done                   ; Carry will be set on equal
         jsr     reset_program_state     ; Clear the variable name table
         jsr     reset_line_ptr          ; Reset line_ptr to the start of the program
         mvaa    #PROGRAM_STATE_RUNNING, program_state
@@ -21,7 +21,7 @@ exec_run:
         jmp     @run_one_line
 
 @program_end:
-        mva     #PROGRAM_STATE_NOT_RUNNING, program_state
+        mva     #PROGRAM_STATE_ENDED, program_state
         clc
 
 @done:
