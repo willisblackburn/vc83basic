@@ -12,9 +12,9 @@
 
 ; Aliases for globals
 
-.export _bp = bp;
-.export _src_ptr = src_ptr;
-.export _dst_ptr = dst_ptr;
+.export _bp = bp
+.export _src_ptr = src_ptr
+.export _dst_ptr = dst_ptr
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
@@ -29,10 +29,10 @@
 .export _himem_ptr = himem_ptr
 .export _variable_count = variable_count
 .export _variable_value_ptr = variable_value_ptr
-.export _lp = lp;
+.export _lp = lp
 
 .export _name_ptr = name_ptr
-.export _np = np;
+.export _np = np
 
 .bss
 
