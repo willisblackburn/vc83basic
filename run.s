@@ -24,6 +24,11 @@ exec_run:
 @end:
         rts
 
+statement_exec_vectors:
+        .word   exec_run
+        .word   exec_print
+        .word   exec_let
+
 ; Invokes a statement handler from a table.
 ; This function does not return; it jumps to the handler, which will eventually return.
 ; A = the index of the handler in the table
