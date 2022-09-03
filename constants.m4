@@ -14,3 +14,4 @@ def(NT_END,             hex(80))
 comment Tokenized form constants
 
 def(TOKEN_INT,          hex(01))
+def(TOKEN_VAR,          hex(80)) comment OR with variable number
