@@ -7,11 +7,11 @@
 
 .zeropage
 
-; A pointer to the current program line
-line_ptr: .res 2
-
 ; A pointer to the start of the program
 program_ptr: .res 2
+
+; A pointer to the current program line
+line_ptr: .res 2
 
 ; The start of the variable name table
 variable_name_table_ptr: .res 2
