@@ -7,10 +7,3 @@ statement_name_table:
         .byte   'I', 'N', 'P', 'U', 'T', NT_RPT_VAR | NT_END
         .byte   'L', 'I', 'S', 'T', 2 | NT_OPTIONAL | NT_END
         .byte   0
-
-statement_exec_vectors:
-        .word   exec_run
-        .word   exec_print
-        .word   exec_let
-        .word   exec_input
-        .word   exec_list
