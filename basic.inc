@@ -109,7 +109,6 @@
 
 ; tables.s
 .global statement_name_table
-.global statement_exec_vectors
 .global operator_name_table
 
 ; util.s

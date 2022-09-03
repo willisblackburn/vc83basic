@@ -8,13 +8,6 @@ statement_name_table:
         .byte   'L', 'I', 'S', 'T', 2 | NT_OPTIONAL | NT_END
         .byte   0
 
-statement_exec_vectors:
-        .word   exec_run
-        .word   exec_print
-        .word   exec_let
-        .word   exec_input
-        .word   exec_list
-
 operator_name_table:
         .byte '+' | NT_END
         .byte '-' | NT_END
