@@ -177,7 +177,7 @@ list_expression:
         jsr     decode_byte             ; Get the identifier of the next value
         bmi     @variable               ; It's a variable
         tay                             ; Transfer the value into Y
-        cmp     #(TOKEN_OP | OP_LPAREN) ; Is it a left paren token?
+        cmp     #TOKEN_LPAREN           ; Is it a left paren token?
         beq     @parentheses
         tay                             ; Transfer token into Y for vector lookup
         ldax    #list_argument_vectors
@@ -206,8 +206,8 @@ list_expression:
         tay                             ; Transfer into Y to use as lookup
         lda     (line_ptr),y            ; Check the next byte
         tay                             ; Store original value (TODO: move this into "peek" operation)
-        and     #<~(TOKEN_BINARY_OP - 1) ; Check if it's an operator
-        cmp     #TOKEN_BINARY_OP         ; All the bits except the op bits have to equal TOKEN_BINARY_OP
+        and     #<~(TOKEN_OP - 1) ; Check if it's an operator
+        cmp     #TOKEN_OP         ; All the bits except the op bits have to equal TOKEN_OP
         beq     @operator               ; It is, handle an operator
 @done:
         rts
@@ -215,9 +215,9 @@ list_expression:
 @operator:
         inc     lp                      ; Have to incrmement lp since we consumed the operator
         tya                             ; Retrieve operator value from Y
-        and     #<(TOKEN_BINARY_OP - 1)  ; Isolate just the op bits
+        and     #<(TOKEN_OP - 1)  ; Isolate just the op bits
         tay                             ; Back to Y
-        ldax    #binary_operator_name_table
+        ldax    #operator_name_table
         jsr     list_element            ; Operator is already in Y
         jmp     list_expression         ; There has to be another expression after the operator
 

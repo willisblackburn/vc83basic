@@ -16,15 +16,6 @@ statement_exec_vectors:
         .word   exec_list
 
 operator_name_table:
-        .byte '-' | NT_END
-        .byte 'N', 'O', 'T' | NT_END
-        .byte ',' | NT_END
-        .byte ';' | NT_END
-        .byte '(' | NT_END
-        .byte ')' | NT_END
-        .byte 0
-
-binary_operator_name_table:
         .byte '+' | NT_END
         .byte '-' | NT_END
         .byte '*' | NT_END
@@ -39,4 +30,13 @@ binary_operator_name_table:
         .byte '>' | NT_END
         .byte 'A', 'N', 'D' | NT_END
         .byte 'O', 'R' | NT_END
+        .byte 0
+
+misc_name_table:
+        .byte '(' | NT_END
+        .byte ')' | NT_END
+        .byte 'N', 'O', 'T' | NT_END
+        .byte '-' | NT_END
+        .byte ',' | NT_END
+        .byte ';' | NT_END
         .byte 0

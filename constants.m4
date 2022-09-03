@@ -19,8 +19,13 @@ comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
 def(TOKEN_INT,          hex(01))
-def(TOKEN_OP,           hex(08)) comment OR with OP_*
-def(TOKEN_BINARY_OP,    hex(10)) comment OR with OP_*
+def(TOKEN_LPAREN,       hex(06))
+def(TOKEN_RPAREN,       hex(07))
+def(TOKEN_NOT,          hex(08))
+def(TOKEN_MINUS,        hex(09))
+def(TOKEN_COMMA,        hex(0A))
+def(TOKEN_SEMI,         hex(0B))
+def(TOKEN_OP,           hex(10)) comment OR with OP_*
 def(TOKEN_VAR,          hex(80)) comment OR with variable number
 
 comment Statement tokens
@@ -31,16 +36,7 @@ def(ST_LET,             2)
 def(ST_INPUT,           3)
 def(ST_LIST,            4)
 
-comment Operator tokens: combine with TOKEN_OP
-
-def(OP_NEG,             0)
-def(OP_NOT,             1)
-def(OP_COMMA,           2)
-def(OP_SEMI,            3)
-def(OP_LPAREN,          4)
-def(OP_RPAREN,          5)
-
-comment Binary operator tokens: combine with TOKEN_BINARY_OP
+comment Binary operator tokens: combine with TOKEN_OP
 
 def(OP_ADD,             0)
 def(OP_SUB,             1)

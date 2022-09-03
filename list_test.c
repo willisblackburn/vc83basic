@@ -21,11 +21,11 @@ static void test_list_expression(void) {
     const char line_data_1[] = { TOKEN_INT, 0x10, 0x10 };
     const char line_data_2[] = { 0x80 };
     const char line_data_3[] = { TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_INT, 0x16, 0x00, TOKEN_BINARY_OP | OP_DIV, TOKEN_INT, 0x07, 0x00 };
-    const char line_data_5[] = { 0x80, TOKEN_BINARY_OP | OP_LE, TOKEN_INT, 0x07, 0x00, TOKEN_BINARY_OP | OP_OR,
-        0x81, TOKEN_BINARY_OP | OP_EQ, TOKEN_INT, 0x10, 0x10 };
-    const char line_data_6[] = { TOKEN_OP | OP_LPAREN, 0x80, TOKEN_BINARY_OP | OP_ADD, TOKEN_INT, 0x03, 0x00,
-        TOKEN_OP | OP_RPAREN, TOKEN_BINARY_OP | OP_MUL, 0x81 };
+    const char line_data_4[] = { TOKEN_INT, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_INT, 0x07, 0x00 };
+    const char line_data_5[] = { 0x80, TOKEN_OP | OP_LE, TOKEN_INT, 0x07, 0x00, TOKEN_OP | OP_OR,
+        0x81, TOKEN_OP | OP_EQ, TOKEN_INT, 0x10, 0x10 };
+    const char line_data_6[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_INT, 0x03, 0x00,
+        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81 };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";

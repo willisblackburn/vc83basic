@@ -60,11 +60,11 @@ static void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
     const char line_data_2[] = { 0x80 };
-    const char line_data_3[] = { 0x80, TOKEN_BINARY_OP | OP_ADD, TOKEN_INT, 0x01, 0x00 };
-    const char line_data_4[] = { 0x80, TOKEN_BINARY_OP | OP_EQ, TOKEN_INT, 0x03, 0x00, TOKEN_BINARY_OP | OP_OR, 0x80,
-        TOKEN_BINARY_OP | OP_LE, 0x81 };
-    const char line_data_5[] = { TOKEN_OP | OP_LPAREN, 0x80, TOKEN_BINARY_OP | OP_ADD, TOKEN_INT, 0x03, 0x00,
-        TOKEN_OP | OP_RPAREN, TOKEN_BINARY_OP | OP_MUL, 0x81 };
+    const char line_data_3[] = { 0x80, TOKEN_OP | OP_ADD, TOKEN_INT, 0x01, 0x00 };
+    const char line_data_4[] = { 0x80, TOKEN_OP | OP_EQ, TOKEN_INT, 0x03, 0x00, TOKEN_OP | OP_OR, 0x80,
+        TOKEN_OP | OP_LE, 0x81 };
+    const char line_data_5[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_INT, 0x03, 0x00,
+        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81 };
 
     PRINT_TEST_NAME();
 

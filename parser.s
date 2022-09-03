@@ -275,10 +275,10 @@ parse_expression:
         jsr     parse_variable
         bcs     @done                   ; Not a number or a variable; must be an error
 @try_operator:
-        ldax    #binary_operator_name_table ; Try to parse an operator from here
+        ldax    #operator_name_table    ; Try to parse an operator from here
         jsr     find_name               ; Carry will be clear if one was found
         bcs     @no_operator            ; Not found; expression ends here
-        jsr     encode_binary_operator  ; The operator ID is in A; encode it
+        jsr     encode_operator         ; The operator ID is in A; encode it
         jmp     parse_expression        ; Otherwise parse the following expression
 @no_operator:
         clc                             ; Not finding an operator is okay; still success
@@ -291,15 +291,15 @@ parse_parentheses:
         jsr     skip_whitespace         ; Skip whitespace and return the next character
         cmp     #'('                    ; Is is a left paren?
         bne     @error                  ; This is not an expression in parentheses
-        lda     #OP_LPAREN              ; Encode the left paren
-        jsr     encode_operator
+        lda     #TOKEN_LPAREN           ; Encode the left paren
+        jsr     encode_byte
         inc     bp                      ; Skip over the left paren
         jsr     parse_expression        ; Parse the expression in the parentheses
         jsr     skip_whitespace         ; Find the next character, ...
         cmp     #')'                    ; which had better be a right parenthesis
         bne     @error                  ; But it wasn't
-        lda     #OP_RPAREN              ; It was; encode it
-        jsr     encode_operator
+        lda     #TOKEN_RPAREN           ; It was; encode it
+        jsr     encode_byte
         inc     bp                      ; Skip over the close paren
         clc                             ; Clear carry to indicate success
         rts

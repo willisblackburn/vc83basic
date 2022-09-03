@@ -44,7 +44,6 @@
 .global encode_number
 .global encode_variable
 .global encode_operator
-.global encode_binary_operator
 .global encode_byte
 
 ; input.s
@@ -110,7 +109,6 @@
 .global statement_name_table
 .global statement_exec_vectors
 .global operator_name_table
-.global binary_operator_name_table
 
 ; util.s
 .global copy_bytes, copy_bytes_a, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_a, copy_bytes_higher_de
