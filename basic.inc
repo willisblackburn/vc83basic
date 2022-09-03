@@ -15,8 +15,9 @@
 .globalzp name_ptr
 .globalzp np
 .globalzp src_ptr, dst_ptr
-.globalzp line_ptr
+.globalzp vector_table_ptr
 .globalzp program_ptr
+.globalzp line_ptr
 .globalzp variable_name_table_ptr
 .globalzp value_table_ptr
 .globalzp heap_ptr

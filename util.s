@@ -228,11 +228,11 @@ div10:
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
-; Callers can use DE to pass parameters to the target function. The _vt entry point uses the existing value of
+; Callers can use BC to pass parameters to the target function. The _vt entry point uses the existing value of
 ; vector_table_pointer and does not touch X, so it can also be used to pass data.
 ; AX = address of the vector table (the _vt entry point uses the value still in vector_table_ptr)
 ; Y = the index of the vector
-; DE SAFE
+; BC SAFE
 
 invoke_indexed_vector:
         stax    vector_table_ptr
@@ -241,11 +241,11 @@ invoke_indexed_vector_vt:
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
         lda     (vector_table_ptr),y    ; Load low byte of vector
-        sta     B                       ; Set up BC as the jump vector                
+        sta     D                       ; Set up BC as the jump vector                
         iny     
         lda     (vector_table_ptr),y    
-        sta     C
-        jmp     (BC)                    ; Handler function RTS will return from *this* function
+        sta     E
+        jmp     (DE)                    ; Handler function RTS will return from *this* function
 
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
 ; in buffer (i.e., it is equal to bp).
