@@ -15,6 +15,7 @@
 .export _bp = bp
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
+.export _vector_table_ptr = vector_table_ptr
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
@@ -44,6 +45,12 @@ _reg_a: .res 1
 _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
 
 .code
 
@@ -60,6 +67,10 @@ return_carry:
 ; Function wrappers
 
 ; decode.s
+
+_decode_dispatch_next:
+.export _decode_dispatch_next
+        jmp     decode_dispatch_next
 
 _decode_number:
 .export _decode_number

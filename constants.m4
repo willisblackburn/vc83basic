@@ -19,6 +19,9 @@ comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
 def(TOKEN_INT,          hex(01))
+def(TOKEN_STRING,       hex(02))
+def(TOKEN_FLOAT,        hex(03))
+def(TOKEN_SMALL_FLOAT,  hex(04))
 def(TOKEN_LPAREN,       hex(06))
 def(TOKEN_RPAREN,       hex(07))
 def(TOKEN_NOT,          hex(08))
@@ -26,6 +29,8 @@ def(TOKEN_MINUS,        hex(09))
 def(TOKEN_COMMA,        hex(0A))
 def(TOKEN_SEMI,         hex(0B))
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
+def(TOKEN_FUNC,         hex(20)) comment OR with FUNC_*
+def(TOKEN_SMALL_INT,    hex(40))
 def(TOKEN_VAR,          hex(80)) comment OR with variable number
 
 comment Statement tokens
