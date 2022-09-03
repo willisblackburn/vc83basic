@@ -25,7 +25,7 @@ encode_number:
 ; Y SAFE, BC SAFE
 
 encode_variable:
-        ora     #$80                    ; Variables are encoded with the high bit set
+        ora     #TOKEN_VAR              ; Variables are encoded with the high bit set
         jsr     encode
         rts
 
