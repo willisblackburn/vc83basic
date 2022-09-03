@@ -114,7 +114,7 @@
 .global copy_bytes, copy_bytes_a, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_a, copy_bytes_higher_de
 .global clear_memory
 .global mul2a, mul2, mul10, div10
-.global invoke_indexed_vector
+.global invoke_indexed_vector, invoke_indexed_vector_vt
 .global format_number
 .global putchar_space_buffer, putchar_buffer
 

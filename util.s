@@ -19,6 +19,9 @@ bp: .res 1
 src_ptr: .res 2
 dst_ptr: .res 2
 
+; Pointer to the table of vectors used by invoke_indexed_vector
+vector_table_ptr: .res 2
+
 .code
 
 ; Copies bytes from a source address to a destination address.
@@ -221,23 +224,27 @@ div10:
         ldax    DE
         rts
 
-; Invokes a vector selected from an array of vectors.
+; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
-; AX = address of the vector array
+; Callers can use DE to pass parameters to the target function. The _vt entry point uses the existing value of
+; vector_table_pointer and does not touch X, so it can also be used to pass data.
+; AX = address of the vector table (the _vt entry point uses the value still in vector_table_ptr)
 ; Y = the index of the vector
+; DE SAFE
 
 invoke_indexed_vector:
-        stax    BC
+        stax    vector_table_ptr
+invoke_indexed_vector_vt:
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
-        lda     (BC),y                  ; Load low byte of vector
-        sta     D                       ; Set up DE as the jump vector                
+        lda     (vector_table_ptr),y    ; Load low byte of vector
+        sta     B                       ; Set up BC as the jump vector                
         iny     
-        lda     (BC),y    
-        sta     E
-        jmp     (DE)                    ; Handler function RTS will return from *this* function
+        lda     (vector_table_ptr),y    
+        sta     C
+        jmp     (BC)                    ; Handler function RTS will return from *this* function
 
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
 ; in buffer (i.e., it is equal to bp).
