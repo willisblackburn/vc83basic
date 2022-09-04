@@ -7,7 +7,7 @@
 ; All functions clobber X, so save it if you need it.
 
 ; Encodes a number.
-; AX = the integer to encode
+; AX = the number to encode
 ; Y SAFE, DE SAFE
 
 encode_number:
