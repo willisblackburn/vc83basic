@@ -14,7 +14,7 @@ static void create_varibles(void) {
 
 static void test_list_argument(void) {
 
-    const char line_data_1[] = { TOKEN_INT, 0x10, 0x10 };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10 };
     const char line_data_2[] = { 0x80 };
     const char line_data_3[] = { TOKEN_NO_VALUE };
 
@@ -42,7 +42,7 @@ static void test_list_argument(void) {
 
 static void test_list_repeated_argument(void) {
     
-    const char line_data_1[] = { TOKEN_INT, 0x10, 0x10, 0x80, TOKEN_NO_VALUE };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, 0x80, TOKEN_NO_VALUE };
 
     const char list_1[] = { "4112,X" };
 
@@ -58,8 +58,8 @@ static void test_list_repeated_argument(void) {
 
 static void test_list_multiple_arguments(void) {
     
-    const char line_data_1[] = { TOKEN_INT, 0x10, 0x10, 0x80, TOKEN_INT, 0x10, 0x00 };
-    const char line_data_2[] = { TOKEN_INT, 0x10, 0x10, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, 0x80, TOKEN_NUM, 0x10, 0x00 };
+    const char line_data_2[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_3[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
     const char list_1_1[] = { "4112" };
@@ -95,9 +95,9 @@ static void test_list_multiple_arguments(void) {
 static void test_list_element(void) {
 
     const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x80, TOKEN_INT, 0xFF, 0x7F };
-    const char line_data_3[] = { TOKEN_INT, 0x0A, 0x00, TOKEN_INT, 0x14, 0x00 };
-    const char line_data_4[] = { TOKEN_INT, 0x0A, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 0x80, TOKEN_NUM, 0xFF, 0x7F };
+    const char line_data_3[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00 };
+    const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE };
     const char line_data_5[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
@@ -140,8 +140,8 @@ static void test_list_element(void) {
 static void test_list_line(void) {
     int err;
 
-    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_INT, 0x01, 0x01 };
-    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_INT, 0xFF, 0x7F };
+    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_NUM, 0x01, 0x01 };
+    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F };
     const char line_data_end[] = { 3, 0xFF, 0xFF };
     
     const char list_1[] = "10 PRINT 257";

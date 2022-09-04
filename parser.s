@@ -62,7 +62,7 @@ char_to_digit:
 
 argument_type_vectors:
         .word   parse_expression        ; NT_EXPRESSION
-        .word   parse_number            ; NT_NUMBER
+        .word   parse_number            ; NT_NUM
         .word   parse_variable          ; NT_VAR
 
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
@@ -211,7 +211,7 @@ parse_multiple_arguments:
 ; A = the directive from the name table entry
 
 .assert (NT_EXPRESSION & $0F) = (NT_RPT_EXPRESSION & $03), error
-.assert (NT_NUMBER & $0F) = (NT_RPT_NUMBER & $03), error
+.assert (NT_NUM & $0F) = (NT_RPT_NUMBER & $03), error
 .assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
 
 parse_repeated_argument:
