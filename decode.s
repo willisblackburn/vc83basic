@@ -11,7 +11,7 @@
 ;   1xxx xxxx -> 0 (variable)
 ;   
 ;   0000 0000 -> x (will never be dispatched)
-;   0000 0001 -> 1 (integer)
+;   0000 0001 -> 1 (number)
 ;   0000 0002 -> 2 (subexpression)
 ; vector_table_ptr = the table of vectors for dispatching; must be set up in advance!
 
@@ -26,7 +26,7 @@ decode_expression:
         bmi     @variable               ; Handle variable
         tax                             ; Move to X to use dex-beq logic (Z = TOKEN_NO_VALUE)
         dex                             ; Z = TOKEN_NUM
-        beq     @integer                ; Handle integer
+        beq     @number                ; Handle number
         dex                             ; Z = TOKEN_LPAREN
         beq     @subexpression
 
@@ -40,8 +40,8 @@ decode_expression:
         ldy     #XH_VAR                 ; Choose handler
         jmp     @dispatch               ; Dispatch    
 
-@integer:
-        jsr     decode_number           ; Decode the integer
+@number:
+        jsr     decode_number           ; Decode the number
         stax    BC                      ; Park it in BC
         ldy     #XH_NUM                 ; Choose handler                    
         jmp     @dispatch               ; Dispatch    
