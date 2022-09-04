@@ -12,7 +12,7 @@
 
 encode_number:
         stax    BC
-        lda     #TOKEN_INT
+        lda     #TOKEN_NUM
         jsr     encode
         lda     B
         jsr     encode

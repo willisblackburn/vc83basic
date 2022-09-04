@@ -31,8 +31,8 @@ static void test_encode_byte(void) {
 static void test_encode_number(void) {
     int err;
 
-    const char line_data_1[] = { TOKEN_INT, 0x00, 0x00 };
-    const char line_data_2[] = { TOKEN_INT, 0x00, 0x01, TOKEN_INT, 0xE8, 0x03 };
+    const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00 };
+    const char line_data_2[] = { TOKEN_NUM, 0x00, 0x01, TOKEN_NUM, 0xE8, 0x03 };
 
     PRINT_TEST_NAME();
 

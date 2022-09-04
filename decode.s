@@ -16,7 +16,7 @@
 ; vector_table_ptr = the table of vectors for dispatching; must be set up in advance!
 
 .assert TOKEN_NO_VALUE = 0, error
-.assert TOKEN_INT = 1, error
+.assert TOKEN_NUM = 1, error
 .assert TOKEN_LPAREN = 2, error
 .assert TOKEN_OP = $10, error
 .assert TOKEN_VAR = $80, error
@@ -25,7 +25,7 @@ decode_expression:
         jsr     decode_byte
         bmi     @variable               ; Handle variable
         tax                             ; Move to X to use dex-beq logic (Z = TOKEN_NO_VALUE)
-        dex                             ; Z = TOKEN_INT
+        dex                             ; Z = TOKEN_NUM
         beq     @integer                ; Handle integer
         dex                             ; Z = TOKEN_LPAREN
         beq     @subexpression

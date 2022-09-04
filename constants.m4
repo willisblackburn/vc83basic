@@ -8,17 +8,17 @@ comment Name table definitions
 
 def(NT_OPTIONAL,        hex(08))
 def(NT_EXPRESSION,      hex(10))
-def(NT_NUMBER,          hex(11))
+def(NT_NUM,             hex(11))
 def(NT_VAR,             hex(12))
 def(NT_RPT_EXPRESSION,  hex(1C))
-def(NT_RPT_NUMBER,      hex(1D))
+def(NT_RPT_NUM,         hex(1D))
 def(NT_RPT_VAR,         hex(1E))
 def(NT_END,             hex(80))
 
 comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_INT,          hex(01))
+def(TOKEN_NUM,          hex(01))
 def(TOKEN_LPAREN,       hex(02))
 def(TOKEN_RPAREN,       hex(03))
 def(TOKEN_OP,           hex(10)) comment OR with OP_*

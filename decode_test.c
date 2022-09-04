@@ -40,15 +40,15 @@ static void test_decode_expression(void) {
         15,
         10,
         {
-            TOKEN_INT, 0x10, 0x10,          // 4,112
+            TOKEN_NUM, 0x10, 0x10,          // 4,112
             TOKEN_OP | OP_ADD,        
             TOKEN_LPAREN,
             TOKEN_VAR | 1,                  // X
             TOKEN_OP | OP_DIV,              
-            TOKEN_INT, 0x03, 0x00,          // 3
+            TOKEN_NUM, 0x03, 0x00,          // 3
             TOKEN_RPAREN,
             TOKEN_OP | OP_SUB,              
-            TOKEN_INT, 0x01, 0x00,          // 1
+            TOKEN_NUM, 0x01, 0x00,          // 1
         }
     };
 
