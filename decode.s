@@ -25,10 +25,7 @@
 .assert TOKEN_VAR = $80, error
 
 decode_expression:
-        debug $00
         jsr     decode_primary_expression
-        debug $01
-        ;bcs     @error
         ldy     lp                      ; Before looking for an operator, check if we're at the end of the line
         cpy     next_line_offset        ; If next_line_offset > lp then we had to borrow and carry is clear
         beq     @done
@@ -60,7 +57,6 @@ decode_expression:
 
 decode_primary_expression:
         jsr     decode_byte
-        debug $10
         bmi     @variable               ; Handle variable
         tax                             ; Move to X to use dex-beq logic (Z = TOKEN_NO_VALUE)
         dex                             ; Z = TOKEN_NUM
@@ -87,7 +83,6 @@ decode_primary_expression:
         jsr     decode_number           ; Decode the number
         stax    BC                      ; Park it in BC
         ldy     #XH_NUM                 ; Choose handler  
-        debug $10                  
         bpl     @dispatch               ; Unconditional  
 
 @subexpression:

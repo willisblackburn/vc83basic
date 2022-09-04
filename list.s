@@ -202,23 +202,21 @@ list_subexpression:
 list_operator:
         ldy     B                       ; Load operator index into Y
         ldax    #operator_name_table
-        jmp     list_element            ; Operator is already in Y
+        jsr     list_element            ; Operator is already in Y
+        jmp     add_whitespace          ; Only adds whitespace if the operator is AND/OR
 
 list_minus:
-        debug $20
         ldy     #0
         bcc     list_unary_operator
 
 list_not:
-        debug $21
         ldy     #1
         bcc     list_unary_operator
 
 list_unary_operator:
-        debug $22
         ldax    #unary_operator_name_table
         jsr     list_element
-        jsr     add_whitespace
+        jsr     add_whitespace          ; Only adds whitespace if the operator is NOT
         jmp     decode_primary_expression
 
 ; Adds whitespace to the output if necessary.
