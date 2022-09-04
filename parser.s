@@ -60,7 +60,7 @@ char_to_digit:
         rts
 
 argument_type_vectors:
-        .word   parse_expression        ; NT_EXPRESSION
+        .word   parse_expression        ; NT_EXP
         .word   parse_number            ; NT_NUM
         .word   parse_variable          ; NT_VAR
 
@@ -95,7 +95,7 @@ parse_line:
 
 parse_element:
 
-.assert NT_EXPRESSION = $10, error
+.assert NT_EXP = $10, error
 
 ; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
 
