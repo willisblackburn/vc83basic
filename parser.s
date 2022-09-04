@@ -61,7 +61,7 @@ char_to_digit:
 
 argument_type_vectors:
         .word   parse_expression        ; NT_EXPRESSION
-        .word   parse_number            ; NT_NUMBER
+        .word   parse_number            ; NT_NUM
         .word   parse_variable          ; NT_VAR
 
 ; Parses a line from the buffer. The line is an optional line number followed by statements.

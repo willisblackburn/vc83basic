@@ -58,7 +58,7 @@ static void test_read_number(void) {
 static void test_parse_expression(void) {
     int err;
     
-    const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
+    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
     const char line_data_2[] = { 0x80 };
 
     PRINT_TEST_NAME();
@@ -111,7 +111,7 @@ static void test_parse_argument_separator(void) {
 static void test_parse_argument(void) {
     int err;
 
-    const char line_data_1[] = { TOKEN_INT, 0x01, 0x00 };
+    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
     const char line_data_2[] = { 0x80 };
 
     PRINT_TEST_NAME();
@@ -126,7 +126,7 @@ static void test_parse_argument(void) {
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "1");
-    err = parse_argument(NT_NUMBER, 0, offsetof(Line, data));
+    err = parse_argument(NT_NUM, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(bp, 1);
@@ -143,8 +143,8 @@ static void test_parse_argument(void) {
 static void test_parse_element(void) {
     int err;
     const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x01, TOKEN_INT, 0x08, 0x00 };
-    const char line_data_3[] = { 0x02, 0x80, TOKEN_INT, 0x64, 0x00 };
+    const char line_data_2[] = { 0x01, TOKEN_NUM, 0x08, 0x00 };
+    const char line_data_3[] = { 0x02, 0x80, TOKEN_NUM, 0x64, 0x00 };
 
     PRINT_TEST_NAME();
 
