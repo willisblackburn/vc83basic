@@ -180,10 +180,10 @@ _add_variable:
 
 ; parser.s
 
-_read_number:
-.export _read_number
+_read_int:
+.export _read_int
         sta     bp                      ; Buffer index
-        jsr     read_number
+        jsr     read_int
         jmp     return_carry
 
 _char_to_digit:
