@@ -178,7 +178,7 @@ list_no_value:
         rts
 
 list_number:
-        jsr     decode_number           ; It must be an integer; decode the number (return value in AX)
+        jsr     decode_number           ; It must be a number; decode it (return value in AX)
         jmp     format_number           ; Send it right to format_number
         rts
 
