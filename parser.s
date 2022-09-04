@@ -211,7 +211,7 @@ parse_multiple_arguments:
 ; A = the directive from the name table entry
 
 .assert (NT_EXPRESSION & $0F) = (NT_RPT_EXPRESSION & $03), error
-.assert (NT_NUM & $0F) = (NT_RPT_NUMBER & $03), error
+.assert (NT_NUM & $0F) = (NT_RPT_NUM & $03), error
 .assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
 
 parse_repeated_argument:
