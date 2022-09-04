@@ -91,7 +91,7 @@ int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
 
 // parser.s
-int read_int(char bp);
+int read_number(char bp);
 int char_to_digit(char c);
 int parse_line(void);
 int parse_element(const char* name_ptr, char bp, char lp);

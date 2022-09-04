@@ -19,8 +19,8 @@ argument_count: .res 1
 ; bp = the read position in buffer
 ; Returns the number in AX, carry clear if ok, carry set if error
 
-read_int:
-        jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
+read_number:
+        jsr     skip_whitespace
         ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
@@ -71,7 +71,7 @@ argument_type_vectors:
 parse_line:
         mva     #0, bp                  ; Initialize the read pointer
         mva     #Line::data, lp         ; Initialize write pointer
-        jsr     read_int                ; Leaves line number in AX and bp points to next character in buffer
+        jsr     read_number             ; Leaves line number in AX and bp points to next character in buffer
         bcc     @store_line_number      ; Line number was provided so store it
         lda     #$FF                    ; Otherwise store -1 ($FFFF) instead
         tax
@@ -281,7 +281,7 @@ parse_expression:
 ; Parses a number from the buffer.
 
 parse_number:
-        jsr     read_int
+        jsr     read_number
         bcs     @done
         jsr     encode_number           ; Will set carry if fail
 @done:
