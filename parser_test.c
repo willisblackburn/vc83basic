@@ -31,26 +31,26 @@ static void test_read_number(void) {
     PRINT_TEST_NAME();
 
     strcpy(buffer, "10 PRINT X");
-    err = read_number(0);
+    err = read_int(0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 10);
     ASSERT_EQ(bp, 2);
 
     // The function should honor the current read position.
     strcpy(buffer, "1020 PRINT X");
-    err = read_number(2);
+    err = read_int(2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_ax, 20);
     ASSERT_EQ(bp, 4);
 
     // The function should return carry set if an invalid number.
     strcpy(buffer, "invalid");
-    err = read_number(0);
+    err = read_int(0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 0);
 
     strcpy(buffer, "");
-    err = read_number(0);
+    err = read_int(0);
     ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 0);
 }
