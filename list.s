@@ -206,16 +206,15 @@ list_operator:
 ; Y SAFE, BC SAFE, DE SAFE
 
 add_whitespace:
-        bcs     @done                   ; No
         ldx     bp                      ; Current write position
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         cmp     #')'                    ; Is it ')'?
         beq     @add                    ; Yes, add a space
         jsr     is_name_character       ; Is it a name character?
-        bcs     @done                   ; No
-@add:
-        jsr     putchar_space_buffer
+        bcc     @add                    ; Yes
 @done:
         rts
+@add:
+        jmp     putchar_space_buffer
 
