@@ -59,7 +59,7 @@
 .global add_variable
 
 ; parser.s
-.global read_number, char_to_digit
+.global read_int, char_to_digit
 .global parse_line
 .global parse_element
 .global parse_repeated_argument

@@ -14,7 +14,7 @@ exec_input:
         jsr     decode_byte             ; Read the variable
         beq     @done                   ; It was TOKEN_END_REPEAT, nothing more to read
         jsr     set_variable_value_ptr  ; Sets variable_value_ptr to the storage for this variable
-        jsr     read_number             ; Returns value in AX
+        jsr     read_int                ; Returns value in AX
         bcs     @error                  ; Failed to read a number
         jsr     set_variable_value      ; Store the value
         jsr     decode_byte             ; Read the variable
