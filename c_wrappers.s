@@ -128,10 +128,10 @@ _add_variable:
 
 ; parser.s
 
-_read_int:
-.export _read_int
+_read_number:
+.export _read_number
         sta     bp                      ; Buffer index
-        jsr     read_int
+        jsr     read_number
         jmp     return_carry
 
 _char_to_digit:
