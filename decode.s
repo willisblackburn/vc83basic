@@ -30,7 +30,7 @@
 decode_expression:
         jsr     decode_byte
         ldy     #XH_VAR                 ; First handler is VAR
-        tax                             ; Store it in X for now
+        tax                             ; Store it in X for now (sets flags from decoded byte)
         bmi     @dispatch               ; Handle 1xxx xxxx (variable)
         iny                             ; Advance to next handler OP
         asl     A                       ; Check for pattern 01xx xxxx (unused)

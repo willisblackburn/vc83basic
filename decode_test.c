@@ -2,7 +2,7 @@
 
 static int num_count;
 
-static void handle_number(void) {
+static void xh_number(void) {
     int value = decode_number(line_ptr, lp);
     switch (++num_count) {
         case 1: ASSERT_EQ(value, 4112); break;
@@ -12,7 +12,7 @@ static void handle_number(void) {
 
 static int var_count;
 
-static void handle_variable(void) {
+static void xh_variable(void) {
     __asm__ ("stx %v", reg_x);
     ++var_count;
     ASSERT_EQ(reg_x, TOKEN_VAR | 1);
@@ -20,7 +20,7 @@ static void handle_variable(void) {
 
 static int lparen_count, rparen_count;
 
-static void handle_paren(void) {
+static void xh_paren(void) {
     __asm__ ("stx %v", reg_x);
     if (reg_x == TOKEN_LPAREN) {
         ++lparen_count;
@@ -31,7 +31,7 @@ static void handle_paren(void) {
 
 static int op_count;
 
-static void handle_operator(void) {
+static void xh_operator(void) {
     __asm__ ("stx %v", reg_x);
     switch (++op_count) {
         case 1: ASSERT_EQ(reg_x, TOKEN_OP | OP_ADD); break;
@@ -42,7 +42,7 @@ static void handle_operator(void) {
 
 static int minus_count, not_count;
 
-static void handle_unary(void) {
+static void xh_unary(void) {
     __asm__ ("stx %v", reg_x);
     if (reg_x == TOKEN_MINUS) {
         ++minus_count;
@@ -72,19 +72,19 @@ static void test_decode_expression(void) {
         }
     };
 
-    void* vector_table[] = {
-        handle_variable,
-        handle_operator,
-        handle_number,
-        handle_paren,
-        handle_paren,
-        handle_unary,
-        handle_unary,
+    void* decode_xh_vectors[] = {
+        xh_variable,
+        xh_operator,
+        xh_number,
+        xh_paren,
+        xh_paren,
+        xh_unary,
+        xh_unary,
     };
 
     PRINT_TEST_NAME();
 
-    vector_table_ptr = vector_table;
+    vector_table_ptr = decode_xh_vectors;
     decode_expression(&line, offsetof(Line, data));
     ASSERT_EQ(num_count, 2);
     ASSERT_EQ(var_count, 2);

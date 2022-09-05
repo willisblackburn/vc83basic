@@ -18,19 +18,19 @@ static void create_varibles(void) {
 
 static void test_list_expression(void) {
 
-    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10 };
-    const char line_data_2[] = { 0x80 };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
     const char line_data_3[] = { TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00 };
+    const char line_data_4[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00, TOKEN_NO_VALUE };
     const char line_data_5[] = { 0x80, TOKEN_OP | OP_LE, TOKEN_NUM, 0x07, 0x00, TOKEN_OP | OP_OR,
-        0x81, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x10, 0x10 };
+        0x81, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE };
     const char line_data_6[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00,
-        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81 };
+        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
     const char line_data_7[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00,
-        TOKEN_RPAREN, TOKEN_OP | OP_AND, 0x81 };
-    const char line_data_8[] = { TOKEN_MINUS, 0x80 };
+        TOKEN_RPAREN, TOKEN_OP | OP_AND, 0x81, TOKEN_NO_VALUE };
+    const char line_data_8[] = { TOKEN_MINUS, 0x80, TOKEN_NO_VALUE };
     const char line_data_9[] = { TOKEN_NOT, TOKEN_LPAREN, 0x80, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x03, 0x00,
-        TOKEN_OP | OP_OR, TOKEN_NOT, TOKEN_MINUS, 0x81, TOKEN_RPAREN };
+        TOKEN_OP | OP_OR, TOKEN_NOT, TOKEN_MINUS, 0x81, TOKEN_RPAREN, TOKEN_NO_VALUE };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
@@ -63,12 +63,6 @@ static void test_list_expression(void) {
     ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
     ASSERT_EQ(bp, sizeof list_4 - 1);
 
-    // Verify that LIST ignores a byte that looks like an operator after the end of the line.
-    // The important thing is that bp (the buffer length) is 2 (i.e., the operator was not rendered).
-    list_expression(line_data_4, 3, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_4, 2);
-    ASSERT_EQ(bp, 2);
-
     list_expression(line_data_5, sizeof line_data_5, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
     ASSERT_EQ(bp, sizeof list_5 - 1);
@@ -92,48 +86,47 @@ static void test_list_expression(void) {
 
 static void test_list_argument(void) {
 
-    // list_argument just delegates to list_expression, so just do a quick sanity check.
-
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10 };
 
-    const char list_1[] = { "4112" };
+    const char list_1[] = "4112";
 
     PRINT_TEST_NAME();
 
     initialize_program();
 
-    list_argument(line_data_1, sizeof line_data_1, 0, 0);
+    list_argument(NT_EXP, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 }
 
 static void test_list_repeated_argument(void) {
     
-    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, 0x80, TOKEN_NO_VALUE };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, 0x80, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
-    const char list_1[] = { "4112,X" };
+    const char list_1[] = "4112,X";
 
     PRINT_TEST_NAME();
 
     initialize_program();
     create_varibles();
 
-    list_repeated_argument(line_data_1, sizeof line_data_1, 0, 0);
+    list_repeated_argument(NT_EXP, line_data_1, sizeof line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 }
 
 static void test_list_multiple_arguments(void) {
     
-    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, 0x80, TOKEN_NUM, 0x10, 0x00 };
-    const char line_data_2[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, 0x80, TOKEN_NO_VALUE, 
+            TOKEN_NUM, 0x10, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_3[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
-    const char list_1_1[] = { "4112" };
-    const char list_1_2[] = { "4112,X" };
-    const char list_1_3[] = { "4112,X,16" };
-    const char list_2[] = { "4112" };
-    const char list_3[] = { "" };
+    const char list_1_1[] = "4112";
+    const char list_1_2[] = "4112,X";
+    const char list_1_3[] = "4112,X,16";
+    const char list_2[] = "4112";
+    const char list_3[] = "";
 
     PRINT_TEST_NAME();
 
@@ -162,9 +155,9 @@ static void test_list_multiple_arguments(void) {
 static void test_list_element(void) {
 
     const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x80, TOKEN_NUM, 0xFF, 0x7F };
-    const char line_data_3[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00 };
-    const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
+    const char line_data_3[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
+    const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_5[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
@@ -207,8 +200,8 @@ static void test_list_element(void) {
 static void test_list_line(void) {
     int err;
 
-    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_NUM, 0x01, 0x01 };
-    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F };
+    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_NUM, 0x01, 0x01, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
     const char line_data_end[] = { 3, 0xFF, 0xFF };
     
     const char list_1[] = "10 PRINT 257";

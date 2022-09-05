@@ -139,6 +139,7 @@ _list_argument:
         sta     next_line_offset
         jsr     popax
         stax    line_ptr
+        jsr     popa                    ; directive
         jmp     list_argument
 
 _list_multiple_arguments:
@@ -150,7 +151,7 @@ _list_multiple_arguments:
         sta     next_line_offset
         jsr     popax
         stax    line_ptr
-        jsr     popa
+        jsr     popa                    ; directive
         jmp     list_multiple_arguments
 
 _list_repeated_argument:
@@ -162,6 +163,7 @@ _list_repeated_argument:
         sta     next_line_offset
         jsr     popax
         stax    line_ptr
+        jsr     popa                    ; directive
         jmp     list_repeated_argument
 
 _list_expression:

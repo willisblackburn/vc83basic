@@ -28,6 +28,7 @@
 .globalzp lp
 .globalzp program_state
 .globalzp next_line_offset
+.globalzp directive
 .globalzp argument_count
 
 ; Data

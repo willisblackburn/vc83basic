@@ -124,6 +124,7 @@ list_multiple_arguments:
         beq     @no_value               ; If so then don't list
 @next_argument:
         dec     lp                      ; Back up to decode the argument
+        lda     #NT_EXP                 ; Multiple arguments are always expressions
         jsr     list_argument           ; Assume it's an expression for now
 @no_value:
         dec     argument_count          ; Done with one argument
@@ -143,10 +144,13 @@ list_multiple_arguments:
 .assert TOKEN_NO_VALUE = 0, error
 
 list_repeated_argument:
+        and     #$03                    ; Isolate the type of argument
+        sta     directive               ; Store it in the directive from paser module
         jsr     decode_byte             ; Get the next byte
         beq     @done                   ; If it's TOKEN_NO_VALUE then done
 @next_argument:
         dec     lp                      ; It wasn't, so back up lp
+        lda     directive               ; Remember what type of argument it is
         jsr     list_argument           ; List one argument
         jsr     decode_byte             ; Check the next byte
         beq     @done                   ; If no more arguments then exit
@@ -157,67 +161,82 @@ list_repeated_argument:
 @done:
         rts
 
+list_argument_type_vectors:
+        .word   list_expression         ; NT_EXP
+        .word   list_number             ; NT_NUM
+        .word   list_variable           ; NT_VAR
+
 list_argument:
+        and     #$0F                    ; Isolate just the type
+        tay                             ; Prepare too use type as vector index
         ldphaa  name_ptr                ; Save existing value of name_ptr
         ldpha   np                      ; Save existing name entry read position
-        jsr     list_expression
+        ldax    #list_argument_type_vectors
+        jsr     invoke_indexed_vector   ; Jump to the list function for the argument type
         plsta   np                      ; Recover values previously saved on stack
         plstaa  name_ptr
         rts
 
-; Lists an argument value from the token stream.
-
 list_vectors:
-        .word   list_number             ; XH_NUM
-        .word   list_variable           ; XH_VAR
-        .word   list_subexpression      ; XH_SUBX
-        .word   list_operator           ; XH_OP
-        .word   list_minus              ; XH_MINUS
-        .word   list_not                ; XH_NOT
+        .word   list_xh_variable         ; XH_VAR
+        .word   list_xh_operator         ; XH_OP
+        .word   list_xh_number           ; XH_NUM
+        .word   list_xh_paren            ; XH_LPAREN
+        .word   list_xh_paren            ; XH_RPAREN
+        .word   list_xh_unary            ; XH_MINUS
+        .word   list_xh_unary            ; XH_NOT
 
-
-; Lists an expression.
+; Lists an argument value from the token stream.
 
 list_expression:
         mvax    #list_vectors, vector_table_ptr
         jmp     decode_expression
 
+
 list_number:
-        jsr     add_whitespace
-        ldax    BC                      ; Load the number that was saved by the decoder
-        jmp     format_number           ; Send it right to format_number
+        jmp     list_xh_number
 
 list_variable:
-        ldy     B                       ; The variable index into Y
+        jsr     decode_byte
+        tax
+        jmp     list_xh_variable
+
+; Expression decoder handlers
+
+list_xh_variable:
+        txa                             ; Get the variable index
+        and     #(TOKEN_VAR - 1)        ; Remove the token part
+        tay         
         ldax    variable_name_table_ptr ; Look up name in the variable name table
         jmp     list_element            ; Recursively call list_element to display the name
 
-list_subexpression:
-        lda     #'('
-        jsr     putchar_buffer
-        jsr     decode_expression
-        lda     #')'
+list_xh_number:
+        jsr     add_whitespace
+        jsr     decode_number           ; Decode the number
+        jmp     format_number           ; Send it right to format_number
+
+.assert TOKEN_LPAREN = 2, error
+
+list_xh_paren:
+        txa                             ; Transfer token into A; carry will be clear
+        adc     #('(' - TOKEN_LPAREN)   ; Transform TOKEN_LPAREN -> '(' and TOKEN_RPAREN - ')'
         jmp     putchar_buffer
 
-list_operator:
-        ldy     B                       ; Load operator index into Y
+list_xh_operator:
+        txa                             ; Get the variable index
+        and     #(TOKEN_OP - 1)         ; Remove the token part
+        tay         
         ldax    #operator_name_table
         jsr     list_element            ; Operator is already in Y
-        jmp     add_whitespace          ; Only adds whitespace if the operator is AND/OR
+        jmp     add_whitespace          ; Only adds whitespace if the operator was AND/OR
 
-list_minus:
-        ldy     #0
-        bcc     list_unary_operator
-
-list_not:
-        ldy     #1
-        bcc     list_unary_operator
-
-list_unary_operator:
+list_xh_unary:
+        txa                             ; Get token into A
+        sbc     #(TOKEN_MINUS - 1)      ; Remap TOKEN_MINUS to 0; carry is clear so SBC will subtract one more
+        tay
         ldax    #unary_operator_name_table
         jsr     list_element
-        jsr     add_whitespace          ; Only adds whitespace if the operator is NOT
-        ; jmp     decode_primary_expression
+        jmp     add_whitespace          ; Only adds whitespace if the operator is NOT
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')'.

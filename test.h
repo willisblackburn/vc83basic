@@ -94,9 +94,9 @@ int encode_byte(char byte_value, char lp);
 // list.s
 int list_line(const char* line_ptr, size_t length);
 void list_element(const char* name_ptr, char index, const char* line_ptr, size_t length, char lp, char bp);
-void list_argument(const char* line_ptr, size_t length, char lp, char bp);
+void list_argument(char directive, const char* line_ptr, size_t length, char lp, char bp);
 void list_multiple_arguments(char directive, const char* line_ptr, size_t length, char lp, char bp);
-void list_repeated_argument(const char* line_ptr, size_t length, char lp, char bp);
+void list_repeated_argument(char directive, const char* line_ptr, size_t length, char lp, char bp);
 void list_expression(const char* line_ptr, size_t length, char lp, char bp);
 
 // name.s

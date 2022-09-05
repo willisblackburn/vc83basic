@@ -60,11 +60,6 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-argument_type_vectors:
-        .word   parse_expression_argument   ; NT_EXP
-        .word   parse_number            ; NT_NUM
-        .word   parse_variable          ; NT_VAR
-
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
 ; If the line number is missing, set it to -1.
 
@@ -222,6 +217,11 @@ parse_repeated_argument:
 @done:
         jmp     encode_no_value
 
+parse_argument_type_vectors:
+        .word   parse_expression_argument   ; NT_EXP
+        .word   parse_number            ; NT_NUM
+        .word   parse_variable          ; NT_VAR
+
 ; Parses a single argument.
 ; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
@@ -234,7 +234,7 @@ parse_argument:
         ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
         ldpha   np
         ldpha   directive
-        ldax    #argument_type_vectors
+        ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
         plsta   directive
         plsta   np
