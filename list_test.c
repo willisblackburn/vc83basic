@@ -18,9 +18,9 @@ static void test_list_argument(void) {
     const char line_data_2[] = { 0x80 };
     const char line_data_3[] = { TOKEN_NO_VALUE };
 
-    const char list_1[] = { "4112" };
-    const char list_2[] = { "X" };
-    const char list_3[] = { "" };
+    const char list_1[] = "4112";
+    const char list_2[] = "X";
+    const char list_3[] = "";
 
     PRINT_TEST_NAME();
 
@@ -44,7 +44,7 @@ static void test_list_repeated_argument(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, 0x80, TOKEN_NO_VALUE };
 
-    const char list_1[] = { "4112,X" };
+    const char list_1[] = "4112,X";
 
     PRINT_TEST_NAME();
 
@@ -62,11 +62,11 @@ static void test_list_multiple_arguments(void) {
     const char line_data_2[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_3[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
-    const char list_1_1[] = { "4112" };
-    const char list_1_2[] = { "4112,X" };
-    const char list_1_3[] = { "4112,X,16" };
-    const char list_2[] = { "4112" };
-    const char list_3[] = { "" };
+    const char list_1_1[] = "4112";
+    const char list_1_2[] = "4112,X";
+    const char list_1_3[] = "4112,X,16";
+    const char list_2[] = "4112";
+    const char list_3[] = "";
 
     PRINT_TEST_NAME();
 
