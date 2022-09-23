@@ -5,5 +5,5 @@ statement_name_table:
         .byte   'P', 'R', 'I', 'N', 'T', NT_EXP | NT_END
         .byte   'L', 'E', 'T', NT_VAR, '=', NT_EXP | NT_END
         .byte   'I', 'N', 'P', 'U', 'T', NT_RPT_VAR | NT_END
-        .byte   'L', 'I', 'S', 'T', 2 | NT_OPTIONAL | NT_END
+        .byte   'L', 'I', 'S', 'T', 2 | NT_END
         .byte   0
