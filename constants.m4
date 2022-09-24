@@ -6,7 +6,6 @@ comment Generated from __file__
 
 comment Name table definitions 
 
-def(NT_OPTIONAL,        hex(08))
 def(NT_EXP,             hex(10))
 def(NT_NUM,             hex(11))
 def(NT_VAR,             hex(12))

@@ -166,12 +166,11 @@ parse_element:
 ; Arguments must be separated by ','.
 ; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
 ; number of arguments.
-; ARGUMENT COUNT MUST BE AT LEAST 1.
+; ARGUMENT COUNT MUST BE AT LEAST 1. If it is zero it will be interpreted as 8.
 ; A = the number of arguments to parse, from 1 to 7; bit 3 is true if these arguments are optional
 
 parse_multiple_arguments:
-        sta     directive
-        and     #$07
+        and     #$07                    ; Bottom 3 bits are number of arguments to read (>0)
         sta     argument_count
         lda     #NT_EXP
         jsr     parse_argument          ; Parse the argument value
@@ -183,15 +182,11 @@ parse_multiple_arguments:
         jsr     parse_following_argument    ; Parse the next argument value
         bcc     @value                  ; If separator parsed then continue with value, otherwise fail
 @parse_failed:
-        lda     directive               ; Get the original parse directive
-        and     #NT_OPTIONAL            ; Mask the optional argument flag
-        beq     @done                   ; Result was 0 so optional flag not set; fail
-        ldy     argument_count          ; Optional was set so prepare to store "no value" tokens
-@no_value:
-        jsr     encode_no_value         ; Encode the "no value" token
+        lda     #TOKEN_NO_VALUE         ; Store "no value" tokens for any remaining arguments
+        jsr     encode_byte             ; Encode the "no value" token
         bcs     @done                   ; encode_byte error
-        dey                             ; Done with one "no value"
-        bne     @no_value               ; Loop if more
+        dec     argument_count          ; Done with one "no value"
+        bne     @parse_failed           ; Loop if more
 @success:
         clc                             ; Signal no error
 @done:
