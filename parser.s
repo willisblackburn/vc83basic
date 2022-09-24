@@ -96,8 +96,6 @@ parse_line:
 ; Parses and tokenizes a syntax element starting with a name.
 ; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
-; This function is called recursively. It sets up name_ptr and Y and saves them on the stack prior to calling
-; other functions so that those functions can call back in to this one.
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
 
