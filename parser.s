@@ -148,7 +148,6 @@ parse_element:
         bcc     @loop                   ; Continue if no error, otherwise fall through to @error
 
 @error:
-        pla                             ; Discard last-read byte
         sec                             ; Signal error
         rts
 

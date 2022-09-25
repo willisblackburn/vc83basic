@@ -395,9 +395,9 @@ static void test_parse_element(void) {
 
     // Make sure the parser doesn't match continued names.
 
-    // strcpy(buffer, "PRINTX");
-    // err = parse_element(statement_name_table, 0, offsetof(Line, data));
-    // ASSERT_NE(err, 0);
+    strcpy(buffer, "PRINTX");
+    err = parse_element(statement_name_table, 0, offsetof(Line, data));
+    ASSERT_NE(err, 0);
 }
 
 static void test_parse_line(void) {

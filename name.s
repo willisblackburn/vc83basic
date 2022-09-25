@@ -56,7 +56,6 @@ find_name:
         rts
 
 @no_match:
-        tya                             ; Get last-read character again
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         bne     @advance                ; It's a literal, move the next entry
         jsr     check_name_continuation ; Check if the name continues
@@ -107,7 +106,6 @@ is_name_character:
 
 advance_np_next_entry:
         ldy     np
-        debug $30
         inc     np                      ; Advance past
         lda     (name_ptr),y            ; Load character at current position
         bpl     advance_np_next_entry   ; Keep searching if bit 7 not set
