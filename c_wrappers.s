@@ -191,16 +191,6 @@ _find_name:
         jsr     find_name
         jmp     return_carry
 
-_match_character_sequence:
-.export _match_character_sequence
-        sta     bp
-        jsr     popa
-        sta     np      
-        jsr     popax
-        stax    name_ptr
-        jsr     match_character_sequence
-        jmp     return_carry
-
 _get_name_table_entry:
 .export _get_name_table_entry
         sta     B                       ; Index arrives in A; we need it in Y

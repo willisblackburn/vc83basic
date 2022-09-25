@@ -71,7 +71,6 @@
 
 ; name.s
 .global find_name
-.global match_character_sequence
 .global is_name_character
 .global advance_np_next_entry
 .global advance_name_ptr

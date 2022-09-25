@@ -39,28 +39,6 @@ void test_is_name_character() {
     ASSERT_NE(err, 0);
 }
 
-void test_match_character_sequence() {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    strcpy(buffer, "PRINT");
-    err = match_character_sequence("PRIN\xD4", 0, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-    err = match_character_sequence("PRINT\x11", 0, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-
-    strcpy(buffer, "LET X=1");
-    err = match_character_sequence("LET\x11=\x91", 4, 5);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 6);
-}
-
 void test_find_name(void) {
     int err;
     // C adds a trailing 0 to these strings which terminates the name table.
@@ -232,7 +210,6 @@ static void test_add_variable(void) {
 int main(void) {
     initialize_target();
     test_is_name_character();
-    test_match_character_sequence();
     test_find_name();
     test_find_name_operators();
     test_get_name_table_entry();

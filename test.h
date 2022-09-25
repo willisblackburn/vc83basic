@@ -101,7 +101,6 @@ void list_expression(const char* line_ptr, size_t length, char lp, char bp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
-int match_character_sequence(const char* name_ptr, char np, char bp);
 int is_name_character(char c);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);

@@ -24,72 +24,49 @@ np: .res 1
 
 find_name:
         stax    name_ptr
+        jsr     skip_whitespace         ; Skip any whitespace in the buffer
         mva     #0, B                   ; Track name table index in B
-@next_name:
-        mvy     #0, np                  ; np is the read position in the name table entry (also store in Y)
-        lda     (name_ptr),y            ; Get name character
+@loop_entry:
+        mva     #0, np                  ; Set name table entry read position to 0
+        tay                             ; Use Y to transfer the last-read byte back and initalize to 0
+        ldx     bp                      ; Load bp into X
+@loop_literal:
+        tya                             ; Get last-read byte
+        bmi     @past_end               ; If the high bit was set, then it was the last byte; np is now at next entry
+        sec                             ; Set carry here in case we have to jump to @error
+        ldy     np
+        lda     (name_ptr),y            ; Get name byte
         beq     @error                  ; If it's 0 then out of names to match
-        jsr     match_character_sequence
-        bcc     @match
-        inc     B                       ; Increment name table index; doesn't affect carry
-        bcs     @next_name      
+        tay                             ; Store back into Y
+        and     #$7F                    ; Clear NT_END bit if it's set
+        cmp     buffer,x                ; Compare with buffer
+        bne     @no_match               ; They didn't match; this may be because the byte is a directive
+        inc     np                      ; Next name entry position
+        inx                             ; Next buffer position
+        bne     @loop_literal           ; Unconditional
 
-@error:     
-        sec                             ; Signal failure
-@match:     
+@past_end:
+        jsr     check_name_continuation ; Does not affect Y, which still has last-read byte
+        bcc     @prepare_next_entry
+@match:
+        clc                             ; Signal success
+        stx     bp                      ; Update bp on success
+@error:
         lda     B                       ; Return number of matched name in A
         rts
 
-; Matches a character sequence from the name table with characters from buffer.
-; name_ptr = pointer to the current name table entry
-; np = the current read position in the name table entry
-; bp = read position in buffer (updated on success)
-; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On success, np will point to the next byte past the matched word, and name_ptr will be unchanged.
-; On failure, name_ptr will be set to the next name table entry.
-; B SAFE
-
-match_character_sequence:
-        jsr     skip_whitespace         ; Leaves read position in X
-@next_character:
-        ldy     np                      ; Load name table entry position into Y
-        lda     (name_ptr),y            ; Get name character
-        tay                             ; Store character in Y
-        and     #$60                    ; Check if it's a string literal character
-        beq     @non_literal
-        tya                             ; Reload last-read character
-        and     #$7F                    ; Clear bit 7, if it's set
-        cmp     buffer,x                ; Compare with character from buffer
-        bne     @mismatch               ; Doesn't match
-        inx                             ; Next position
-        inc     np
-        tya                             ; Reload character once more
-        bpl     @next_character         ; Keep reading characters if this isn't the last one
-
-; We've reached a character in the name table entry with bit 7 set and everything has matched so far.
-; Check for name continuation. If the name continues, then return no match. Y already points to next entry.
-
-        jsr     check_name_continuation
-        bcs     @match
-        bcc     @continued_name         ; Will always branch
-
-; We're reached a non-literal character and everything has matched so far.
-; Check for name continuation. If the name continues, then advance to next entry and return no match.
-
-@non_literal:
-        jsr     check_name_continuation
-        bcs     @match
-@mismatch:
-        jsr     advance_np_next_entry
-@continued_name:
-        jsr     advance_name_ptr
-        sec                             ; Set carry to indicate failure
-        rts     
-        
-@match:     
-        stx     bp                      ; Update bp
-        clc                             ; Signal success
-        rts
+@no_match:
+        tya                             ; Get last-read character again
+        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
+        bne     @advance                ; It's a literal, move the next entry
+        jsr     check_name_continuation ; Check if the name continues
+        bcs     @match                  ; If no continuation then that's a match; otherwise move np to next entry
+@advance:
+        jsr     advance_np_next_entry   ; Move np up to the next entry
+@prepare_next_entry:
+        jsr     advance_name_ptr        ; Add np to name_ptr
+        inc     B                       ; Increment name table index
+        bne     @loop_entry             ; Handle the next entry (unconditional)
 
 ; Checks if the character at position X in buffer is a continuation of a name at position X-1.
 ; We consider it a continuation if the X-1 character was a name character and the X character is also
@@ -130,6 +107,7 @@ is_name_character:
 
 advance_np_next_entry:
         ldy     np
+        debug $30
         inc     np                      ; Advance past
         lda     (name_ptr),y            ; Load character at current position
         bpl     advance_np_next_entry   ; Keep searching if bit 7 not set
