@@ -3,9 +3,6 @@
 
 .zeropage
 
-element_index: .res 1
-save_bp: .res 1
-save_lp: .res 1
 directive: .res 1
 argument_count: .res 1
 
