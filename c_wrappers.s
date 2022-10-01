@@ -45,6 +45,12 @@ _reg_a: .res 1
 _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
 
 .code
 
@@ -129,7 +135,7 @@ _list_multiple_arguments:
         sta     lp
         jsr     popax
         stax    line_ptr
-        jsr     popa
+        jsr     popa                    ; directive
         jmp     list_multiple_arguments
 
 _list_repeated_argument:
