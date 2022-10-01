@@ -9,8 +9,6 @@
 name_ptr: .res 2
 ; Read position in the name table entry
 np: .res 1
-; The last byte read from the name table entry
-last_byte: .res 1
 
 .code
 
