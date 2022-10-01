@@ -25,6 +25,8 @@ extern void* src_ptr;
 #pragma zpsym ("src_ptr")
 extern void* dst_ptr;
 #pragma zpsym ("dst_ptr")
+extern void** vector_table_ptr;
+#pragma zpsym ("vector_table_ptr")
 extern char* name_ptr;
 #pragma zpsym ("name_ptr")
 extern char np;
@@ -65,6 +67,18 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
+extern int reg_bc;
+#pragma zpsym ("reg_bc")
+extern char reg_b;
+#pragma zpsym ("reg_b")
+extern char reg_c;
+#pragma zpsym ("reg_c")
+extern int reg_de;
+#pragma zpsym ("reg_de")
+extern char reg_d;
+#pragma zpsym ("reg_d")
+extern char reg_e;
+#pragma zpsym ("reg_e")
 
 // Prototypes for C wrapper functions
 
@@ -107,6 +121,8 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
+void set_line_ptr(void* line_ptr);
+void set_line_variables(void);
 int insert_or_update_line(void);
 void set_variable_value_ptr(char variable);
 int expand(void* ptr, size_t size);
@@ -149,6 +165,7 @@ void hexdump(const char* name, const char* data, size_t length) {
 
 #define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
 
+#define ASSERT(x) do { fprintf(stderr, "  %s:%u: assert %s: ", __FILE__, __LINE__, #x); assert(x); fputs("OK\n", stderr); } while (0)
 #define ASSERT_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s (%ld, $%lX) %s %s (%ld, $%lX): ", __FILE__, __LINE__, #a, (long)(a), (long)(a), #op, #b, (long)(b), (long)(b)); assert((a) op (b)); fputs("OK\n", stderr); } while (0)
 #define ASSERT_EQ(a, b) ASSERT_OP(a, b, ==)
 #define ASSERT_NE(a, b) ASSERT_OP(a, b, !=)
@@ -161,5 +178,7 @@ void hexdump(const char* name, const char* data, size_t length) {
 #define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s (%u, $%X) %s NULL: ", __FILE__, __LINE__, #a, (a), (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
+
+#define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
 
 #endif

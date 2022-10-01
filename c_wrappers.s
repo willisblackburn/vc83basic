@@ -15,6 +15,7 @@
 .export _bp = bp
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
+.export _vector_table_ptr = vector_table_ptr
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
@@ -154,17 +155,6 @@ _find_name:
         jsr     find_name
         jmp     return_carry
 
-_match_character_sequence:
-.export _match_character_sequence
-        sta     bp
-        jsr     popa
-        sta     B      
-        jsr     popax
-        stax    name_ptr
-        ldy     B      
-        jsr     match_character_sequence
-        jmp     return_carry
-
 _get_name_table_entry:
 .export _get_name_table_entry
         sta     B                       ; Index arrives in A; we need it in Y
@@ -269,6 +259,14 @@ _find_line:
 _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
+
+_set_line_ptr:
+.export _set_line_ptr
+        jmp     set_line_ptr            ; New line_ptr value is already in AX
+
+_set_line_variables:
+.export _set_line_variables
+        jmp     set_line_variables
 
 _insert_or_update_line:
 .export _insert_or_update_line

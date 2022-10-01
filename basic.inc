@@ -27,6 +27,8 @@
 .globalzp variable_value_ptr
 .globalzp lp
 .globalzp program_state
+.globalzp next_line_offset
+.globalzp directive
 .globalzp argument_count
 
 ; Data
@@ -43,6 +45,7 @@
 ; encode.s
 .global encode_number
 .global encode_variable
+.global encode_no_value
 .global encode_byte
 
 ; input.s
@@ -66,6 +69,8 @@
 .global find_name
 .global match_character_sequence
 .global is_name_character
+.global advance_np_next_entry
+.global advance_name_ptr
 .global get_name_table_entry
 .global add_variable
 
@@ -88,8 +93,8 @@
 .global reset_program_state
 .global reset_line_ptr
 .global find_line
-.global advance_line_ptr
-.global add_line_ptr_offset
+.global advance_line_ptr, advance_line_ptr_a
+.global set_line_ptr, set_line_variables
 .global insert_or_update_line
 .global set_variable_value_ptr
 .global set_variable_value

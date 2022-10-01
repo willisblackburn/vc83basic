@@ -230,6 +230,8 @@ div10:
 ; return to the caller's caller.
 ; Callers can use BC to pass parameters to the target function. The _vt entry point uses the existing value of
 ; vector_table_pointer and does not touch X, so it can also be used to pass data.
+; Since Y, the vector index, can never exceed 127, the ASL will clear the carry flag, and it will still be clear
+; when control reaches the target routine.
 ; AX = address of the vector table (the _vt entry point uses the value still in vector_table_ptr)
 ; Y = the index of the vector
 ; BC SAFE
@@ -284,7 +286,7 @@ format_number:
 ; STA is the last operation so zero flag will be set if we wrote zero.
 ; A = the byte to write (preserved)
 ; bp = the buffer position (updated)
-; Y SAFE
+; Y SAFE, BC SAFE, DE SAFE
 
 putchar_space_buffer:
         lda     #' '

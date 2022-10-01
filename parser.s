@@ -20,7 +20,7 @@ argument_count: .res 1
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
-        jsr     skip_whitespace
+        jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
         ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
@@ -99,75 +99,56 @@ parse_line:
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
 
-parse_element:
-
 .assert NT_EXP = $10, error
 
-; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
-
-        jsr     find_name               ; Sets Y to next byte in name table entry (AX passed to find_name)
+parse_element:
+        jsr     find_name               ; Start by finding name; sets np and returns index in A
         bcs     @error
-        jsr     encode_byte             ; Encode the statement name
-        bcs     @error                  ; encode_byte error
+        jsr     encode_byte             ; Encode index
+@loop:
+        jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
+        ldy     np                      ; Get the character at np-1
+        dey
+        lda     (name_ptr),y
+        bmi     @success                ; If the high bit was set, then it was the last byte; success
+        iny                             ; Advance to current position
+        lda     (name_ptr),y            ; Get next charater from name table entry
+        tay                             ; Store it in Y so we can use it for several checks
+        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
+        beq     @directive              ; It is
+        jsr     match_character_sequence    ; Otherwise it's a literal character sequence; match it
+        bcc     @loop                   ; Continue after a character sequence match
+@error:
+        rts                             ; Return with carry set to indicate error
 
-; Parse the next byte.
-; First check the previous byte and see if the high bit was set; if so then end.
-; Otherwise, determine if the current byte is:
-; 1. A character -> match a sequence
-; 2. An "N arguments" directive
-; 3. A directive to parse one argument of a specific type
-; Upon entry to this block, Y must point to the next character in the name table entry.
-
-@next:
-        sty     np                      ; Save name table entry position in np
-        dey                             ; Back up 1
-        lda     (name_ptr),y            ; Check for the end bit
-        bmi     @success                ; Success if the end bit set
-        iny                             ; Back to previous position
-        lda     (name_ptr),y            ; Get the next byte
-        tax                             ; Save in X since we're going to be checking it a lot
-        and     #$60                    ; Figure out if this is a chracter sequence or a directive
-        beq     @directive              ; It's a directive (x00x xxxx)
-        jsr     match_character_sequence    ; Will advance Y past the matched sequence
-        bcs     @error                  ; If not matched then error
-        bcc     @next                   ; If matched then continue
-
-; Handle arguments.
+@success:
+        clc                             ; Signal success
+        rts  
 
 @directive:
-        txa                             ; Get the original byte
+        inc     np                      ; Move position past directive
+        tya
         and     #$70                    ; Check if it's a multiple-argument directive (x000 xxxx)
         beq     @multiple               ; Yes
-        txa                             ; Get the byte again
+        tya                             ; Get the byte again
         and     #$0C                    ; Check if it's repeated (xxxx 11xx)
         cmp     #$0C
         beq     @repeated               ; Yes
-        txa                             ; It's not multiple and not repeated, must be a single argument
-        jsr     parse_argument
-        jmp     @loop
+        tya                             ; It's not multiple and not repeated, must be a single argument
+        jsr     parse_argument          ; Just parse one argument value
+        bcc     @loop                   ; Will never store 0 so this is unconditional branch
+        bcs     @error
 
 @multiple:
-        txa                             ; Get original byte
+        tya                             ; Get back original directive
         jsr     parse_multiple_arguments
-        jmp     @loop
+        bcc     @loop                   ; Continue if no error
+        bcs     @error
 
 @repeated:
-        txa                             ; Get original byte
+        tya                             ; Get back original directive
         jsr     parse_repeated_argument
-
-@loop:
-        bcs     @error
-        inc     np                      ; Recover saved name table entry position
-        ldy     np                      ; Advance 1
-        bcc     @next
-
-@success:
-        clc
-
-; We never jump to @error without carry being set so don't have to set it again.
-
-@error:
-        rts
+        bcc     @loop                   ; Continue if no error, otherwise fall through to @pop_error
 
 ; Parses arguments from the buffer and tokenizes them.
 ; Arguments must be separated by ','.
@@ -217,8 +198,12 @@ parse_repeated_argument:
         jsr     parse_following_argument
         bcc     @next
 @done:
-        lda     #TOKEN_NO_VALUE
-        jmp     encode_byte
+        jmp     encode_no_value
+
+parse_argument_type_vectors:
+        .word   parse_expression        ; NT_EXP
+        .word   parse_number            ; NT_NUM
+        .word   parse_variable          ; NT_VAR
 
 ; Parses a single argument.
 ; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
@@ -232,7 +217,7 @@ parse_argument:
         ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
         ldpha   np
         ldpha   directive
-        ldax    #argument_type_vectors
+        ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
         plsta   directive
         plsta   np
