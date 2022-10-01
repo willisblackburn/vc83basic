@@ -171,7 +171,7 @@ parse_repeated_argument:
         jsr     parse_following_argument
         bcc     @next
 @done:
-        lda     #TOKEN_END_REPEAT
+        lda     #TOKEN_NO_VALUE
         jmp     encode_byte
 
 ; Parses a single argument.
