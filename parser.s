@@ -60,11 +60,6 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-argument_type_vectors:
-        .word   parse_expression        ; NT_EXP
-        .word   parse_number            ; NT_NUM
-        .word   parse_variable          ; NT_VAR
-
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
 ; If the line number is missing, set it to -1.
 
