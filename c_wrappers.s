@@ -13,16 +13,20 @@
 ; Aliases for globals
 
 .export _bp = bp
+.export _src_ptr = src_ptr
+.export _dst_ptr = dst_ptr
+.export _vector_table_ptr = vector_table_ptr
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
 .export _statement_name_table = statement_name_table
 
-.export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
+.export _line_ptr = line_ptr
 .export _variable_name_table_ptr = variable_name_table_ptr
 .export _value_table_ptr = value_table_ptr
 .export _heap_ptr = heap_ptr
+.export _free_ptr = free_ptr
 .export _himem_ptr = himem_ptr
 .export _variable_count = variable_count
 .export _variable_value_ptr = variable_value_ptr
@@ -41,6 +45,12 @@ _reg_a: .res 1
 _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
 
 .code
 
@@ -195,27 +205,52 @@ _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
 
+_set_line_ptr:
+.export _set_line_ptr
+        jmp     set_line_ptr            ; New line_ptr value is already in AX
+
+_set_line_variables:
+.export _set_line_variables
+        jmp     set_line_variables
+
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
         jmp     return_carry
 
-_grow_variable_name_table:
-.export _grow_variable_name_table
-        jsr     grow_variable_name_table
-        jmp     return_carry
-
-_check_himem:
-.export _check_himem
-        sta     B                       ; Swap A and X
-        txa                     
-        ldx     B      
-        jsr     check_himem
-        jmp     return_carry
-
 _set_variable_value_ptr:
 .export _set_variable_value_ptr
         jmp     set_variable_value_ptr
+
+_expand:
+.export _expand
+        stax    BC                      ; Save size temporarily
+        jsr     popax                   ; Get ptr (ignore high byte in X)
+        tay                             ; Store in Y
+        ldax    BC                      ; Get the size again
+        jsr     expand
+        jmp     return_carry
+
+_compact:
+.export _compact
+        stax    BC                      ; Save size temporarily
+        jsr     popax                   ; Get ptr (ignore high byte in X)
+        tay                             ; Store in Y
+        ldax    BC                      ; Get the size again
+        jsr     compact
+        jmp     return_carry
+        rts
+
+_calculate_bytes_to_move:
+.export _calculate_bytes_to_move
+        jsr     calculate_bytes_to_move
+        ldax    DE                      ; Function returns in DE; copy to AX for convenience
+        rts
+
+_check_himem:
+.export _check_himem
+        jsr     check_himem
+        jmp     return_carry
 
 ; util.s
 

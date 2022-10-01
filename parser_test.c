@@ -142,9 +142,9 @@ static void test_parse_argument(void) {
 
 static void test_parse_element(void) {
     int err;
-    const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x01, TOKEN_NUM, 0x08, 0x00 };
-    const char line_data_3[] = { 0x02, 0x80, TOKEN_NUM, 0x64, 0x00 };
+    const char line_data_1[] = { ST_RUN };
+    const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00 };
+    const char line_data_3[] = { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 };
 
     PRINT_TEST_NAME();
 

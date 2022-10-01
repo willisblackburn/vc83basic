@@ -1,10 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-directive: .res 1
-
 .code
 
 ; All "parse" functions use:
@@ -19,7 +15,7 @@ directive: .res 1
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
-        jsr     skip_whitespace
+        jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
         ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
@@ -59,11 +55,6 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-argument_type_vectors:
-        .word   parse_expression        ; NT_EXP
-        .word   parse_number            ; NT_NUM
-        .word   parse_variable          ; NT_VAR
-
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
 ; If the line number is missing, set it to -1.
 
@@ -77,12 +68,19 @@ parse_line:
 @store_line_number:
         stax    line_buffer+Line::number
         jsr     skip_whitespace         ; Detect a blank line; returns non-blank character in A, may be zero
-        clc
+        tax                             ; Transfer into X to check if it's zero
         beq     @blank_line
         ldax    #statement_name_table
         jsr     parse_element           ; Leaves the parsed statement in line_buffer and sets/clears carry
+        bcs     @done                   ; Parse failed
 @blank_line:
         mva     lp, line_buffer+Line::next_line_offset  ; Write position is next statement offset
+        ldx     bp
+        lda     buffer,x                ; Verify the line ends as expected
+        clc
+        beq     @done                   ; If so then jump to done with carry still clear
+        sec                             ; Otherwise set carry to indicate failure
+@done:
         rts
 
 ; Parses and tokenizes a syntax element starting with a name.
@@ -91,56 +89,43 @@ parse_line:
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
 
-parse_element:
-
 .assert NT_EXP = $10, error
 
-; This whole first section uses Y to track the parse position in the name table entry pointed to by name_ptr.
-
-        jsr     find_name               ; Sets Y to next byte in name table entry (AX passed to find_name)
+parse_element:
+        jsr     find_name               ; Start by finding name; sets np and returns index in A
         bcs     @error
-        jsr     encode_byte             ; Encode the statement name
-        bcs     @error                  ; encode_byte error
-
-; Parse the next byte.
-; First check the previous byte and see if the high bit was set; if so then end.
-; Otherwise, determine if the current byte is:
-; 1. A character -> match a sequence
-; 2. An "N arguments" directive
-; 3. A directive to parse one argument of a specific type
-; Upon entry to this block, Y must point to the next character in the name table entry.
-
-@next:
-        sty     np                      ; Save name table entry position in np
-        dey                             ; Back up 1
-        lda     (name_ptr),y            ; Check for the end bit
-        bmi     @success                ; Success if the end bit set
-        iny                             ; Back to previous position
-        lda     (name_ptr),y            ; Get the next byte
-        tax                             ; Save in X since we're going to be checking it a lot
-        and     #$60                    ; Figure out if this is a chracter sequence or a directive
-        beq     @directive              ; It's a directive (x00x xxxx)
-        jsr     match_character_sequence    ; Will advance Y past the matched sequence
-        bcs     @error                  ; If not matched then error
-        bcc     @next                   ; If matched then continue
-
-; Handle arguments.
-
-@directive:
-        txa                             ; Get the original byte
-        jsr     parse_argument
-        bcs     @error
-        inc     np                      ; Recover saved name table entry position
-        ldy     np                      ; Advance 1
-        bcc     @next
+        jsr     encode_byte             ; Encode index
+@loop:
+        jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
+        ldy     np                      ; Get the character at np-1
+        dey
+        lda     (name_ptr),y
+        bmi     @success                ; If the high bit was set, then it was the last byte; success
+        iny                             ; Advance to current position
+        lda     (name_ptr),y            ; Get next charater from name table entry
+        tay                             ; Store it in Y so we can use it for several checks
+        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
+        beq     @directive              ; It is
+        jsr     match_character_sequence    ; Otherwise it's a literal character sequence; match it
+        bcc     @loop                   ; Continue after a character sequence match
+@error:
+        rts                             ; Return with carry set to indicate error
 
 @success:
-        clc
+        clc                             ; Signal success
+        rts  
 
-; We never jump to @error without carry being set so don't have to set it again.
+@directive:
+        inc     np                      ; Move position past directive
+        tya
+        jsr     parse_argument          ; Just parse one argument value
+        bcc     @loop                   ; Will never store 0 so this is unconditional branch
+        bcs     @error
 
-@error:
-        rts
+parse_argument_type_vectors:
+        .word   parse_expression        ; NT_EXP
+        .word   parse_number            ; NT_NUM
+        .word   parse_variable          ; NT_VAR
 
 ; Parses a single argument.
 ; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
@@ -153,28 +138,10 @@ parse_argument:
         tay                             ; Prepare too use type as vector index
         ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
         ldpha   np
-        ldpha   directive
-        ldax    #argument_type_vectors
+        ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-        plsta   directive
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
-        rts
-
-; Parses an argument separator followed by an argument.
-; Reverts the read and write positions if parsing either the separator or argument fails.
-; A = the type of argument to parse (as a name table directive)
-
-parse_following_argument:
-        tay                             ; Save the argument type directive
-        jsr     parse_argument_separator
-        bcs     @error
-        tya                             ; Pass the argument type directive to parse_argument
-        jsr     parse_argument
-        bcs     @error
-        rts
-
-@error:
         rts
 
 ; Placeholder handler that just signals an error.
@@ -240,9 +207,7 @@ parse_argument_separator:
         sec
         rts
 
-; Skip past any whitespace in the buffer. Returns the next character in A, and also sets the zero flag if
-; that character is zero. Callers can use this to detect if there is anything left to read. The final value of
-; bp is also left in X.
+; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
@@ -255,5 +220,4 @@ skip_whitespace:
         beq     @next       
         dex                             ; It wasn't whitespace so go back
         stx     bp                      ; Update read position
-        lda     buffer,x                ; Return next character
         rts

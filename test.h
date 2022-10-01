@@ -21,22 +21,30 @@ typedef struct Line {
 
 extern char bp;
 #pragma zpsym ("bp")
-extern const char* name_ptr;
+extern void* src_ptr;
+#pragma zpsym ("src_ptr")
+extern void* dst_ptr;
+#pragma zpsym ("dst_ptr")
+extern void** vector_table_ptr;
+#pragma zpsym ("vector_table_ptr")
+extern char* name_ptr;
 #pragma zpsym ("name_ptr")
 extern char np;
 #pragma zpsym ("np")
 extern void* signature_ptr;
 #pragma zpsym ("signature_ptr")
-extern Line* line_ptr;
-#pragma zpsym ("line_ptr")
 extern Line* program_ptr;
 #pragma zpsym ("program_ptr")
-extern const char* variable_name_table_ptr;
+extern Line* line_ptr;
+#pragma zpsym ("line_ptr")
+extern char* variable_name_table_ptr;
 #pragma zpsym ("variable_name_table_ptr")
 extern void* value_table_ptr;
 #pragma zpsym ("value_table_ptr")
 extern void* heap_ptr;
 #pragma zpsym ("heap_ptr")
+extern void* free_ptr;
+#pragma zpsym ("free_ptr")
 extern void* himem_ptr;
 #pragma zpsym ("himem_ptr")
 extern char variable_count;
@@ -59,12 +67,24 @@ extern int reg_ax;
 extern char reg_a;
 extern char reg_x;
 extern char reg_y;
+extern int reg_bc;
+#pragma zpsym ("reg_bc")
+extern char reg_b;
+#pragma zpsym ("reg_b")
+extern char reg_c;
+#pragma zpsym ("reg_c")
+extern int reg_de;
+#pragma zpsym ("reg_de")
+extern char reg_d;
+#pragma zpsym ("reg_d")
+extern char reg_e;
+#pragma zpsym ("reg_e")
 
 // Prototypes for C wrapper functions
 
 // decode.s
-int decode_number(const char* line_ptr, char lp);
-char decode_byte(const char* line_ptr, char lp);
+int decode_number(const void* line_ptr, char lp);
+char decode_byte(const void* line_ptr, char lp);
 
 // encode.s
 int encode_number(int number, char lp);
@@ -72,7 +92,6 @@ int encode_byte(char byte_value, char lp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
-int match_character_sequence(const char* name_ptr, char y, char bp);
 int is_name_character(char c);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
@@ -91,10 +110,14 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
+void set_line_ptr(void* line_ptr);
+void set_line_variables(void);
 int insert_or_update_line(void);
-int check_himem(void* ptr);
-int grow_variable_name_table(char amount);
 void set_variable_value_ptr(char variable);
+int expand(void* ptr, size_t size);
+int compact(void* ptr, size_t size);
+size_t calculate_bytes_to_move(void);
+int check_himem(size_t size);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
@@ -131,6 +154,7 @@ void hexdump(const char* name, const char* data, size_t length) {
 
 #define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
 
+#define ASSERT(x) do { fprintf(stderr, "  %s:%u: assert %s: ", __FILE__, __LINE__, #x); assert(x); fputs("OK\n", stderr); } while (0)
 #define ASSERT_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s (%ld, $%lX) %s %s (%ld, $%lX): ", __FILE__, __LINE__, #a, (long)(a), (long)(a), #op, #b, (long)(b), (long)(b)); assert((a) op (b)); fputs("OK\n", stderr); } while (0)
 #define ASSERT_EQ(a, b) ASSERT_OP(a, b, ==)
 #define ASSERT_NE(a, b) ASSERT_OP(a, b, !=)
@@ -143,5 +167,7 @@ void hexdump(const char* name, const char* data, size_t length) {
 #define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s (%u, $%X) %s NULL: ", __FILE__, __LINE__, #a, (a), (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
+
+#define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
 
 #endif

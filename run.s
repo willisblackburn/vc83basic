@@ -5,23 +5,29 @@
 ; Executes the program.
 
 exec_run:
-        mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
-        lda     variable_count          ; Amount to clear is variable_count * 2
-        jsr     mul2a
-        jsr     clear_memory
-        jsr     reset_line_ptr
+        jsr     reset_program_state     ; Clear the variable name table
+        jsr     reset_line_ptr          ; Reset line_ptr to the start of the program
 @run_one_line:
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
-        bmi     @end                    ; If MSB of line number is set, we're at end of program
-        mva     #Line::data, lp         ; Initialize read position to start of data
-        jsr     decode_byte             ; Get statement number
-        jsr     invoke_statement_handler
-        ; TODO: check for error
+        bmi     @program_end            ; If MSB of line number is set, we're at end of program
+        jsr     run_line
+        bcs     @done
         jsr     advance_line_ptr        ; Advance to next line
         jmp     @run_one_line
 
-@end:
+@program_end:
+        clc
+
+@done:
+        rts
+
+; Executes the line pointed by line_ptr
+
+run_line:
+        mva     #Line::data, lp         ; Initialize read position to start of data
+        jsr     decode_byte             ; Get statement number
+        jsr     invoke_statement_handler
         rts
 
 statement_exec_vectors:

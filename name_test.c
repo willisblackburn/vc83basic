@@ -39,28 +39,6 @@ void test_is_name_character() {
     ASSERT_NE(err, 0);
 }
 
-void test_match_character_sequence() {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    strcpy(buffer, "PRINT");
-    err = match_character_sequence("PRIN\xD4", 0, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(bp, 5);
-    err = match_character_sequence("PRINT\x11", 0, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(bp, 5);
-
-    strcpy(buffer, "LET X=1");
-    err = match_character_sequence("LET\x11=\x91", 4, 5);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_y, 5);
-    ASSERT_EQ(bp, 6);
-}
-
 void test_find_name(void) {
     int err;
     // C adds a trailing 0 to these strings which terminates the name table.
@@ -81,19 +59,19 @@ void test_find_name(void) {
     err = find_name(name_table_1, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(reg_y, 5);
+    ASSERT_EQ(np, 5);
     ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_1);
     err = find_name(name_table_2, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(reg_y, 5);
+    ASSERT_EQ(np, 5);
     ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_2);
     err = find_name(name_table_3, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(reg_y, 5);
+    ASSERT_EQ(np, 5);
     ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_3 + 4);
 
@@ -101,14 +79,14 @@ void test_find_name(void) {
     err = find_name(name_table_4, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(reg_y, 5);
+    ASSERT_EQ(np, 5);
     ASSERT_EQ(bp, 5);
     ASSERT_EQ(name_ptr, name_table_4 + 4);
     err = find_name(name_table_5, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(bp, 5);
     ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(reg_y, 5);
+    ASSERT_EQ(np, 5);
     ASSERT_EQ(name_ptr, name_table_5 + 5);
 
     // Name not found
@@ -159,20 +137,20 @@ static void test_find_name_operators(void) {
     err = find_name(name_table_1, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(reg_y, 2);
+    ASSERT_EQ(np, 2);
     ASSERT_EQ(bp, 2);
     ASSERT_EQ(name_ptr, name_table_1);
     // We expect operators to prefix match; that is, the ">" in ">=" should match first ">"
     err = find_name(name_table_2, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(reg_y, 1);
+    ASSERT_EQ(np, 1);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(name_ptr, name_table_2);
     err = find_name(name_table_3, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(reg_y, 2);
+    ASSERT_EQ(np, 2);
     ASSERT_EQ(bp, 2);
     ASSERT_EQ(name_ptr, name_table_3 + 1);
 }
@@ -218,12 +196,20 @@ static void test_add_variable(void) {
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 1);
+
+    strcpy(buffer, "Y,Z");
+    err = find_name(variable_name_table_ptr, 0);
+    ASSERT_NE(err, 0);
+    err = add_variable();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 1);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(variable_count, 2);
 }
 
 int main(void) {
     initialize_target();
     test_is_name_character();
-    test_match_character_sequence();
     test_find_name();
     test_find_name_operators();
     test_get_name_table_entry();

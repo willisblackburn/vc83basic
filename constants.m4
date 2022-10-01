@@ -15,3 +15,9 @@ comment Tokenized form constants
 
 def(TOKEN_NUM,          hex(01))
 def(TOKEN_VAR,          hex(80)) comment OR with variable number
+
+comment Statement tokens
+
+def(ST_RUN,             0)
+def(ST_PRINT,           1)
+def(ST_LET,             2)
