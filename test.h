@@ -99,7 +99,6 @@ void list_repeated_argument(const void* line_ptr, char lp, char bp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
-int match_character_sequence(const char* name_ptr, char y, char bp);
 int is_name_character(char c);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
