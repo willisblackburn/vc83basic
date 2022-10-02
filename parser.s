@@ -209,7 +209,7 @@ parse_argument_type_vectors:
 parse_argument:
         and     #$0F                    ; Isolate just the type
         tay                             ; Prepare too use type as vector index
-        ldphaa  name_ptr                ; Save name_ptr, np, and signature_ptr
+        ldphaa  name_ptr                ; Save state in case of recursive call
         ldpha   np
         ldpha   directive
         ldax    #parse_argument_type_vectors

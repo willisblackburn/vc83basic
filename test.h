@@ -31,8 +31,6 @@ extern char* name_ptr;
 #pragma zpsym ("name_ptr")
 extern char np;
 #pragma zpsym ("np")
-extern void* signature_ptr;
-#pragma zpsym ("signature_ptr")
 extern Line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern Line* line_ptr;
