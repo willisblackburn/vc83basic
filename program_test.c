@@ -178,22 +178,6 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
-static void test_set_variable_value_ptr(void) {
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    set_variable_value_ptr(0);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr));
-    set_variable_value_ptr(1);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 1));
-    set_variable_value_ptr(127);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
-    // Should clear high bit if set
-    set_variable_value_ptr(255);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
-}
-
 static void test_check_himem(void) {
     char err;
 
@@ -379,6 +363,22 @@ static void test_compact(void) {
     ASSERT_EQ((char*)free_ptr, (char*)heap_ptr + 0x800);
 }
 
+static void test_set_variable_value_ptr(void) {
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    set_variable_value_ptr(0);
+    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr));
+    set_variable_value_ptr(1);
+    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 1));
+    set_variable_value_ptr(127);
+    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
+    // Should clear high bit if set
+    set_variable_value_ptr(255);
+    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
+}
+
 int main(void) {
     initialize_target();
     test_initalize_program();
@@ -386,10 +386,10 @@ int main(void) {
     test_advance_line_ptr();
     test_find_line();
     test_insert_or_update_line();
-    test_set_variable_value_ptr();
     test_check_himem();
     test_calculate_bytes_to_move();
     test_expand();
     test_compact();
+    test_set_variable_value_ptr();
     return 0;
 }

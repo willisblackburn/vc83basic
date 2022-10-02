@@ -113,11 +113,11 @@ void advance_line_ptr(void);
 void set_line_ptr(void* line_ptr);
 void set_line_variables(void);
 int insert_or_update_line(void);
-void set_variable_value_ptr(char variable);
 int expand(void* ptr, size_t size);
 int compact(void* ptr, size_t size);
 size_t calculate_bytes_to_move(void);
 int check_himem(size_t size);
+void set_variable_value_ptr(char variable);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);

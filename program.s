@@ -210,31 +210,6 @@ insert_or_update_line:
 @done:
         rts
 
-; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
-; The variable token passed in A will always be <= 127 since there can only be 128 variables, but it possibly
-; has the high bit set, so we AND with $7F first.
-; A = the variable token
-
-set_variable_value_ptr:
-        and     #$7F                    ; Clear MSB
-        jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
-        adc     value_table_ptr         ; Add to the value table offset
-        sta     variable_value_ptr      ; Store low byte
-        txa                             
-        adc     value_table_ptr+1
-        sta     variable_value_ptr+1
-        rts
-
-; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
-
-set_variable_value:
-        ldy     #0                      ; Index variable value with Y
-        sta     (variable_value_ptr),y  ; Low byte
-        iny
-        txa
-        sta     (variable_value_ptr),y  ; High byte
-        rts
-
 ; Expands a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
 ; not including) himem_ptr, by some amount.
 ; This creates a new area of uninitialized memory at the pointer's original address, increasing the memory available
@@ -360,4 +335,29 @@ check_himem:
         bne     @done                   ; argument low byte > himem_ptr low byte (carry is set)
         clc                             ; Pointers are equal; clear carry since this is success
 @done:
+        rts
+
+; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
+; The variable token passed in A will always be <= 127 since there can only be 128 variables, but it possibly
+; has the high bit set, so we AND with $7F first.
+; A = the variable token
+
+set_variable_value_ptr:
+        and     #$7F                    ; Clear MSB
+        jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
+        adc     value_table_ptr         ; Add to the value table offset
+        sta     variable_value_ptr      ; Store low byte
+        txa                             
+        adc     value_table_ptr+1
+        sta     variable_value_ptr+1
+        rts
+
+; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
+
+set_variable_value:
+        ldy     #0                      ; Index variable value with Y
+        sta     (variable_value_ptr),y  ; Low byte
+        iny
+        txa
+        sta     (variable_value_ptr),y  ; High byte
         rts
