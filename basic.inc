@@ -11,9 +11,10 @@
 .globalzp BC, B, C, DE, D, E
 .globalzp bp
 .globalzp src_ptr, dst_ptr
-.globalzp line_ptr
 .globalzp program_ptr
-.globalzp heap_ptr
+.globalzp line_ptr
+.globalzp free_ptr
+.globalzp himem_ptr
 
 ; Data
 
@@ -32,14 +33,29 @@
 
 ; program.s
 .global initialize_program
+.global reset_program_state
 .global reset_line_ptr
 .global find_line
-.global advance_line_ptr
-.global add_line_ptr_offset
+.global advance_line_ptr, advance_line_ptr_a
+.global set_line_ptr, set_line_variables
 .global insert_or_update_line
+.global set_variable_value_ptr
+.global set_variable_value
+.global expand, expand_a, compact, compact_a
+.global calculate_bytes_to_move
+.global check_himem
+
+; run.s
+.global exec_run
+.global run_line
+.global invoke_statement_handler
+.global get_argument_value
+
+; tables.s
+.global statement_name_table
 
 ; util.s
-.global copy_bytes, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_de
+.global copy_bytes, copy_bytes_a, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_a, copy_bytes_higher_de
 .global mul10, div10
 
 ; target/*

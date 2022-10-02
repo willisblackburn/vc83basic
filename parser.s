@@ -11,32 +11,33 @@
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
+        jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
         ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
-        tax     
-@next:      
+        tax
+@next:
         pha                             ; Save A (low byte of value)
-        lda     buffer,y        
+        lda     buffer,y    
         jsr     char_to_digit           ; X SAFE function
         sta     B                       ; Store the digit value
         pla                             ; Retrieve the low byte of value
         bcs     @finish                 ; If there was an error in char_to_digit, stop parsing
         iny                             ; No error, increment read position
         jsr     mul10                   ; Multiply the value by 10 (preserves Y)
-        clc     
+        clc
         adc     B                       ; Add the digit value
         bcc     @next                   ; If carry clear then next digit
         inx                             ; Otherwise increment high byte
-        jmp     @next       
+        jmp     @next
 
-@finish:        
+@finish:
         cpy     bp                      ; Did we parse anything?
         beq     @nothing                ; Nope
         sty     bp                      ; Update read position
         clc                             ; Clear carry to signal OK
-        rts     
+        rts
 
-@nothing:       
+@nothing:
         sec                             ; Set carry to signal error
         rts
 
@@ -81,9 +82,7 @@ parse_keyword:
         sec
         rts
 
-; Skip past any whitespace in the buffer. Returns the next character in A, and also sets the zero flag if
-; that character is zero. Callers can use this to detect if there is anything left to read. The final value of
-; bp is also left in X.
+; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
@@ -96,5 +95,4 @@ skip_whitespace:
         beq     @next       
         dex                             ; It wasn't whitespace so go back
         stx     bp                      ; Update read position
-        lda     buffer,x                ; Return next character
         rts

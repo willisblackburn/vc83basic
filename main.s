@@ -56,16 +56,18 @@ exec_run:
         ldy     #Line::number+1         ; High byte of line number
         lda     (line_ptr),y
         bmi     @end                    ; If MSB of line number is set, we're at end of program
-        lda     #Line::data
-        jsr     add_line_ptr_offset     ; Puts pointer to start of line data in AX
-        stax    src_ptr                 ; Copy from there
-        mvaa    #buffer, dst_ptr        ; Into buffer
-        ldy     #Line::next_line_offset ; Offset of line length
-        lda     (line_ptr),y            ; Get next line offset
-        sec
-        sbc     #Line::data             ; Subtract the offset of the data field
-        ldx     #0                      ; High byte of the length is 0
-        jsr     copy_bytes              ; Copy the line data into buffer
+        ldy     #Line::next_line_offset ; Get next line offset
+        lda     (line_ptr),y
+        sta     B                       ; Store in B
+        ldx     #0                      ; Copy data into offset 0 in buffer
+        ldy     #Line::data             ; Starting at data offset
+@copy_byte:
+        lda     (line_ptr),y            ; Load byte
+        sta     buffer,x                ; Store into buffer
+        inx
+        iny
+        cpy     B                       ; End of line?
+        bne     @copy_byte              ; No, keep copying
         mva     #0, bp                  ; Start reading from offset 0
         ldax    #keyword_print          ; Check if the keyword is print
         jsr     parse_keyword           ; Was it "PRINT"?

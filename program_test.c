@@ -8,7 +8,8 @@ static void test_initalize_program(void) {
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_EQ(heap_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
+    ASSERT_EQ((void*)free_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
+    ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
 }
 
 static void test_reset_line_ptr(void) {
@@ -26,19 +27,21 @@ static void test_reset_line_ptr(void) {
 static void test_advance_line_ptr(void) {
     PRINT_TEST_NAME();
 
-    // Calling advance_line_ptr on the empty program should advance line_ptr to heap_ptr.
+    // Calling advance_line_ptr on the empty program should advance line_ptr to free_ptr.
     initialize_program();
     advance_line_ptr();
-    ASSERT_EQ((void*)line_ptr, heap_ptr);
+    ASSERT_EQ((void*)line_ptr, (void*)free_ptr);
 
     // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
     // Note that we're charging into unallocated memory here, but that's okay since we own memory space
     // after the BSS.
     initialize_program();
     line_ptr->next_line_offset = 10;
+    set_line_variables();
     advance_line_ptr();
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10);
     line_ptr->next_line_offset = 250;
+    set_line_variables();
     advance_line_ptr();
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
@@ -58,18 +61,21 @@ static void test_find_line(void) {
     line_ptr->number = 10;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
+    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 250;
     line_ptr->number = 256;
+    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 10;
     line_ptr->number = 10000;
+    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 0;
     line_ptr->number = -1;
     // Patch up the program end.
+    set_line_variables();
     advance_line_ptr();
-    heap_ptr = line_ptr;
 
     // Test if we can find each line separately.
     err = find_line(10);
@@ -98,7 +104,7 @@ static void test_find_line(void) {
 }
 
 static void set_line_buffer(int number, const char* data, char data_length) {
-    line_buffer.next_line_offset = offsetof(Line, data) + data_length;
+    line_buffer.next_line_offset = (line_buffer.data + data_length) - (const char*)&line_buffer;
     line_buffer.number = number;
     memcpy(line_buffer.data, data, data_length);
 }
@@ -166,6 +172,137 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
+static void test_check_himem(void) {
+    char err;
+
+    PRINT_TEST_NAME();
+
+    free_ptr = (void*)0x1000;
+    himem_ptr = (void*)0x2000;
+
+    err = check_himem(0x0F00);
+    ASSERT_EQ(err, 0);
+
+    err = check_himem(0x1F00);
+    ASSERT_NE(err, 0);
+
+    himem_ptr = (void*)0xFF00;
+
+    err = check_himem(0xEF00);
+    ASSERT_EQ(err, 0);
+
+    err = check_himem(0xFF00);
+    ASSERT_NE(err, 0);
+}
+
+static void test_calculate_bytes_to_move(void) {
+    size_t bytes;
+
+    PRINT_TEST_NAME();
+
+    // The function just calculates the difference between src_ptr and himem_ptr.
+
+    src_ptr = (void*)0x0400;
+    himem_ptr = (void*)0x1000;
+
+    bytes = calculate_bytes_to_move();
+    ASSERT_EQ(bytes, 0x0C00);
+}
+
+static void test_expand(void) {
+
+    char err;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Add 3 bytes to the program space by adding to line_ptr.
+    // First make sure line_ptr points to the beginning of the program.
+    ASSERT_EQ(line_ptr, program_ptr);
+
+    // Add 3 bytes.
+    err = expand(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+
+    // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
+    line_ptr = program_ptr;
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 20;
+
+    // Now move it up 3 again.
+    err = expand(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    line_ptr = program_ptr;
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 10;
+
+    // Other pointers should be at their correct positions.
+
+    ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9));
+
+    // Verify the program contents.
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, 10);
+    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, 20);
+    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, -1);
+
+    // Now expand free_ptr by 1K.
+    // Nothing should change except free_ptr.
+
+    line_ptr = program_ptr;
+    err = expand(&free_ptr, 0x400);
+    ASSERT_EQ(err, 0);
+
+    ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
+}
+
+static void test_compact(void) {
+    char err;
+
+    // To test compact, we first expand some sections, write some data to them, then make sure that data is
+    // preserved when we compact. We know that expand works because it's been separately tested.
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Create some program space.
+    err = expand(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    program_ptr->next_line_offset = 3;
+    program_ptr->number = 10;
+
+    // Move free pointer up by 3 bytes.
+    err = expand(&free_ptr, 3);
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 20;
+    ASSERT_EQ(err, 0);
+
+    // Make sure all the pointers are where they should be.
+    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 3);
+    ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
+
+    // Now compact each section, each time checking that no data is corrupted.
+
+    err = compact(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ(line_ptr->number, 20);
+    ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
+
+    err = compact(&free_ptr, 3);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(line_ptr, program_ptr);
+    ASSERT_EQ((char *)free_ptr, (char*)line_ptr + 3);
+}
+
 int main(void) {
     initialize_target();
     test_initalize_program();
@@ -173,5 +310,9 @@ int main(void) {
     test_advance_line_ptr();
     test_find_line();
     test_insert_or_update_line();
+    test_check_himem();
+    test_calculate_bytes_to_move();
+    test_expand();
+    test_compact();
     return 0;
 }
