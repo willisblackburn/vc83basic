@@ -13,12 +13,15 @@
 ; Aliases for globals
 
 .export _bp = bp
+.export _src_ptr = src_ptr
+.export _dst_ptr = dst_ptr
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
-.export _line_ptr = line_ptr
 .export _program_ptr = program_ptr
-.export _heap_ptr = heap_ptr
+.export _line_ptr = line_ptr
+.export _free_ptr = free_ptr
+.export _himem_ptr = himem_ptr
 
 .bss
 
@@ -30,6 +33,12 @@ _reg_a: .res 1
 _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
 
 .code
 
@@ -44,6 +53,28 @@ return_carry:
         rts
 
 ; Function wrappers
+
+; parser.s
+
+_read_number:
+.export _read_number
+        sta     bp               
+        jsr     read_number
+        jmp     return_carry
+
+_char_to_digit:
+.export _char_to_digit
+        jsr     char_to_digit
+        jmp     return_carry
+
+_parse_keyword:
+.export _parse_keyword
+        sta     bp              
+        jsr     popax                   ; Keyword pointer
+        jsr     parse_keyword
+        jmp     return_carry
+
+; program.s
 
 _initialize_target:
 .export _initialize_target
@@ -66,28 +97,50 @@ _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
 
+_set_line_ptr:
+.export _set_line_ptr
+        jmp     set_line_ptr            ; New line_ptr value is already in AX
+
+_set_line_variables:
+.export _set_line_variables
+        jmp     set_line_variables
+
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
         jmp     return_carry
 
-_read_number:
-.export _read_number
-        sta     bp               
-        jsr     read_number
+_expand:
+.export _expand
+        stax    BC                      ; Save size temporarily
+        jsr     popax                   ; Get ptr (ignore high byte in X)
+        tay                             ; Store in Y
+        ldax    BC                      ; Get the size again
+        jsr     expand
         jmp     return_carry
 
-_char_to_digit:
-.export _char_to_digit
-        jsr     char_to_digit
+_compact:
+.export _compact
+        stax    BC                      ; Save size temporarily
+        jsr     popax                   ; Get ptr (ignore high byte in X)
+        tay                             ; Store in Y
+        ldax    BC                      ; Get the size again
+        jsr     compact
+        jmp     return_carry
+        rts
+
+_calculate_bytes_to_move:
+.export _calculate_bytes_to_move
+        jsr     calculate_bytes_to_move
+        ldax    DE                      ; Function returns in DE; copy to AX for convenience
+        rts
+
+_check_himem:
+.export _check_himem
+        jsr     check_himem
         jmp     return_carry
 
-_parse_keyword:
-.export _parse_keyword
-        sta     bp              
-        jsr     popax                   ; Keyword pointer
-        jsr     parse_keyword
-        jmp     return_carry
+; util.s
 
 _copy_bytes:
 .export _copy_bytes

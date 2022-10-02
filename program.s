@@ -7,14 +7,23 @@
 
 .zeropage
 
-; A pointer to the current program line
-line_ptr: .res 2
-
 ; A pointer to the start of the program
 program_ptr: .res 2
 
-; The start of the heap
-heap_ptr: .res 2
+; A pointer to the current program line
+line_ptr: .res 2
+
+; The start of the free space beyond the heap
+free_ptr: .res 2
+
+; The address of "high memory" that will not be touched by the interpreter
+himem_ptr: .res 2
+
+; Read/write position in line
+lp: .res 1
+
+; While running or listing, holds the offset of the next line.
+next_line_offset: .res 1
 
 .bss
 
@@ -32,6 +41,7 @@ line_buffer: .res 256
 .assert Line::number = 1, error
 
 initialize_program:
+        mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
         ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
@@ -42,17 +52,18 @@ initialize_program:
         dey     
         lda     #Line::data                 ; This is the offset of the next line if this line has no data
         sta     (line_ptr),y                ; Save as next line offset
-        jsr     add_line_ptr_offset         ; Adding A to line_ptr gives heap_ptr value in AX
-        stax    heap_ptr
-        rts
+        jsr     advance_line_ptr_a          ; Add it to line_ptr; line_ptr is now invalid but that's okay
+        mvax    line_ptr, free_ptr          ; Invalid line_ptr is the start of free space
+
+; Fall through
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
-; Y SAFE, BC SAFE, DE SAFE
+; BC SAFE, DE SAFE
 
 reset_line_ptr:
-        mvax    program_ptr, line_ptr
-        rts
+        ldax    program_ptr
+        jmp     set_line_ptr
 
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
@@ -81,32 +92,34 @@ find_line:
         bcc     @next_line     
         bne     @return                 ; If not the line then reutrn with carry bit set
         clc                             ; If it was the line then return with carry clear
-@return:    
-        rts 
+@return:        
+        rts     
 
-; Advances the current line pointer to the next line.
+; Advances the current line pointer to the next line. The offset of the next line must already be in the
+; next_line_offset variable (unless using the advance_line_ptr_a entry point, which takes the line length from A).
 ; line_ptr = current line (updated)
-; Returns new line_ptr value in AX.
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
-        ldy     #Line::next_line_offset ; Index of next line offset in buffer
-        lda     (line_ptr),y            ; Get length of current line
-        jsr     add_line_ptr_offset
-        stax    line_ptr
-        rts
-
-; Adds A to line_ptr.
-; Returns result in AX.
-; Y SAFE, BC SAFE, DE SAFE
-
-add_line_ptr_offset:
+        lda     next_line_offset        ; Must already have been set by call to set_line_variables!
+advance_line_ptr_a:
         clc
         adc     line_ptr                ; Add line length to low byte of line_ptr
         ldx     line_ptr+1              ; High byte into X
-        bcc     @no_carry               ; Don't need to add the carry to X
+        bcc     set_line_ptr            ; Don't need to add the carry to X
         inx                             ; Add the carry to X
-@no_carry:
+
+; Fall through
+
+; Sets line_ptr from AX and other fields from the new line.
+; AX = the new value for line_ptr
+
+set_line_ptr:
+        stax    line_ptr
+set_line_variables:
+        ldy     #Line::next_line_offset
+        lda     (line_ptr),y
+        sta     next_line_offset
         rts
 
 ; Updates the program based on the information in line_buffer.
@@ -118,84 +131,162 @@ insert_or_update_line:
         jsr     find_line               ; Go find it
         bcs     @insert                 ; Not found, just insert the new line
 
-; line_ptr points to a line that we have to remove.
-; Find the next line and copy the reset of the program to where line_ptr is pointing now.
-; There will always be a next line becasue we'll only be here if the line to delete
-; actually exists.
+; line_ptr points to a line that we have to remove and next_line_offset is its length.
 
-        lda     line_ptr                ; Current line_ptr
-        sta     dst_ptr                 ; will be the target of the memcpy
-        pha                             ; Also push it on the stack so we can restore after advancing
-        lda     line_ptr+1              ; High byte
-        sta     dst_ptr+1   
+        lda     next_line_offset        ; Save the next line offset on the stack; it will be the compact length
         pha 
-        jsr     advance_line_ptr        ; Move to line_ptr to next line (AX = line_ptr)
-        stax    src_ptr                 ; This will be the source for the copy
-        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
-        jsr     update_pointers         ; Knowing copy from and to, we can update pointers
-        jsr     copy_bytes_de           ; Compact the program
-        pla                             ; line_ptr now points to an invalid line so restore saved value
-        sta     line_ptr+1
-        pla
-        sta     line_ptr
+        jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
+        pla                             ; Get the length of the line back off the stack
+        ldy     #line_ptr               ; Select line_ptr as the pointer to move
+        jsr     compact_a
 
 ; Insert the new line, if there is one.
 ; There is a line if next_line_offset is greater than the offset of the data field.
 ; line_ptr points to where this new line should go.
 
 @insert:
-        mvax    line_ptr, src_ptr       ; Initialize src_ptr to line_ptr
         lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
+        tax                             ; Save in X since we'll need it again
         cmp     #Line::data             ; Compare next line offset with the offset of the data field
         beq     @finish                 ; If they're the same, line is blank, nothing to insert
-        jsr     add_line_ptr_offset     ; Add next_line_offset to line_ptr to get new address of current line
-        stax    dst_ptr                 ; Store in dst_ptr
-        jsr     calculate_bytes_to_move ; Set DE to length of program from line_ptr
-        jsr     update_pointers
-        jsr     copy_bytes_higher_de      ; Make room for the new line
+        ldphaa  line_ptr                ; Push line_ptr onto stack so we can get it back later
+        txa                             ; Copy line length back into A as the amount to expand
+        ldy     #line_ptr               ; Select line_ptr as the pointer to move
+        jsr     expand_a                ; Create space for the new line
+        plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if expand failed)
+        bcs     @done                   ; Don't copy if expand failed
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
-        mvaa    line_ptr, dst_ptr
         lda     line_buffer+Line::next_line_offset  ; Length of the new line
-        ldx     #0                      ; High byte of length is always 0
-        jsr     copy_bytes              ; Copy the line into the program
+        jsr     copy_bytes_a            ; Copy the line into the program
 
 @finish:
         clc
+@done:
         rts
 
-; Calculates the bytes to move for both compact and expand as (heap_ptr - line_ptr).
+; Expands a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
+; not including) himem_ptr, by some amount.
+; This creates a new area of uninitialized memory at the pointer's original address, increasing the memory available
+; to the section *before* the pointer we moved.
+; AX = the amount to add to the pointer (the expand_a entry point sets X to 0)
+; Y = the zero-page address of the pointer to increase
+
+expand_a:
+        ldx     #0                      ; Initialize high byte to 0
+expand:
+        stax    BC                      ; Store length in BC
+        jsr     check_himem             ; Check if expansion will push BASIC memory past himem_ptr
+        bcs     @done                   ; If check_himem failed then we fail
+        clc                             ; Clear carry to prepare for addition
+        lda     0,y                     ; Load the low byte of the pointer to increase
+        sta     src_ptr                 ; Store it as source for copy
+        adc     B                       ; Increase low byte
+        sta     0,y                     ; Save back
+        sta     dst_ptr                 ; It's also the destination pointer
+        iny                             ; Do the same thing for the high byte
+        lda     0,y
+        sta     src_ptr+1
+        adc     C
+        sta     0,y
+        sta     dst_ptr+1
+        jsr     calculate_bytes_to_move ; Knowing src_ptr we can calculate number of bytes to move
+@next_ptr:
+        iny
+        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
+        beq     @copy                   ; Don't want to change it.
+        clc
+        lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
+        adc     B
+        sta     0,y
+        iny
+        lda     0,y
+        adc     C
+        sta     0,y
+        jmp     @next_ptr
+
+@copy:
+        jsr     copy_bytes_higher       ; Copy data up to the higher address
+        clc                             ; Success
+@done:
+        rts
+
+; Compacts memory by decreasing one of the zero-page pointers, and all subsequent pointers up to (but not including)
+; himem_ptr, by some amount.
+; We don't check if the amount to subtract would cause the pointer to crash into next-lower pointer in memory;
+; this is assumed to never happen.
+; This decreases the amount of memory available in the section *before* the pointer we moved.
+; AX = the amount to subtract from the pointer (the expand_a entry point sets X to 0)
+; Y = the zero-page address of the pointer to increase
+
+compact_a:
+        ldx     #0
+compact:
+        stax    BC                      ; Follow a similar pattern to expand, only we're subtracting
+        sec
+        lda     0,y
+        sta     src_ptr
+        sbc     B
+        sta     0,y
+        sta     dst_ptr
+        iny
+        lda     0,y
+        sta     src_ptr+1
+        sbc     C
+        sta     0,y
+        sta     dst_ptr+1
+        jsr     calculate_bytes_to_move ; Calculate the number of byte to move
+@next_ptr:
+        iny
+        cpy     #himem_ptr              ; Have we reached himem_ptr?
+        beq     @copy                   ; Yes, go start the copy
+        sec
+        lda     0,y                     ; Otherwise subtract BC from this pointer
+        sbc     B
+        sta     0,y
+        iny
+        lda     0,y
+        sbc     C
+        sta     0,y
+        jmp     @next_ptr
+
+@copy:
+        jsr     copy_bytes
+        clc
+        rts
+
+; Calculates the bytes to move for both compact and expand as (himem_ptr - src_ptr).
 ; Returns the number of bytes in DE.
+; X SAFE, Y SAFE, BC SAFE
 
 calculate_bytes_to_move:
         sec                       
-        lda     heap_ptr
-        sbc     line_ptr
+        lda     himem_ptr
+        sbc     src_ptr
         sta     D                       ; Store low byte of length in D
-        lda     heap_ptr+1      
-        sbc     line_ptr+1      
+        lda     himem_ptr+1      
+        sbc     src_ptr+1      
         sta     E                       ; High byte of length in E
         rts
 
-; Updates heap_ptr by adding (dst_ptr - src_ptr).
-; In other words, if we're moving everything to a higher address (dst_ptr > src_ptr), then we have
-; to move the pointers up too, and vice versa. We're just shifting the pointers by however many bytes
-; we moved the end of the program.
-; Uses XY to store the difference value.
-; BC SAFE, DE SAFE
+; Checks if adding an amount to free_ptr will cause it to exceed himem_ptr.
+; Returns carry set if this would happen, otherwise carry clear.
+; AX = the amount to add to free_ptr
+; Y SAFE, BC SAFE
 
-update_pointers:
-        sec           
-        lda     dst_ptr
-        sbc     src_ptr
-        tax                             ; Difference low byte in X
-        lda     dst_ptr+1       
-        sbc     src_ptr+1     
-        tay                             ; Difference high byte in Y
-        clc                             ; Update variable_name_table_ptr
-        txa                             
-        adc     heap_ptr
-        sta     heap_ptr
-        tya
-        adc     heap_ptr+1
-        sta     heap_ptr+1
+check_himem:
+        clc                             ; Do 16-bit add of size in AX to free_ptr
+        adc     free_ptr                ; Add low byte
+        sta     D                       ; Park the low byte of result in D
+        txa                             ; High byte of size into A
+        adc     free_ptr+1              ; Add high byte of free_ptr
+        bcs     @done                   ; If carry is set after high byte add then address has overflowed
+        cmp     himem_ptr+1             ; Compare high byte
+        bcc     @done                   ; argument high byte < himem_ptr high byte
+        bne     @done                   ; argument high byte > himem_ptr high byte (carry is set)
+        lda     D                       ; High bytes are equal; compare low bytes
+        cmp     himem_ptr
+        bcc     @done                   ; argument low byte < himem_ptr low byte
+        bne     @done                   ; argument low byte > himem_ptr low byte (carry is set)
+        clc                             ; Pointers are equal; clear carry since this is success
+@done:
         rts
