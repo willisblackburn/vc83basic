@@ -225,10 +225,6 @@ _insert_or_update_line:
         jsr     insert_or_update_line
         jmp     return_carry
 
-_set_variable_value_ptr:
-.export _set_variable_value_ptr
-        jmp     set_variable_value_ptr
-
 _expand:
 .export _expand
         stax    BC                      ; Save size temporarily
@@ -258,6 +254,10 @@ _check_himem:
 .export _check_himem
         jsr     check_himem
         jmp     return_carry
+
+_set_variable_value_ptr:
+.export _set_variable_value_ptr
+        jmp     set_variable_value_ptr
 
 ; util.s
 
