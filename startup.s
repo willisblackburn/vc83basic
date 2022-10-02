@@ -21,7 +21,7 @@ hello_length = * - hello
 startup:
 .export startup
         cld                             ; Clear decimal flag
-        ldx     #$FF        
+        ldx     #$FF
         txs                             ; Initialize the stack to $FF
         lda     #<(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
