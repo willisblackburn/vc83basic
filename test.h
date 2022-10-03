@@ -21,6 +21,8 @@ typedef struct Line {
 
 extern char bp;
 #pragma zpsym ("bp")
+extern char lp;
+#pragma zpsym ("lp")
 extern void* src_ptr;
 #pragma zpsym ("src_ptr")
 extern void* dst_ptr;
@@ -49,8 +51,6 @@ extern char variable_count;
 #pragma zpsym ("variable_count")
 extern void* variable_value_ptr;
 #pragma zpsym ("variable_value_ptr")
-extern char lp;
-#pragma zpsym ("lp")
 
 // Data
 
