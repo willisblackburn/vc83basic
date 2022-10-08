@@ -66,39 +66,40 @@ list_element:
 @loop:
         pla                             ; Get the last-seen name table entry byte (TODO: use this technique in parser)
         bmi     @done                   ; If the high byte is set then we're done
-        ldy     np
+        ldy     np                      ; Load name table entry position
         inc     np                      ; Next position
         lda     (name_ptr),y            ; Load the next byte from the name table
         pha                             ; Put on the stack in order to check high bit next time through
-        tax                             ; Temporarily store in X
+        and     #$7F                    ; Remove the high bit since we don't care about it anymore
+        tay                             ; Temporarily store in Y
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        txa                             ; Not a directive, must be a single argument
-        and     #$7F                    ; Clear high bit if set
+        tya                             ; Not a directive, must be a literal
         jsr     putchar_buffer
-        jmp     @loop                   ; Will never store 0 so this is unconditional branch
+        jmp     @loop
 
 @directive:
-        txa
+        tya
         and     #$70                    ; Check if it's a multiple-argument directive (x000 xxxx)
         beq     @multiple               ; Yes
-        txa                             ; Get the byte again
+        tya                             ; Get the byte again
         and     #$0C                    ; Check if it's repeated (xxxx 11xx)
         cmp     #$0C
         beq     @repeated               ; Yes
-        txa                             ; It's not multiple and not repeated, must be a single argument
+        tya                             ; It's not multiple and not repeated, must be a single argument
         jsr     list_argument           ; Just list one argument value
-        jmp     @loop                   ; Will never store 0 so this is unconditional branch
+        jmp     @loop
 
 @multiple:
-        txa                             ; Get back original directive
+        tya                             ; Get back original directive
         jsr     list_multiple_arguments
         jmp     @loop
 
 @repeated:
-        txa                             ; Get back original directive
+        tya                             ; Get back original directive
         jsr     list_repeated_argument
         jmp     @loop
+
 @done:
         rts                            
 
