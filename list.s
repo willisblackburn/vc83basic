@@ -62,10 +62,8 @@ list_line:
 
 list_element:
         jsr     get_name_table_entry    ; Sets name_ptr and resets np; should never fail
-        debug $30
 @loop:
         ldy     np                      ; Get the character at np-1
-        debug $31
         beq     @skip                   ; Skip this test if np=0
         dey
         lda     (name_ptr),y
@@ -73,7 +71,6 @@ list_element:
         iny                             ; Advance to current position
 @skip:
         lda     (name_ptr),y            ; Load the next byte from the name table
-        debug $32
         inc     np                      ; Next position
         and     #$7F                    ; Remove the high bit since we don't care about it anymore
         tay                             ; Temporarily store in Y
@@ -94,6 +91,9 @@ list_element:
 ; Lists a single directive from the token stream.
 ; A = the directive
 
+; Make sure NT_VAR is the first typed directive
+.assert NT_VAR = $10, error
+
 list_directive:
         tay                             ; Keep in Y while using A to save state
         jsr     add_whitespace
@@ -102,7 +102,6 @@ list_directive:
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
-        debug $00
         bcs     @single
         jsr     list_expression         ; Just list one expression for now
         jmp     @pop
@@ -121,12 +120,9 @@ list_argument_type_vectors:
         .word   list_repeated_variable  ; NT_RPT_VAR
 
 list_expression:
-        debug $20
         jsr     decode_byte             ; Get the next token
-        debug $21
         bmi     list_variable_a         ; It's a variable
         jsr     decode_number           ; It must be a number; decode it (return value in AX)
-        debug $22
         jmp     format_number           ; Send it right to format_number
 
 list_variable:
@@ -134,7 +130,6 @@ list_variable:
 list_variable_a:
         and     #$7F                    ; Clear high bit leaving variable index
         tay                             ; The variable index into Y
-        debug $10
         ldax    variable_name_table_ptr ; Look up name in the variable name table
         jmp     list_element            ; Recursively call list_element to display the name        
 
