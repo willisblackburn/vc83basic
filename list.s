@@ -7,7 +7,7 @@
 
 ; LIST statement:
 ; Scans through the program and prints each line.
-; We use line_ptr to list the program, but it's possible the LIST is being called from wtihin the program,
+; We use line_ptr to list the program, but it's possible the LIST is being called from within the program,
 ; so we save the existing line_ptr value on the stack and restore it after.
 
 exec_list:
