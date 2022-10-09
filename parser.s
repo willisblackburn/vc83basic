@@ -1,8 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.code
-
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; bp = the read position in buffer (modified on success)
@@ -190,9 +188,6 @@ parse_variable:
         jsr     encode_variable       
 @done:
         rts
-
-parse_data:
-        jmp     parse_number
 
 ; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
 ; bp = the read position (modified)
