@@ -184,7 +184,7 @@ insert_or_update_line:
 ; line_ptr points to a line that we have to remove and next_line_offset is its length.
 
         lda     next_line_offset        ; Save the next line offset on the stack; it will be the compact length
-        pha
+        pha 
         jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
         pla                             ; Get the length of the line back off the stack
         ldy     #line_ptr               ; Select line_ptr as the pointer to move

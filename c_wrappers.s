@@ -119,33 +119,15 @@ _list_element:
         ldy     B                       ; Move index back into B
         jmp     list_element
 
-_list_argument:
-.export _list_argument
+_list_directive:
+.export _list_directive
         sta     bp
         jsr     popa
         sta     lp
         jsr     popax
         stax    line_ptr
-        jmp     list_argument
-
-_list_multiple_arguments:
-.export _list_multiple_arguments
-        sta     bp
         jsr     popa
-        sta     lp
-        jsr     popax
-        stax    line_ptr
-        jsr     popa                    ; directive
-        jmp     list_multiple_arguments
-
-_list_repeated_argument:
-.export _list_repeated_argument
-        sta     bp
-        jsr     popa
-        sta     lp
-        jsr     popax
-        stax    line_ptr
-        jmp     list_repeated_argument
+        jmp     list_directive
 
 ; name.s
 
@@ -202,31 +184,13 @@ _parse_element:
         jsr     parse_element
         jmp     return_carry
 
-_parse_multiple_arguments:
-.export _parse_multiple_arguments
+_parse_directive:
+.export _parse_directive
         sta     lp
         jsr     popa
         sta     bp
         jsr     popa
-        jsr     parse_multiple_arguments
-        jmp     return_carry
-
-_parse_repeated_argument:
-.export _parse_repeated_argument
-        sta     lp
-        jsr     popa
-        sta     bp
-        jsr     popa
-        jsr     parse_repeated_argument
-        jmp     return_carry
-
-_parse_argument:
-.export _parse_argument
-        sta     lp
-        jsr     popa
-        sta     bp
-        jsr     popa
-        jsr     parse_argument
+        jsr     parse_directive
         jmp     return_carry
 
 _parse_expression:

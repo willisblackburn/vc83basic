@@ -28,8 +28,6 @@
 .globalzp lp
 .globalzp program_state
 .globalzp next_line_offset
-.globalzp directive
-.globalzp argument_count
 
 ; Data
 
@@ -58,9 +56,7 @@
 .global exec_list
 .global list_line
 .global list_element
-.global list_multiple_arguments
-.global list_repeated_argument
-.global list_argument
+.global list_directive
 
 ; main.s
 .global main
@@ -78,9 +74,7 @@
 .global read_number, char_to_digit
 .global parse_line
 .global parse_element
-.global parse_multiple_arguments
-.global parse_repeated_argument
-.global parse_argument
+.global parse_directive
 .global parse_expression
 .global parse_argument_separator
 .global skip_whitespace

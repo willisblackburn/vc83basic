@@ -6,12 +6,8 @@ comment Generated from __file__
 
 comment Name table definitions 
 
-def(NT_EXP,             hex(10))
-def(NT_NUM,             hex(11))
-def(NT_VAR,             hex(12))
-def(NT_RPT_EXP,         hex(1C))
-def(NT_RPT_NUM,         hex(1D))
-def(NT_RPT_VAR,         hex(1E))
+def(NT_VAR,             hex(10))
+def(NT_RPT_VAR,         hex(11))
 def(NT_END,             hex(80))
 
 comment Tokenized form constants

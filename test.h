@@ -91,9 +91,7 @@ int encode_byte(char byte_value, char lp);
 // list.s
 int list_line(const void* line_ptr);
 void list_element(const char* name_ptr, char index, const void* line_ptr, char lp, char bp);
-void list_argument(const void* line_ptr, char lp, char bp);
-void list_multiple_arguments(char directive, const void* line_ptr, char lp, char bp);
-void list_repeated_argument(const void* line_ptr, char lp, char bp);
+void list_directive(char directive, const void* line_ptr, char lp, char bp);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
@@ -106,9 +104,7 @@ int read_number(char bp);
 int char_to_digit(char c);
 int parse_line(void);
 int parse_element(const char* name_ptr, char bp, char lp);
-int parse_multiple_arguments(char directive, char bp, char lp);
-int parse_repeated_argument(char directive, char bp, char lp);
-int parse_argument(char directive, char bp, char lp);
+int parse_directive(char directive, char bp, char lp);
 int parse_expression(char bp, char lp);
 int parse_argument_separator(char bp);
 
