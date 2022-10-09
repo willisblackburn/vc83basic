@@ -148,13 +148,13 @@ _parse_element:
         jsr     parse_element
         jmp     return_carry
 
-_parse_argument:
-.export _parse_argument
+_parse_directive:
+.export _parse_directive
         sta     lp
         jsr     popa
         sta     bp
         jsr     popa
-        jsr     parse_argument
+        jsr     parse_directive
         jmp     return_carry
 
 _parse_expression:
@@ -163,12 +163,6 @@ _parse_expression:
         jsr     popa
         sta     bp
         jsr     parse_expression
-        jmp     return_carry
-
-_parse_argument_separator:
-.export _parse_argument_separator
-        sta     bp
-        jsr     parse_argument_separator
         jmp     return_carry
 
 ; program.s

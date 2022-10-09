@@ -89,8 +89,6 @@ parse_line:
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
 
-.assert NT_EXP = $10, error
-
 parse_element:
         jsr     find_name               ; Start by finding name; sets np and returns index in A
         bcs     @error
@@ -118,36 +116,41 @@ parse_element:
 @directive:
         inc     np                      ; Move position past directive
         tya
-        jsr     parse_argument          ; Just parse one argument value
-        bcc     @loop                   ; Will never store 0 so this is unconditional branch
+        and     #$7F                    ; Clear the high bit if it's set
+        jsr     parse_directive
+        bcc     @loop
         bcs     @error
 
 parse_argument_type_vectors:
-        .word   parse_expression        ; NT_EXP
-        .word   parse_number            ; NT_NUM
         .word   parse_variable          ; NT_VAR
 
-; Parses a single argument.
-; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
+; Parses a single directive.
+; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
-; A = the type of argument to parse (as a name table directive)
+; A = the directive
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
 
-parse_argument:
-        and     #$0F                    ; Isolate just the type
-        tay                             ; Prepare too use type as vector index
+; Make sure NT_VAR is the first typed directive
+.assert NT_VAR = $10, error
+
+parse_directive:
+        tay                             ; Keep in Y while using A to save state
         ldphaa  name_ptr                ; Save state in case of recursive call
         ldpha   np
+        tya                             ; Recover directive from Y
+        sec
+        sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
+        bcs     @single
+        jsr     parse_expression        ; Just parse one expression for now
+        jmp     @pop
+
+@single:
+        tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
+@pop:
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
-        rts
-
-; Placeholder handler that just signals an error.
-
-parse_error:
-        sec
         rts
 
 ; Parses and tokenizes a expression.
@@ -190,22 +193,6 @@ parse_variable:
 
 parse_data:
         jmp     parse_number
-
-; Parses a mandatory comma beween arguments. Does not write any tokens.
-; Returns carry clear if the ',' was found or carry set if it was not.
-; Y SAFE
-
-parse_argument_separator:
-        jsr     skip_whitespace         ; Leaves next character in A
-        cmp     #','                    ; Sets carry if character was ','
-        bne     @error
-        inc     bp
-        clc
-        rts
-
-@error:
-        sec
-        rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
 ; bp = the read position (modified)

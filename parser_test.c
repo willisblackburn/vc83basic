@@ -82,33 +82,7 @@ static void test_parse_expression(void) {
     // TODO: add more tests
 }
 
-static void test_parse_argument_separator(void) {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    strcpy(buffer, ",");
-    err = parse_argument_separator(0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, 1);
-
-    strcpy(buffer, "  ,");
-    err = parse_argument_separator(0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, 3);
-
-    strcpy(buffer, "x");
-    err = parse_argument_separator(0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
-
-    strcpy(buffer, ",");
-    err = parse_argument_separator(1);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 1);
-}
-
-static void test_parse_argument(void) {
+static void test_parse_directive(void) {
     int err;
 
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
@@ -119,21 +93,21 @@ static void test_parse_argument(void) {
     initialize_program();
 
     strcpy(buffer, "1");
-    err = parse_argument(NT_EXP, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
-
-    strcpy(buffer, "1");
-    err = parse_argument(NT_NUM, 0, offsetof(Line, data));
+    err = parse_directive(1, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     strcpy(buffer, "X");
-    err = parse_argument(NT_VAR, 0, offsetof(Line, data));
+    err = parse_directive(1, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
+    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
+
+    strcpy(buffer, "X");
+    err = parse_directive(NT_VAR, 0, offsetof(Line, data));
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(bp, 1);
@@ -189,8 +163,7 @@ int main(void) {
     test_char_to_digit();
     test_read_number();
     test_parse_expression();
-    test_parse_argument_separator();
-    test_parse_argument();
+    test_parse_directive();
     test_parse_element();
     return 0;
 }
