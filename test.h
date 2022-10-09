@@ -98,9 +98,7 @@ int add_variable(void);
 int read_number(char bp);
 int char_to_digit(char c);
 int parse_element(const char* name_ptr, char bp, char lp);
-int parse_multiple_arguments(char directive, char bp, char lp);
-int parse_repeated_argument(char directive, char bp, char lp);
-int parse_argument(char directive, char bp, char lp);
+int parse_directive(char directive, char bp, char lp);
 int parse_expression(char bp, char lp);
 int parse_argument_separator(char bp);
 

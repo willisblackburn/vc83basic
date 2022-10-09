@@ -27,8 +27,6 @@
 .globalzp variable_value_ptr
 .globalzp lp
 .globalzp next_line_offset
-.globalzp directive
-.globalzp argument_count
 
 ; Data
 
@@ -69,9 +67,7 @@
 .global read_number, char_to_digit
 .global parse_line
 .global parse_element
-.global parse_multiple_arguments
-.global parse_repeated_argument
-.global parse_argument
+.global parse_directive
 .global parse_expression
 .global parse_argument_separator
 .global skip_whitespace

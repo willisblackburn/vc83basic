@@ -1,13 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-directive: .res 1
-argument_count: .res 1
-
-.code
-
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; bp = the read position in buffer (modified on success)
@@ -94,8 +87,6 @@ parse_line:
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
 
-.assert NT_EXP = $10, error
-
 parse_element:
         jsr     find_name               ; Start by finding name; sets np and returns index in A
         bcs     @error
@@ -123,123 +114,43 @@ parse_element:
 @directive:
         inc     np                      ; Move position past directive
         tya
-        and     #$70                    ; Check if it's a multiple-argument directive (x000 xxxx)
-        beq     @multiple               ; Yes
-        tya                             ; Get the byte again
-        and     #$0C                    ; Check if it's repeated (xxxx 11xx)
-        cmp     #$0C
-        beq     @repeated               ; Yes
-        tya                             ; It's not multiple and not repeated, must be a single argument
-        jsr     parse_argument          ; Just parse one argument value
-        bcc     @loop                   ; Will never store 0 so this is unconditional branch
+        and     #$7F                    ; Clear the high bit if it's set
+        jsr     parse_directive
+        bcc     @loop
         bcs     @error
 
-@multiple:
-        tya                             ; Get back original directive
-        jsr     parse_multiple_arguments
-        bcc     @loop                   ; Continue if no error
-        bcs     @error
-
-@repeated:
-        tya                             ; Get back original directive
-        jsr     parse_repeated_argument
-        bcc     @loop                   ; Continue if no error, otherwise fall through to @pop_error
-
-; Parses arguments from the buffer and tokenizes them.
-; Arguments must be separated by ','.
-; In this function we don't pay attention to the name table anymore; we're only concerned with parsing some
-; number of arguments.
-; ARGUMENT COUNT MUST BE AT LEAST 1. If it is zero it will be interpreted as 8.
-; A = the number of arguments to parse, from 1 to 7; bit 3 is true if these arguments are optional
-
-parse_multiple_arguments:
-        and     #$07                    ; Bottom 3 bits are number of arguments to read (>0)
-        sta     argument_count
-        lda     #NT_EXP
-        jsr     parse_argument          ; Parse the argument value
-        bcs     @parse_failed
-@value:
-        dec     argument_count          ; One argument done
-        beq     @success                ; All done parsing arguments
-        lda     #NT_EXP
-        jsr     parse_following_argument    ; Parse the next argument value
-        bcc     @value                  ; If separator parsed then continue with value, otherwise fail
-@parse_failed:
-        lda     #TOKEN_NO_VALUE         ; Store "no value" tokens for any remaining arguments
-        jsr     encode_byte             ; Encode the "no value" token
-        bcs     @done                   ; encode_byte error
-        dec     argument_count          ; Done with one "no value"
-        bne     @parse_failed           ; Loop if more
-@success:
-        clc                             ; Signal no error
-@done:
-        rts
-
-; Parses a repeated value.
-; A = the directive from the name table entry
-
-.assert (NT_EXP & $0F) = (NT_RPT_EXP & $03), error
-.assert (NT_NUM & $0F) = (NT_RPT_NUM & $03), error
-.assert (NT_VAR & $0F) = (NT_RPT_VAR & $03), error
-
-parse_repeated_argument:
-        sta     directive
-        and     #$03
-        jsr     parse_argument
-        bcs     @done
-@next:
-        lda     directive
-        and     #$03
-        jsr     parse_following_argument
-        bcc     @next
-@done:
-        jmp     encode_no_value
-
-parse_argument_type_vectors:
-        .word   parse_expression        ; NT_EXP
-        .word   parse_number            ; NT_NUM
-        .word   parse_variable          ; NT_VAR
-
-; Parses a single argument.
-; Since parsing the argument can recursively invoke the name table element parser with new values for name_ptr etc.,
+; Parses a single directive.
+; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
-; A = the type of argument to parse (as a name table directive)
+; A = the directive
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
 
-parse_argument:
-        and     #$0F                    ; Isolate just the type
-        tay                             ; Prepare too use type as vector index
+; Make sure NT_VAR is the first typed directive
+.assert NT_VAR = $10, error
+
+parse_directive:
+        tay                             ; Keep in Y while using A to save state
         ldphaa  name_ptr                ; Save state in case of recursive call
         ldpha   np
-        ldpha   directive
+        tya                             ; Recover directive from Y
+        sec
+        sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
+        bcs     @single
+        jsr     parse_expression        ; Just parse one expression for now
+        jmp     @pop
+
+@single:
+        tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-        plsta   directive
+@pop:
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
         rts
 
-; Parses an argument separator followed by an argument.
-; Reverts the read and write positions if parsing either the separator or argument fails.
-; A = the type of argument to parse (as a name table directive)
-
-parse_following_argument:
-        tay                             ; Save the argument type directive
-        jsr     parse_argument_separator
-        bcs     @error
-        tya                             ; Pass the argument type directive to parse_argument
-        jsr     parse_argument
-        bcs     @error
-        rts
-
-@error:
-        rts
-
-; Placeholder handler that just signals an error.
-
-parse_error:
-        sec
-        rts
+parse_argument_type_vectors:
+        .word   parse_variable          ; NT_VAR
+        .word   parse_repeated_variable ; NT_RPT_VAR
 
 ; Parses and tokenizes a expression.
 
@@ -279,11 +190,19 @@ parse_variable:
 @done:
         rts
 
-parse_data:
-        jmp     parse_number
+; Parses a series of variable names separated by commas.
+
+parse_repeated_variable:
+        jsr     parse_variable          ; Parse 1 variable
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_no_value         ; Terminate the repeated list
+@done:
+        rts
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
-; Returns carry clear if the ',' was found or carry set if it was not.
+; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did.
 ; Y SAFE
 
 parse_argument_separator:
@@ -291,11 +210,10 @@ parse_argument_separator:
         cmp     #','                    ; Sets carry if character was ','
         bne     @error
         inc     bp
-        clc
         rts
 
 @error:
-        sec
+        clc                             ; Clear carry since we don't know its state following the CMP above
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
