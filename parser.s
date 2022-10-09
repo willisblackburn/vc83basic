@@ -1,6 +1,13 @@
 .include "macros.inc"
 .include "basic.inc"
 
+.zeropage
+
+; The number of arguments that parse_argument_list is parsing
+argument_count: .res 1
+
+.code
+
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; bp = the read position in buffer (modified on success)
@@ -132,11 +139,13 @@ parse_directive:
         tay                             ; Keep in Y while using A to save state
         ldphaa  name_ptr                ; Save state in case of recursive call
         ldpha   np
+        ldpha   argument_count
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        jsr     parse_expression        ; Just parse one expression for now
+        and     #$0F                    ; Mask out top 4 bits
+        jsr     parse_argument_list
         jmp     @pop
 
 @single:
@@ -144,6 +153,7 @@ parse_directive:
         ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 @pop:
+        plsta   argument_count
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
         rts
@@ -151,6 +161,35 @@ parse_directive:
 parse_argument_type_vectors:
         .word   parse_variable          ; NT_VAR
         .word   parse_repeated_variable ; NT_RPT_VAR
+
+; Parses an argument list of N expressions delimited by commas.
+; All expressions are optional; if we find less than N expressions, encode TOKEN_NO_VALUE up to N.
+; A = the number of arguments (must be >= 1)
+
+parse_argument_list:
+        and     #$07                    ; Bottom 3 bits are number of arguments to read (>0)
+        sta     argument_count
+@next:
+        jsr     parse_expression        ; Parse the argument expression
+        bcs     @parse_failed
+@value:
+        dec     argument_count          ; One argument done
+        beq     @success                ; All done parsing arguments
+        jsr     parse_argument_separator    ; Look for argument separator
+        bcs     @next                   ; Found separator so continue parsing
+
+; Fall through; argument_count must be >= 1 since we didn't go to @success.
+
+@parse_failed:
+        lda     #TOKEN_NO_VALUE         ; Store "no value" tokens for any remaining arguments
+        jsr     encode_byte             ; Encode the "no value" token
+        bcs     @error                  ; encode_byte error
+        dec     argument_count          ; Done with one "no value"
+        bne     @parse_failed           ; Loop if more
+@success:
+        clc                             ; Signal no error
+@error:
+        rts
 
 ; Parses and tokenizes a expression.
 

@@ -85,20 +85,20 @@ static void test_list_element(void) {
     ASSERT_EQ(bp, sizeof list_2 - 1);
     ASSERT_EQ(lp, sizeof line_data_2);
 
-    // list_element(statement_name_table, ST_LIST, line_data_3, 0, 0);
-    // ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
-    // ASSERT_EQ(bp, sizeof list_3 - 1);
-    // ASSERT_EQ(lp, sizeof line_data_3);
+    list_element(statement_name_table, ST_LIST, line_data_3, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
+    ASSERT_EQ(bp, sizeof list_3 - 1);
+    ASSERT_EQ(lp, sizeof line_data_3);
 
-    // list_element(statement_name_table, ST_LIST, line_data_4, 0, 0);
-    // ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
-    // ASSERT_EQ(bp, sizeof list_4 - 1);
-    // ASSERT_EQ(lp, sizeof line_data_4);
+    list_element(statement_name_table, ST_LIST, line_data_4, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
+    ASSERT_EQ(bp, sizeof list_4 - 1);
+    ASSERT_EQ(lp, sizeof line_data_4);
 
-    // list_element(statement_name_table, ST_LIST, line_data_5, 0, 0);
-    // ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
-    // ASSERT_EQ(bp, sizeof list_5 - 1);
-    // ASSERT_EQ(lp, sizeof line_data_5);
+    list_element(statement_name_table, ST_LIST, line_data_5, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
+    ASSERT_EQ(bp, sizeof list_5 - 1);
+    ASSERT_EQ(lp, sizeof line_data_5);
 }
 
 static void test_list_line(void) {

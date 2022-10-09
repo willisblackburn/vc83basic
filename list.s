@@ -96,14 +96,14 @@ list_element:
 
 list_directive:
         tay                             ; Keep in Y while using A to save state
-        jsr     add_whitespace
         ldphaa  name_ptr                ; Save existing value of name_ptr
         ldpha   np                      ; Save existing name entry read position
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        jsr     list_expression         ; Just list one expression for now
+        and     #$0F                    ; Mask out top 4 bits
+        jsr     list_argument_list
         jmp     @pop
 
 @single:
@@ -119,9 +119,30 @@ list_argument_type_vectors:
         .word   list_variable           ; NT_VAR
         .word   list_repeated_variable  ; NT_RPT_VAR
 
+list_argument_list:
+        and     #$07                    ; Isolate the count
+        sta     argument_count          ; Re-use argument_count from parser module
+        jsr     decode_byte             ; Check if the next argument is TOKEN_NO_VALUE
+        beq     @no_value               ; If so then don't list
+@next_argument:
+        dec     lp                      ; Back up
+        jsr     list_expression         ; List the expression
+@no_value:
+        dec     argument_count          ; Done with one argument
+        beq     @done                   ; Finish if no more
+        jsr     decode_byte             ; Check if next argument is TOKEN_NO_VALUE
+        beq     @no_value               
+        lda     #','                    ; Output argument separator
+        jsr     putchar_buffer
+        bne     @next_argument          ; Will never write 0 so this is unconditional branch
+
+@done:
+        rts
+
 list_expression:
         jsr     decode_byte             ; Get the next token
         bmi     list_variable_a         ; It's a variable
+        jsr     add_whitespace
         jsr     decode_number           ; It must be a number; decode it (return value in AX)
         jmp     format_number           ; Send it right to format_number
 
@@ -130,6 +151,7 @@ list_variable:
 list_variable_a:
         and     #$7F                    ; Clear high bit leaving variable index
         tay                             ; The variable index into Y
+        jsr     add_whitespace
         ldax    variable_name_table_ptr ; Look up name in the variable name table
         jmp     list_element            ; Recursively call list_element to display the name        
 

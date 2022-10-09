@@ -227,10 +227,10 @@ static void test_parse_line(void) {
 
     // Happy path immediate mode.
 
-    // strcpy(buffer, "LIST 10,20");
-    // err = parse_line();
-    // ASSERT_EQ(err, 0);
-    // ASSERT_MEMORY_EQ((const char*)&line_buffer, line_data_2, sizeof line_data_2);
+    strcpy(buffer, "LIST 10,20");
+    err = parse_line();
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ((const char*)&line_buffer, line_data_2, sizeof line_data_2);
 
     // Empty line
 
