@@ -88,6 +88,10 @@ list_element:
 @done:
         rts                            
 
+list_argument_type_vectors:
+        .word   list_variable           ; NT_VAR
+        .word   list_repeated_variable  ; NT_RPT_VAR
+
 ; Lists a single directive from the token stream.
 ; A = the directive
 
@@ -114,10 +118,6 @@ list_directive:
         plsta   np                      ; Recover values previously saved on stack
         plstaa  name_ptr
         rts
-
-list_argument_type_vectors:
-        .word   list_variable           ; NT_VAR
-        .word   list_repeated_variable  ; NT_RPT_VAR
 
 list_argument_list:
         and     #$07                    ; Isolate the count
