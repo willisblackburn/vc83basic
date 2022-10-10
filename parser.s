@@ -119,6 +119,10 @@ parse_element:
         bcc     @loop
         bcs     @error
 
+parse_argument_type_vectors:
+        .word   parse_variable          ; NT_VAR
+        .word   parse_repeated_variable ; NT_RPT_VAR
+
 ; Parses a single directive.
 ; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
@@ -147,10 +151,6 @@ parse_directive:
         plsta   np
         plstaa  name_ptr                ; Recover variables from stack
         rts
-
-parse_argument_type_vectors:
-        .word   parse_variable          ; NT_VAR
-        .word   parse_repeated_variable ; NT_RPT_VAR
 
 ; Parses and tokenizes a expression.
 
