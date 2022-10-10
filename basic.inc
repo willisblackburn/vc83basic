@@ -99,7 +99,6 @@
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector, invoke_indexed_vector_vt
 .global format_number
-.global putchar_space_buffer, putchar_buffer
 
 ; target/*
 .global startup, initialize_target, readline, getchar, write, putchar, newline
