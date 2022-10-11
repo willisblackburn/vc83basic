@@ -1,15 +1,5 @@
 #include "test.h"
 
-static int num_count;
-
-static void xh_number(void) {
-    int value = decode_number(line_ptr, lp);
-    switch (++num_count) {
-        case 1: ASSERT_EQ(value, 4112); break;
-        case 2: ASSERT_EQ(value, 3); break;
-    }
-}
-
 static int var_count;
 
 static void xh_variable(void) {
@@ -18,14 +8,13 @@ static void xh_variable(void) {
     ASSERT_EQ(reg_x, TOKEN_VAR | 1);
 }
 
-static int lparen_count, rparen_count;
+static int num_count;
 
-static void xh_paren(void) {
-    __asm__ ("stx %v", reg_x);
-    if (reg_x == TOKEN_LPAREN) {
-        ++lparen_count;
-    } else if (reg_x == TOKEN_RPAREN) {
-        ++rparen_count;
+static void xh_number(void) {
+    int value = decode_number(line_ptr, lp);
+    switch (++num_count) {
+        case 1: ASSERT_EQ(value, 4112); break;
+        case 2: ASSERT_EQ(value, 3); break;
     }
 }
 
@@ -37,6 +26,17 @@ static void xh_operator(void) {
         case 1: ASSERT_EQ(reg_x, TOKEN_OP | OP_ADD); break;
         case 2: ASSERT_EQ(reg_x, TOKEN_OP | OP_DIV); break;
         case 3: ASSERT_EQ(reg_x, TOKEN_OP | OP_SUB); break;
+    }
+}
+
+static int lparen_count, rparen_count;
+
+static void xh_paren(void) {
+    __asm__ ("stx %v", reg_x);
+    if (reg_x == TOKEN_LPAREN) {
+        ++lparen_count;
+    } else if (reg_x == TOKEN_RPAREN) {
+        ++rparen_count;
     }
 }
 
@@ -74,8 +74,8 @@ static void test_decode_expression(void) {
 
     void* decode_xh_vectors[] = {
         xh_variable,
-        xh_operator,
         xh_number,
+        xh_operator,
         xh_paren,
         xh_paren,
         xh_unary,

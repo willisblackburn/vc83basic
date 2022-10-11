@@ -15,31 +15,33 @@
 ; vector_table_ptr = the table of vectors for dispatching; must be set up in advance!
 
 .assert TOKEN_NO_VALUE = 0, error
-.assert TOKEN_NUM = 1, error
-.assert TOKEN_LPAREN = 2, error
-.assert TOKEN_RPAREN = 3, error
-.assert TOKEN_MINUS = 4, error
-.assert TOKEN_NOT = 5, error
+.assert TOKEN_LPAREN = 1, error
+.assert TOKEN_RPAREN = 2, error
+.assert TOKEN_MINUS = 3, error
+.assert TOKEN_NOT = 4, error
 .assert TOKEN_OP = $10, error
+.assert TOKEN_NUM = $20, error
 .assert TOKEN_VAR = $80, error
 
 .assert XH_VAR = 0, error
-.assert XH_OP = 1, error
-.assert XH_NUM = 2, error
+.assert XH_NUM = 1, error
+.assert XH_OP = 2, error
  
 decode_expression:
         jsr     decode_byte
         ldy     #XH_VAR                 ; First handler is VAR
         tax                             ; Store it in X for now (sets flags from decoded byte)
-        bmi     @dispatch               ; Handle 1xxx xxxx (variable)
+        bmi     @dispatch               ; Handle variable (1xxx xxxx)
         iny                             ; Advance to next handler
-        asl     A                       ; Check for pattern 01xx xxxx (unused)
-        asl     A                       ; Check for pattern 001x xxxx (unused)
-        asl     A                       ; Check for pattern 0001 xxxx (operator)
-        bmi     @dispatch
+        asl     A                       ; Bit 6 into MSB
+        asl     A                       ; Bit 5 into MSB
+        bmi     @dispatch               ; Handle number (001x xxxx)
+        iny
+        asl     A                       ; Bit 4 into MSB
+        bmi     @dispatch               ; Handle operator (0001 xxxx)
         txa                             ; It's in the range 0-15; see if it's zero (TOKEN_NO_VALUE)
         beq     @done                   ; If zero then done; carry is clear here because we've shifted 0s into it        
-        adc     #(XH_NUM - TOKEN_NUM)   ; Generate handler by aligning NUM handler index with NUM token
+        adc     #(XH_LPAREN - TOKEN_LPAREN) ; Generate handler by aligning LPAREN handler index with token
         tay                             ; Transfer into Y for dispatch
 @dispatch:
         jsr     invoke_indexed_vector_vt    ; Invoke the vector using the existng vector_table_ptr; value is in X

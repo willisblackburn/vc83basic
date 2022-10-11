@@ -150,8 +150,8 @@ list_argument_list:
 
 list_vectors:
         .word   list_xh_variable         ; XH_VAR
-        .word   list_xh_operator         ; XH_OP
         .word   list_xh_number           ; XH_NUM
+        .word   list_xh_operator         ; XH_OP
         .word   list_xh_paren            ; XH_LPAREN
         .word   list_xh_paren            ; XH_RPAREN
         .word   list_xh_unary            ; XH_MINUS
@@ -195,8 +195,6 @@ list_xh_number:
         jsr     add_whitespace
         jsr     decode_number           ; Decode the number
         jmp     format_number           ; Send it right to format_number
-
-.assert TOKEN_LPAREN = 2, error
 
 list_xh_paren:
         txa                             ; Transfer token into A; carry will be clear
