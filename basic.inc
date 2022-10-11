@@ -37,6 +37,7 @@
 
 ; decode.s
 .global decode_number
+.global decode_variable
 .global decode_byte
 
 ; encode.s
