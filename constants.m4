@@ -13,7 +13,7 @@ def(NT_END,             hex(80))
 comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_NUM,          hex(01))
+def(TOKEN_NUM,          hex(20))
 def(TOKEN_VAR,          hex(80)) comment OR with variable number
 
 comment Statement tokens
