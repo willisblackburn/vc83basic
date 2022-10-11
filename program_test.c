@@ -374,9 +374,6 @@ static void test_set_variable_value_ptr(void) {
     ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 1));
     set_variable_value_ptr(127);
     ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
-    // Should clear high bit if set
-    set_variable_value_ptr(255);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
 }
 
 int main(void) {

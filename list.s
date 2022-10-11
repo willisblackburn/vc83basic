@@ -140,16 +140,15 @@ list_argument_list:
         rts
 
 list_expression:
-        jsr     decode_byte             ; Get the next token
-        bmi     list_variable_a         ; It's a variable
+        ldy     lp
+        lda     (line_ptr),y            ; Check the next token
+        bmi     list_variable           ; It's a variable
         jsr     add_whitespace
         jsr     decode_number           ; It must be a number; decode it (return value in AX)
         jmp     format_number           ; Send it right to format_number
 
 list_variable:
-        jsr     decode_byte             ; Get the next token
-list_variable_a:
-        and     #$7F                    ; Clear high bit leaving variable index
+        jsr     decode_variable         ; Get the variable
         tay                             ; The variable index into Y
         jsr     add_whitespace
         ldax    variable_name_table_ptr ; Look up name in the variable name table

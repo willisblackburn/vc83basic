@@ -54,11 +54,13 @@ invoke_statement_handler:
 ; Gets the value for an argument and returns it in AX.
 
 get_argument_value:
-        jsr     decode_byte             ; Get the next token
+        ldy     np
+        lda     (name_ptr),y            ; Check the next token
         bmi     @variable               ; It's a variable
         jmp     decode_number           ; Decode a number instead
 
 @variable:
+        jsr     decode_variable
         jsr     set_variable_value_ptr  ; Address of variable data in AX
         ldy     #1
         lda     (variable_value_ptr),y  ; High byte of variable value
