@@ -1,6 +1,13 @@
 .include "macros.inc"
 .include "basic.inc"
 
+.zeropage
+
+; Read/write position in buffer
+bp: .res 1
+
+.code
+
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; bp = the read position in buffer (modified on success)
