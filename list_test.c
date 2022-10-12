@@ -22,13 +22,17 @@ static void test_list_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10 };
     const char line_data_2[] = { 0x80 };
-    const char line_data_3[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_4[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_3[] = { 0x80, TOKEN_NUM, 0x10, 0x10 };
+    const char line_data_4[] = { 0x80 };
+    const char line_data_5[] = { 0x80, TOKEN_NO_VALUE };
+    const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
-    const char list_3[] = "X";
-    const char list_4[] = "X,Y";
+    const char list_3[] = "X,4112";
+    const char list_4[] = "X";
+    const char list_5[] = "X";
+    const char list_6[] = "X,Y";
 
     PRINT_TEST_NAME();
 
@@ -43,17 +47,21 @@ static void test_list_directive(void) {
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
-    list_directive(NT_VAR, line_data_2, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
-    ASSERT_EQ(bp, sizeof list_2 - 1);
-
-    list_directive(NT_RPT_VAR, line_data_3, 0, 0);
+    list_directive(2, line_data_3, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
 
-    list_directive(NT_RPT_VAR, line_data_4, 0, 0);
+    list_directive(NT_VAR, line_data_4, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
     ASSERT_EQ(bp, sizeof list_4 - 1);
+
+    list_directive(NT_RPT_VAR, line_data_5, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
+    ASSERT_EQ(bp, sizeof list_5 - 1);
+
+    list_directive(NT_RPT_VAR, line_data_6, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_6, sizeof list_6 - 1);
+    ASSERT_EQ(bp, sizeof list_6 - 1);
 }
 
 static void test_list_element(void) {
