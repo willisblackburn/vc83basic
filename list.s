@@ -152,26 +152,23 @@ list_vectors:
         .word   list_xh_variable         ; XH_VAR
         .word   list_xh_number           ; XH_NUM
         .word   list_xh_operator         ; XH_OP
-        .word   list_xh_paren            ; XH_LPAREN
-        .word   list_xh_paren            ; XH_RPAREN
-        .word   list_xh_unary            ; XH_MINUS
-        .word   list_xh_unary            ; XH_NOT
+        .word   list_xh_lparen           ; XH_LPAREN
+        .word   list_xh_rparen           ; XH_RPAREN
+        .word   list_xh_minus            ; XH_MINUS
+        .word   list_xh_not              ; XH_NOT
 
 list_expression:
         mvax    #list_vectors, vector_table_ptr
         jmp     decode_expression
 
-
 list_number:
         jmp     list_xh_number
 
 list_variable:
-        jsr     decode_byte
-        tax
         jmp     list_xh_variable
 
 list_repeated_variable:
-        jsr     list_variable           ; List one variable
+        jsr     list_xh_variable        ; List one variable
         jsr     decode_byte             ; Get the next byte
         beq     @done                   ; If it's TOKEN_NO_VALUE then no more values
         lda     #','                    ; Write ',' to output
@@ -185,8 +182,7 @@ list_repeated_variable:
 ; Expression decoder handlers
 
 list_xh_variable:
-        txa                             ; Get the variable index
-        and     #(TOKEN_VAR - 1)        ; Remove the token part
+        jsr     decode_variable
         tay         
         ldax    variable_name_table_ptr ; Look up name in the variable name table
         jmp     list_element            ; Recursively call list_element to display the name
@@ -196,26 +192,33 @@ list_xh_number:
         jsr     decode_number           ; Decode the number
         jmp     format_number           ; Send it right to format_number
 
-list_xh_paren:
-        txa                             ; Transfer token into A; carry will be clear
-        adc     #('(' - TOKEN_LPAREN)   ; Transform TOKEN_LPAREN -> '(' and TOKEN_RPAREN - ')'
-        jmp     putchar_buffer
-
 list_xh_operator:
-        txa                             ; Get the variable index
-        and     #(TOKEN_OP - 1)         ; Remove the token part
+        jsr     decode_operator
         tay         
         ldax    #operator_name_table
-        jsr     list_element            ; Operator is already in Y
-        jmp     add_whitespace          ; Only adds whitespace if the operator was AND/OR
+        bne     list_element_add_whitespace ; Uncondtional
 
-list_xh_unary:
-        txa                             ; Get token into A
-        sbc     #(TOKEN_MINUS - 1)      ; Remap TOKEN_MINUS to 0; carry is clear so SBC will subtract one more
-        tay
+list_xh_lparen:
+        lda     #'('
+        jmp     putchar_buffer
+
+list_xh_rparen:
+        lda     #')'
+        jmp     putchar_buffer
+
+list_xh_minus:
+        ldy     #UNARY_OP_MINUS
         ldax    #unary_operator_name_table
+        bne     list_element_add_whitespace ; Uncondtional
+        
+list_xh_not:
+        ldy     #UNARY_OP_NOT
+        ldax    #unary_operator_name_table
+        bne     list_element_add_whitespace ; Uncondtional
+
+list_element_add_whitespace:
         jsr     list_element
-        jmp     add_whitespace          ; Only adds whitespace if the operator is NOT
+        jmp     add_whitespace
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')'.

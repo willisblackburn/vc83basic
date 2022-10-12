@@ -46,6 +46,9 @@ def(OP_GT,             11)
 def(OP_AND,            12)
 def(OP_OR,             13)
 
+def(UNARY_OP_MINUS,     0)
+def(UNARY_OP_NOT,       1)
+
 comment Expression decode handlers
 
 def(XH_VAR,             0)

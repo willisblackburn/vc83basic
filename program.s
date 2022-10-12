@@ -342,12 +342,9 @@ check_himem:
         rts
 
 ; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
-; The variable token passed in A will always be <= 127 since there can only be 128 variables, but it possibly
-; has the high bit set, so we AND with $7F first.
-; A = the variable token
+; A = the variable index (0-127)
 
 set_variable_value_ptr:
-        and     #$7F                    ; Clear MSB
         jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
         adc     value_table_ptr         ; Add to the value table offset
         sta     variable_value_ptr      ; Store low byte

@@ -82,6 +82,14 @@ _decode_number:
         stax    line_ptr
         jmp     decode_number
 
+_decode_variable:
+.export _decode_variable
+        jmp     decode_variable
+
+_decode_operator:
+.export _decode_operator
+        jmp     decode_operator
+
 _decode_byte:
 .export _decode_byte
         sta     lp
