@@ -176,7 +176,6 @@ parse_argument_list:
         jsr     parse_expression        ; Parse the argument expression
         bcs     @parse_failed
 @value:
-        jsr     encode_no_value         ; Terminate expression with TOKEN_NO_VALUE
         dec     argument_count          ; One argument done
         beq     @success                ; All done parsing arguments
         jsr     parse_argument_separator    ; Look for argument separator
@@ -207,7 +206,8 @@ parse_expression:
         jmp     parse_expression        ; Otherwise parse the following expression
 
 @no_operator:
-        clc                             ; Not finding an operator is okay; still success
+        jsr     encode_no_value         ; Terminate expression with TOKEN_NO_VALUE
+        clc                             ; Signal success
 @error:
         rts
 

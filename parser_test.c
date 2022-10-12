@@ -58,17 +58,17 @@ static void test_read_number(void) {
 static void test_parse_expression(void) {
     int err;
     
-    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
-    const char line_data_2[] = { 0x80 };
-    const char line_data_3[] = { 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x01, 0x00 };
+    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
+    const char line_data_3[] = { 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
     const char line_data_4[] = { 0x80, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x03, 0x00, TOKEN_OP | OP_OR, 0x80,
-        TOKEN_OP | OP_LE, 0x81 };
-    const char line_data_5[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00,
-        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81 };
-    const char line_data_6[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80 };
+        TOKEN_OP | OP_LE, 0x81, TOKEN_NO_VALUE };
+    const char line_data_5[] = { TOKEN_LPAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
+        TOKEN_RPAREN, TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
+    const char line_data_6[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80, TOKEN_NO_VALUE };
     const char line_data_7[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_LPAREN, 0x80, TOKEN_OP | OP_EQ, 
         TOKEN_NUM, 0x03, 0x00, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x81, TOKEN_RPAREN };
+        TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x81, TOKEN_NO_VALUE, TOKEN_RPAREN, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
