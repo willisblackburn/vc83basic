@@ -10,7 +10,7 @@ exec_run:
         beq     @done                   ; Carry will be set on equal
         jsr     reset_program_state     ; Clear the variable name table
         jsr     reset_line_ptr          ; Reset line_ptr to the start of the program
-        mvaa    #PROGRAM_STATE_RUNNING, program_state
+        mva     #PROGRAM_STATE_RUNNING, program_state
 @run_one_line:
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
@@ -54,8 +54,8 @@ invoke_statement_handler:
 ; Gets the value for an argument and returns it in AX.
 
 get_argument_value:
-        ldy     np
-        lda     (name_ptr),y            ; Check the next token
+        ldy     lp
+        lda     (line_ptr),y            ; Peek at the next byte
         bmi     @variable               ; It's a variable
         jmp     decode_number           ; Decode a number instead
 
