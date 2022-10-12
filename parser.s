@@ -3,6 +3,9 @@
 
 .zeropage
 
+; Read/write position in buffer
+bp: .res 1
+
 ; The number of arguments that parse_argument_list is parsing
 argument_count: .res 1
 

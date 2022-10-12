@@ -13,9 +13,6 @@ DE:
 D: .res 1
 E: .res 1
 
-; Read/write position in buffer
-bp: .res 1
-
 ; Source and destination pointers for memory opreations
 src_ptr: .res 2
 dst_ptr: .res 2
