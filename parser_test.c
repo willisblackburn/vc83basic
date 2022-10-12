@@ -158,6 +158,54 @@ static void test_parse_element(void) {
     ASSERT_EQ(err, 0);
 }
 
+static void test_parse_line(void) {
+    int err;
+
+    const Line line_1 = {
+        8,
+        10,
+        { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 }
+    };
+    const Line line_2 = {
+        4,
+        -1,
+        { ST_RUN }
+    };
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Happy path with line number.
+
+    strcpy(buffer, "10 LET X=100");
+    err = parse_line();
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ((void*)&line_buffer, (void*)&line_1, sizeof line_1);
+
+    // Happy path immediate mode.
+
+    strcpy(buffer, "RUN");
+    err = parse_line();
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ((void*)&line_buffer, (void*)&line_2, sizeof line_2);
+
+    // Empty line
+
+    strcpy(buffer, "");
+    err = parse_line();
+    ASSERT_EQ(err, 0);
+    strcpy(buffer, "  ");
+    err = parse_line();
+    ASSERT_EQ(err, 0);
+
+    // Test that the parser rejects statements that continue past the point where they're supposed to end.
+
+    strcpy(buffer, "LET X=100,5");
+    err = parse_line();
+    ASSERT_NE(err, 0);
+}
+
 int main(void) {
     initialize_target();
     test_char_to_digit();
@@ -165,5 +213,6 @@ int main(void) {
     test_parse_expression();
     test_parse_directive();
     test_parse_element();
+    test_parse_line();
     return 0;
 }
