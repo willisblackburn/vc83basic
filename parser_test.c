@@ -211,8 +211,16 @@ static void test_parse_element(void) {
 static void test_parse_line(void) {
     int err;
 
-    const char line_data_1[] = { 8, 0x0A, 0x00, ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 };
-    const char line_data_2[] = { 10, 0xFF, 0xFF, ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00 };
+    const Line line_1 = {
+        8,
+        10,
+        { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 }
+    };
+    const Line line_2 = {
+        10,
+        -1,
+        { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00  }
+    };
 
     PRINT_TEST_NAME();
 
@@ -223,14 +231,14 @@ static void test_parse_line(void) {
     strcpy(buffer, "10 LET X=100");
     err = parse_line();
     ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ((const char*)&line_buffer, line_data_1, sizeof line_data_1);
+    ASSERT_MEMORY_EQ((void*)&line_buffer, (void*)&line_1, sizeof line_1);
 
     // Happy path immediate mode.
 
     strcpy(buffer, "LIST 10,20");
     err = parse_line();
     ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ((const char*)&line_buffer, line_data_2, sizeof line_data_2);
+    ASSERT_MEMORY_EQ((void*)&line_buffer, (void*)&line_2, sizeof line_2);
 
     // Empty line
 
