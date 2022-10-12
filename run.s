@@ -47,8 +47,8 @@ invoke_statement_handler:
 ; Gets the value for an argument and returns it in AX.
 
 get_argument_value:
-        ldy     np
-        lda     (name_ptr),y            ; Check the next token
+        ldy     lp
+        lda     (line_ptr),y            ; Peek at the next byte
         bmi     @variable               ; It's a variable
         jmp     decode_number           ; Decode a number instead
 
