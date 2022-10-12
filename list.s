@@ -177,7 +177,21 @@ add_whitespace:
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         jsr     is_name_character
-        bcs     @done
-        jsr     putchar_space_buffer
+        bcc     putchar_space_buffer
 @done:
+        rts
+
+; Writes a single byte to buffer at position bp and increments bp.
+; Does not check for buffer overflow; we assume this can't happen.
+; STA is the last operation so zero flag will be set if we wrote zero.
+; A = the byte to write (preserved)
+; bp = the buffer position (updated)
+; Y SAFE, BC SAFE, DE SAFE
+
+putchar_space_buffer:
+        lda     #' '
+putchar_buffer:
+        ldx     bp                      ; Load position
+        inc     bp                      ; Incrment position
+        sta     buffer,x                ; Store A in buffer
         rts
