@@ -207,6 +207,8 @@ static void test_parse_element(void) {
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00, TOKEN_NO_VALUE };
     const char line_data_3[] = { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00, TOKEN_NO_VALUE };
     const char line_data_4[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_5[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00,
+        TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -240,6 +242,13 @@ static void test_parse_element(void) {
     ASSERT_EQ(bp, 9);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_4);
 
+    strcpy(buffer, "LIST 10,20");
+    err = parse_element(statement_name_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
+    ASSERT_EQ(bp, 10);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_5);
+
     // Test that adding spaces here and there doesn't mix up the parser.
 
     strcpy(buffer, "PRINT    8");
@@ -268,9 +277,9 @@ static void test_parse_line(void) {
         { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00, TOKEN_NO_VALUE }
     };
     const Line line_2 = {
-        12,
+        4,
         -1,
-        { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE  }
+        { ST_RUN }
     };
 
     PRINT_TEST_NAME();
@@ -286,7 +295,7 @@ static void test_parse_line(void) {
 
     // Happy path immediate mode.
 
-    strcpy(buffer, "LIST 10,20");
+    strcpy(buffer, "RUN");
     err = parse_line();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ((void*)&line_buffer, (void*)&line_2, sizeof line_2);
