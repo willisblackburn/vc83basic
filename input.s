@@ -11,7 +11,7 @@ exec_input:
         jsr     readline
         mva     #0, bp                  ; Reset the read position
 @next_var:
-        jsr     decode_byte             ; Read the variable
+        jsr     decode_variable         ; Read the variable
         beq     @done                   ; It was TOKEN_NO_VALUE, nothing more to read
         jsr     set_variable_value_ptr  ; Sets variable_value_ptr to the storage for this variable
         jsr     read_number             ; Returns value in AX
