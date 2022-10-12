@@ -138,6 +138,11 @@ _char_to_digit:
         jsr     char_to_digit
         jmp     return_carry
 
+_parse_line:
+.export _parse_line
+        jsr     parse_line
+        jmp     return_carry
+
 _parse_element:
 .export _parse_element
         sta     lp
