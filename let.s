@@ -4,7 +4,7 @@
 ; LET statement:
 
 exec_let:
-        jsr     decode_byte             ; Read the variable
+        jsr     decode_variable         ; Read the variable
         jsr     set_variable_value_ptr  ; Address of variable data in AX
         jsr     get_argument_value      ; Value is in AX
         jmp     set_variable_value
