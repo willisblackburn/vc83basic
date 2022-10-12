@@ -29,7 +29,6 @@
 decode_expression:
         ldy     lp                      ; Peek at next byte in token stream
         lda     (line_ptr),y
-        debug $00
         ldy     #XH_VAR                 ; First handler is VAR
         tax                             ; Store it in X for now (sets flags from decoded byte)
         bmi     @dispatch               ; Handle variable (1xxx xxxx)
@@ -46,7 +45,6 @@ decode_expression:
         adc     #(XH_LPAREN - TOKEN_LPAREN) ; Generate handler by aligning LPAREN handler index with token
         tay                             ; Transfer into Y for dispatch
 @dispatch:
-        debug $01
         jsr     invoke_indexed_vector_vt    ; Invoke the vector using the existng vector_table_ptr; value is in X
         jmp     decode_expression
 
@@ -84,5 +82,4 @@ decode_byte_with_mask:
         ldy     lp                      ; Read lp into Y and increment
         inc     lp  
         and     (line_ptr),y            ; AND byte with mask and return
-        debug $10
         rts
