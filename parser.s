@@ -215,13 +215,13 @@ parse_expression:
 
 parse_primary_expression:
         jsr     parse_parentheses       ; Look for an expression in parentheses
-        bcc     @return
+        bcc     @done
         jsr     parse_number
-        bcc     @return
+        bcc     @done
         jsr     parse_unary_operator
-        bcc     @return
+        bcc     @done
         jsr     parse_variable
-@return:
+@done:
         rts
 
 ; Parses an expression in parentheses.
