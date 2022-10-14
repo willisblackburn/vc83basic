@@ -203,6 +203,7 @@ list_xh_unary_operator:
         bne     list_element_add_whitespace ; Uncondtional
 
 list_xh_paren:
+        jsr     add_whitespace
         lda     #'('
         jsr     putchar_buffer
         jsr     decode_expression
