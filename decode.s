@@ -24,33 +24,31 @@
 .assert XH_OP = 2, error
 .assert XH_UNARY_OP = 3, error
 .assert XH_PAREN = 4, error
- 
+
+loop_decode_expression:
+        adc     #(XH_PAREN - TOKEN_PAREN)   ; Generate handler by aligning PAREN handler index with token
+        tay                             ; Transfer into Y for dispatch
+dispatch:
+        jsr     invoke_indexed_vector_vt    ; Invoke the vector using the existng vector_table_ptr; value is in X
 decode_expression:
         ldy     lp                      ; Peek at next byte in token stream
         lda     (line_ptr),y
         ldy     #XH_VAR                 ; First handler is VAR
         tax                             ; Store it in X for now (sets flags from decoded byte)
-        bmi     @dispatch               ; Handle variable           (1xxx xxxx)
+        bmi     dispatch                ; Handle variable           (1xxx xxxx)
         iny                             ; Advance to next handler
         asl     A                       ; Bit 6 into MSB
         asl     A                       ; Bit 5 into MSB
-        bmi     @dispatch               ; Handle number             (001x xxxx)
+        bmi     dispatch                ; Handle number             (001x xxxx)
         iny
         asl     A                       ; Bit 4 into MSB
-        bmi     @dispatch               ; Handle operator           (0001 xxxx)
+        bmi     dispatch                ; Handle operator           (0001 xxxx)
         iny
         asl     A                       ; Bit 3 into MSB
-        bmi     @dispatch               ; Handle unary operator     (0000 1xxx)
+        bmi     dispatch                ; Handle unary operator     (0000 1xxx)
         inc     lp                      ; Each handler is unique from this point so advance past the byte
         txa                             ; It's in the range 0-7; see if it's zero (TOKEN_NO_VALUE)
-        beq     @done                   ; If zero then done; carry is clear here because we've shifted 0s into it        
-        adc     #(XH_PAREN - TOKEN_PAREN)   ; Generate handler by aligning PAREN handler index with token
-        tay                             ; Transfer into Y for dispatch
-@dispatch:
-        jsr     invoke_indexed_vector_vt    ; Invoke the vector using the existng vector_table_ptr; value is in X
-        jmp     decode_expression
-
-@done:
+        bne     loop_decode_expression  ; If not zero then keep doing stuff; carry is clear here due to shifts
         rts
 
 ; Decodes a number and returns it in AX.
