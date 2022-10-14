@@ -200,13 +200,11 @@ parse_variable:
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
+inc_skip_whitespace:
+        inc     bp
 skip_whitespace:
         ldx     bp                      ; Use X to index buffer
-@next:      
         lda     buffer,x        
-        inx     
         cmp     #' '        
-        beq     @next       
-        dex                             ; It wasn't whitespace so go back
-        stx     bp                      ; Update read position
+        beq     inc_skip_whitespace       
         rts
