@@ -156,16 +156,14 @@ list_variable:
 
 .assert TOKEN_NO_VALUE = 0, error
 
-list_repeated_variable:
-        jsr     list_variable           ; List one variable
-        jsr     decode_byte             ; Get the next byte
-        beq     @done                   ; If it's TOKEN_NO_VALUE then no more values
+loop_list_repeated_variable:
         lda     #','                    ; Write ',' to output
         jsr     putchar_buffer
-        dec     lp                      ; Back up
-        jmp     list_repeated_variable  ; Continue
-
-@done:
+list_repeated_variable:
+        jsr     list_variable           ; List one variable
+        ldy     lp                      ; Peek next byte
+        lda     (line_ptr),y
+        bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
         rts
 
 ; Adds whitespace to the output if necessary.
