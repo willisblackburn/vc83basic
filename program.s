@@ -131,14 +131,14 @@ find_line:
         lda     (line_ptr),y        
         cmp     E       
         bcc     @next_line              ; Line number high byte is <target; go to next line
-        bne     @return                 ; Return with carry set
+        bne     @done                   ; Return with carry set
         dey                             ; High byte is equal; decrement Y to get low byte of line number
         lda     (line_ptr),y            ; Check the low byte of line number
         cmp     D                       ; Same logic for low byte
         bcc     @next_line     
-        bne     @return                 ; If not the line then reutrn with carry bit set
+        bne     @done                   ; If not the line then reutrn with carry bit set
         clc                             ; If it was the line then return with carry clear
-@return:        
+@done:        
         rts     
 
 ; Advances the current line pointer to the next line. The offset of the next line must already be in the
