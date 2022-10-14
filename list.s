@@ -194,13 +194,14 @@ list_xh_operator:
         jsr     decode_operator
         tay         
         ldax    #operator_name_table
-        bne     list_element_add_whitespace ; Uncondtional
+        jmp     list_element
 
 list_xh_unary_operator:
+        jsr     add_whitespace
         jsr     decode_unary_operator
         tay         
         ldax    #unary_operator_name_table
-        bne     list_element_add_whitespace ; Uncondtional
+        jmp     list_element
 
 list_xh_paren:
         jsr     add_whitespace
@@ -209,9 +210,6 @@ list_xh_paren:
         jsr     decode_expression
         lda     #')'
         jmp     putchar_buffer
-
-list_element_add_whitespace:
-        jsr     list_element
 
 ; Fall through
 
