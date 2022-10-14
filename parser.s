@@ -262,11 +262,11 @@ parse_argument_separator:
 ; bp = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
-inc_skip_whitespace:
+loop_skip_whitespace:
         inc     bp
 skip_whitespace:
         ldx     bp                      ; Use X to index buffer
         lda     buffer,x        
         cmp     #' '        
-        beq     inc_skip_whitespace       
+        beq     loop_skip_whitespace       
         rts
