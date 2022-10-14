@@ -69,14 +69,11 @@ static void xh_unary_operator(void) {
     }
 }
 
-static int lparen_count, rparen_count;
+static int paren_count;
 
-static void xh_lparen(void) {
-    ++lparen_count;
-}
-
-static void xh_rparen(void) {
-    ++rparen_count;
+static void xh_paren(void) {
+    ++paren_count;
+    decode_expression(line_ptr, lp);
 }
 
 static void test_decode_expression(void) {
@@ -87,11 +84,11 @@ static void test_decode_expression(void) {
         {
             TOKEN_NUM, 0x10, 0x10,          // 4,112
             TOKEN_OP | OP_ADD,        
-            TOKEN_LPAREN,
+            TOKEN_PAREN,
             TOKEN_VAR | 1,                  // X
             TOKEN_OP | OP_DIV,              
             TOKEN_NUM, 0x03, 0x00,          // 3
-            TOKEN_RPAREN,
+            TOKEN_NO_VALUE,
             TOKEN_OP | OP_SUB, 
             TOKEN_UNARY_OP | UNARY_OP_NOT,
             TOKEN_UNARY_OP | UNARY_OP_MINUS,             
@@ -105,8 +102,7 @@ static void test_decode_expression(void) {
         xh_number,
         xh_operator,
         xh_unary_operator,
-        xh_lparen,
-        xh_rparen,
+        xh_paren,
     };
 
     PRINT_TEST_NAME();
@@ -117,8 +113,7 @@ static void test_decode_expression(void) {
     ASSERT_EQ(var_count, 2);
     ASSERT_EQ(op_count, 3);
     ASSERT_EQ(unary_op_count, 2);
-    ASSERT_EQ(lparen_count, 1);
-    ASSERT_EQ(rparen_count, 1);
+    ASSERT_EQ(paren_count, 1);
 }
 
 int main(void) {

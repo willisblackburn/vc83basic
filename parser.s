@@ -230,15 +230,13 @@ parse_parentheses:
         jsr     skip_whitespace         ; Skip whitespace and return the next character
         cmp     #'('                    ; Is is a left paren?
         bne     @error                  ; This is not an expression in parentheses
-        lda     #TOKEN_LPAREN           ; Encode the left paren
+        lda     #TOKEN_PAREN            ; Encode the paren
         jsr     encode_byte
         inc     bp                      ; Skip over the left paren
         jsr     parse_expression        ; Parse the expression in the parentheses
         jsr     skip_whitespace         ; Find the next character, ...
         cmp     #')'                    ; which had better be a right parenthesis
         bne     @error                  ; But it wasn't
-        lda     #TOKEN_RPAREN           ; It was; encode it
-        jsr     encode_byte
         inc     bp                      ; Skip over the close paren
         clc                             ; Clear carry to indicate success
         rts

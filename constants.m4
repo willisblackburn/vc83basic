@@ -13,8 +13,7 @@ def(NT_END,             hex(80))
 comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_LPAREN,       hex(01))
-def(TOKEN_RPAREN,       hex(02))
+def(TOKEN_PAREN,        hex(01))
 def(TOKEN_UNARY_OP,     hex(08)) comment OR with OP_UNARY_*
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
 def(TOKEN_NUM,          hex(20))
@@ -56,8 +55,7 @@ def(XH_VAR,             0)
 def(XH_NUM,             1)
 def(XH_OP,              2)
 def(XH_UNARY_OP,        3)
-def(XH_LPAREN,          4)
-def(XH_RPAREN,          5)
+def(XH_PAREN,           4)
 
 comment Program states
 

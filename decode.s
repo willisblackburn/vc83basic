@@ -13,8 +13,7 @@
 ; vector_table_ptr = the table of vectors for dispatching; must be set up in advance!
 
 .assert TOKEN_NO_VALUE = 0, error
-.assert TOKEN_LPAREN = 1, error
-.assert TOKEN_RPAREN = 2, error
+.assert TOKEN_PAREN = 1, error
 .assert TOKEN_UNARY_OP = $08, error
 .assert TOKEN_OP = $10, error
 .assert TOKEN_NUM = $20, error
@@ -24,7 +23,7 @@
 .assert XH_NUM = 1, error
 .assert XH_OP = 2, error
 .assert XH_UNARY_OP = 3, error
-.assert XH_LPAREN = 4, error
+.assert XH_PAREN = 4, error
  
 decode_expression:
         ldy     lp                      ; Peek at next byte in token stream
@@ -45,7 +44,7 @@ decode_expression:
         inc     lp                      ; Each handler is unique from this point so advance past the byte
         txa                             ; It's in the range 0-7; see if it's zero (TOKEN_NO_VALUE)
         beq     @done                   ; If zero then done; carry is clear here because we've shifted 0s into it        
-        adc     #(XH_LPAREN - TOKEN_LPAREN) ; Generate handler by aligning LPAREN handler index with token
+        adc     #(XH_PAREN - TOKEN_PAREN)   ; Generate handler by aligning PAREN handler index with token
         tay                             ; Transfer into Y for dispatch
 @dispatch:
         jsr     invoke_indexed_vector_vt    ; Invoke the vector using the existng vector_table_ptr; value is in X

@@ -153,8 +153,7 @@ list_vectors:
         .word   list_xh_number          ; XH_NUM
         .word   list_xh_operator        ; XH_OP
         .word   list_xh_unary_operator  ; XH_UNARY_OP
-        .word   list_xh_lparen          ; XH_LPAREN
-        .word   list_xh_rparen          ; XH_RPAREN
+        .word   list_xh_paren           ; XH_PAREN
 
 list_expression:
         mvax    #list_vectors, vector_table_ptr
@@ -203,11 +202,10 @@ list_xh_unary_operator:
         ldax    #unary_operator_name_table
         bne     list_element_add_whitespace ; Uncondtional
 
-list_xh_lparen:
+list_xh_paren:
         lda     #'('
-        jmp     putchar_buffer
-
-list_xh_rparen:
+        jsr     putchar_buffer
+        jsr     decode_expression
         lda     #')'
         jmp     putchar_buffer
 
