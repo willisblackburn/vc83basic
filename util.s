@@ -51,13 +51,13 @@ copy_bytes_de:
 
 @remaining:
         cpy     D                       ; Compare Y with number of remaining bytes
-        beq     @return                 ; If equal then we're done
+        beq     @done                   ; If equal then we're done
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y               
         iny 
         jmp     @remaining
 
-@return:
+@done:
         rts
 
 ; Copy bytes backwards from a source address to a destination address.
