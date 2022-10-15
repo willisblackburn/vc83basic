@@ -156,7 +156,7 @@ list_vectors:
         .word   list_paren              ; XH_PAREN
 
 list_expression:
-        mvax    #list_vectors, vector_table_ptr
+        ldax    #list_vectors
         jmp     decode_expression
 
 list_variable:
@@ -197,6 +197,7 @@ list_paren:
         jsr     add_whitespace
         lda     #'('
         jsr     putchar_buffer
+        ldax    #list_vectors
         jsr     decode_expression
         lda     #')'
         jmp     putchar_buffer
