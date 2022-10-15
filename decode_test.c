@@ -30,6 +30,8 @@ static void test_decode_number(void) {
     ASSERT_EQ(value, 769);
 }
 
+extern void* decode_xh_vectors[];
+
 static int num_count;
 
 static void xh_number(void) {
@@ -73,8 +75,16 @@ static int paren_count;
 
 static void xh_paren(void) {
     ++paren_count;
-    decode_expression(line_ptr, lp);
+    decode_expression(decode_xh_vectors, line_ptr, lp);
 }
+
+void* decode_xh_vectors[] = {
+    xh_variable,
+    xh_number,
+    xh_operator,
+    xh_unary_operator,
+    xh_paren,
+};
 
 static void test_decode_expression(void) {
 
@@ -97,18 +107,9 @@ static void test_decode_expression(void) {
         }
     };
 
-    void* decode_xh_vectors[] = {
-        xh_variable,
-        xh_number,
-        xh_operator,
-        xh_unary_operator,
-        xh_paren,
-    };
-
     PRINT_TEST_NAME();
 
-    vector_table_ptr = decode_xh_vectors;
-    decode_expression(&line, offsetof(Line, data));
+    decode_expression(decode_xh_vectors, &line, offsetof(Line, data));
     ASSERT_EQ(num_count, 2);
     ASSERT_EQ(var_count, 2);
     ASSERT_EQ(op_count, 3);

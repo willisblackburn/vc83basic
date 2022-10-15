@@ -67,6 +67,7 @@ _decode_expression:
         sta     lp
         jsr     popax
         stax    line_ptr
+        jsr     popax
         jmp     decode_expression
 
 _decode_number:

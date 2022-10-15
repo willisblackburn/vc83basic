@@ -69,7 +69,7 @@ extern char reg_y;
 // Prototypes for C wrapper functions
 
 // decode.s
-void decode_expression(const void* line_ptr, char lp);
+void decode_expression(void** vector_table_ptr, const void* line_ptr, char lp);
 int decode_number(const void* line_ptr, char lp);
 char decode_variable(void);
 char decode_operator(void);
