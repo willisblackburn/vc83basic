@@ -102,8 +102,6 @@ void initialize_program(void);
 void reset_line_ptr(void);
 int find_line(int line_number);
 void advance_line_ptr(void);
-void set_line_ptr(void* line_ptr);
-void set_line_variables(void);
 int insert_or_update_line(void);
 int expand(void* ptr, size_t size);
 int compact(void* ptr, size_t size);

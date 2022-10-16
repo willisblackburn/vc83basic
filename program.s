@@ -112,8 +112,8 @@ reset_program_state:
 ; BC SAFE, DE SAFE
 
 reset_line_ptr:
-        ldax    program_ptr
-        jmp     set_line_ptr
+        mvax    program_ptr, line_ptr
+        rts
 
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
@@ -145,31 +145,22 @@ find_line:
 @done:        
         rts     
 
-; Advances the current line pointer to the next line. The offset of the next line must already be in the
-; next_line_offset variable (unless using the advance_line_ptr_a entry point, which takes the line length from A).
+; Advances the current line pointer to the next line.
+; The advance_line_ptr_a entry point takes the line length from A instead of the next_line_offset field.
 ; line_ptr = current line (updated)
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
-        lda     next_line_offset        ; Must already have been set by call to set_line_variables!
+        ldy     #Line::next_line_offset
+        lda     (line_ptr),y            ; Get next line offset into A
 advance_line_ptr_a:
         clc
         adc     line_ptr                ; Add line length to low byte of line_ptr
         ldx     line_ptr+1              ; High byte into X
-        bcc     set_line_ptr            ; Don't need to add the carry to X
+        bcc     @skip                   ; Don't need to add the carry to X
         inx                             ; Add the carry to X
-
-; Fall through
-
-; Sets line_ptr from AX and other fields from the new line.
-; AX = the new value for line_ptr
-
-set_line_ptr:
-        stax    line_ptr
-set_line_variables:
-        ldy     #Line::next_line_offset
-        lda     (line_ptr),y
-        sta     next_line_offset
+@skip:
+        stax    line_ptr                ; Set line_ptr
         rts
 
 ; Updates the program based on the information in line_buffer.
@@ -181,10 +172,11 @@ insert_or_update_line:
         jsr     find_line               ; Go find it
         bcs     @insert                 ; Not found, just insert the new line
 
-; line_ptr points to a line that we have to remove and next_line_offset is its length.
+; line_ptr points to a line that we have to remove.
 
-        lda     next_line_offset        ; Save the next line offset on the stack; it will be the compact length
-        pha 
+        ldy     #Line::next_line_offset
+        lda     (line_ptr),y            ; Get next line offset into A
+        pha                             ; Save the next line offset on the stack; it will be the compact length
         jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
         pla                             ; Get the length of the line back off the stack
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
