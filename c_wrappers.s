@@ -91,14 +91,6 @@ _advance_line_ptr:
 .export _advance_line_ptr
         jmp     advance_line_ptr
 
-_set_line_ptr:
-.export _set_line_ptr
-        jmp     set_line_ptr            ; New line_ptr value is already in AX
-
-_set_line_variables:
-.export _set_line_variables
-        jmp     set_line_variables
-
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line

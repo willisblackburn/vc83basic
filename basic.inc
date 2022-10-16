@@ -37,7 +37,6 @@
 .global reset_line_ptr
 .global find_line
 .global advance_line_ptr, advance_line_ptr_a
-.global set_line_ptr, set_line_variables
 .global insert_or_update_line
 .global set_variable_value_ptr
 .global set_variable_value
