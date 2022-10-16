@@ -9,35 +9,35 @@ statement_name_table:
         .byte   0
 
 operator_name_table:
-        .byte '+' | NT_END
-        .byte '-' | NT_END
-        .byte '*' | NT_END
-        .byte '/' | NT_END
-        .byte '^' | NT_END
-        .byte '&' | NT_END
-        .byte '=' | NT_END
-        .byte '<', '>' | NT_END
-        .byte '<', '=' | NT_END
-        .byte '<' | NT_END
-        .byte '>', '=' | NT_END
-        .byte '>' | NT_END
-        .byte 'A', 'N', 'D' | NT_END
-        .byte 'O', 'R' | NT_END
-        .byte 0
+        .byte   '+' | NT_END
+        .byte   '-' | NT_END
+        .byte   '*' | NT_END
+        .byte   '/' | NT_END
+        .byte   '^' | NT_END
+        .byte   '&' | NT_END
+        .byte   '=' | NT_END
+        .byte   '<', '>' | NT_END
+        .byte   '<', '=' | NT_END
+        .byte   '<' | NT_END
+        .byte   '>', '=' | NT_END
+        .byte   '>' | NT_END
+        .byte   'A', 'N', 'D' | NT_END
+        .byte   'O', 'R' | NT_END
+        .byte   0
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
 
 operator_precedence_table:
-        .byte PR_ADD            ; +, -
-        .byte PR_MUL            ; *, /
-        .byte PR_POW            ; ^, &
-        .byte PR_RELATIONAL     ; =, <>
-        .byte PR_RELATIONAL     ; <=, <
-        .byte PR_RELATIONAL     ; >=, >
-        .byte PR_LOGICAL        ; AND, OR
+        .byte   PR_ADD          ; +, -
+        .byte   PR_MUL          ; *, /
+        .byte   PR_POW          ; ^, &
+        .byte   PR_RELATIONAL   ; =, <>
+        .byte   PR_RELATIONAL   ; <=, <
+        .byte   PR_RELATIONAL   ; >=, >
+        .byte   PR_LOGICAL      ; AND, OR
 
 unary_operator_name_table:
-        .byte '-' | NT_END
-        .byte 'N', 'O', 'T' | NT_END
-        .byte 0
+        .byte   '-' | NT_END
+        .byte   'N', 'O', 'T' | NT_END
+        .byte   0
