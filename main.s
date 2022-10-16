@@ -36,7 +36,7 @@ main:
         mvax    #line_buffer, line_ptr  ; Set line_ptr to point to line_buffer
         jsr     run_line
         bcs     @error
-        jmp     @wait_for_input
+        bcc     @ready
 
 @error:
         jsr     print_error
@@ -61,6 +61,7 @@ print_start:
         jmp     newline
 
 print_ready:
+        jsr     newline
         ldax    #ready_message          ; Pass address of message in AX
         ldy     #ready_length
         jsr     write
