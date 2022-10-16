@@ -26,7 +26,6 @@
 .globalzp variable_count
 .globalzp variable_value_ptr
 .globalzp lp
-.globalzp next_line_offset
 
 ; Data
 
@@ -82,7 +81,6 @@
 .global reset_line_ptr
 .global find_line
 .global advance_line_ptr, advance_line_ptr_a
-.global set_line_ptr, set_line_variables
 .global insert_or_update_line
 .global expand, expand_a, compact, compact_a
 .global calculate_bytes_to_move
