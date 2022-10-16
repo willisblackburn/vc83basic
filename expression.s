@@ -19,18 +19,18 @@ value_stack: .res VALUE_STACK_DEPTH * 2
 
 .code
 
+evaluate_expression:
+        mvax    #evaluate_vectors, vector_table_ptr
+        jsr     decode_expression
+        lda     #0                      ; Process any operators not yet processed
+        jmp     process_operators
+
 evaluate_vectors:
         .word   evaluate_variable           ; XH_VAR
         .word   evaluate_number             ; XH_NUM
         .word   evaluate_operator           ; XH_OP
         .word   evaluate_unary_operator     ; XH_UNARY_OP
         .word   evaluate_paren              ; XH_PAREN
-
-evaluate_expression:
-        mvax    #evaluate_vectors, vector_table_ptr
-        jsr     decode_expression
-        lda     #0                      ; Process any operators not yet processed
-        jmp     process_operators
 
 evaluate_variable:
         jsr     decode_variable         ; Returns variable index in 0
