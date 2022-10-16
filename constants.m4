@@ -59,7 +59,7 @@ def(XH_PAREN,           4)
 
 comment Expression priorty levels
 
-def(PR_UNARY_OP,      hex(E0))
+def(PR_UNARY_OP,      hex(F0))
 def(PR_POW,           hex(C0))
 def(PR_MUL,           hex(A0))
 def(PR_ADD,           hex(80))

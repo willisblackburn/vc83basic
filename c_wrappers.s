@@ -116,11 +116,13 @@ _encode_byte:
 
 _evaluate_expression:
 .export _evaluate_expression
-        jmp     evaluate_expression
+        jsr     evaluate_expression
+        jmp     return_carry
 
 _push_value:
 .export _push_value
-        jmp     push_value
+        jsr     push_value
+        jmp     return_carry
 
 _pop_value:
 .export _pop_value

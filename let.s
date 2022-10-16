@@ -10,4 +10,6 @@ exec_let:
         pla                             ; Get the variable back
         jsr     set_variable_value_ptr  ; Calculate address of variable
         jsr     pop_value               ; Get the evaluated value
-        jmp     set_variable_value      ; And save it
+        jsr     set_variable_value      ; And save it
+        clc                             ; Signal success
+        rts

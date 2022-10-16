@@ -94,23 +94,14 @@ process_operators:
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
         stx     osp                     ; Save this as new operator stack position
-        tay                             ; Move value into Y so we can recover it after test
-        eor     #$E0                    ; Check for a unary operator
-        beq     @unary
-        tya                             
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
         jsr     invoke_indexed_vector   ; Invoke the vector
         jmp     @next
 
-@unary:
-        tay                             ; Store unary operator in Y
-        ldax    unary_operator_vectors
-        jsr     invoke_indexed_vector
-        jmp     @next
-
 @done:
+        clc                             ; Signal success
         rts
 
 operator_vectors:
@@ -128,8 +119,8 @@ operator_vectors:
         .word   op_gt
         .word   op_and
         .word   op_or
-
-unary_operator_vectors:
+        .word   0
+        .word   0
         .word   unary_op_minus
         .word   unary_op_not
 
@@ -149,16 +140,15 @@ op_add:
 op_sub:
         jsr     pop_value               ; Get value
         stax    BC                      ; Save in BC
-        sec
         jsr     pop_value               ; Get second value
 op_sub_bc_from_ax:
-        tay                             ; Move low byte into Y to make room for high byte
-        txa                             ; Subtract high byte first
         sec
+        sbc     B                       ; Subtract low byte
+        tay                             ; Move low byte into Y to make room for high byte
+        txa                             ; Subtract high byte
         sbc     C
         tax                             ; Result of high byte back into X
-        tya                             ; Subtract high byte
-        sbc     B
+        tya                             ; Low byte back into A
         jmp     push_value
 
 unary_op_minus:
@@ -264,7 +254,6 @@ pop_value:
         tay                             ; Transfer into Y to use as index
         lda     value_stack,y           ; Load low byte into A
         ldx     value_stack+1,y         ; Load high byte into X
-@empty:
         rts
 
 op_and:
