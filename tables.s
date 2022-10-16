@@ -9,23 +9,23 @@ statement_name_table:
         .byte   0
 
 operator_name_table:
-        .byte '+' | NT_END
-        .byte '-' | NT_END
-        .byte '*' | NT_END
-        .byte '/' | NT_END
-        .byte '^' | NT_END
-        .byte '&' | NT_END
-        .byte '=' | NT_END
-        .byte '<', '>' | NT_END
-        .byte '<', '=' | NT_END
-        .byte '<' | NT_END
-        .byte '>', '=' | NT_END
-        .byte '>' | NT_END
-        .byte 'A', 'N', 'D' | NT_END
-        .byte 'O', 'R' | NT_END
-        .byte 0
+        .byte   '+' | NT_END
+        .byte   '-' | NT_END
+        .byte   '*' | NT_END
+        .byte   '/' | NT_END
+        .byte   '^' | NT_END
+        .byte   '&' | NT_END
+        .byte   '=' | NT_END
+        .byte   '<', '>' | NT_END
+        .byte   '<', '=' | NT_END
+        .byte   '<' | NT_END
+        .byte   '>', '=' | NT_END
+        .byte   '>' | NT_END
+        .byte   'A', 'N', 'D' | NT_END
+        .byte   'O', 'R' | NT_END
+        .byte   0
 
 unary_operator_name_table:
-        .byte '-' | NT_END
-        .byte 'N', 'O', 'T' | NT_END
-        .byte 0
+        .byte   '-' | NT_END
+        .byte   'N', 'O', 'T' | NT_END
+        .byte   0
