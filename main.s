@@ -112,6 +112,7 @@ print_number:
         rts
 
 print_ready:
+        jsr     newline
         ldax    #ready_message          ; Pass address of message in AX
         ldy     #ready_length
         jsr     write
