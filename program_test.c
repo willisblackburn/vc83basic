@@ -41,11 +41,9 @@ static void test_advance_line_ptr(void) {
     // after the BSS.
     initialize_program();
     line_ptr->next_line_offset = 10;
-    set_line_variables();
     advance_line_ptr();
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10);
     line_ptr->next_line_offset = 250;
-    set_line_variables();
     advance_line_ptr();
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
@@ -65,20 +63,16 @@ static void test_find_line(void) {
     line_ptr->number = 10;
 
     // Since we know advance_line_ptr works, we can use it to move to the next space in memory.
-    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 250;
     line_ptr->number = 256;
-    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 10;
     line_ptr->number = 10000;
-    set_line_variables();
     advance_line_ptr();
     line_ptr->next_line_offset = 0;
     line_ptr->number = -1;
     // Patch up the program end.
-    set_line_variables();
     advance_line_ptr();
     variable_name_table_ptr = (char*)line_ptr;
     value_table_ptr = line_ptr;
