@@ -57,16 +57,16 @@ def(XH_OP,              2)
 def(XH_UNARY_OP,        3)
 def(XH_PAREN,           4)
 
-comment Expression priorty levels
+comment Expression precedence levels
 
-def(PR_UNARY_OP,      hex(F0))
-def(PR_POW,           hex(C0))
-def(PR_MUL,           hex(A0))
-def(PR_ADD,           hex(80))
-def(PR_RELATIONAL,    hex(60))
-def(PR_LOGICAL,       hex(40))
-def(PR_CLOSE_PAREN,   hex(20))
-def(PR_OPEN_PAREN,    hex(00))
+def(PR_UNARY_OP,        hex(F0))
+def(PR_POW,             hex(C0))
+def(PR_MUL,             hex(A0))
+def(PR_ADD,             hex(80))
+def(PR_RELATIONAL,      hex(60))
+def(PR_LOGICAL,         hex(40))
+def(PR_CLOSE_PAREN,     hex(20))
+def(PR_OPEN_PAREN,      hex(00))
 
 comment Program states
 

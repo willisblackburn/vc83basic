@@ -63,7 +63,7 @@ evaluate_operator:
 
 evaluate_unary_operator:
         jsr     decode_unary_operator   ; Get the unary operator
-        ora     #PR_UNARY_OP            ; Unary ops have highest priority and are right-assoc so don't do anything
+        ora     #PR_UNARY_OP            ; Unary ops have highest precedence and are right-assoc so don't do anything
         jmp     push_operator           ; Except push the operator onto the stack
 
 evaluate_paren:
@@ -85,7 +85,7 @@ push_operator:
 ; Process operators with a precedence >= the precedence passed in A.
 ; For each such operator, first check if it's a unary operator, then use a jump table to handle other operators.
 ; The open and close parens will never be handled through the jump table: close paren is never actually put on the
-; operator stack, and open parens have such a low priority that they will never be evaluated.
+; operator stack, and open parens have such a low precedence that they will never be evaluated.
 ; A = minimum precedence
 
 process_operators:
