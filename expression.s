@@ -20,7 +20,7 @@ value_stack: .res VALUE_STACK_DEPTH * 2
 .code
 
 evaluate_expression:
-        mvax    #evaluate_vectors, vector_table_ptr
+        ldax    #evaluate_vectors
         jsr     decode_expression
         lda     #0                      ; Process any operators not yet processed
         jmp     process_operators
@@ -147,8 +147,26 @@ op_add:
         jmp     push_value              ; Save on the value stack
 
 op_sub:
-        jsr     unary_op_minus
-        jmp     op_add
+        jsr     pop_value               ; Get value
+        stax    BC                      ; Save in BC
+        sec
+        jsr     pop_value               ; Get second value
+op_sub_bc_from_ax:
+        tay                             ; Move low byte into Y to make room for high byte
+        txa                             ; Subtract high byte first
+        sec
+        sbc     C
+        tax                             ; Result of high byte back into X
+        tya                             ; Subtract high byte
+        sbc     B
+        jmp     push_value
+
+unary_op_minus:
+        jsr     pop_value               ; Get value
+        stax    BC                      ; Save in BC
+        lda     #0                      ; Put zero into AX
+        tax
+        beq     op_sub_bc_from_ax
 
 op_mul:
 op_div:
@@ -157,85 +175,71 @@ op_concat:
         jmp     op_add
 
 op_eq:
-        jsr     pop_value
-        stax    BC
-        jsr     pop_value
-        cmp     B
-        bne     @not_equal
-        cpx     C
-        bne     @not_equal
-        ldax    #1
-        jmp     push_value
-
-@not_equal:
-        ldax    #0
-        jmp     push_value
+        jsr     compare_values
+        bcc     push_value_0            ; A < B
+        bne     push_value_0            ; A <> B
+        beq     push_value_1            ; A = B
 
 op_ne:
-        jsr     op_eq
-        jmp     unary_op_not
+        jsr     compare_values
+        bcc     push_value_1            ; A < B
+        bne     push_value_1            ; A <> B
+        beq     push_value_0            ; A = B
 
 op_le:
+        jsr     compare_values
+        bcc     push_value_1            ; A < B
+        bne     push_value_0            ; A <> B
+        beq     push_value_1            ; A = B
+
 op_lt:
+        jsr     compare_values
+        bcc     push_value_1            ; A < B
+        bcs     push_value_0            ; A <> B or A = B
+
 op_ge:
+        jsr     compare_values
+        bcc     push_value_0            ; A < B
+        bcs     push_value_1            ; A <> B or A = B
+
 op_gt:
-        ldax    #1
-        jmp     push_value
+        jsr     compare_values
+        bcc     push_value_0            ; A < B
+        bne     push_value_1            ; A <> B
+        beq     push_value_0            ; A = B
 
-op_and:
-        jsr     pop_value
-        stax    BC
-        jsr     pop_value
-        and     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        and     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
-        jmp     push_value
+; Compares two values from the stack returns flags based on the comparison.
+; On return, C ("not borrow") will be or clear if the second value is greater than the first (B > A or A < B)
+; or set if the second value is less than or equal to the first (B <= A or A >= B).
+; If carry is set, then Z will be also be set if the values are equal or clear if they are not.
 
-op_or:
-        jsr     pop_value
-        stax    BC
-        jsr     pop_value
-        ora     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        ora     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
-        jmp     push_value
-
-unary_op_minus:
+compare_values:
         jsr     pop_value               ; Get value
         stax    BC                      ; Save in BC
-        sec
-        lda     #0                      ; Subtract the value from 0 (TODO: merge with op_sub)
-        sbc     B
-        sta     B
-        lda     #0
-        sbc     C
-        tax
-        lda     B
-        jmp     push_value
-
-unary_op_not:
-        jsr     pop_value               ; Get value
-        stx     B
-        ldx     #0                      ; No matter what X will be zero in the result
-        ora     B                       ; OR the low and high bytes together
-        beq     @false                  ; Value was false (zero)
+        jsr     pop_value        
+        tay                             ; Move low byte into Y to make room for high byte
         txa
-        jmp     push_value
-
-@false:
-        lda     #1
-        jmp     push_value
+        cmp     C                       ; Subtract high byte
+        bcc     @done                   ; Second value is greater
+        tya                             ; Get low byte back
+        cmp     B                       ; Subtract low byte
+@done:
+        rts
 
 ; Push the value in AX onto the value stack.
 ; AX = the value to push
 ; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
 ; DE SAFE
+
+push_value_0:
+        lda     #0
+        beq     push_value_a
+
+push_value_1:
+        lda     #1
+
+push_value_a:
+        ldx     #0
 
 push_value:
         stax    BC                      ; Store value in BC while we calculate value stack offset
@@ -262,3 +266,35 @@ pop_value:
         ldx     value_stack+1,y         ; Load high byte into X
 @empty:
         rts
+
+op_and:
+        jsr     pop_value
+        stax    BC
+        jsr     pop_value
+        and     B                       ; OR low byte
+        tay                             ; Park in Y
+        txa                             ; Get high byte
+        and     C                       ; OR high byte
+        tax                             ; Back into X
+        tya                             ; Recover low byte from Y
+        jmp     push_value
+
+op_or:
+        jsr     pop_value
+        stax    BC
+        jsr     pop_value
+        ora     B                       ; OR low byte
+        tay                             ; Park in Y
+        txa                             ; Get high byte
+        ora     C                       ; OR high byte
+        tax                             ; Back into X
+        tya                             ; Recover low byte from Y
+        jmp     push_value
+
+unary_op_not:
+        jsr     pop_value               ; Get value
+        stx     B
+        clc                             ; Carry will be used to set the result; default is 0
+        ora     B                       ; OR the low and high bytes together
+        bne     push_value_0            ; Value was not zero so we should return 0
+        beq     push_value_1

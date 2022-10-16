@@ -78,6 +78,8 @@ char decode_byte(const void* line_ptr, char lp);
 
 // expression.h
 int evaluate_expression(void);
+void push_value(int value);
+int pop_value(void);
 
 // encode.s
 int encode_number(int number, char lp);

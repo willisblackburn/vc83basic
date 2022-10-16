@@ -112,6 +112,20 @@ _encode_byte:
         jsr     encode_byte
         jmp     return_carry
 
+; expression.s
+
+_evaluate_expression:
+.export _evaluate_expression
+        jmp     evaluate_expression
+
+_push_value:
+.export _push_value
+        jmp     push_value
+
+_pop_value:
+.export _pop_value
+        jmp     pop_value
+
 ; list.s
 
 _list_line:
