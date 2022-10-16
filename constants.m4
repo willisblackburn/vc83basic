@@ -57,9 +57,25 @@ def(XH_OP,              2)
 def(XH_UNARY_OP,        3)
 def(XH_PAREN,           4)
 
+comment Expression priorty levels
+
+def(PR_UNARY_OP,      hex(E0))
+def(PR_POW,           hex(C0))
+def(PR_MUL,           hex(A0))
+def(PR_ADD,           hex(80))
+def(PR_RELATIONAL,    hex(60))
+def(PR_LOGICAL,       hex(40))
+def(PR_CLOSE_PAREN,   hex(20))
+def(PR_OPEN_PAREN,    hex(00))
+
 comment Program states
 
 def(PROGRAM_STATE_INITIALIZED,  hex(00))    comment Variables initalized to 0
 def(PROGRAM_STATE_RUNNING,      hex(01))    comment STOP command stops program; END ends
 def(PROGRAM_STATE_STOPPED,      hex(02))    comment CONT command continues; CLR resets
 def(PROGRAM_STATE_ENDED,        hex(03))    comment Program has ended; CONT doen't work
+
+comment Other constants
+
+def(OP_STACK_DEPTH, 16)
+def(VALUE_STACK_DEPTH, 16)

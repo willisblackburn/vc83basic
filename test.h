@@ -76,6 +76,9 @@ char decode_operator(void);
 char decode_unary_operator(void);
 char decode_byte(const void* line_ptr, char lp);
 
+// expression.h
+int evaluate_expression(void);
+
 // encode.s
 int encode_number(int number, char lp);
 int encode_byte(char byte_value, char lp);

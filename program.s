@@ -89,6 +89,9 @@ initialize_program:
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
 
+; We treat this as zero.
+.assert PROGRAM_STATE_INITIALIZED = 0, error
+
 reset_program_state:
         mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
         lda     variable_count          ; Amount to clear is variable_count * 2
@@ -104,6 +107,8 @@ reset_program_state:
         sta     heap_ptr+1
         sta     free_ptr+1
         mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
+        sta     osp                     ; Initialize expression stack positions to 0
+        sta     vsp
 
 ; Fall through
 

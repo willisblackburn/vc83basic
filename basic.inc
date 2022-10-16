@@ -29,6 +29,8 @@
 .globalzp program_state
 .globalzp next_line_offset
 .globalzp argument_count
+.globalzp osp
+.globalzp vsp
 
 ; Data
 
@@ -52,6 +54,10 @@
 .global encode_unary_operator
 .global encode_no_value
 .global encode_byte
+
+; expression.s
+.global evaluate_expression
+.global push_value, pop_value
 
 ; input.s
 .global exec_input
@@ -107,11 +113,11 @@
 .global exec_run
 .global run_line
 .global invoke_statement_handler
-.global get_argument_value
 
 ; tables.s
 .global statement_name_table
 .global operator_name_table
+.global operator_precedence_table
 .global unary_operator_name_table
 
 ; util.s

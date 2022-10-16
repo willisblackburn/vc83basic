@@ -5,6 +5,9 @@
 
 exec_let:
         jsr     decode_variable         ; Read the variable
-        jsr     set_variable_value_ptr  ; Address of variable data in AX
-        jsr     get_argument_value      ; Value is in AX
-        jmp     set_variable_value
+        pha                             ; Remember it while we figure out the value to assign to it
+        jsr     evaluate_expression     ; Leaves the result on the stack
+        pla                             ; Get the variable back
+        jsr     set_variable_value_ptr  ; Calculate address of variable
+        jsr     pop_value               ; Get the evaluated value
+        jmp     set_variable_value      ; And save it
