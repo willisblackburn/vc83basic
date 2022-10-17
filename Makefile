@@ -3,6 +3,7 @@ TARGETS = sim6502 apple2
 TEST_TARGET = sim6502
 
 COMMON_SOURCES = \
+	control.s \
 	decode.s \
 	encode.s \
 	expression.s \
@@ -18,7 +19,9 @@ COMMON_SOURCES = \
 	util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
-TESTS = decode_test \
+TESTS = \
+	control_test \
+	decode_test \
 	encode_test \
 	expression_test \
 	list_test \

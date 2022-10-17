@@ -70,8 +70,8 @@ initialize_program:
         dey     
         lda     #Line::data                 ; This is the offset of the next line if this line has no data
         sta     (line_ptr),y                ; Save as next line offset
-        jsr     advance_line_ptr_a          ; Add it to line_ptr; line_ptr is now invalid but that's okay
-        mvax    line_ptr, variable_name_table_ptr   ; Invalid line_ptr is the start of variable name table
+        jsr     get_line_ptr_plus_a         ; Add it to line_ptr
+        stax    variable_name_table_ptr     ; Returned value is the start of variable name table
         clc                                 ; Add 1 to variable_name_table_ptr to get value_table_ptr
         adc     #1
         sta     value_table_ptr
@@ -110,7 +110,8 @@ reset_program_state:
         sta     osp                     ; Initialize expression stack positions to 0
         sta     vsp
 
-; Fall through
+; Fall through; setting line_ptr is redundant if we started at intialize_program but important if we
+; started at reset_program_state.
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
@@ -151,22 +152,30 @@ find_line:
         rts     
 
 ; Advances the current line pointer to the next line.
-; The advance_line_ptr_a entry point takes the line length from A instead of the next_line_offset field.
 ; line_ptr = current line (updated)
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
+        jsr     get_next_line_ptr       ; Get the next line pointer
+        stax    line_ptr                ; Store in line_ptr
+        rts
+
+; Calculates the address of the next line and returns it in AX.
+; The get_line_ptr_plus_a entry point adds the value in A to line_ptr instead of the current line length.
+; line_ptr = current line
+; BC SAFE, DE SAFE
+
+get_next_line_ptr:
         ldy     #Line::next_line_offset
         lda     (line_ptr),y            ; Get next line offset into A
-advance_line_ptr_a:
+get_line_ptr_plus_a:
         clc
         adc     line_ptr                ; Add line length to low byte of line_ptr
         ldx     line_ptr+1              ; High byte into X
         bcc     @skip                   ; Don't need to add the carry to X
         inx                             ; Add the carry to X
 @skip:
-        stax    line_ptr                ; Set line_ptr
-        rts
+        rts        
 
 ; Updates the program based on the information in line_buffer.
 ; If the line number in line_buffer is in the program, remove it.
@@ -182,7 +191,7 @@ insert_or_update_line:
         ldy     #Line::next_line_offset
         lda     (line_ptr),y            ; Get next line offset into A
         pha                             ; Save the next line offset on the stack; it will be the compact length
-        jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
+        jsr     advance_line_ptr        ; Advance line_ptr to next line
         pla                             ; Get the length of the line back off the stack
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
         jsr     compact_a
