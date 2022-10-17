@@ -18,7 +18,8 @@ COMMON_SOURCES = \
 	util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
-TESTS = decode_test \
+TESTS = \
+	decode_test \
 	encode_test \
 	expression_test \
 	list_test \
