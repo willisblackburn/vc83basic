@@ -1,4 +1,4 @@
-TARGETS = sim6502 apple2
+TARGETS = sim6502 apple2 atari
 
 TEST_TARGET = sim6502
 
