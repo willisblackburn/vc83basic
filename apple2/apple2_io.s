@@ -10,7 +10,8 @@ getchar = KEYIN
 newline = CROUT
 
 readline:
-        jsr     GETLNNOPMPT
+        mva     #$80, PROMPT
+        jsr     GETLN
         ldx     #$FF                    ; Go looking for the "RETURN" character
 @next:      
         inx     
