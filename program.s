@@ -140,7 +140,7 @@ find_line:
         lda     (line_ptr),y            ; Check the low byte of line number
         cmp     D                       ; Same logic for low byte
         bcc     @next_line     
-        bne     @done                   ; If not the line then reutrn with carry bit set
+        bne     @done                   ; If not the line then return with carry bit set
         clc                             ; If it was the line then return with carry clear
 @done:        
         rts     

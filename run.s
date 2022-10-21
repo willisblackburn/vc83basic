@@ -9,7 +9,6 @@ exec_run:
         cmp     #PROGRAM_STATE_RUNNING  ; Don't re-run if we're already running
         beq     @done                   ; Carry will be set on equal
         jsr     reset_program_state     ; Clear the variable name table
-        jsr     reset_line_ptr          ; Reset line_ptr to the start of the program
         mva     #PROGRAM_STATE_RUNNING, program_state
 @run_one_line:
         ldy     #Line::number+1         ; Position of line number high byte
