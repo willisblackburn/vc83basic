@@ -90,8 +90,8 @@ static void test_find_line(void) {
 
     // Test finding a line that occurs earlier in the program.
     err = find_line(10000);
-    ASSERT_EQ(line_ptr->number, 10000);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(line_ptr->number, 10000);
     err = find_line(10);
     ASSERT_NE(err, 1);
     ASSERT_EQ(line_ptr->number, 10);
