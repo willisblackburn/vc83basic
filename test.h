@@ -37,6 +37,8 @@ extern Line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern Line* line_ptr;
 #pragma zpsym ("line_ptr")
+extern Line* next_line_ptr;
+#pragma zpsym ("next_line_ptr")
 extern char* variable_name_table_ptr;
 #pragma zpsym ("variable_name_table_ptr")
 extern void* value_table_ptr;
@@ -108,9 +110,9 @@ int parse_argument_separator(char bp);
 // program.s
 void initialize_target(void);
 void initialize_program(void);
-void reset_line_ptr(void);
+void reset_next_line_ptr(void);
 int find_line(int line_number);
-void advance_line_ptr(void);
+void advance_next_line_ptr(void);
 int insert_or_update_line(void);
 int expand(void* ptr, size_t size);
 int compact(void* ptr, size_t size);

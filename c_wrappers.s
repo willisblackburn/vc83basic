@@ -24,6 +24,7 @@
 
 .export _program_ptr = program_ptr
 .export _line_ptr = line_ptr
+.export _next_line_ptr = next_line_ptr
 .export _variable_name_table_ptr = variable_name_table_ptr
 .export _value_table_ptr = value_table_ptr
 .export _heap_ptr = heap_ptr
@@ -247,18 +248,18 @@ _initialize_program:
 .export _initialize_program
         jmp     initialize_program
 
-_reset_line_ptr:
-.export _reset_line_ptr
-        jmp     reset_line_ptr
+_reset_next_line_ptr:
+.export _reset_next_line_ptr
+        jmp     reset_next_line_ptr
 
 _find_line:
 .export _find_line
         jsr     find_line
         jmp     return_carry
 
-_advance_line_ptr:
-.export _advance_line_ptr
-        jmp     advance_line_ptr
+_advance_next_line_ptr:
+.export _advance_next_line_ptr
+        jmp     advance_next_line_ptr
 
 _insert_or_update_line:
 .export _insert_or_update_line

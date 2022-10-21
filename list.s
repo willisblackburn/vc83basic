@@ -12,18 +12,21 @@
 
 exec_list:
         ldphaa  line_ptr
-        jsr     reset_line_ptr
+        ldphaa  next_line_ptr
+        jsr     reset_next_line_ptr
 @list_one_line:
+        mvaa    next_line_ptr, line_ptr
+        jsr     advance_next_line_ptr
         jsr     list_line
         bcs     @done
         ldax    #buffer
         ldy     bp                      ; bp will be the amount of data written to the buffer
         jsr     write
         jsr     newline
-        jsr     advance_line_ptr
         jmp     @list_one_line
 
 @done:
+        plstaa  next_line_ptr
         plstaa  line_ptr
         clc                             ; LIST always succeeds
         rts

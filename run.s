@@ -1,14 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; The value that line_ptr should take after we finish executing the current line.
-; May be modified by control statements like GOTO, GOSUB, RETURN, NEXT, etc.
-next_line_ptr: .res 2
-
-.code
-
 ; RUN statement:
 ; Executes the program.
 
@@ -19,14 +11,13 @@ exec_run:
         jsr     reset_program_state     ; Clear the variable name table
         mva     #PROGRAM_STATE_RUNNING, program_state
 @run_one_line:
+        mvax    next_line_ptr, line_ptr
+        jsr     advance_next_line_ptr
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
         bmi     @program_end            ; If MSB of line number is set, we're at end of program
-        jsr     get_next_line_ptr       ; Calculate and save the next line_ptr value
-        stax    next_line_ptr           
         jsr     run_line
         bcs     @done
-        mvax    next_line_ptr, line_ptr ; Resume processing at the previously-saved next line number
         jmp     @run_one_line
 
 @program_end:

@@ -13,6 +13,10 @@ program_ptr: .res 2
 ; A pointer to the current program line
 line_ptr: .res 2
 
+; The value that line_ptr should take after we finish executing the current line.
+; May be modified by control statements like GOTO, GOSUB, RETURN, NEXT, etc.
+next_line_ptr: .res 2
+
 ; The start of the variable name table
 variable_name_table_ptr: .res 2
 
@@ -62,6 +66,7 @@ initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
         stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
+        stax    next_line_ptr               ; Also set next_line_ptr
         ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
         lda     #$FF                        ; Line number = -1
         sta     (line_ptr),y                ; Save line number high byte
@@ -70,7 +75,7 @@ initialize_program:
         dey     
         lda     #Line::data                 ; This is the offset of the next line if this line has no data
         sta     (line_ptr),y                ; Save as next line offset
-        jsr     get_line_ptr_plus_a         ; Add it to line_ptr
+        jsr     advance_next_line_ptr       ; Advance next_line_ptr to the next line
         stax    variable_name_table_ptr     ; Returned value is the start of variable name table
         clc                                 ; Add 1 to variable_name_table_ptr to get value_table_ptr
         adc     #1
@@ -110,15 +115,14 @@ reset_program_state:
         sta     osp                     ; Initialize expression stack positions to 0
         sta     vsp
 
-; Fall through; setting line_ptr is redundant if we started at intialize_program but important if we
-; started at reset_program_state.
+; Fall through
 
-; Sets line_ptr to program_ptr.
-; Returns line_ptr in AX.
+; Sets next_line_ptr to program_ptr.
+; Returns next_line_ptr in AX.
 ; BC SAFE, DE SAFE
 
-reset_line_ptr:
-        mvax    program_ptr, line_ptr
+reset_next_line_ptr:
+        mvax    program_ptr, next_line_ptr
         rts
 
 ; Searches for a line in the program.
@@ -132,18 +136,18 @@ reset_line_ptr:
 
 find_line:
         stax    DE
-        jsr     reset_line_ptr          ; Set line_ptr to beginning of program
+        jsr     reset_next_line_ptr     ; Set line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
-        jsr     advance_line_ptr        ; Advance to the next line    
+        jsr     advance_next_line_ptr   ; Advance to the next line
 @test_line:
         ldy     #Line::number+1         ; Index of high byte of line number
-        lda     (line_ptr),y        
+        lda     (next_line_ptr),y        
         cmp     E       
         bcc     @next_line              ; Line number high byte is <target; go to next line
         bne     @done                   ; Return with carry set
         dey                             ; High byte is equal; decrement Y to get low byte of line number
-        lda     (line_ptr),y            ; Check the low byte of line number
+        lda     (next_line_ptr),y       ; Check the low byte of line number
         cmp     D                       ; Same logic for low byte
         bcc     @next_line     
         bne     @done                   ; If not the line then return with carry bit set
@@ -151,29 +155,18 @@ find_line:
 @done:        
         rts     
 
-; Advances the current line pointer to the next line.
+; Advances next_line_ptr to the next line.
 ; line_ptr = current line (updated)
 ; BC SAFE, DE SAFE
 
-advance_line_ptr:
-        jsr     get_next_line_ptr       ; Get the next line pointer
-        stax    line_ptr                ; Store in line_ptr
-        rts
-
-; Calculates the address of the next line and returns it in AX.
-; The get_line_ptr_plus_a entry point adds the value in A to line_ptr instead of the current line length.
-; line_ptr = current line
-; BC SAFE, DE SAFE
-
-get_next_line_ptr:
+advance_next_line_ptr:
         ldy     #Line::next_line_offset
-        lda     (line_ptr),y            ; Get next line offset into A
-get_line_ptr_plus_a:
+        lda     (next_line_ptr),y       ; Get next line offset into A
         clc
-        adc     line_ptr                ; Add line length to low byte of line_ptr
-        ldx     line_ptr+1              ; High byte into X
-        bcc     @skip                   ; Don't need to add the carry to X
-        inx                             ; Add the carry to X
+        adc     next_line_ptr           ; Add line length to low byte of next_line_ptr
+        sta     next_line_ptr           ; Save back
+        bcc     @skip                   ; Don't need to change the high byte
+        inc     next_line_ptr+1         ; Increment the high byte
 @skip:
         rts        
 
@@ -186,14 +179,14 @@ insert_or_update_line:
         jsr     find_line               ; Go find it
         bcs     @insert                 ; Not found, just insert the new line
 
-; line_ptr points to a line that we have to remove.
+; next_line_ptr points to a line that we have to remove.
 
         ldy     #Line::next_line_offset
-        lda     (line_ptr),y            ; Get next line offset into A
+        lda     (next_line_ptr),y       ; Get next line offset into A
         pha                             ; Save the next line offset on the stack; it will be the compact length
-        jsr     advance_line_ptr        ; Advance line_ptr to next line
+        jsr     advance_next_line_ptr   ; Advance line_ptr to next line
         pla                             ; Get the length of the line back off the stack
-        ldy     #line_ptr               ; Select line_ptr as the pointer to move
+        ldy     #next_line_ptr          ; Select next_line_ptr as the pointer to move
         jsr     compact_a
 
 ; Insert the new line, if there is one.
@@ -205,9 +198,9 @@ insert_or_update_line:
         tax                             ; Save in X since we'll need it again
         cmp     #Line::data             ; Compare next line offset with the offset of the data field
         beq     @finish                 ; If they're the same, line is blank, nothing to insert
-        ldphaa  line_ptr                ; Push line_ptr onto stack so we can get it back later
+        ldphaa  next_line_ptr           ; Push next_line_ptr onto stack so we can get it back later
         txa                             ; Copy line length back into A as the amount to expand
-        ldy     #line_ptr               ; Select line_ptr as the pointer to move
+        ldy     #next_line_ptr          ; Select next_line_ptr as the pointer to move
         jsr     expand_a                ; Create space for the new line
         plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if expand failed)
         bcs     @done                   ; Don't copy if expand failed

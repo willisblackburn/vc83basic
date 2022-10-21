@@ -18,6 +18,7 @@
 .globalzp vector_table_ptr
 .globalzp program_ptr
 .globalzp line_ptr
+.globalzp next_line_ptr
 .globalzp variable_name_table_ptr
 .globalzp value_table_ptr
 .globalzp heap_ptr
@@ -102,9 +103,9 @@
 ; program.s
 .global initialize_program
 .global reset_program_state
-.global reset_line_ptr
+.global reset_next_line_ptr
 .global find_line
-.global advance_line_ptr, get_next_line_ptr, get_line_ptr_plus_a
+.global advance_next_line_ptr
 .global insert_or_update_line
 .global expand, expand_a, compact, compact_a
 .global calculate_bytes_to_move
