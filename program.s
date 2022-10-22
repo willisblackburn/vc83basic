@@ -298,16 +298,16 @@ compact:
         clc
         rts
 
-; Calculates the bytes to move for both compact and expand as (himem_ptr - src_ptr).
+; Calculates the bytes to move for both compact and expand as (free_ptr - src_ptr).
 ; Returns the number of bytes in DE.
 ; X SAFE, Y SAFE, BC SAFE
 
 calculate_bytes_to_move:
         sec                       
-        lda     himem_ptr
+        lda     free_ptr
         sbc     src_ptr
         sta     D                       ; Store low byte of length in D
-        lda     himem_ptr+1      
+        lda     free_ptr+1      
         sbc     src_ptr+1      
         sta     E                       ; High byte of length in E
         rts
