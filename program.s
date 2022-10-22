@@ -57,7 +57,6 @@ line_buffer: .res 256
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
-        stax    line_ptr                    ; Also set line_ptr
         stax    next_line_ptr               ; Also set next_line_ptr
         ldy     #0                          ; Populate END statement starting at offset 0
         jsr     build_end_statement
