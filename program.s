@@ -40,9 +40,6 @@ lp: .res 1
 ; Whether the program is not running, running, stopped, or awaiting reset.
 program_state: .res 1
 
-; While running or listing, holds the offset of the next line.
-next_line_offset: .res 1
-
 .bss
 
 ; The program line produced by the parser
