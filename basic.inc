@@ -21,7 +21,6 @@
 .globalzp next_line_ptr
 .globalzp variable_name_table_ptr
 .globalzp value_table_ptr
-.globalzp heap_ptr
 .globalzp free_ptr
 .globalzp himem_ptr
 .globalzp variable_count
