@@ -194,13 +194,13 @@ static void test_calculate_bytes_to_move(void) {
 
     PRINT_TEST_NAME();
 
-    // The function just calculates the difference between src_ptr and himem_ptr.
+    // The function just calculates the difference between src_ptr and free_ptr.
 
     src_ptr = (void*)0x0400;
-    himem_ptr = (void*)0x1000;
+    free_ptr = (void*)0x2000;
 
     bytes = calculate_bytes_to_move();
-    ASSERT_EQ(bytes, 0x0C00);
+    ASSERT_EQ(bytes, 0x1C00);
 }
 
 static void test_expand(void) {
