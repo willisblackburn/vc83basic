@@ -22,9 +22,6 @@ himem_ptr: .res 2
 ; Read/write position in line
 lp: .res 1
 
-; While running or listing, holds the offset of the next line.
-next_line_offset: .res 1
-
 .bss
 
 ; The program line produced by the parser
