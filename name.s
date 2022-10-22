@@ -32,8 +32,7 @@ find_name:
         beq     @end                    ; If it's zero then we're at the end
         jsr     match_character_sequence    ; Try to match
         bcc     @match                  ; It matched; return
-        jsr     advance_np_next_entry   ; Move np up to the next entry
-        jsr     advance_name_ptr        ; Add np to name_ptr
+        jsr     advance_name_ptr        ; Move np up to the next entry
         inc     B                       ; Increment name table index
         bne     @loop_entry             ; Handle the next entry (unconditional)
 
@@ -115,24 +114,16 @@ is_name_character:
 @done:      
         rts
 
-; Advances np until it points to the next name table entry.
-; name_ptr = a pointer to the current name table entry
+; Advances np until it points to the next name table entry, then adds np to name_ptr.
+; name_ptr = a pointer to the current name table entry (updated)
 ; np = the read position within the name table entry (updated)
 ; B SAFE
 
-advance_np_next_entry:
+advance_name_ptr:
         ldy     np
         inc     np                      ; Advance past
         lda     (name_ptr),y            ; Load character at current position
-        bpl     advance_np_next_entry   ; Keep searching if bit 7 not set
-        rts
-
-; Adds np to name_ptr.
-; name_ptr = a pointer to the current name table entry
-; np = the value to add, which should be the position of the next name table entry relative to this one
-; B SAFE
-
-advance_name_ptr:
+        bpl     advance_name_ptr        ; Keep searching if bit 7 not set
         lda     np                      ; np is the offset of the next element; add to name_ptr
         clc                             ; Add to name_ptr to get updated name_ptr
         adc     name_ptr            
@@ -157,8 +148,7 @@ get_name_table_entry:
         bmi     @found                  ; If @index is now <0 then we're done (this limits name table to 128 entries)
         lda     (name_ptr),y            ; Check if at end of name table
         beq     @not_found
-        jsr     advance_np_next_entry   ; Advance np until it points to the next entry
-        jsr     advance_name_ptr        ; Add Y to name_ptr
+        jsr     advance_name_ptr        ; Advance to the next entry
         jmp     @next_name
 @found:
         clc
