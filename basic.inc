@@ -8,6 +8,10 @@
     data .res 1
 .endstruct
 
+.struct Control
+    next_line_ptr .res 2
+.endstruct
+
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
@@ -30,6 +34,7 @@
 .globalzp argument_count
 .globalzp osp
 .globalzp vsp
+.globalzp csp
 .globalzp next_line_ptr
 
 ; Data
@@ -42,6 +47,8 @@
 ; control.s
 .global exec_end
 .global exec_goto
+.global exec_gosub
+.global exec_return
 
 ; decode.s
 .global decode_expression

@@ -88,3 +88,5 @@ comment Other constants
 
 def(OP_STACK_DEPTH, 16)
 def(VALUE_STACK_DEPTH, 16)
+def(CONTROL_STACK_DEPTH, 16)
+def(CONTROL_SIZE, 16)

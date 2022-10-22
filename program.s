@@ -91,6 +91,7 @@ reset_program_state:
         sta     free_ptr+1
         mva     #0, osp                 ; Initialize expression stack positions to 0
         sta     vsp
+        sta     csp
 
 ; Fall through
 

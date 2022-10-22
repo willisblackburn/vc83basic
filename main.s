@@ -75,6 +75,8 @@ statement_exec_vectors:
         .word   exec_input
         .word   exec_list
         .word   exec_goto
+        .word   exec_gosub
+        .word   exec_return
 
 print_start:
         ldax    #start_message
