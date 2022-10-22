@@ -116,8 +116,6 @@
 ; run.s
 .global exec_run
 .global exec_run_no_reset
-.global run_line
-.global invoke_statement_handler
 
 ; tables.s
 .global statement_name_table

@@ -69,6 +69,7 @@ initialize_program:
         tay                                 ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     variable_count              ; Initialize number of variables to 0
+        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
         
 ; Fall through to reset_program_state
 
@@ -88,7 +89,6 @@ reset_program_state:
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
         sta     free_ptr+1
-        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
         mva     #0, osp                 ; Initialize expression stack positions to 0
         sta     vsp
 
@@ -102,8 +102,7 @@ reset_next_line_ptr:
         mvax    program_ptr, next_line_ptr
         rts
 
-; Builds a line containing an END statement at next_line_ptr, starting at offset Y.
-; Y = the offset at which to begin writing.
+; Builds a line containing an END statement at next_line_ptr.
 ; This function makes assumptions about these offsets.
 
 .assert Line::next_line_offset = 0, error
@@ -111,6 +110,7 @@ reset_next_line_ptr:
 .assert Line::data = 3, error
 
 build_end_statement:
+        ldy     #0                          ; Start at offset 0 to next_line_ptr
         lda     #Line::data+1               ; Next line offset is data offset plus 1 for END 
         sta     (next_line_ptr),y           ; Save as next line offset
         iny
