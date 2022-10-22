@@ -26,7 +26,6 @@
 .export _line_ptr = line_ptr
 .export _variable_name_table_ptr = variable_name_table_ptr
 .export _value_table_ptr = value_table_ptr
-.export _heap_ptr = heap_ptr
 .export _free_ptr = free_ptr
 .export _himem_ptr = himem_ptr
 .export _variable_count = variable_count

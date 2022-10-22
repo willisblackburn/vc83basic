@@ -19,9 +19,6 @@ variable_name_table_ptr: .res 2
 ; The start of the variable value table; maintained as the end of the variable name table
 value_table_ptr: .res 2
 
-; The start of the heap; reset to value_table_ptr plus the size of the value table when program is run
-heap_ptr: .res 2
-
 ; The start of the free space beyond the heap
 free_ptr: .res 2
 
@@ -94,11 +91,9 @@ reset_program_state:
         clc
         lda     D                       ; Add size of variable value table to value_table_ptr
         adc     value_table_ptr
-        sta     heap_ptr                ; Store in heap_ptr
         sta     free_ptr                ; And the free_ptr since the heap has no size yet
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
-        sta     heap_ptr+1
         sta     free_ptr+1
         mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
 

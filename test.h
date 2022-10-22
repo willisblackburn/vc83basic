@@ -41,8 +41,6 @@ extern char* variable_name_table_ptr;
 #pragma zpsym ("variable_name_table_ptr")
 extern void* value_table_ptr;
 #pragma zpsym ("value_table_ptr")
-extern void* heap_ptr;
-#pragma zpsym ("heap_ptr")
 extern void* free_ptr;
 #pragma zpsym ("free_ptr")
 extern void* himem_ptr;
