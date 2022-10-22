@@ -68,14 +68,13 @@ encode_byte:
 
 encode:
         ldx     lp
+        cpx     #(254 - Line::data - 1) ; Max length = 255 - 1 (for this byte) - space for END line in immediate mode
+        bcs     @error
         sta     line_buffer,x
         inc     lp
-        beq     @error
-        clc
         rts
 
 @error:
         pla                             ; Discard the return address 
         pla     
-        sec
         rts                             ; Return to the caller's caller

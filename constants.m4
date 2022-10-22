@@ -23,17 +23,18 @@ def(TOKEN_VAR,          hex(80)) comment OR with variable number
 
 comment Statement tokens
 
-def(ST_RUN,             0)
-def(ST_PRINT,           1)
-def(ST_LET,             2)
-def(ST_INPUT,           3)
-def(ST_LIST,            4)
-def(ST_GOTO,            5)
-def(ST_GOSUB,           6)
-def(ST_RETURN,          7)
-def(ST_POP,             8)
-def(ST_ON_GOTO,         9)
-def(ST_ON_GOSUB,       10)
+def(ST_END,             0)
+def(ST_RUN,             1)
+def(ST_PRINT,           2)
+def(ST_LET,             3)
+def(ST_INPUT,           4)
+def(ST_LIST,            5)
+def(ST_GOTO,            6)
+def(ST_GOSUB,           7)
+def(ST_RETURN,          8)
+def(ST_POP,             9)
+def(ST_ON_GOTO,        10)
+def(ST_ON_GOSUB,       11) 
 
 comment Binary operator tokens: combine with TOKEN_OP
 
@@ -78,8 +79,8 @@ def(PR_OPEN_PAREN,      hex(00))
 
 comment Program states
 
-def(PROGRAM_STATE_INITIALIZED,  hex(00))    comment Variables initalized to 0
-def(PROGRAM_STATE_RUNNING,      hex(01))    comment STOP command stops program; END ends
+def(PROGRAM_STATE_RUNNING,      hex(00))    comment STOP command stops program; END ends
+def(PROGRAM_STATE_INITIALIZED,  hex(01))    comment Variables initalized to 0
 def(PROGRAM_STATE_STOPPED,      hex(02))    comment CONT command continues; CLR resets
 def(PROGRAM_STATE_ENDED,        hex(03))    comment Program has ended; CONT doen't work
 

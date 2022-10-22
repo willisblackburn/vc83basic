@@ -54,26 +54,15 @@ line_buffer: .res 256
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 
-; This function makes assumptions about these offsets
-
-.assert Line::next_line_offset = 0, error
-.assert Line::number = 1, error
-
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
-        mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
-        stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
+        stax    line_ptr                    ; Also set line_ptr
         stax    next_line_ptr               ; Also set next_line_ptr
-        ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
-        lda     #$FF                        ; Line number = -1
-        sta     (line_ptr),y                ; Save line number high byte
-        dey
-        sta     (line_ptr),y                ; Line number low byte
-        dey     
-        lda     #Line::data                 ; This is the offset of the next line if this line has no data
-        sta     (line_ptr),y                ; Save as next line offset
+        ldy     #0                          ; Populate END statement starting at offset 0
+        jsr     build_end_statement
         jsr     advance_next_line_ptr       ; Advance next_line_ptr to the next line
-        stax    variable_name_table_ptr     ; Returned value is the start of variable name table
+        mvax    next_line_ptr, variable_name_table_ptr  ; New value is the start of variable name table
         clc                                 ; Add 1 to variable_name_table_ptr to get value_table_ptr
         adc     #1
         sta     value_table_ptr
@@ -91,9 +80,6 @@ initialize_program:
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
 
-; We treat this as zero.
-.assert PROGRAM_STATE_INITIALIZED = 0, error
-
 reset_program_state:
         mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
         lda     variable_count          ; Amount to clear is variable_count * 2
@@ -109,7 +95,7 @@ reset_program_state:
         sta     heap_ptr+1
         sta     free_ptr+1
         mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
-        sta     osp                     ; Initialize expression stack positions to 0
+        mva     #0, osp                 ; Initialize expression stack positions to 0
         sta     vsp
 
 ; Fall through
@@ -120,6 +106,27 @@ reset_program_state:
 
 reset_next_line_ptr:
         mvax    program_ptr, next_line_ptr
+        rts
+
+; Builds a line containing an END statement at next_line_ptr, starting at offset Y.
+; Y = the offset at which to begin writing.
+; This function makes assumptions about these offsets.
+
+.assert Line::next_line_offset = 0, error
+.assert Line::number = 1, error
+.assert Line::data = 3, error
+
+build_end_statement:
+        lda     #Line::data+1               ; Next line offset is data offset plus 1 for END 
+        sta     (next_line_ptr),y           ; Save as next line offset
+        iny
+        lda     #$FF                        ; Line number = -1
+        sta     (next_line_ptr),y           ; Save line number low byte
+        iny
+        sta     (next_line_ptr),y           ; Line number high byte
+        iny
+        lda     #ST_END                     ; END
+        sta     (next_line_ptr),y           ; Save as next line offset
         rts
 
 ; Searches for a line in the program.
@@ -154,7 +161,7 @@ find_line:
 
 ; Advances next_line_ptr to the next line.
 ; line_ptr = current line (updated)
-; BC SAFE, DE SAFE
+; X SAFE, BC SAFE, DE SAFE
 
 advance_next_line_ptr:
         ldy     #Line::next_line_offset

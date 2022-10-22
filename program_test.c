@@ -5,10 +5,10 @@ static void test_initalize_program(void) {
 
     initialize_program();
 
-    ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
-    ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_EQ((void*)variable_name_table_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
+    ASSERT_EQ(next_line_ptr, program_ptr);
+    ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + 1); // Add 1 for END token
+    ASSERT_EQ(next_line_ptr->number, -1);
+    ASSERT_EQ((char*)variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 1);
     ASSERT_EQ(*variable_name_table_ptr, 0);
     ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1)); // Variable name table is empty with terminating 0
     ASSERT_EQ((void*)heap_ptr, (void*)value_table_ptr);
@@ -240,7 +240,7 @@ static void test_expand(void) {
     // Other pointers should be at their correct positions.
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 9);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 10);
     ASSERT_EQ(*variable_name_table_ptr, 0);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + 1));
     ASSERT_EQ(heap_ptr, value_table_ptr);
@@ -253,7 +253,7 @@ static void test_expand(void) {
     ASSERT_EQ(line_ptr->next_line_offset, 3);
     ASSERT_EQ(line_ptr->number, 20);
     line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->next_line_offset, 4);
     ASSERT_EQ(line_ptr->number, -1);
 
     // Now expand free_ptr by 1K.
@@ -264,7 +264,7 @@ static void test_expand(void) {
     ASSERT_EQ(err, 0);
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 9);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 10);
     ASSERT_EQ(*variable_name_table_ptr, 0);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + 1));
     ASSERT_EQ(heap_ptr, value_table_ptr);
@@ -309,7 +309,7 @@ static void test_compact(void) {
     // Make sure all the pointers are where they should be.
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 3 + 0x400);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 4 + 0x400);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
     ASSERT_EQ((char*)heap_ptr, (char*)value_table_ptr + sizeof value_data);
     ASSERT_EQ((char*)free_ptr, (char*)heap_ptr + 0x1000);
@@ -318,7 +318,7 @@ static void test_compact(void) {
 
     err = compact(&variable_name_table_ptr, 0x10);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 3 + 0x400 - 0x10);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 4 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
@@ -328,7 +328,7 @@ static void test_compact(void) {
 
     err = compact(&value_table_ptr, 4);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 3 + 0x400 - 0x10);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 4 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
@@ -338,7 +338,7 @@ static void test_compact(void) {
 
     err = compact(&heap_ptr, 4);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 3 + 0x400 - 0x10);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 4 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data - 4);
@@ -348,7 +348,7 @@ static void test_compact(void) {
 
     err = compact(&free_ptr, 0x800);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 3 + 0x400 - 0x10);
+    ASSERT_EQ(variable_name_table_ptr, (char*)line_ptr + 4 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data - 4);

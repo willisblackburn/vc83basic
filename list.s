@@ -11,7 +11,6 @@
 ; so we save the existing line_ptr value on the stack and restore it after.
 
 exec_list:
-        ldphaa  line_ptr
         ldphaa  next_line_ptr
         jsr     reset_next_line_ptr
 @list_one_line:
@@ -27,7 +26,6 @@ exec_list:
 
 @done:
         plstaa  next_line_ptr
-        plstaa  line_ptr
         clc                             ; LIST always succeeds
         rts
 

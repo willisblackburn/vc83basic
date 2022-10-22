@@ -41,6 +41,7 @@
 ; Functions
 
 ; control.s
+.global exec_end
 .global exec_goto
 
 ; decode.s
@@ -104,6 +105,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_next_line_ptr
+.global build_end_statement
 .global find_line
 .global advance_next_line_ptr
 .global insert_or_update_line
@@ -115,6 +117,7 @@
 
 ; run.s
 .global exec_run
+.global exec_run_no_reset
 .global run_line
 .global invoke_statement_handler
 

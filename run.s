@@ -5,26 +5,15 @@
 ; Executes the program.
 
 exec_run:
-        lda     program_state
-        cmp     #PROGRAM_STATE_RUNNING  ; Don't re-run if we're already running
-        beq     @done                   ; Carry will be set on equal
         jsr     reset_program_state     ; Clear the variable name table
+exec_run_no_reset:
         mva     #PROGRAM_STATE_RUNNING, program_state
-@run_one_line:
-        mvax    next_line_ptr, line_ptr
-        jsr     advance_next_line_ptr
-        ldy     #Line::number+1         ; Position of line number high byte
-        lda     (line_ptr),y            ; Into A
-        bmi     @program_end            ; If MSB of line number is set, we're at end of program
-        jsr     run_line
-        bcs     @done
-        jmp     @run_one_line
+        clc
+        rts
 
-@program_end:
+exec_end:
         mva     #PROGRAM_STATE_ENDED, program_state
         clc
-
-@done:
         rts
 
 ; Executes the line pointed by line_ptr
@@ -36,6 +25,7 @@ run_line:
         rts
 
 statement_exec_vectors:
+        .word   exec_end
         .word   exec_run
         .word   exec_print
         .word   exec_let
