@@ -9,6 +9,7 @@ startup:
         ldx     #$FF        
         txs                             ; Initialize the stack to $FF
         jsr     initialize_once     
+        jsr     HOME                    ; Clear screen
         jsr     main        
         jmp     DOSWARM                 ; Exit to resident program
         
