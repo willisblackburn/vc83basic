@@ -13,6 +13,8 @@ statement_name_table:
         .byte   'P', 'O', 'P' | NT_END
         .byte   'O', 'N', 1, 'G', 'O', 'T', 'O', NT_RPT_NUM | NT_END
         .byte   'O', 'N', 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUM | NT_END
+        .byte   'F', 'O', 'R', NT_VAR, '=', 1, 'T', 'O', 1 | NT_END
+        .byte   'N', 'E', 'X', 'T', NT_VAR | NT_END
         .byte   0
 
 operator_name_table:

@@ -165,7 +165,7 @@ clear_memory_de:
         rts
 
 ; Shifts the value in AX left by 1 bit, multiplying it by 2.
-; Y SAFE
+; Y SAFE, BC SAFE
 
 mul2a:
         ldx     #0                      ; Only multiply A by initializing high byte to 0     

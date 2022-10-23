@@ -341,6 +341,7 @@ check_himem:
 
 ; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
 ; A = the variable index (0-127)
+; Y SAFE, BC SAFE
 
 set_variable_value_ptr:
         jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
@@ -352,6 +353,7 @@ set_variable_value_ptr:
         rts
 
 ; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
+; BC SAFE, DE SAFE
 
 set_variable_value:
         ldy     #0                      ; Index variable value with Y

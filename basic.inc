@@ -10,6 +10,9 @@
 
 .struct Control
     next_line_ptr .res 2
+    variable .res 1
+    end_value .res 2
+    step_value .res 2
 .endstruct
 
 ; Zero Page
@@ -48,6 +51,8 @@
 .global exec_goto
 .global exec_gosub
 .global exec_return
+.global exec_for
+.global exec_next
 
 ; decode.s
 .global decode_expression

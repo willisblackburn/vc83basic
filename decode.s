@@ -63,6 +63,7 @@ decode_expression:
         rts
 
 ; Decodes a number and returns it in AX.
+; BC SAFE, DE SAFE
 
 decode_number:
         inc     lp                      ; Advance past number marker token
@@ -90,6 +91,7 @@ decode_unary_operator:
 ; Decodes a single byte and returns it in A.
 ; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
 ; The decode_byte_with_mask entry point accepts a mask byte in A and ANDs it with the byte from the token stream.
+; X SAFE, BC SAFE, DE SAFE
 
 decode_byte:
         lda     #$FF
