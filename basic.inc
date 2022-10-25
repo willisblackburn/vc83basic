@@ -94,6 +94,7 @@
 ; name.s
 .global find_name
 .global match_character_sequence
+.global read_name_table_byte
 .global is_name_character
 .global advance_name_ptr
 .global get_name_table_entry

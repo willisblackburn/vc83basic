@@ -103,13 +103,9 @@ parse_element:
         jsr     encode_byte             ; Encode index
 @loop:
         jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
-        ldy     np                      ; Get the character at np-1
-        dey
-        lda     (name_ptr),y
-        bmi     @success                ; If the high bit was set, then it was the last byte; success
-        iny                             ; Advance to current position
-        lda     (name_ptr),y            ; Get next charater from name table entry
-        tay                             ; Store it in Y so we can use it for several checks
+        jsr     read_name_table_byte    ; Read the next byte from the name table
+        bcs     @success                ; If the high bit was set, then it was the last byte; success
+        tay                             ; Store it in Y so we can use it again later
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
         jsr     match_character_sequence    ; Otherwise it's a literal character sequence; match it
@@ -124,7 +120,6 @@ parse_element:
 @directive:
         inc     np                      ; Move position past directive
         tya
-        and     #$7F                    ; Clear the high bit if it's set
         jsr     parse_directive
         bcc     @loop
         bcs     @error

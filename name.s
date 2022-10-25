@@ -47,39 +47,51 @@ find_name:
 ; np = current position within the name table entry
 ; bp = position within buffer
 ; Returns carry clear if the sequence matched, and np and bp both advance to the next position past the match.
-; Returns carry set if no match; np and bp are unchanged.
+; Returns carry set if no match; bp is unchanged.
 ; BC SAFE, DE SAFE
 
 match_character_sequence:
         ldx     bp                      ; Load bp into x
-        ldy     np                      ; Load np into Y
-        ldpha   #0                      ; Initialize last-read byte to 0
 @loop:
-        pla                             ; Get last-read byte
-        bmi     @check_continuation     ; If the high bit was set, then it was the last byte; np is now at next entry
-        lda     (name_ptr),y            ; Get name byte
-        pha                             ; Save for next time around
-        and     #$7F                    ; Clear NT_END bit if it's set
+        jsr     read_name_table_byte    ; Read the next byte from the name table
+        bcs     @check_continuation     ; Last byte was the last; np is now at next entry
         cmp     buffer,x                ; Compare with buffer
         bne     @no_match               ; They didn't match; this may be because the byte is a directive
         inx                             ; Next buffer position
-        iny                             ; Next name table entry position
+        inc     np                      ; Next name table entry position
         bne     @loop                   ; Unconditional
 
 @no_match:
-        pla                             ; Pop last-read byte off stack
+        lda     (name_ptr),y            ; Read character from name table again
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         bne     @error                  ; Not a directive, just a non-matching character
 @check_continuation:
         jsr     check_name_continuation ; Check if the name continues
         bcc     @error                  ; It does continue so this is not a match
         stx     bp                      ; Update bp
-        sty     np                      ; Update np
         clc                             ; Signal success
         rts
         
 @error:
         sec                             ; Signal error
+        rts
+
+; Reads the name table byte at position np.
+; If np > 0, checks the byte at position np-1 to see if it was the last character in the name table entry.
+; Returns carry clear if there is another byte to read, with the byte in A.
+; Returns carry set if there are no more bytes.
+
+read_name_table_byte:
+        clc                             ; Default signal success
+        ldy     np                      ; Load np
+        beq     @done                   ; If zero then just return
+        dey                             ; Go look at character at np-1
+        lda     (name_ptr),y
+        iny                             ; Increment Y so it's equal to np again
+        asl     A                       ; Shift NT_END bit into carry
+@done:
+        lda     (name_ptr),y            ; Load next character to match
+        and     #$7F                    ; Don't need NT_END bit; it's only checked here
         rts
 
 ; Checks if the character at position X in buffer is a continuation of a name at position X-1.
@@ -114,18 +126,21 @@ is_name_character:
 @done:      
         rts
 
-; Advances np until it points to the next name table entry, then adds np to name_ptr.
+; Advances name_ptr to the next name table entry.
+; We don't know where np is when this gets called, so we start scanning from the start of the current entry
+; until we find the next one.
 ; name_ptr = a pointer to the current name table entry (updated)
-; np = the read position within the name table entry (updated)
-; B SAFE
+; X SAFE, BC SAFE, DE SAFE
 
 advance_name_ptr:
-        ldy     np
-        inc     np                      ; Advance past
+        ldy     #$FF                    ; Start at -1 because we pre-increment
+@loop:
+        iny
         lda     (name_ptr),y            ; Load character at current position
-        bpl     advance_name_ptr        ; Keep searching if bit 7 not set
-        lda     np                      ; np is the offset of the next element; add to name_ptr
-        clc                             ; Add to name_ptr to get updated name_ptr
+        bpl     @loop                   ; Keep searching if bit 7 not set
+        iny                             ; Skip past the last character
+        tya                             ; Y is the offset of the next element
+        clc                             ; Add it to name_ptr to get updated name_ptr
         adc     name_ptr            
         sta     name_ptr        
         bcc     @done                   ; Don't have to increment high byte
