@@ -93,6 +93,7 @@
 
 ; name.s
 .global find_name
+.global find_next_name
 .global match_character_sequence
 .global read_name_table_byte
 .global is_name_character
@@ -104,6 +105,7 @@
 .global read_number, char_to_digit
 .global parse_line
 .global parse_element
+.global parse_next_element
 .global parse_directive
 .global parse_expression
 .global parse_argument_separator

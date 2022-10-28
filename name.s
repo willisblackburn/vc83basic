@@ -21,11 +21,15 @@ np: .res 1
 ; On match, updates name_ptr to point to the matched name, and returns the index of the matched name in A and
 ; the next position in the name table after the matched name in Y.
 ; If no match, then A is the number of names in the name table and name_ptr points to the 0 at the end of the table.
+; The find_next_name entry point searches from the current name_ptr. The caller must set X to the index of the
+; starting name table entry.
 
 find_name:
         stax    name_ptr
+        ldx     #0                      ; Initialize name table index to 0
+find_next_name:
+        stx     B                       ; Track name table index in B
         jsr     skip_whitespace         ; Skip any whitespace in the buffer
-        mva     #0, B                   ; Track name table index in B
 @loop_entry:
         mvy     #0, np                  ; Set name table entry read position to 0
         lda     (name_ptr),y            ; Get first byte of name

@@ -96,10 +96,18 @@ parse_line:
 ; the buffer length.
 ; AX = pointer to the first entry of the name table
 ; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
+; The parse_next_element entry point parses a syntax element using the value already in name_ptr, not the one
+; passed in AX.
 
 parse_element:
-        jsr     find_name               ; Start by finding name; sets np and returns index in A
-        bcs     @error
+        stax    name_ptr                ; Store initial name_ptr
+        ldx     #0                      ; Starting name table index
+parse_next_element:
+        ldpha   bp                      ; Save bp value in case we have to backtrack
+        ldpha   lp                      ; Same for lp value
+        jsr     find_next_name          ; Start by finding name; sets np and returns index in A
+        bcs     @no_match
+        pha                             ; Store the return value
         jsr     encode_byte             ; Encode index
 @loop:
         jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
@@ -110,11 +118,21 @@ parse_element:
         beq     @directive              ; It is
         jsr     match_character_sequence    ; Otherwise it's a literal character sequence; match it
         bcc     @loop                   ; Continue after a character sequence match
-@error:
-        rts                             ; Return with carry set to indicate error
+@backtrack_try_again:
+        pla                             ; Return from find_next_name is starting index
+        tax                             ; Transfer into X so we can pass it back to find_next_name
+        plsta   lp                      ; Restore lp and bp
+        plsta   bp
+        jsr     advance_name_ptr        ; Advance past the failed name table entry (will preserve X)
+        inx                             ; Increment X since we advanced name_ptr
+        jmp     parse_next_element 
 
 @success:
         clc                             ; Signal success
+        pla                             ; Discard saved name entry index
+@no_match:
+        pla                             ; Discard saved lp and bp
+        pla
         rts  
 
 @directive:
@@ -122,7 +140,7 @@ parse_element:
         tya
         jsr     parse_directive
         bcc     @loop
-        bcs     @error
+        bcs     @backtrack_try_again
 
 parse_argument_type_vectors:
         .word   parse_variable          ; NT_VAR

@@ -229,6 +229,8 @@ static void test_parse_element(void) {
         TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
     const char line_data_7[] = { ST_ON_GOTO, 0x80, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x02, 0x00, TOKEN_NO_VALUE,
         TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NUM, 0x1E, 0x00, TOKEN_NO_VALUE };
+    const char line_data_8[] = { ST_ON_GOSUB, 0x80, TOKEN_NO_VALUE,
+        TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NUM, 0x1E, 0x00, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -282,6 +284,15 @@ static void test_parse_element(void) {
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_7, sizeof line_data_7);
     ASSERT_EQ(bp, 20);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_7);
+
+    // Test that the parser can differentiate between ON...GOTO and ON...GOSUB.
+
+    strcpy(buffer, "ON X GOSUB 10,20,30");
+    err = parse_element(statement_name_table, 0, offsetof(Line, data));
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, line_data_8, sizeof line_data_8);
+    ASSERT_EQ(bp, 19);
+    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_8);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 
