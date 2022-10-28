@@ -18,7 +18,7 @@ np: .res 1
 ; AX = pointer to the first entry of the name table; saved into name_ptr
 ; bp = read position in buffer (updated on success)
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On match, updates name_ptr to point to the matched name, and returns the number of the matched name in A and
+; On match, updates name_ptr to point to the matched name, and returns the index of the matched name in A and
 ; the next position in the name table after the matched name in Y.
 ; If no match, then A is the number of names in the name table and name_ptr points to the 0 at the end of the table.
 
