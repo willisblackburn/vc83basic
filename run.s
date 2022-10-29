@@ -4,10 +4,11 @@
 ; RUN statement:
 ; Executes the program.
 
+.assert PROGRAM_STATE_RUNNING = 1, error
+
 exec_run:
         lda     program_state
-        cmp     #PROGRAM_STATE_RUNNING  ; Don't re-run if we're already running
-        beq     @done                   ; Carry will be set on equal
+        bne     @done                   ; Don't re-run if we're already running
         jsr     reset_program_state     ; Clear the variable name table
         mva     #PROGRAM_STATE_RUNNING, program_state
 @run_one_line:
@@ -20,7 +21,7 @@ exec_run:
         jmp     @run_one_line
 
 @program_end:
-        mva     #PROGRAM_STATE_ENDED, program_state
+        mva     #PROGRAM_STATE_STOPPED, program_state
         clc
 
 @done:

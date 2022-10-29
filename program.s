@@ -95,7 +95,7 @@ reset_program_state:
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
         sta     free_ptr+1
-        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
+        mva     #PROGRAM_STATE_STOPPED, program_state   ; Set the program state to stopped
 
 ; Fall through
 
