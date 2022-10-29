@@ -38,6 +38,7 @@
 .globalzp osp
 .globalzp vsp
 .globalzp csp
+.globalzp resume_line_ptr
 
 ; Data
 
@@ -131,6 +132,8 @@
 ; run.s
 .global exec_run
 .global exec_end
+.global exec_stop
+.global exec_cont
 
 ; tables.s
 .global statement_name_table

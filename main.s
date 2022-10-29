@@ -15,7 +15,8 @@ error_length = * - error_message
 
 ; Verify that the program states are the affected values so we can use flags.
 
-.assert PROGRAM_STATE_RUNNING = 0, error
+.assert PROGRAM_STATE_STOPPED = 0, error
+.assert PROGRAM_STATE_RUNNING = 1, error
 
 main:
         jsr     initialize_target
@@ -23,7 +24,7 @@ main:
         jsr     print_start
 @loop:
         lda     program_state
-        bne     @get_command
+        beq     @get_command
 
 ; Program is running; set line_ptr and execute statement.
 
@@ -41,8 +42,8 @@ main:
         bcc     @loop
 @error:
         jsr     print_error
-        mva     #PROGRAM_STATE_STOPPED, program_state
-        bne     @loop
+        jsr     exec_stop
+        bcc     @loop
 
 @get_command:
         jsr     print_ready
@@ -52,9 +53,10 @@ main:
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
+        mva     #0, resume_line_ptr+1   ; Clear high byte of resume line_ptr to disable CONT
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
-        jmp     @wait_for_input
+        bcc     @wait_for_input
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer
@@ -65,7 +67,7 @@ main:
         jsr     advance_next_line_ptr   ; So we can move it to the next statement
         jsr     build_end_statement     ; Populate END statement after the immediate mode statement
         mva     #PROGRAM_STATE_RUNNING, program_state   ; Set the program state to RUNNING
-        jmp     @dispatch
+        bne     @dispatch
 
 statement_exec_vectors:
         .word   exec_end
@@ -82,6 +84,8 @@ statement_exec_vectors:
         .word   exec_on_gosub
         .word   exec_for
         .word   exec_next
+        .word   exec_stop
+        .word   exec_cont
 
 print_start:
         ldax    #start_message

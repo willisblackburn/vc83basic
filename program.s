@@ -48,6 +48,8 @@ line_buffer: .res 256
 
 .code
 
+.assert PROGRAM_STATE_STOPPED = 0, error
+
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 
@@ -69,7 +71,7 @@ initialize_program:
         tay                                 ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     variable_count              ; Initialize number of variables to 0
-        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
+        sta     program_state               ; Initialize program_state to stopped (must be 0)
         
 ; Fall through to reset_program_state
 
@@ -92,6 +94,7 @@ reset_program_state:
         mva     #0, osp                 ; Initialize expression stack positions to 0
         sta     vsp
         sta     csp
+        sta     resume_line_ptr+1       ; Initialize resume_line_ptr to 0 to disable CONT
 
 ; Fall through
 
