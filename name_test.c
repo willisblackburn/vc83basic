@@ -185,7 +185,8 @@ static void test_add_variable(void) {
 
     // Call initialize_program to set up variable_name_table_ptr.
     initialize_program();
-    ASSERT_EQ(*variable_name_table_ptr, 0);
+    ASSERT_EQ(variable_name_table_ptr[0], 0);
+    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 1);
 
     // add_variable is used after find_name, which sets up name_ptr.
     strcpy(buffer, "X");
@@ -196,6 +197,9 @@ static void test_add_variable(void) {
     ASSERT_EQ(reg_a, 0);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 1);
+    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[1], 0);
+    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 2);
 
     strcpy(buffer, "Y,Z");
     err = find_name(variable_name_table_ptr, 0);
@@ -205,6 +209,22 @@ static void test_add_variable(void) {
     ASSERT_EQ(reg_a, 1);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 2);
+    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[2], 0);
+    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 3);
+    err = find_name(variable_name_table_ptr, 2);
+    ASSERT_NE(err, 0);
+    err = add_variable();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 2);
+    ASSERT_EQ(bp, 3);
+    ASSERT_EQ(variable_count, 3);
+    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[2], 'Z' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[3], 0);
+    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 4);
 }
 
 int main(void) {
