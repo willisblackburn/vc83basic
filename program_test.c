@@ -127,6 +127,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_MEMORY_EQ(line_ptr->data, line_10_data, sizeof line_10_data);  
     
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 3);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     set_line_buffer(200, line_200_data, sizeof line_200_data);
@@ -139,6 +140,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 3);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test inserting a line before the other two.
@@ -155,6 +157,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 3);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test deleting a line.
@@ -168,6 +171,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, 10);    
     ASSERT_EQ(line_ptr->number, 10);    
     advance_line_ptr();
+    ASSERT_EQ(line_ptr->next_line_offset, 3);    
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
