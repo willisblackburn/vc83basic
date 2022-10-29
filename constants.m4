@@ -70,10 +70,8 @@ def(PR_OPEN_PAREN,      hex(00))
 
 comment Program states
 
-def(PROGRAM_STATE_INITIALIZED,  hex(00))    comment Variables initalized to 0
-def(PROGRAM_STATE_RUNNING,      hex(01))    comment STOP command stops program; END ends
-def(PROGRAM_STATE_STOPPED,      hex(02))    comment CONT command continues; CLR resets
-def(PROGRAM_STATE_ENDED,        hex(03))    comment Program has ended; CONT doen't work
+def(PROGRAM_STATE_STOPPED,      hex(00))
+def(PROGRAM_STATE_RUNNING,      hex(01))
 
 comment Other constants
 

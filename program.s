@@ -84,7 +84,7 @@ initialize_program:
 ; variable_count = the number of variables in the variable name table
 
 ; We treat this as zero.
-.assert PROGRAM_STATE_INITIALIZED = 0, error
+.assert PROGRAM_STATE_STOPPED = 0, error
 
 reset_program_state:
         mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
@@ -98,7 +98,7 @@ reset_program_state:
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
         sta     free_ptr+1
-        mva     #PROGRAM_STATE_INITIALIZED, program_state   ; Set the program state to initialized
+        mva     #PROGRAM_STATE_STOPPED, program_state   ; Set the program state to stopped
         sta     osp                     ; Initialize expression stack positions to 0
         sta     vsp
 
