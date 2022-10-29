@@ -59,5 +59,5 @@ def(XH_PAREN,           4)
 
 comment Program states
 
-def(PROGRAM_STATE_STOPPED,      hex(00))
-def(PROGRAM_STATE_RUNNING,      hex(01))
+def(PS_STOPPED,         hex(00))
+def(PS_RUNNING,         hex(01))
