@@ -4,13 +4,13 @@
 ; RUN statement:
 ; Executes the program.
 
-.assert PROGRAM_STATE_RUNNING = 1, error
+.assert PS_RUNNING = 1, error
 
 exec_run:
         lda     program_state
         bne     @done                   ; Don't re-run if we're already running
         jsr     reset_program_state     ; Clear the variable name table
-        mva     #PROGRAM_STATE_RUNNING, program_state
+        mva     #PS_RUNNING, program_state
 @run_one_line:
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
@@ -21,7 +21,7 @@ exec_run:
         jmp     @run_one_line
 
 @program_end:
-        mva     #PROGRAM_STATE_STOPPED, program_state
+        mva     #PS_STOPPED, program_state
         clc
 
 @done:
