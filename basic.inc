@@ -131,7 +131,6 @@
 
 ; run.s
 .global exec_run
-.global exec_run_no_reset
 
 ; tables.s
 .global statement_name_table
