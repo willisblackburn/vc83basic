@@ -175,7 +175,7 @@ add_variable:
         txa                             ; Carry guaranteed to be set; handy!
         sbc     bp                      ; Subtract bp to find length of name
         ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
-        jsr     expand                  ; Do the expand
+        jsr     expand_a                ; Do the expand
         bcs     @fail
         ldx     bp                      ; Reload read position
         ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment
