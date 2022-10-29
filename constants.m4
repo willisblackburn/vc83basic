@@ -70,8 +70,8 @@ def(PR_OPEN_PAREN,      hex(00))
 
 comment Program states
 
-def(PROGRAM_STATE_STOPPED,      hex(00))
-def(PROGRAM_STATE_RUNNING,      hex(01))
+def(PS_STOPPED,         hex(00))
+def(PS_RUNNING,         hex(01))
 
 comment Other constants
 
