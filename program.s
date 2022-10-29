@@ -211,19 +211,15 @@ expand:
         lda     0,y                     ; Load the low byte of the pointer to increase
         sta     src_ptr                 ; Store it as source for copy
         adc     B                       ; Increase low byte
-        sta     0,y                     ; Save back
         sta     dst_ptr                 ; It's also the destination pointer
         iny                             ; Do the same thing for the high byte
         lda     0,y
         sta     src_ptr+1
         adc     C
-        sta     0,y
         sta     dst_ptr+1
         jsr     calculate_bytes_to_move ; Knowing src_ptr we can calculate number of bytes to move
+        dey                             ; Move Y back to low by of source pointer
 @next_ptr:
-        iny
-        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
-        beq     @copy                   ; Don't want to change it.
         clc
         lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
         adc     B
@@ -232,10 +228,10 @@ expand:
         lda     0,y
         adc     C
         sta     0,y
-        jmp     @next_ptr
-
-@copy:
-        jsr     copy_bytes_higher       ; Copy data up to the higher address
+        iny
+        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
+        bne     @next_ptr               ; Nope, keep going
+        jsr     copy_bytes_higher_de    ; Copy data up to the higher address
         clc                             ; Success
 @done:
         rts
@@ -256,19 +252,15 @@ compact:
         lda     0,y
         sta     src_ptr
         sbc     B
-        sta     0,y
         sta     dst_ptr
         iny
         lda     0,y
         sta     src_ptr+1
         sbc     C
-        sta     0,y
         sta     dst_ptr+1
         jsr     calculate_bytes_to_move ; Calculate the number of byte to move
+        dey                             ; Move Y back to low by of source pointer
 @next_ptr:
-        iny
-        cpy     #himem_ptr              ; Have we reached himem_ptr?
-        beq     @copy                   ; Yes, go start the copy
         sec
         lda     0,y                     ; Otherwise subtract BC from this pointer
         sbc     B
@@ -277,10 +269,10 @@ compact:
         lda     0,y
         sbc     C
         sta     0,y
-        jmp     @next_ptr
-
-@copy:
-        jsr     copy_bytes
+        iny
+        cpy     #himem_ptr              ; Have we reached himem_ptr?
+        bne     @next_ptr               ; Nope, keep going
+        jsr     copy_bytes_de
         clc
         rts
 
