@@ -20,7 +20,6 @@ COMMON_SOURCES = \
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
 TESTS = \
-	control_test \
 	decode_test \
 	encode_test \
 	expression_test \
