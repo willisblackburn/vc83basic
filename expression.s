@@ -114,19 +114,18 @@ operator_vectors:
         .word   op_mul
         .word   op_div
         .word   op_pow
-        .word   op_concat
-        .word   op_eq
-        .word   op_ne
-        .word   op_le
-        .word   op_lt
-        .word   op_ge
-        .word   op_gt
-        .word   op_and
-        .word   op_or
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
         .word   0
         .word   0
         .word   unary_op_minus
-        .word   unary_op_not
 
 op_add:
         jsr     pop_value               ; Get first value
@@ -165,60 +164,7 @@ unary_op_minus:
 op_mul:
 op_div:
 op_pow:
-op_concat:
         jmp     op_add
-
-op_eq:
-        jsr     compare_values
-        bcc     push_value_0            ; A < B
-        bne     push_value_0            ; A <> B
-        beq     push_value_1            ; A = B
-
-op_ne:
-        jsr     compare_values
-        bcc     push_value_1            ; A < B
-        bne     push_value_1            ; A <> B
-        beq     push_value_0            ; A = B
-
-op_le:
-        jsr     compare_values
-        bcc     push_value_1            ; A < B
-        bne     push_value_0            ; A <> B
-        beq     push_value_1            ; A = B
-
-op_lt:
-        jsr     compare_values
-        bcc     push_value_1            ; A < B
-        bcs     push_value_0            ; A <> B or A = B
-
-op_ge:
-        jsr     compare_values
-        bcc     push_value_0            ; A < B
-        bcs     push_value_1            ; A <> B or A = B
-
-op_gt:
-        jsr     compare_values
-        bcc     push_value_0            ; A < B
-        bne     push_value_1            ; A <> B
-        beq     push_value_0            ; A = B
-
-; Compares two values from the stack returns flags based on the comparison.
-; On return, C ("not borrow") will be or clear if the second value is greater than the first (B > A or A < B)
-; or set if the second value is less than or equal to the first (B <= A or A >= B).
-; If carry is set, then Z will be also be set if the values are equal or clear if they are not.
-
-compare_values:
-        jsr     pop_value               ; Get value
-        stax    BC                      ; Save in BC
-        jsr     pop_value        
-        tay                             ; Move low byte into Y to make room for high byte
-        txa
-        cmp     C                       ; Subtract high byte
-        bcc     @done                   ; Second value is greater
-        tya                             ; Get low byte back
-        cmp     B                       ; Subtract low byte
-@done:
-        rts
 
 ; Push the value in AX onto the value stack.
 ; AX = the value to push
@@ -259,35 +205,3 @@ pop_value:
         lda     value_stack,y           ; Load low byte into A
         ldx     value_stack+1,y         ; Load high byte into X
         rts
-
-op_and:
-        jsr     pop_value
-        stax    BC
-        jsr     pop_value
-        and     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        and     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
-        jmp     push_value
-
-op_or:
-        jsr     pop_value
-        stax    BC
-        jsr     pop_value
-        ora     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        ora     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
-        jmp     push_value
-
-unary_op_not:
-        jsr     pop_value               ; Get value
-        stx     B
-        clc                             ; Carry will be used to set the result; default is 0
-        ora     B                       ; OR the low and high bytes together
-        bne     push_value_0            ; Value was not zero so we should return 0
-        beq     push_value_1

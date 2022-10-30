@@ -25,15 +25,6 @@ operator_name_table:
         .byte   '*' | NT_END
         .byte   '/' | NT_END
         .byte   '^' | NT_END
-        .byte   '&' | NT_END
-        .byte   '=' | NT_END
-        .byte   '<', '>' | NT_END
-        .byte   '<', '=' | NT_END
-        .byte   '<' | NT_END
-        .byte   '>', '=' | NT_END
-        .byte   '>' | NT_END
-        .byte   'A', 'N', 'D' | NT_END
-        .byte   'O', 'R' | NT_END
         .byte   0
 
 ; Operator precedence table
@@ -42,13 +33,8 @@ operator_name_table:
 operator_precedence_table:
         .byte   PR_ADD          ; +, -
         .byte   PR_MUL          ; *, /
-        .byte   PR_POW          ; ^, &
-        .byte   PR_RELATIONAL   ; =, <>
-        .byte   PR_RELATIONAL   ; <=, <
-        .byte   PR_RELATIONAL   ; >=, >
-        .byte   PR_LOGICAL      ; AND, OR
+        .byte   PR_POW          ; ^
 
 unary_operator_name_table:
         .byte   '-' | NT_END
-        .byte   'N', 'O', 'T' | NT_END
         .byte   0
