@@ -79,7 +79,7 @@ statement_exec_vectors:
         .word   exec_goto
         .word   exec_gosub
         .word   exec_return
-        .word   0 ; pop
+        .word   exec_pop
         .word   exec_on_goto
         .word   exec_on_gosub
         .word   exec_for

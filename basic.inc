@@ -53,6 +53,7 @@
 .global exec_gosub
 .global exec_on_gosub
 .global exec_return
+.global exec_pop
 .global exec_for
 .global exec_next
 
