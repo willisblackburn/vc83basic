@@ -57,7 +57,8 @@ static void xh_operator(void) {
     switch (++op_count) {
         case 1: ASSERT_EQ(op, OP_ADD); break;
         case 2: ASSERT_EQ(op, OP_DIV); break;
-        case 3: ASSERT_EQ(op, OP_SUB); break;
+        case 3: ASSERT_EQ(op, OP_MUL); break;
+        case 4: ASSERT_EQ(op, OP_OR); break;
     }
 }
 
@@ -66,8 +67,8 @@ static int unary_op_count;
 static void xh_unary_operator(void) {
     char op = decode_unary_operator();
     switch (++unary_op_count) {
-        case 1: ASSERT_EQ(op, UNARY_OP_NOT); break;
-        case 2: ASSERT_EQ(op, UNARY_OP_MINUS); break;
+        case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
+        case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
     }
 }
 
@@ -88,7 +89,7 @@ void* decode_xh_vectors[] = {
 
 static void test_decode_expression(void) {
 
-    Line line = { // 4112+(X/3) OR NOT -X where X is variable 1
+    Line line = { // 4112+(X/3)*-X OR NOT X where X is variable 1
         16,
         10,
         {
@@ -99,9 +100,11 @@ static void test_decode_expression(void) {
             TOKEN_OP | OP_DIV,              
             TOKEN_NUM, 0x03, 0x00,          // 3
             TOKEN_NO_VALUE,
-            TOKEN_OP | OP_SUB, 
-            TOKEN_UNARY_OP | UNARY_OP_NOT,
+            TOKEN_OP | OP_MUL, 
             TOKEN_UNARY_OP | UNARY_OP_MINUS,             
+            TOKEN_VAR | 1,                  // X
+            TOKEN_OP | OP_OR,
+            TOKEN_UNARY_OP | UNARY_OP_NOT,
             TOKEN_VAR | 1,                  // X
             TOKEN_NO_VALUE
         }
@@ -111,8 +114,8 @@ static void test_decode_expression(void) {
 
     decode_expression(decode_xh_vectors, &line, offsetof(Line, data));
     ASSERT_EQ(num_count, 2);
-    ASSERT_EQ(var_count, 2);
-    ASSERT_EQ(op_count, 3);
+    ASSERT_EQ(var_count, 3);
+    ASSERT_EQ(op_count, 4);
     ASSERT_EQ(unary_op_count, 2);
     ASSERT_EQ(paren_count, 1);
 }
