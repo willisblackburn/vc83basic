@@ -125,6 +125,20 @@ get_control_stack_index_a:
 get_control_stack_index_done:
         rts
 
+; Add an entry onto the control stack and set the next_line_ptr field.
+; Reflects carry return from get_control_stack_index. On success, X is still the control stack index.
+; Y SAFE, BC SAFE, DE SAFE
+
+push_next_line_ptr:
+        jsr     get_control_stack_index ; Set X to control stack index
+        bcs     @done                   ; If csp was out of range
+        lda     next_line_ptr           ; Store next_line_ptr on control stack
+        sta     control_stack+Control::next_line_ptr,x
+        lda     next_line_ptr+1
+        sta     control_stack+Control::next_line_ptr+1,x
+@done:
+        rts
+
 ; FOR statement:
 
 exec_for:
@@ -200,17 +214,3 @@ exec_next:
         sta     next_line_ptr+1
         clc                             ; Signal success
         rts                            
-
-; Add an entry onto the control stack and set the next_line_ptr field.
-; Reflects carry return from get_control_stack_index. On success, X is still the control stack index.
-; Y SAFE, BC SAFE, DE SAFE
-
-push_next_line_ptr:
-        jsr     get_control_stack_index ; Set X to control stack index
-        bcs     @done                   ; If csp was out of range
-        lda     next_line_ptr           ; Store next_line_ptr on control stack
-        sta     control_stack+Control::next_line_ptr,x
-        lda     next_line_ptr+1
-        sta     control_stack+Control::next_line_ptr+1,x
-@done:
-        rts
