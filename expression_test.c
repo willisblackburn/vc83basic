@@ -77,28 +77,19 @@ static void test_evaluate_expression(void) {
     test_one_op(OP_ADD, 0, 1, 1, 2);
     test_one_op(OP_SUB, 0, -1, 1, 0);
 
-    test_one_op(OP_EQ, 1, 0, 0, 1);
-    test_one_op(OP_NE, 0, 1, 1, 0);
-    test_one_op(OP_LT, 0, 1, 0, 0);
-    test_one_op(OP_LE, 1, 1, 0, 1);
-    test_one_op(OP_GT, 0, 0, 1, 0);
-    test_one_op(OP_GE, 1, 0, 1, 1);
-
-    test_one_op(OP_AND, 0, 0, 0, 1);
-    test_one_op(OP_OR, 0, 1, 1, 1);
-
     test_one_unary_op(UNARY_OP_MINUS, 0, -1);
-    test_one_unary_op(UNARY_OP_NOT, 1, 0);
 }
 
 static void test_evaluate_expression_precedence(void) {
     char err;
     int result;
 
-    char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
-    char line_data_2[] = { TOKEN_PAREN, TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    // 2-1-1 = 0
+    char line_data_1[] = { TOKEN_NUM, 0x02, 0x00, TOKEN_OP | OP_SUB, 
+        TOKEN_NUM, 0x01, 0x00, TOKEN_OP | OP_SUB, TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
+    // 2-(1-1) = 2
+    char line_data_2[] = { TOKEN_NUM, 0x02, 0x00, TOKEN_OP | OP_SUB, TOKEN_PAREN,
+        TOKEN_NUM, 0x01, 0x00, TOKEN_OP | OP_SUB, TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
     set_line(line_data_1, sizeof line_data_1);
     err = evaluate_expression();
@@ -110,7 +101,7 @@ static void test_evaluate_expression_precedence(void) {
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
-    ASSERT_EQ(result, 1);
+    ASSERT_EQ(result, 2);
 }
 
 int main(void) {
