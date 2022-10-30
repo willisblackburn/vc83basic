@@ -225,8 +225,6 @@ list_paren:
         lda     #')'
         jmp     putchar_buffer
 
-; Fall through
-
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')'.
 ; Y SAFE, BC SAFE, DE SAFE
