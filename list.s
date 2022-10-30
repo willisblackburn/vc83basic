@@ -103,6 +103,7 @@ list_argument_type_vectors:
         .word   list_repeated_variable  ; NT_RPT_VAR
         .word   list_number             ; NT_NUM
         .word   list_repeated_number    ; NT_RPT_NUM
+        .word   list_statement          ; NT_STATEMENT
 
 ; Lists a single directive from the token stream.
 ; A = the directive
@@ -180,6 +181,12 @@ list_repeated_variable:
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
         rts
+
+list_statement:
+        jsr     decode_byte             ; Get the statement number
+        tay                             ; Transfer to Y for list_element
+        ldax    #statement_name_table
+        jmp     list_element
 
 list_number:
         jsr     add_whitespace

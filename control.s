@@ -206,4 +206,14 @@ push_next_line_ptr:
 @done:
         rts
 
-
+exec_if:
+        jsr     evaluate_expression     ; Evaluate the expression
+        jsr     pop_value
+        sta     B                       ; Store low byte of result in B
+        txa                             ; Transfer high byte into X
+        ora     B                       ; Or the high and low bytes together
+        beq     @done                   ; If zero then don't execute the THEN
+        jsr     dispatch_next_statement ; Otherwise execute the THEN
+@done:
+        clc
+        rts

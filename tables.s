@@ -17,6 +17,7 @@ statement_name_table:
         .byte   'N', 'E', 'X', 'T', NT_VAR | NT_END
         .byte   'S', 'T', 'O', 'P' | NT_END
         .byte   'C', 'O', 'N', 'T' | NT_END
+        .byte   'I', 'F', 1, 'T', 'H', 'E', 'N', NT_STATEMENT | NT_END
         .byte   0
 
 operator_name_table:

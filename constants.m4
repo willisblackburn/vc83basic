@@ -10,6 +10,7 @@ def(NT_VAR,             hex(10))
 def(NT_RPT_VAR,         hex(11))
 def(NT_NUM,             hex(12))
 def(NT_RPT_NUM,         hex(13))
+def(NT_STATEMENT,       hex(14))
 def(NT_END,             hex(80))
 
 comment Tokenized form constants

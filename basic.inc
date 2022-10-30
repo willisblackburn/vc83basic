@@ -55,6 +55,7 @@
 .global exec_return
 .global exec_for
 .global exec_next
+.global exec_if
 
 ; decode.s
 .global decode_expression
@@ -90,6 +91,7 @@
 
 ; main.s
 .global main
+.global dispatch_next_statement
 
 ; name.s
 .global find_name

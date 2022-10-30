@@ -35,10 +35,7 @@ main:
 
 @dispatch:
         mva     #Line::data, lp         ; Initialize read position to start of data
-        jsr     decode_byte             ; Get statement number
-        tay
-        ldax    #statement_exec_vectors
-        jsr     invoke_indexed_vector
+        jsr     dispatch_next_statement
         bcc     @loop
 @error:
         jsr     print_error
@@ -69,6 +66,14 @@ main:
         mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
         bne     @dispatch
 
+; Decodes and executes one statement from the token stream.
+
+dispatch_next_statement:
+        jsr     decode_byte             ; Get statement number
+        tay
+        ldax    #statement_exec_vectors
+        jmp     invoke_indexed_vector
+
 statement_exec_vectors:
         .word   exec_end
         .word   exec_run
@@ -86,6 +91,7 @@ statement_exec_vectors:
         .word   exec_next
         .word   exec_stop
         .word   exec_cont
+        .word   exec_if
 
 print_start:
         ldax    #start_message

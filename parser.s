@@ -147,6 +147,7 @@ parse_argument_type_vectors:
         .word   parse_repeated_variable ; NT_RPT_VAR
         .word   parse_number            ; NT_NUM
         .word   parse_repeated_number   ; NT_RPT_NUM
+        .word   parse_statement         ; NT_STATEMENT
 
 ; Parses a single directive.
 ; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
@@ -319,6 +320,12 @@ parse_repeated_variable:
         jsr     encode_no_value         ; Terminate the repeated list
 @done:
         rts
+
+; Parses the statement following THEN.
+
+parse_statement:
+        ldax    #statement_name_table
+        jmp     parse_element
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
 ; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did.
