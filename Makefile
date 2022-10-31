@@ -7,7 +7,8 @@ COMMON_SOURCES = \
 	decode.s \
 	encode.s \
 	expression.s \
-	input.s let.s \
+	input.s \
+	let.s \
 	list.s \
 	main.s \
 	name.s \
