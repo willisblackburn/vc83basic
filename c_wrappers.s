@@ -12,6 +12,8 @@
 
 ; Aliases for globals
 
+.export _reg_fpa = FPA
+
 .export _bp = bp
 .export _lp = lp
 .export _src_ptr = src_ptr
@@ -50,13 +52,20 @@ _reg_y: .res 1
 
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
-return_carry:
+return_carry_flag:
         stax    _reg_ax
         sty     _reg_y
         lda     #0
         tax
         rol     A
         rts
+
+; Returns 0 or 1 based on the zero flag state.
+return_zero_flag:
+        beq     @zero
+        jmp     return0
+@zero:
+        jmp     return1
 
 ; Function wrappers
 
@@ -103,30 +112,57 @@ _encode_number:
         sta     lp
         jsr     popax
         jsr     encode_number
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _encode_byte:
 .export _encode_byte
         sta     lp
         jsr     popa
         jsr     encode_byte
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; expression.s
 
 _evaluate_expression:
 .export _evaluate_expression
         jsr     evaluate_expression
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _push_value:
 .export _push_value
         jsr     push_value
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _pop_value:
 .export _pop_value
         jmp     pop_value
+
+; fp.s
+
+_load_fpa:
+.export _load_fpa
+        jmp     load_fpa
+
+_store_fpa:
+.export _store_fpa
+        jmp     store_fpa
+
+_clear_fpa:
+.export _clear_fpa
+        jmp     clear_fpa
+
+_fpa_is_zero:
+.export _fpa_is_zero
+        jsr     fpa_is_zero
+        jmp     return_zero_flag
+
+_fneg:
+.export _fneg
+        jmp     fneg
+
+_fp_to_string:
+.export _fp_to_string
+        jmp     fp_to_string
 
 ; list.s
 
@@ -134,7 +170,7 @@ _list_line:
 .export _list_line
         stax    line_ptr
         jsr     list_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _list_element:
 .export _list_element
@@ -164,14 +200,14 @@ _list_directive:
 _is_name_character:
 .export _is_name_character
         jsr     is_name_character
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _find_name:
 .export _find_name
         sta     bp                      ; Buffer index
         jsr     popax                   ; Name table pointer
         jsr     find_name
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _get_name_table_entry:
 .export _get_name_table_entry
@@ -179,12 +215,12 @@ _get_name_table_entry:
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
         jsr     get_name_table_entry
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _add_variable:
 .export _add_variable
         jsr     add_variable
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; parser.s
 
@@ -192,17 +228,17 @@ _read_number:
 .export _read_number
         sta     bp                      ; Buffer index
         jsr     read_number
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_line:
 .export _parse_line
         jsr     parse_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_element:
 .export _parse_element
@@ -212,7 +248,7 @@ _parse_element:
         jsr     popax                   ; Name table pointer
         stax    name_ptr
         jsr     parse_element
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_directive:
 .export _parse_directive
@@ -221,7 +257,7 @@ _parse_directive:
         sta     bp
         jsr     popa
         jsr     parse_directive
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_expression:
 .export _parse_expression
@@ -229,13 +265,13 @@ _parse_expression:
         jsr     popa
         sta     bp
         jsr     parse_expression
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_argument_separator:
 .export _parse_argument_separator
         sta     bp
         jsr     parse_argument_separator
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; program.s
 
@@ -254,7 +290,7 @@ _reset_next_line_ptr:
 _find_line:
 .export _find_line
         jsr     find_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _advance_next_line_ptr:
 .export _advance_next_line_ptr
@@ -263,7 +299,7 @@ _advance_next_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _expand:
 .export _expand
@@ -272,7 +308,7 @@ _expand:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     expand
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _compact:
 .export _compact
@@ -281,7 +317,7 @@ _compact:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     compact
-        jmp     return_carry
+        jmp     return_carry_flag
         rts
 
 _calculate_bytes_to_move:
@@ -293,7 +329,7 @@ _calculate_bytes_to_move:
 _check_himem:
 .export _check_himem
         jsr     check_himem
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _set_variable_value_ptr:
 .export _set_variable_value_ptr

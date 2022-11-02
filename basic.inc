@@ -1,6 +1,7 @@
 .include "constants.inc"
 
 ; Data structures
+
 .struct Line
     next_line_offset .res 1
     number .res 2
@@ -15,9 +16,15 @@
     step_value .res 2
 .endstruct
 
+.struct Float
+    exponent .res 1
+    significand .res 4
+.endstruct
+
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
+.globalzp FPA
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -77,6 +84,12 @@
 ; expression.s
 .global evaluate_expression
 .global push_value, pop_value
+
+; fp.s
+.global load_fpa, store_fpa, clear_fpa
+.global fpa_is_zero
+.global fneg
+.global fp_to_string
 
 ; input.s
 .global exec_input

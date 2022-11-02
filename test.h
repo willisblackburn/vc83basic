@@ -17,8 +17,15 @@ typedef struct Line {
     char data[];
 } Line;
 
+typedef struct Float {
+    signed char exponent;
+    long significand;
+} Float;
+
 // Zero Page
 
+extern Float reg_fpa;
+#pragma zpsym ("reg_fpa")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -84,6 +91,14 @@ int pop_value(void);
 // encode.s
 int encode_number(int number, char lp);
 int encode_byte(char byte_value, char lp);
+
+// fp.s
+void load_fpa(const Float* fp_ptr);
+void store_fpa(const Float* fp_ptr);
+void clear_fpa(void);
+int fpa_is_zero(void);
+void fneg(void);
+void fp_to_string(void);
 
 // list.s
 int list_line(const void* line_ptr);

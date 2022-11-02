@@ -7,6 +7,7 @@ COMMON_SOURCES = \
 	decode.s \
 	encode.s \
 	expression.s \
+	fp.s \
 	input.s \
 	let.s \
 	list.s \
@@ -24,6 +25,7 @@ TESTS = \
 	decode_test \
 	encode_test \
 	expression_test \
+	fp_test \
 	list_test \
 	name_test \
 	parser_test \
