@@ -53,16 +53,6 @@ read_number:
         sec                             ; Set carry to signal error
         rts
 
-; Converts the character in A into a digit.
-; Returns the digit in A, carry clear if ok, carry set if error
-; X SAFE, Y SAFE
-
-char_to_digit:
-        sec                             ; Set carry
-        sbc     #'0'                    ; Subtract '0'; maps valid values to range 0-9 and other values to 10-255
-        cmp     #10                     ; Sets carry if it's in the 10-255 range
-        rts
-
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
 ; If the line number is missing, set it to -1.
 

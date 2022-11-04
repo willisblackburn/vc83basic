@@ -90,6 +90,8 @@
 .global fpa_is_zero
 .global fneg
 .global fp_to_string
+.global string_to_fp
+.global char_to_digit
 
 ; input.s
 .global exec_input
@@ -118,7 +120,7 @@
 .global add_variable
 
 ; parser.s
-.global read_number, char_to_digit
+.global read_number
 .global parse_line
 .global parse_element
 .global parse_next_element

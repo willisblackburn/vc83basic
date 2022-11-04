@@ -22,10 +22,8 @@ MAXDIGITS = 10
 .assert .sizeof(Float::exponent) = 1, error
 .assert .sizeof(Float::significand) = 4, error
 
-; FP accumulator
-FPA: .res 5
-; Extra significand bytes
-FPAX: .res 4
+; FP accumulator + extended significand
+FPA: .res 9
 ; Secondary FP register
 FPB: .res 5
 
@@ -124,24 +122,23 @@ clear_fpa:
 ;         stz     FPX+4
 ;         rts
 
-; ; Copies FPA to FPX
-; ; No return value.
-; ; Does not use X or Y.
+; Copies FPA to FPB
+; No return value.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
-; _copy_fpa_to_fpx:
-; copy_fpa_to_fpx:
-;         lda     FPA
-;         sta     FPX
-; copy_fpa_significand_to_fpx:
-;         lda     FPA+1
-;         sta     FPX+1
-;         lda     FPA+2
-;         sta     FPX+2
-;         lda     FPA+3
-;         sta     FPX+3
-;         lda     FPA+4
-;         sta     FPX+4
-;         rts
+copy_fpa_to_fpb:
+        lda     FPA+Float::exponent
+        sta     FPB+Float::exponent
+copy_fpa_significand_to_fpb:
+        lda     FPA+Float::significand
+        sta     FPB+Float::significand
+        lda     FPA+Float::significand+1
+        sta     FPB+Float::significand+1
+        lda     FPA+Float::significand+2
+        sta     FPB+Float::significand+2
+        lda     FPA+Float::significand+3
+        sta     FPB+Float::significand+3
+        rts
 
 ; ; Copies FPX to FPA
 ; ; No return value.
@@ -210,49 +207,54 @@ fpa_is_zero:
         ora     FPA+Float::significand+3
         rts
 
-; ; Multiplies the FPA significand by 10. Copies the FPA value into FPX.
-; ; On return the carry will be set if the multiplication caused an overflow.
-; ; On overflow, the original value can be recovered from FPX.
-; ; Does not touch X or Y.
+; Multiplies the FPA significand by 10. Copies the FPA value into FPX.
+; On return the carry will be set if the multiplication caused an overflow.
+; On overflow, the original value can be recovered from FPX.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
-; significand_mul_10:
-;         jsr     copy_fpa_significand_to_fpx
-;         jsr     @shift_significand      ; *2
-;         bcs     @overflow
-;         jsr     @shift_significand      ; *4
-;         bcs     @overflow
-;         jsr     @add_significands       ; *5
-;         bcs     @overflow
-;         jsr     @shift_significand      ; *10
-; @overflow:
-;         rts
+significand_mul_10:
+        jsr     copy_fpa_significand_to_fpb
+        jsr     @shift_significand      ; *2
+        bcs     @overflow
+        jsr     @shift_significand      ; *4
+        bcs     @overflow
+        jsr     @add_significands       ; *5
+        bcs     @overflow
+        jsr     @shift_significand      ; *10
+@overflow:
+        lda     FPA+Float::exponent
+        lda     FPA+Float::significand
+        lda     FPA+Float::significand+1
+        lda     FPA+Float::significand+2
+        lda     FPA+Float::significand+3
+        rts
 
-; ; Shifts the signifiand of FPA left, multiplying it by 2.
+; Shifts the signifiand of FPA left, multiplying it by 2.
 
-; @shift_significand:
-;         asl     FPA+1
-;         rol     FPA+2
-;         rol     FPA+3
-;         rol     FPA+4
-;         rts
+@shift_significand:
+        asl     FPA+Float::significand
+        rol     FPA+Float::significand+1
+        rol     FPA+Float::significand+2
+        rol     FPA+Float::significand+3
+        rts
 
-; ; Adds the significand of FPX to FPA.
+; Adds the significand of FPX to FPA.
 
-; @add_significands:
-;         clc
-;         lda     FPA+1           
-;         adc     FPX+1
-;         sta     FPA+1
-;         lda     FPA+2           
-;         adc     FPX+2
-;         sta     FPA+2
-;         lda     FPA+3           
-;         adc     FPX+3
-;         sta     FPA+3
-;         lda     FPA+4           
-;         adc     FPX+4
-;         sta     FPA+4
-;         rts
+@add_significands:
+        clc
+        lda     FPA+Float::significand
+        adc     FPB+Float::significand
+        sta     FPA+Float::significand
+        lda     FPA+Float::significand+1
+        adc     FPB+Float::significand+1
+        sta     FPA+Float::significand+1
+        lda     FPA+Float::significand+2
+        adc     FPB+Float::significand+2
+        sta     FPA+Float::significand+2
+        lda     FPA+Float::significand+3
+        adc     FPB+Float::significand+3
+        sta     FPA+Float::significand+3
+        rts
 
 ; Divides the FPA significand by 10.
 ; Returns the remainder in A.
@@ -265,14 +267,14 @@ significand_div_10:
         lda     #0                      ; Initialize remainder to 0
         ldx     #32                     ; 32 bits
 @next_bit:
-        asl     FPA+1                   ; LSB of FPA+1 (least significant byte) is now 0
-        rol     FPA+2
-        rol     FPA+3
-        rol     FPA+4
+        asl     FPA+Float::significand  ; LSB of FPA+1 (least significant byte) is now 0
+        rol     FPA+Float::significand+1
+        rol     FPA+Float::significand+2
+        rol     FPA+Float::significand+3
         rol     A                       ; Bits from significand move into A
         cmp     #10                     ; C ("don't borrow") set if A>=10
         bcc     @not_10                 ; It's <10
-        inc     FPA+1                   ; Increment quotient
+        inc     FPA+Float::significand  ; Increment quotient
         sbc     #10                     ; C will still be set here
 @not_10:
         dex
@@ -353,7 +355,7 @@ fp_to_string:
 ; The number is 0 if the significand is zero regardless of exponent.
 
         jsr     fpa_is_zero
-        bne     @check_negative
+        bne     @not_zero
         lda     #'0'
         sta     buffer,x
         inx
@@ -361,7 +363,7 @@ fp_to_string:
 
 ; If significand is negaitve, output a '-' and then negate the significand.
 
-@check_negative:
+@not_zero:
         lda     FPA+Float::significand+3    ; MSB of significand
         bpl     @generate_digits        ; Already positive, carry on with digits
         lda     #'-'                    ; Store '-' as first character
@@ -580,147 +582,145 @@ remove_trailing_zeros:
 @done:
         rts 
 
-; ; Converts a string into an FP number in FPA.
-; ; AX is the address of the ASCII buffer, which should be NUL-terminated.
-; ; Returns 0 in A for success, otherwise an error code.
+; Converts a string in bufer into an FP number in FPA.
+; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
+; bp = the read position in buffer
+; Returns the number in FPA and carry clear if ok, carry set if error.
 
-; _string_to_fp:
-; string_to_fp:
-;         sta     ptr1                    ; String address into ptr1
-;         stx     ptr1+1
-;         jsr     clear_fpa               ; Clear FPA
-;         ldy     #0                      ; Y is the index into the string
-;         ldx     #$80                    ; X counts digits after '.'; starts at -128 and jumps to 0 on '.'
-;         stz     FPA                     ; Initialize exponent to 0
-;         lda     (ptr1),y                ; Check first character
-;         beq     @err_empty_string
-;         cmp     #'-'                    ; Is the first character a minus?
-;         php                             ; Remember result of this for later
-;         bne     @next_character
-;         iny                             ; Skip the minus
-; @next_character:
-;         lda     (ptr1),y                ; Get the next character
-;         beq     @finish                 ; It was NUL, the number is finished
-;         iny                             ; Advance to next position
-;         cmp     #'.'                    ; Is it the decimal point?
-;         bne     @not_decimal_point      ; No
-;         txa                             ; Check if we've already seen a decimal
-;         bpl     @err_multiple_decimals
-;         ldx     #0                      ; Set X to 0 to count digits after '.'
-;         jmp     @next_character
+string_to_fp:
+        jsr     clear_fpa               ; Clear FPA
+        ldx     bp                      ; X is the index into the string
+        ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
+        lda     buffer,x                ; Check first character
+        beq     @err_empty_string
+        cmp     #'-'                    ; Is the first character a minus?
+        php                             ; Remember result of this for later
+        bne     @next_character
+        inx                             ; Skip the minus
+@next_character:
+        lda     buffer,x                ; Get the next character
+        beq     @finish                 ; It was NUL, the number is finished
+        inx                             ; Advance to next position
+        cmp     #'.'                    ; Is it the decimal point?
+        bne     @not_decimal_point      ; No
+        tya                             ; Check if we've already seen a decimal
+        bpl     @err_multiple_decimals
+        ldy     #0                      ; Set Y to 0 to count digits after '.'
+        jmp     @next_character
 
-; @not_decimal_point:
-;         cmp     #'E'                    ; Is it 'E'?
-;         beq     @handle_e               ; Yes
-;         jsr     @convert_digit          ; But if not, must be a digit
-;         bcs     @err_not_digit          ; Character was not a digit
-;         sta     tmp1                    ; Park digit
+@not_decimal_point:
+        cmp     #'E'                    ; Is it 'E'?
+        beq     @handle_e               ; Yes
+        jsr     char_to_digit           ; But if not, must be a digit
+        bcs     @err_not_digit          ; Character was not a digit
+        sta     D                       ; Park digit
 
-; ; Multiply FPA by 10 and add in new digit.
+; Multiply FPA by 10 and add in new digit.
 
-;         jsr     significand_mul_10
-;         bcs     @err_overflow
-;         inx                             ; Increment digits after '.'
-;         lda     tmp1                    ; Recall the digit
-;         clc     
-;         adc     FPA+1                   ; Add digit to LSB
-;         sta     FPA+1
-;         bcc     @next_character         ; If no carry then next character
-;         inc     FPA+2                   ; Otherwise increment next byte
-;         bne     @next_character         ; If it didn't roll over then next character
-;         inc     FPA+3                   ; etc.
-;         bne     @next_character
-;         inc     FPA+4           
-;         jmp     @next_character
+        jsr     significand_mul_10
+        bcs     @err_overflow
+        iny                             ; Increment digits after '.'
+        lda     D                       ; Recall the digit
+        clc     
+        adc     FPA+Float::significand  ; Add digit to LSB
+        sta     FPA+Float::significand
+        bcc     @next_character         ; If no carry then next character
+        inc     FPA+Float::significand+1    ; Otherwise increment next byte
+        bne     @next_character         ; etc,
+        inc     FPA+Float::significand+2
+        bne     @next_character
+        inc     FPA+Float::significand+3
+        beq     @err_overflow           ; If significand rolled over to 0 then overflow
+        jmp     @next_character
 
-; ; Update the exponent and finish.
+; Update the exponent and finish.
 
-; @finish:
-;         lda     FPA+4                   ; Check if significand went negative
-;         bmi     @err_overflow
-;         txa                             ; Exponent adjustment to A
-;         eor     #$FF                    ; And negate it
-;         inc     A
-;         bmi     @set_exponent           ; We only use the adjustment if is now negative
-;         lda     #0                      ; Otherwise make it 0
-; @set_exponent:
-;         clc
-;         adc     FPA                     ; Add exponent value from 'E'
-;         bvs     @err_overflow           ; Adjusting E might cause signed overflow
-;         sta     FPA                     ; Store exponent
-;         plp                             ; Go get the '-' comparison from earlier
-;         bne     @not_negative           ; There was no '-' at the start of the string
-;         jsr     fneg
-; @not_negative:
-;         jmp     return0                 ; Signal no error
+@finish:
+        tya                             ; Exponent adjustment to A
+        bpl     @set_exponent           ; If adjustment is positive then use it
+        lda     #0                      ; Otherwise make it 0
+@set_exponent:
+        sta     D                       ; Use D to temporarily store adjustment
+        sec
+        lda     FPA+Float::exponent
+        sbc     D
+        bvs     @err_overflow           ; Adjusting E might cause signed overflow
+        sta     FPA+Float::exponent     ; Store exponent
+        plp                             ; Go get the '-' comparison from earlier
+        bne     @positive               ; There was no '-' at the start of the string
+        jsr     fneg
+        bpl     @err_overflow_2         ; Overflow if we were expecting negative but number is positive
+        clc
+        rts
 
-; @err_not_digit_in_e:
-; @err_overflow_in_e:
-;         plp                             ; Errors that require two pops
-; @err_overflow:
-; @err_multiple_decimals:
-; @err_not_digit:
-;         plp                             ; Errors that require one pop
-; @err_empty_string:
-;         lda     #ERR_INVALID_NUMBER
-;         ldx     #0
-;         rts
+@positive:
+        lda     FPA+Float::significand+3
+        bmi     @err_overflow_2         ; Overflow if we were expecting positive but number is negative
+        clc                             ; Signal success
+        rts
 
-; ; There can be 1 or 2 digits after 'E' optionally prefixed by '-'.
-; ; Parse the number and store in tmp1.
-; ; Checks for digits also handle the case of the string ending after 'E' or '-'.
+@err_not_digit_in_e:
+@err_overflow_in_e:
+        pla                             ; Errors that require two pops
+@err_overflow:
+@err_multiple_decimals:
+@err_not_digit:
+        pla                             ; Errors that require one pop
+@err_empty_string:
+@err_overflow_2:
+        sec                             ; Signal failure
+        rts
 
-; @handle_e:
-;         lda     (ptr1),y                ; First character
-;         cmp     #'-'                    ; Is it minus?
-;         php                             ; Save the result for later
-;         bne     @next_character_e
-;         iny                             ; Skip the minus
-; @next_character_e:
-;         lda     (ptr1),y                ; Next character
-;         beq     @finish_e
-;         iny
-;         jsr     @convert_digit          ; Try to parse as digit
-;         bcs     @err_not_digit_in_e     ; Was not digit
-;         sta     tmp1                    ; Park digit in tmp1
-;         lda     FPA                     ; Get exponent
-;         asl     A                       ; Exponent *2
-;         bcs     @err_overflow_in_e
-;         asl     A                       ; *4
-;         bcs     @err_overflow_in_e
-;         adc     FPA                     ; *5, carry guaranteed to be clear
-;         bcs     @err_overflow_in_e
-;         asl     A                       ; *10
-;         bcs     @err_overflow_in_e
-;         adc     tmp1                    ; Add in the new digit
-;         bcs     @err_overflow_in_e
-;         bmi     @err_overflow_in_e      ; If it goes negative then fail
-;         sta     FPA
-;         jmp     @next_character_e
+; There can be 1-3 exponent digits after 'E' optionally prefixed by '-'.
+; Parse the number and store in FPA exponent.
+; Checks for digits also handle the case of the string ending after 'E' or '-'.
 
-; @finish_e:
-;         plp                             ; Get the '-' comparison from before
-;         bne     @finish                 ; If it wasn't negative then all done
-;         lda     FPA                     ; Negate exponent
-;         eor     #$FF
-;         inc     A
-;         sta     FPA
-;         jmp     @finish
+@handle_e:
+        lda     buffer,x                ; First character
+        cmp     #'-'                    ; Is it minus?
+        php                             ; Save the result for later
+        bne     @next_character_e
+        inx                             ; Skip the minus
+@next_character_e:
+        lda     buffer,x                ; Next character
+        beq     @finish_e
+        inx
+        jsr     char_to_digit           ; Try to parse as digit
+        bcs     @err_not_digit_in_e     ; Was not digit
+        sta     D                       ; Park digit in D
+        lda     FPA+Float::exponent     ; Get exponent
+        asl     A                       ; Exponent *2
+        bcs     @err_overflow_in_e
+        asl     A                       ; *4
+        bcs     @err_overflow_in_e
+        adc     FPA+Float::exponent     ; *5, carry guaranteed to be clear
+        bcs     @err_overflow_in_e
+        asl     A                       ; *10
+        bcs     @err_overflow_in_e
+        adc     D                       ; Add in the new digit
+        bcs     @err_overflow_in_e
+        bmi     @err_overflow_in_e      ; If it goes negative then fail
+        sta     FPA+Float::exponent
+        jmp     @next_character_e
 
-; ; Converts the digit in A into a value by subtracting '0'.
-; ; Returns value in A.
-; ; Carry will be set if A is not in the range '0'-'9'.
+@finish_e:
+        plp                             ; Get the '-' comparison from before
+        bne     @finish                 ; If it wasn't negative then all done
+        lda     FPA+Float::exponent     ; Negate exponent
+        eor     #$FF
+        sta     FPA
+        inc     FPA
+        jmp     @finish
 
-; @convert_digit:
-;         sec
-;         sbc     #'0'                    ; Subtract '0' from the digit
-;         bcc     @less_than_0            ; Fail if character was <'0'
-;         cmp     #10                     ; Check for 10; carry will be set if value is >=10
-;         rts
+; Converts the character in A into a digit.
+; Returns the digit in A, carry clear if ok, carry set if error.
+; X SAFE, Y SAFE
 
-; @less_than_0:
-;         sec
-;         rts
+char_to_digit:
+        sec                             ; Set carry
+        sbc     #'0'                    ; Subtract '0'; maps valid values to range 0-9 and other values to 10-255
+        cmp     #10                     ; Sets carry if it's in the 10-255 range
+        rts
 
 ; Converts a 16-bit signed integer value into floating point value in FPA.
 ; A, X = 16-bit integer.

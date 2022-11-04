@@ -98,7 +98,9 @@ void store_fpa(const Float* fp_ptr);
 void clear_fpa(void);
 int fpa_is_zero(void);
 void fneg(void);
+int char_to_digit(char c);
 void fp_to_string(void);
+int string_to_fp(void);
 
 // list.s
 int list_line(const void* line_ptr);
@@ -113,7 +115,6 @@ int add_variable(void);
 
 // parser.s
 int read_number(char bp);
-int char_to_digit(char c);
 int parse_line(void);
 int parse_element(const char* name_ptr, char bp, char lp);
 int parse_directive(char directive, char bp, char lp);

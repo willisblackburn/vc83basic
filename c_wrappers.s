@@ -160,9 +160,19 @@ _fneg:
 .export _fneg
         jmp     fneg
 
+_char_to_digit:
+.export _char_to_digit
+        jsr     char_to_digit
+        jmp     return_carry_flag
+
 _fp_to_string:
 .export _fp_to_string
         jmp     fp_to_string
+
+_string_to_fp:
+.export _string_to_fp
+        jsr     string_to_fp
+        jmp     return_carry_flag
 
 ; list.s
 
@@ -228,11 +238,6 @@ _read_number:
 .export _read_number
         sta     bp                      ; Buffer index
         jsr     read_number
-        jmp     return_carry_flag
-
-_char_to_digit:
-.export _char_to_digit
-        jsr     char_to_digit
         jmp     return_carry_flag
 
 _parse_line:
