@@ -360,60 +360,53 @@ static void test_fadd(void) {
     // ASSERT_FP_EQ(reg_fpa, 1, -9);
 }
 
-// static void test_fmul(void) {
-//     char err;
-//     Float value;
-//     PRINT_TEST_NAME();
-//     // 0 * 0 = 0
-//     SET_FP(reg_fpa, 0, 0);
-//     SET_FP(value, 0, 0);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, 0);
-//     // 1 * 1 = 1
-//     SET_FP(reg_fpa, 0, 1);
-//     SET_FP(value, 0, 1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, 1);
-//     // 1E1 * 1 = 1E1
-//     SET_FP(reg_fpa, 1, 1);
-//     SET_FP(value, 0, 1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 1, 1);
-//     // 3.14159 * 1E5 = 314159
-//     SET_FP(reg_fpa, -5, 314159);
-//     SET_FP(value, 5, 1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, 314159);
-//     // 1 * -1 = -1
-//     SET_FP(reg_fpa, 0, 1);
-//     SET_FP(value, 0, -1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, -1);
-//     // -1 * 1 = -1
-//     SET_FP(reg_fpa, 0, -1);
-//     SET_FP(value, 0, 1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, -1);
-//     // -1 * -1 = 1
-//     SET_FP(reg_fpa, 0, -1);
-//     SET_FP(value, 0, -1);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, 0, 1);
-//     // 3.14159 * 3.14159
-//     // TODO: should round up not truncate
-//     SET_FP(reg_fpa, -5, 314159);
-//     SET_FP(value, -5, 314159);
-//     err = fmul(&value);
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FP_EQ(reg_fpa, -8, 986958772);
-//  }
+static void test_fmul(void) {
+    Float value;
+
+    PRINT_TEST_NAME();
+
+    // 0 * 0 = 0
+    SET_FP(reg_fpa, 0, 0);
+    SET_FP(value, 0, 0);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 0);
+    // 1 * 1 = 1
+    SET_FP(reg_fpa, 0, 1);
+    SET_FP(value, 0, 1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 1);
+    // 1E1 * 1 = 1E1
+    SET_FP(reg_fpa, 1, 1);
+    SET_FP(value, 0, 1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 1, 1);
+    // 3.14159 * 1E5 = 314159
+    SET_FP(reg_fpa, -5, 314159);
+    SET_FP(value, 5, 1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 314159);
+    // 1 * -1 = -1
+    SET_FP(reg_fpa, 0, 1);
+    SET_FP(value, 0, -1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, -1);
+    // -1 * 1 = -1
+    SET_FP(reg_fpa, 0, -1);
+    SET_FP(value, 0, 1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, -1);
+    // -1 * -1 = 1
+    SET_FP(reg_fpa, 0, -1);
+    SET_FP(value, 0, -1);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 1);
+    // 3.14159 * 3.14159
+    // TODO: should round up not truncate
+    SET_FP(reg_fpa, -5, 314159);
+    SET_FP(value, -5, 314159);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, -8, 986958772);
+ }
 
 int main(void) {
     initialize_target();
@@ -429,6 +422,6 @@ int main(void) {
     test_fp_to_string();
     test_string_to_fp();
     test_fadd();
-    // test_fmul();
+    test_fmul();
     return 0;
 }

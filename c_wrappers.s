@@ -178,6 +178,14 @@ _fadd:
 .export _fadd
         jmp     fadd
 
+_fsub:
+.export _fsub
+        jmp     fsub
+
+_fmul:
+.export _fmul
+        jmp     fmul
+
 ; list.s
 
 _list_line:

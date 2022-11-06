@@ -93,6 +93,8 @@
 .global string_to_fp
 .global char_to_digit
 .global fadd
+.global fsub
+.global fmul
 
 ; input.s
 .global exec_input

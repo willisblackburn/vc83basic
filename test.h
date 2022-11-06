@@ -102,6 +102,8 @@ int char_to_digit(char c);
 void fp_to_string(void);
 int string_to_fp(void);
 void fadd(const Float* value);
+void fsub(const Float* value);
+void fmul(const Float* value);
 
 // list.s
 int list_line(const void* line_ptr);

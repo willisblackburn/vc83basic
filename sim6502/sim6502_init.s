@@ -35,7 +35,7 @@ flag_indicators: .res 8
 
 .code
 
-format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X %.8s", $0A, $00
+format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X FPA=%04X%04X-%04X%04X-%02X %.8s", $0A, $00
 flag_names: .byte "NV-BDIZC"
 
 ; Prints the register values to stderr.
@@ -84,10 +84,24 @@ debug_handler:
         jsr     pusha0
         lda     save_sp                 ; SP, ...
         jsr     pusha0
+        lda     FPA+Float::significand+6    ; FPA significand, ...
+        ldx     FPA+Float::significand+7
+        jsr     pushax
+        lda     FPA+Float::significand+4
+        ldx     FPA+Float::significand+5
+        jsr     pushax
+        lda     FPA+Float::significand+2
+        ldx     FPA+Float::significand+3
+        jsr     pushax
+        lda     FPA+Float::significand
+        ldx     FPA+Float::significand+1
+        jsr     pushax
+        lda     FPA+Float::exponent     ; FPA exponent, ...
+        jsr     pusha0
         lda     #<flag_indicators       ; flag_indicators)
         ldx     #>flag_indicators
         jsr     pushax           
-        ldy     #16                     ; 16 bytes on the C stack
+        ldy     #26                     ; 26 bytes on the C stack
         jsr     _fprintf
         lda     save_a                  ; Restore 6502 registers
         ldx     save_x
