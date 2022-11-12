@@ -87,6 +87,7 @@
 
 ; fp.s
 .global load_fpa, store_fpa, clear_fpa
+.global swap_fpa
 .global fpa_is_zero
 .global fneg
 .global fp_to_string

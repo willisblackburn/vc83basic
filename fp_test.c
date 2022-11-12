@@ -82,15 +82,15 @@ static void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
-// void test_swap_fpa(void) {
-//     Float value;
-//     PRINT_TEST_NAME();
-//     clear_fpa();
-//     SET_FP(value, 1, 1418858818L);
-//     swap_fpa(&value);
-//     ASSERT_FP_EQ(reg_fpa, 1, 1418858818L);
-//     ASSERT_FP_EQ(value, 0, 0);
-// }
+void test_swap_fpa(void) {
+    Float value;
+    PRINT_TEST_NAME();
+    clear_fpa();
+    SET_FP(value, 1, 1418858818L);
+    swap_fpa(&value);
+    ASSERT_FP_EQ(reg_fpa, 1, 1418858818L);
+    ASSERT_FP_EQ(value, 0, 0);
+}
 
 // static void test_int_to_fp(void) {
 //     PRINT_TEST_NAME();
@@ -399,6 +399,11 @@ static void test_fmul(void) {
     SET_FP(value, 0, 1);
     fmul(&value);
     ASSERT_FP_EQ(reg_fpa, 1, 1);
+    // 1,000,000,000 * 1,000,000,000
+    SET_FP(reg_fpa, 0, 1000000000);
+    SET_FP(value, 0, 1000000000);
+    fmul(&value);
+    ASSERT_FP_EQ(reg_fpa, 9, 1000000000);
     // 3.14159 * 1E5 = 314159
     SET_FP(reg_fpa, -5, 314159);
     SET_FP(value, 5, 1);
@@ -438,6 +443,17 @@ static void test_fdiv(void) {
     fdiv(&value);
     ASSERT_FP_EQ(reg_fpa, 0, 1);
     
+    SET_FP(reg_fpa, 0, 10);
+    SET_FP(value, 0, 1);
+    fdiv(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    
+    // 1000000000 / 1 = 1000000000
+    SET_FP(reg_fpa, 0, 1000000000);
+    SET_FP(value, 0, 1);
+    fdiv(&value);
+    ASSERT_FP_EQ(reg_fpa, 0, 1000000000);
+    
     // 8 / 2 = 4
     SET_FP(reg_fpa, 0, 8);
     SET_FP(value, 0, 2);
@@ -456,17 +472,17 @@ static void test_fdiv(void) {
     fdiv(&value);
     ASSERT_FP_EQ(reg_fpa, -6, 314159);
     
-    // // 3 / 10 = 0.3
-    // SET_FP(reg_fpa, 0, 3);
-    // SET_FP(value, 0, 10);
-    // fdiv(&value);
-    // ASSERT_FP_EQ(reg_fpa, -1, 3);
+    // 3 / 10 = 0.3
+    SET_FP(reg_fpa, 0, 3);
+    SET_FP(value, 0, 10);
+    fdiv(&value);
+    ASSERT_FP_EQ(reg_fpa, -1, 3);
     
-    // // 3.14159 / 10 = 0.314159
-    // SET_FP(reg_fpa, -5, 314159);
-    // SET_FP(value, 0, 10);
-    // fdiv(&value);
-    // ASSERT_FP_EQ(reg_fpa, -6, 314159);
+    // 3.14159 / 10 = 0.314159
+    SET_FP(reg_fpa, -5, 314159);
+    SET_FP(value, 0, 10);
+    fdiv(&value);
+    ASSERT_FP_EQ(reg_fpa, -6, 314159);
 }
 
 int main(void) {
@@ -477,7 +493,7 @@ int main(void) {
     test_fp_is_zero();
     test_fneg();
     test_char_to_digit();
-    // test_swap_fpa();
+    test_swap_fpa();
     // test_int_to_fp();
     // test_truncate_fp_to_int();
     test_fp_to_string();

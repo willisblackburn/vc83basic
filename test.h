@@ -94,8 +94,9 @@ int encode_byte(char byte_value, char lp);
 
 // fp.s
 void load_fpa(const Float* value);
-void store_fpa(const Float* value);
+void store_fpa(Float* value);
 void clear_fpa(void);
+void swap_fpa(Float* value);
 int fpa_is_zero(void);
 void fneg(void);
 int char_to_digit(char c);

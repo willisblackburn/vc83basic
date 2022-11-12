@@ -191,8 +191,6 @@ significand_mul_10:
 
 ; Divides the FPA significand by 10.
 ; Returns the remainder in A.
-; The second entry point preserves the existing value in A and is used when
-; the addition of two significands causes the field to overflow.
 ; Uses X to keep track of the shift count.
 ; Y SAFE, BC SAFE, DE SAFE
 
@@ -881,17 +879,35 @@ fmul_with_ptr:
         jsr     negate_negative         ; Make both operands positive
         rol     E                       ; Roll the flag into E (don't care what was there before)
         jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
-        jsr     copy_fpa_to_fpb         ; FPA -> FPB so we can use FPA for product
         ldy     #Float::e
         lda     (fp_ptr),y              ; Load value exponent
         clc
         adc     FPA+Float::e            ; Add FPA exponent
         bvs     @err_overflow           ; If overflow then fail
         sta     FPA+Float::e            ; Store result exponent back in FPA
-        sty     FPA+Float::s+4          ; Zero out the high 32 bits of the product
-        sty     FPA+Float::s+5           
-        sty     FPA+Float::s+6
-        sty     FPA+Float::s+7
+        jsr     mul_significands
+        jsr     shrink_significand
+        lda     E                       ; Bits 0-1 of E are negative flags
+        lsr     A                       ; Bit 0 of A is bit 1 from E
+        eor     E                       ; Effectively EORs the two bits together
+        lsr     A                       ; Shift it into carry
+        bcc     @positive               ; If both bits were 0 or 1 then product is positive
+        jsr     fneg                    ; Product is negative
+@positive:
+        rts
+
+@err_overflow:
+        rts
+
+; Multiplies the significands of FPA and fp_ptr, leaving a 64-bit result in FPA.
+
+mul_significands:
+        jsr     copy_fpa_to_fpb         ; FPA -> FPB so we can use FPA for product
+        lda     #0                      ; Zero out the high 32 bits of the product
+        sta     FPA+Float::s+4          
+        sta     FPA+Float::s+5           
+        sta     FPA+Float::s+6
+        sta     FPA+Float::s+7
         ldx     #32                     ; 32 multiplication cycles
 @next_bit:
         lsr     FPB+Float::s+3          ; Shift the multiplicand right
@@ -927,11 +943,11 @@ fmul_with_ptr:
         ror     FPA+Float::s
         dex                             ; Decrement bit counter
         bne     @next_bit               ; Keep going
+        rts
 
-; There is a 64-bit product in the extended FPA register.
-; Divide the product by 10 until the top word is clear.
+; Divides the 64-bit significand by 10 until it fits into 32 bits.
 
-@shrink:
+shrink_significand:
         lda     FPA+Float::s+4
         ora     FPA+Float::s+5
         ora     FPA+Float::s+6
@@ -939,19 +955,9 @@ fmul_with_ptr:
         beq     @done
         jsr     significand_div_10_ext
         inc     FPA                     ; Increase exponent to compensate for division
-        jmp     @shrink
+        jmp     shrink_significand
 
 @done:
-        lda     E                       ; Bits 0-1 of E are negative flags
-        lsr     A                       ; Bit 0 of A is bit 1 from E
-        eor     E                       ; Effectively EORs the two bits together
-        lsr     A                       ; Shift it into carry
-        bcc     @positive               ; If both bits were 0 or 1 then product is positive
-        jsr     fneg                    ; Product is negative
-@positive:
-        rts
-
-@err_overflow:
         rts
 
 ; Divides FPA by the a value, returning the quotient in FPA.
@@ -969,18 +975,23 @@ fdiv_with_ptr:
         jsr     swap_fpa_with_ptr
         jsr     negate_negative         ; Make both operands positive
         rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     copy_fpa_to_fpb         ; Copy the divisor into FPB since we're going to use it a lot
         jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
+@scale_up:
+        lda     FPA+Float::s+3          ; Get high byte of dividend
+        cmp     #6                      ; Compare to 6
+        bcs     @handle_e               ; High byte is >= 6, keep it
+        jsr     significand_mul_10      ; Otherwise multiply by 10
+        dec     FPA+Float::e            ; and decrement exponent to offset
+        jmp     @scale_up               ; Try again
+@handle_e:
+        jsr     swap_fpa_with_ptr       ; Swap
+        jsr     copy_fpa_to_fpb         ; Copy divisor into FPB
+        jsr     swap_fpa_with_ptr       ; Swap back
         lda     FPA+Float::e            ; Subtract divisor exponent from dividend exponent
         sec
         sbc     FPB+Float::e
         bvs     @err_overflow           ; If overflow then fail
         sta     FPA+Float::e            ; Save back as FPA exponent
-        ldy     #0
-        sty     FPA+Float::s+4          ; Zero out the high 32 bits of the product
-        sty     FPA+Float::s+5           
-        sty     FPA+Float::s+6
-        sty     FPA+Float::s+7
         ldx     #32                     ; 32 bits
 @next_bit:
         asl     FPA+Float::s
@@ -1020,6 +1031,19 @@ fdiv_with_ptr:
 @less_than_divisor:
         dex                             ; One bit done
         bne     @next_bit               ; Continue if more
+        jsr     shrink_significand
+@try_make_e_positive:
+        jsr     copy_fpa_to_fpb         ; Back up value in FPB
+        lda     FPA+Float::e            ; Check the FPA exponent
+        bpl     @finish                 ; If positive than done
+        jsr     significand_div_10      ; Divide by 10
+        tax                             ; Remainder is in A; update flags
+        bne     @finish                 ; There is a remainder
+        inc     FPA+Float::e            ; Increment exponent
+        jmp     @try_make_e_positive    ; Try to get closer to 0
+
+@finish:
+        jsr     copy_fpb_to_fpa         ; Copy original value back from FPB
         lda     E                       ; Bits 0-1 of E are negative flags
         lsr     A                       ; Bit 0 of A is bit 1 from E
         eor     E                       ; Effectively EORs the two bits together

@@ -151,6 +151,10 @@ _clear_fpa:
 .export _clear_fpa
         jmp     clear_fpa
 
+_swap_fpa:
+.export _swap_fpa
+        jmp     swap_fpa
+
 _fpa_is_zero:
 .export _fpa_is_zero
         jsr     fpa_is_zero
