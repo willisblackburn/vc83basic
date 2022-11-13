@@ -529,14 +529,13 @@ string_to_fp:
         ldx     bp                      ; X is the index into the string
         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
         lda     buffer,x                ; Check first character
-        beq     @err_empty_string
         cmp     #'-'                    ; Is the first character a minus?
         php                             ; Remember result of this for later
         bne     @next_character
         inx                             ; Skip the minus
 @next_character:
         lda     buffer,x                ; Get the next character
-        beq     @finish                 ; It was NUL, the number is finished
+        debug $00
         inx                             ; Advance to next position
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
@@ -546,10 +545,8 @@ string_to_fp:
         jmp     @next_character
 
 @not_decimal_point:
-        cmp     #'E'                    ; Is it 'E'?
-        beq     @handle_e               ; Yes
-        jsr     char_to_digit           ; But if not, must be a digit
-        bcs     @err_not_digit          ; Character was not a digit
+        jsr     char_to_digit           ; Try to make it into a digit
+        bcs     @not_digit              ; Character was not a digit
         sta     D                       ; Park digit
 
 ; Multiply FPA by 10 and add in new digit.
@@ -569,6 +566,14 @@ string_to_fp:
         inc     FPA+Float::s+3
         beq     @err_overflow           ; If significand rolled over to 0 then overflow
         jmp     @next_character
+
+@not_digit:
+        debug $10
+        cpy     #$80                    ; Has Y changed at all?
+        beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
+        lda     buffer-1,x              ; Load character again; -1 since we've incremented X
+        cmp     #'E'                    ; Is it 'E'?
+        beq     @handle_e               ; Yes
 
 ; Update the exponent and finish.
 
@@ -596,14 +601,12 @@ string_to_fp:
         clc                             ; Signal success
         rts
 
-@err_not_digit_in_e:
 @err_overflow_in_e:
         pla                             ; Errors that require two pops
 @err_overflow:
-@err_multiple_decimals:
 @err_not_digit:
+@err_multiple_decimals:
         pla                             ; Errors that require one pop
-@err_empty_string:
 @err_overflow_2:
         sec                             ; Signal failure
         rts
@@ -620,10 +623,9 @@ string_to_fp:
         inx                             ; Skip the minus
 @next_character_e:
         lda     buffer,x                ; Next character
-        beq     @finish_e
-        inx
         jsr     char_to_digit           ; Try to parse as digit
-        bcs     @err_not_digit_in_e     ; Was not digit
+        bcs     @finish_e               ; Was not digit
+        inx
         sta     D                       ; Park digit in D
         lda     FPA+Float::e            ; Get exponent
         asl     A                       ; Exponent *2
@@ -645,13 +647,13 @@ string_to_fp:
         bne     @finish                 ; If it wasn't negative then all done
         lda     FPA+Float::e            ; Negate exponent
         eor     #$FF
-        sta     FPA
-        inc     FPA
+        sta     FPA+Float::e
+        inc     FPA+Float::e
         jmp     @finish
 
 ; Converts the character in A into a digit.
 ; Returns the digit in A, carry clear if ok, carry set if error.
-; X SAFE, Y SAFE
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 char_to_digit:
         sec                             ; Set carry

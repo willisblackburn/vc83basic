@@ -253,6 +253,18 @@ static void test_string_to_fp(void) {
     err = call_string_to_fp("0");
     ASSERT_EQ(err, 0);
     ASSERT_FP_EQ(reg_fpa, 0, 0);
+    err = call_string_to_fp("0.0");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, -1, 0);
+    err = call_string_to_fp(".0");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, -1, 0);
+    err = call_string_to_fp("0.");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 0);
+    err = call_string_to_fp(".");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 0);
     // 100
     err = call_string_to_fp("100");
     ASSERT_EQ(err, 0);
@@ -307,6 +319,51 @@ static void test_string_to_fp(void) {
     ASSERT_NE(err, 0);
     // Adjusted e out of range
     err = call_string_to_fp("3.14159E-125");
+    ASSERT_NE(err, 0);
+    // Characters after the number
+    err = call_string_to_fp("10 ");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10X");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10. ");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10.X");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10E");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10E ");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10EX");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 0, 10);
+    err = call_string_to_fp("10E1 ");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, 1, 10);
+    err = call_string_to_fp("10E-1 ");
+    ASSERT_EQ(err, 0);
+    ASSERT_FP_EQ(reg_fpa, -1, 10);
+    // Various empty values
+    err = call_string_to_fp("");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp(" ");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("E");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("E1");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("X");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("- ");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("-E1");
+    ASSERT_NE(err, 0);
+    err = call_string_to_fp("-X");
     ASSERT_NE(err, 0);
 }
 
