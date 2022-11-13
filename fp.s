@@ -531,11 +531,11 @@ string_to_fp:
         lda     buffer,x                ; Check first character
         cmp     #'-'                    ; Is the first character a minus?
         php                             ; Remember result of this for later
-        bne     @next_character
-        inx                             ; Skip the minus
+        bne     @bypass_increment
 @next_character:
+        inx                             ; Increment to the next character
+@bypass_increment:
         lda     buffer,x                ; Get the next character
-        inx                             ; Advance to next position
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
         tya                             ; Check if we've already seen a decimal
@@ -569,7 +569,7 @@ string_to_fp:
 @not_digit:
         cpy     #$80                    ; Has Y changed at all?
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
-        lda     buffer-1,x              ; Load character again; -1 since we've incremented X
+        lda     buffer,x                ; Load character again; -1 since we've incremented X
         cmp     #'E'                    ; Is it 'E'?
         beq     @handle_e               ; Yes
 
@@ -590,12 +590,13 @@ string_to_fp:
         bne     @positive               ; There was no '-' at the start of the string
         jsr     fneg
         bpl     @err_overflow_2         ; Overflow if we were expecting negative but number is positive
-        clc
-        rts
+        bmi     @done
 
 @positive:
         lda     FPA+Float::s+3
         bmi     @err_overflow_2         ; Overflow if we were expecting positive but number is negative
+@done:
+        stx     bp                      ; Update bp
         clc                             ; Signal success
         rts
 
@@ -614,16 +615,17 @@ string_to_fp:
 ; Checks for digits also handle the case of the string ending after 'E' or '-'.
 
 @handle_e:
+        inx                             ; Skip 'E'
         lda     buffer,x                ; First character
         cmp     #'-'                    ; Is it minus?
         php                             ; Save the result for later
-        bne     @next_character_e
-        inx                             ; Skip the minus
+        bne     @bypass_increment_e
 @next_character_e:
+        inx                             ; Skip the minus
+@bypass_increment_e:
         lda     buffer,x                ; Next character
         jsr     char_to_digit           ; Try to parse as digit
         bcs     @finish_e               ; Was not digit
-        inx
         sta     D                       ; Park digit in D
         lda     FPA+Float::e            ; Get exponent
         asl     A                       ; Exponent *2
