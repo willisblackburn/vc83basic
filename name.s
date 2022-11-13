@@ -196,6 +196,17 @@ add_variable:
         ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
         jsr     expand_a                ; Do the expand
         bcs     @fail
+        ldy     #free_ptr               ; Grow value table by 2
+        lda     #2
+        jsr     expand_a
+        bcs     @fail
+        lda     variable_count
+        jsr     set_variable_value_ptr  ; variable_value_ptr points to the space for the new value
+        ldy     #0                      ; Offset 0
+        tya
+        sta     (variable_value_ptr),y  ; Zero the new value
+        iny
+        sta     (variable_value_ptr),y  ; Zero the new value
         ldx     bp                      ; Reload read position
         ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment
 @copy:
