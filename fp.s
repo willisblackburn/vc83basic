@@ -535,7 +535,6 @@ string_to_fp:
         inx                             ; Skip the minus
 @next_character:
         lda     buffer,x                ; Get the next character
-        debug $00
         inx                             ; Advance to next position
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
@@ -568,7 +567,6 @@ string_to_fp:
         jmp     @next_character
 
 @not_digit:
-        debug $10
         cpy     #$80                    ; Has Y changed at all?
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
         lda     buffer-1,x              ; Load character again; -1 since we've incremented X
