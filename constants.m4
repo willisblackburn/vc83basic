@@ -34,20 +34,10 @@ def(OP_SUB,             1)
 def(OP_MUL,             2)
 def(OP_DIV,             3)
 def(OP_POW,             4)
-def(OP_CONCAT,          5)
-def(OP_EQ,              6)
-def(OP_NE,              7)
-def(OP_LE,              8)
-def(OP_LT,              9)
-def(OP_GE,             10)
-def(OP_GT,             11)
-def(OP_AND,            12)
-def(OP_OR,             13)
 
 comment Binary operator tokens: combine with TOKEN_UNARY_OP
 
 def(UNARY_OP_MINUS,     0)
-def(UNARY_OP_NOT,       1)
 
 comment Expression decode handlers
 

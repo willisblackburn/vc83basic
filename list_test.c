@@ -26,18 +26,11 @@ static void test_list_directive(void) {
     const char line_data_4[] = { 0x80 };
     const char line_data_5[] = { 0x80, TOKEN_NO_VALUE };
     const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
-    const char line_data_7[] = { 0x80, TOKEN_OP | OP_LE, TOKEN_NUM, 0x07, 0x00, TOKEN_OP | OP_OR,
-        0x81, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE };
-    const char line_data_8[] = { TOKEN_PAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
+    const char line_data_7[] = { TOKEN_PAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
         TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
-    const char line_data_9[] = { TOKEN_PAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
-        TOKEN_OP | OP_AND, 0x81, TOKEN_NO_VALUE };
-    const char line_data_10[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80, TOKEN_NO_VALUE };
-    const char line_data_11[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_PAREN, 0x80, TOKEN_OP | OP_EQ,
-        TOKEN_NUM, 0x03, 0x00, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_UNARY_OP | UNARY_OP_MINUS, 
-        0x81, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_12[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00, TOKEN_NO_VALUE };
-    const char line_data_13[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00, TOKEN_NO_VALUE,
+    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80, TOKEN_NO_VALUE };
+    const char line_data_9[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00, TOKEN_NO_VALUE };
+    const char line_data_10[] = { TOKEN_NUM, 0x16, 0x00, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x07, 0x00, TOKEN_NO_VALUE,
         TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80, TOKEN_NO_VALUE };
 
     const char list_1[] = "4112";
@@ -46,13 +39,10 @@ static void test_list_directive(void) {
     const char list_4[] = "X";
     const char list_5[] = "X";
     const char list_6[] = "X,Y";
-    const char list_7[] = "X<=7 OR Y=4112";
-    const char list_8[] = "(X+3)*Y";
-    const char list_9[] = "(X+3) AND Y";
-    const char list_10[] = "-X";
-    const char list_11[] = "NOT (X=3 OR NOT -Y)";
-    const char list_12[] = "22/7";
-    const char list_13[] = "22/7,-X";
+    const char list_7[] = "(X+3)*Y";
+    const char list_8[] = "-X";
+    const char list_9[] = "22/7";
+    const char list_10[] = "22/7,-X";
 
     PRINT_TEST_NAME();
 
@@ -95,21 +85,9 @@ static void test_list_directive(void) {
     ASSERT_MEMORY_EQ(buffer, list_9, sizeof list_9 - 1);
     ASSERT_EQ(bp, sizeof list_9 - 1);
 
-    list_directive(1, line_data_10, 0, 0);
+    list_directive(2, line_data_10, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_10, sizeof list_10 - 1);
     ASSERT_EQ(bp, sizeof list_10 - 1);
-
-    list_directive(1, line_data_11, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_11, sizeof list_11 - 1);
-    ASSERT_EQ(bp, sizeof list_11 - 1);
-
-    list_directive(1, line_data_12, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_12, sizeof list_12 - 1);
-    ASSERT_EQ(bp, sizeof list_12 - 1);
-
-    list_directive(2, line_data_13, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_13, sizeof list_13 - 1);
-    ASSERT_EQ(bp, sizeof list_13 - 1);
 }
 
 static void test_list_element(void) {
