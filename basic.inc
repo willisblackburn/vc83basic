@@ -43,14 +43,14 @@
 .globalzp program_state
 .globalzp argument_count
 .globalzp osp
-.globalzp vsp
-.globalzp csp
+.globalzp psp
 .globalzp resume_line_ptr
 
 ; Data
 
 .global buffer
 .global line_buffer
+.global primary_stack
 
 ; Functions
 
@@ -60,9 +60,9 @@
 .global exec_gosub
 .global exec_on_gosub
 .global exec_return
-.global exec_pop
 .global exec_for
 .global exec_next
+.global exec_pop
 .global exec_if
 
 ; decode.s
@@ -84,6 +84,7 @@
 ; expression.s
 .global evaluate_expression
 .global push_value, pop_value
+.global stack_alloc, stack_free
 
 ; fp.s
 .global load_fpa, store_fpa, clear_fpa
