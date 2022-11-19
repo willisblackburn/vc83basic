@@ -48,6 +48,7 @@ line_buffer: .res 256
 
 .code
 
+; We treat this as zero.
 .assert PS_STOPPED = 0, error
 
 ; Initializes a new program.
@@ -79,9 +80,6 @@ initialize_program:
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
 
-; We treat this as zero.
-.assert PS_STOPPED = 0, error
-
 reset_program_state:
         mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
         lda     variable_count          ; Amount to clear is variable_count * 2
@@ -94,11 +92,9 @@ reset_program_state:
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
         sta     free_ptr+1
-        lda     #0
-        sta     osp                     ; Initialize expression stack positions to 0
-        sta     vsp
-        sta     csp
-        sta     resume_line_ptr+1       ; Initialize resume_line_ptr to 0 to disable CONT
+        mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
+        mva     #PRIMARY_STACK_SIZE, psp
+        mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
 
 ; Fall through
 

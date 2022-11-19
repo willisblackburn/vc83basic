@@ -3,19 +3,19 @@
 
 .zeropage
 
-; Op stack position; points to next open position, so 0 means stack is empty
+; Op stack position; points to last-used position and initialized to OP_STACK_SIZE
 osp: .res 1
-; Value stack position; (same behavior as osp)
-vsp: .res 1
+; Primary stack position; same behavior as osp but initialized to PRIMARY_STACK_SIZE
+psp: .res 1
 ; Minimum operator precedence used in process_operators
 min_precedence: .res 1
 
 .bss
 
 ; Op stack
-op_stack: .res OP_STACK_DEPTH
-; Value stack
-value_stack: .res VALUE_STACK_DEPTH * 2
+op_stack: .res OP_STACK_SIZE
+; Primary stack
+primary_stack: .res PRIMARY_STACK_SIZE
 
 .code
 
@@ -74,11 +74,13 @@ evaluate_paren:
         rts
 
 push_operator:
+        sec                             ; Set carry so can just return failure if stack pointer is 0
         ldx     osp
-        cpx     #OP_STACK_DEPTH         ; If equal then carry ("don't borrow") will be set
-        beq     @done                   ; Just return with carry set
+        beq     @done                   ; If already zero then fail
+        dex                             ; Grow down
         sta     op_stack,x              ; Store operator
-        inc     osp                     ; Increment position
+        stx     osp                     ; Update stack pointer
+        clc                             ; Success
 @done:
         rts
 
@@ -92,12 +94,12 @@ process_operators:
         sta     min_precedence          ; Store the minimum precedence
 @next:
         ldx     osp                     ; Get operator stack position
-        beq     @done                   ; If 0 then nothing to do
-        dex                             ; Pre-decrement since osp points to the next empty position
+        cpx     #OP_STACK_SIZE          ; Stack exhausted?
+        beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
-        stx     osp                     ; Save this as new operator stack position
+        inc     osp                     ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
@@ -236,28 +238,48 @@ push_value_a:
         ldx     #0
 
 push_value:
-        stax    BC                      ; Store value in BC while we calculate value stack offset
-        lda     vsp                     ; Get the current value stack position
-        cmp     #VALUE_STACK_DEPTH      ; If equal then carry ("don't borrow") will be set
-        beq     @done                   ; Just return with carry set
-        asl     A                       ; Multiply by 2; clears carry as long as vsp < 128
-        tax                             ; Transfer into X to use as index
+        stax    BC                      ; Store value in BC while we update stack position
+        lda     #2                      ; Allocate 2 bytes for the value
+        jsr     stack_alloc
+        bcs     @done                   ; Fail if overflow
         lda     B                       ; Save low byte
-        sta     value_stack,x
+        sta     primary_stack,x
         lda     C                       ; Store high byte
-        sta     value_stack+1,x
-        inc     vsp                     ; Increment stack position; carry remains clear for return
+        sta     primary_stack+1,x
 @done:
         rts
 
 pop_value: 
-        sec                             ; Set carry first in case stack is empty; it is cleared by ASL later
-        dec     vsp                     ; Pre-decrement the stack position
-        lda     vsp                     ; Get it
-        asl     A                       ; Multiply by 2 to generate offset
-        tay                             ; Transfer into Y to use as index
-        lda     value_stack,y           ; Load low byte into A
-        ldx     value_stack+1,y         ; Load high byte into X
+        ldy     psp                     ; Load stack pointer into Y to use as offset
+        lda     #2                      ; Free two bytes (retains Y)
+        jsr     stack_free
+        lda     primary_stack,y         ; Load low byte into A
+        ldx     primary_stack+1,y       ; Load high byte into X
+        rts
+
+; Allocate space on the stack by moving the stack pointer down by some number of bytes.
+; A = the number of bytes to allocate
+; Returns carry clear on success and the new stack pointer in both A and X, or carry set on error.
+; Y SAFE, BC SAFE, DE SAFE
+
+stack_alloc:
+        clc
+        sbc     psp                     ; Do A - psp - 1
+        bcs     @done                   ; Fail if stack has stack is grown too low
+        eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
+        sta     psp                     ; Update the stack pointer
+        tax                             ; Transfer to X to use as pointer
+@done:
+        rts
+
+; Frees space on the stack by moving the stack pointer up.
+; No error checking; the caller must know for sure that there is something on the stack that can be removed.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
+
+stack_free:
+        clc
+        adc     psp                     ; Add stack pointer to whatever value was passed in
+        sta     psp                     ; Save stack pointer back
         rts
 
 op_and:
