@@ -34,6 +34,9 @@
 .export _name_ptr = name_ptr
 .export _np = np
 
+.export _osp = osp
+.export _psp = psp
+
 .bss
 
 ; The wrappers for functions that use the carry bit to flag errors return the carry and use these fields to
@@ -126,6 +129,15 @@ _push_value:
 _pop_value:
 .export _pop_value
         jmp     pop_value
+
+_stack_alloc:
+.export _stack_alloc
+        jsr     stack_alloc
+        jmp     return_carry
+
+_stack_free:
+.export _stack_free
+        jmp     stack_free
 
 ; list.s
 

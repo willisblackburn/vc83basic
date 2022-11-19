@@ -28,7 +28,7 @@
 .globalzp program_state
 .globalzp argument_count
 .globalzp osp
-.globalzp vsp
+.globalzp psp
 
 ; Data
 
@@ -56,6 +56,7 @@
 ; expression.s
 .global evaluate_expression
 .global push_value, pop_value
+.global stack_alloc, stack_free
 
 ; input.s
 .global exec_input

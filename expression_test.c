@@ -1,5 +1,40 @@
 #include "test.h"
 
+static void test_stack_alloc_free(void) {
+    char err;
+
+    PRINT_TEST_NAME();
+
+    ASSERT_EQ(osp, OP_STACK_SIZE);
+    ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
+
+    err = stack_alloc(2);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
+    ASSERT_EQ(reg_a, psp);
+
+    err = stack_alloc(64);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2 - 64);
+    ASSERT_EQ(reg_a, psp);
+
+    stack_free(64);
+    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
+
+    stack_free(2);
+    ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
+
+    // Test overflow; no matter what PRIMARY_STACK_SIZE is, allocating 96 three times should overflow
+    stack_alloc(96);
+    stack_alloc(96);
+    err = stack_alloc(96);
+    ASSERT_NE(err, 0);
+
+    // Re-initialize program since this test leaves it in a bad state.
+    initialize_program();
+}
+
+
 static void set_line(const char* data, size_t length) {
     line_buffer.number = 0;
     line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
@@ -74,6 +109,8 @@ static void test_one_unary_op(char op, int expected0, int expected1) {
 
 static void test_evaluate_expression(void) {
 
+    PRINT_TEST_NAME();
+
     test_one_op(OP_ADD, 0, 1, 1, 2);
     test_one_op(OP_SUB, 0, -1, 1, 0);
 
@@ -91,6 +128,8 @@ static void test_evaluate_expression_precedence(void) {
     char line_data_2[] = { TOKEN_NUM, 0x02, 0x00, TOKEN_OP | OP_SUB, TOKEN_PAREN,
         TOKEN_NUM, 0x01, 0x00, TOKEN_OP | OP_SUB, TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
+    PRINT_TEST_NAME();
+
     set_line(line_data_1, sizeof line_data_1);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -107,6 +146,7 @@ static void test_evaluate_expression_precedence(void) {
 int main(void) {
     initialize_target();
     initialize_program();
+    test_stack_alloc_free();
     test_evaluate_expression();
     test_evaluate_expression_precedence();
     return 0;
