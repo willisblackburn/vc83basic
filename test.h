@@ -51,6 +51,10 @@ extern char variable_count;
 #pragma zpsym ("variable_count")
 extern void* variable_value_ptr;
 #pragma zpsym ("variable_value_ptr")
+extern char osp;
+#pragma zpsym ("osp")
+extern char psp;
+#pragma zpsym ("psp")
 
 // Data
 
@@ -80,6 +84,8 @@ char decode_byte(const void* line_ptr, char lp);
 char evaluate_expression(void);
 char push_value(int value);
 int pop_value(void);
+char stack_alloc(char size);
+void stack_free(char size);
 
 // encode.s
 int encode_number(int number, char lp);

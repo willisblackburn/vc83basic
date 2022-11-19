@@ -72,7 +72,5 @@ def(PS_RUNNING,         hex(01))
 
 comment Other constants
 
-def(OP_STACK_DEPTH, 16)
-def(VALUE_STACK_DEPTH, 16)
-def(CONTROL_STACK_DEPTH, 16)
-def(CONTROL_SIZE, 16)
+def(OP_STACK_SIZE, 16)
+def(PRIMARY_STACK_SIZE, 240)
