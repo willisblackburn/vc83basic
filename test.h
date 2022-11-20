@@ -67,12 +67,12 @@ extern char reg_y;
 // Prototypes for C wrapper functions
 
 // decode.s
-int decode_number(const void* line_ptr, char lp);
-char decode_byte(const void* line_ptr, char lp);
+int decode_number(void);
+char decode_byte(void);
 
 // encode.s
-int encode_number(int number, char lp);
-int encode_byte(char byte_value, char lp);
+int encode_number(int number);
+int encode_byte(char byte_value);
 
 // name.s
 int find_name(const char* name_ptr, char bp);
