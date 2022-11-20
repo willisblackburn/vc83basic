@@ -73,12 +73,12 @@ extern char reg_y;
 // Prototypes for C wrapper functions
 
 // decode.s
-void decode_expression(void** vector_table_ptr, const void* line_ptr, char lp);
-int decode_number(const void* line_ptr, char lp);
+void decode_expression(void** vector_table_ptr);
+int decode_number(void);
 char decode_variable(void);
 char decode_operator(void);
 char decode_unary_operator(void);
-char decode_byte(const void* line_ptr, char lp);
+char decode_byte(void);
 
 // expression.h
 char evaluate_expression(void);
@@ -88,8 +88,8 @@ char stack_alloc(char size);
 void stack_free(char size);
 
 // encode.s
-int encode_number(int number, char lp);
-int encode_byte(char byte_value, char lp);
+int encode_number(int number);
+int encode_byte(char value);
 
 // list.s
 int list_line(const void* line_ptr);
