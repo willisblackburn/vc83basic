@@ -33,10 +33,12 @@ exec_on_goto:
 exec_gosub:
         jsr     decode_number           ; GOSUB line number
 exec_gosub_ax:
-        phax                            ; Temporarily store the line number
+        stax    BC                      ; Temporarily store the line number in BC
         jsr     push_next_line_ptr      ; Save return address
-        plax                            ; Recover line number
         bcs     @done                   ; Stack overflow
+        lda     #TOKEN_VAR              ; Set variable field to an invalid variable
+        sta     primary_stack+Control::variable,x
+        ldax    BC                      ; Reload line number
         jsr     find_line               ; Find the line
         bcs     @done
 @done:
@@ -73,10 +75,15 @@ exec_on:
 exec_return:
         jsr     exec_pop                ; RETURN is just POP except we do something with the popped value
         bcs     @done
+        lda     primary_stack+Control::variable,x   ; Get the variable
+        cmp     #TOKEN_VAR              ; Make sure it's the invalid value that signals a GOSUB
+        sec                             ; If we take this next branch then carry will be set to signal error
+        bne     @done                   ; Variable was not GOSUB signal
         lda     primary_stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
         lda     primary_stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
+        clc                             ; Signal success
 @done:
         rts
 
