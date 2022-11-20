@@ -63,31 +63,21 @@ return_carry:
 
 _decode_number:
 .export _decode_number
-        sta     lp
-        jsr     popax
-        stax    line_ptr
         jmp     decode_number
 
 _decode_byte:
 .export _decode_byte
-        sta     lp
-        jsr     popax
-        stax    line_ptr
         jmp     decode_byte
 
 ; encode.s
 
 _encode_number:
 .export _encode_number
-        sta     lp
-        jsr     popax
         jsr     encode_number
         jmp     return_carry
 
 _encode_byte:
 .export _encode_byte
-        sta     lp
-        jsr     popa
         jsr     encode_byte
         jmp     return_carry
 
