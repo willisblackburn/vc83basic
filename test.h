@@ -90,7 +90,7 @@ char decode_byte(void);
 // expression.h
 char evaluate_expression(void);
 char push_fpa(void);
-void pop_value(void);
+void pop_fpa(void);
 char stack_alloc(char size);
 void stack_free(char size);
 

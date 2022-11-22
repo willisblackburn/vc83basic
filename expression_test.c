@@ -46,66 +46,73 @@ static void set_line(const char* data, size_t length) {
 
 static void test_one_op(char op, int expected00, int expected01, int expected10, int expected11) {
     char err;
-    int result;
-    char line_data[] = { TOKEN_NUM, 0x00, 0x00, 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data[] = {
+            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00,    // 0-5
+            0,                                          // 6  
+            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00,    // 7-12
+            TOKEN_NO_VALUE
+        };
 
     DEBUG(op);
 
-    line_data[3] = TOKEN_OP | op;
-    line_data[1] = 0;
-    line_data[5] = 0;
+    line_data[6] = TOKEN_OP | op;
+    line_data[2] = 0;
+    line_data[9] = 0;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected00);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected00);
 
-    line_data[1] = 0;
-    line_data[5] = 1;
+    line_data[2] = 0;
+    line_data[9] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected01);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected01);
 
-    line_data[1] = 1;
-    line_data[5] = 0;
+    line_data[2] = 1;
+    line_data[9] = 0;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected10);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected10);
 
-    line_data[1] = 1;
-    line_data[5] = 1;
+    line_data[2] = 1;
+    line_data[9] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected11);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected11);
 }
 
 static void test_one_unary_op(char op, int expected0, int expected1) {
     char err;
-    int result;
-    char line_data[] = { 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data[] = {
+            0,                                          // 0        
+            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00,    // 1-7
+            TOKEN_NO_VALUE
+        };
 
     DEBUG(op);
 
     line_data[0] = TOKEN_UNARY_OP | op;
-    line_data[2] = 0;
+    line_data[3] = 0;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected0);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected0);
 
-    line_data[2] = 1;
+    line_data[3] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, expected1);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, expected1);
 }
 
 static void test_evaluate_expression(void) {
@@ -131,26 +138,27 @@ static void test_evaluate_expression(void) {
 
 static void test_evaluate_expression_precedence(void) {
     char err;
-    int result;
 
-    char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
-    char line_data_2[] = { TOKEN_PAREN, TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_AND, 
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_EQ,
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data_2[] = { TOKEN_PAREN, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_AND, 
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE, TOKEN_OP | OP_EQ,
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
     set_line(line_data_1, sizeof line_data_1);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, 0);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, 0);
 
     set_line(line_data_2, sizeof line_data_2);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    result = pop_value();
-    ASSERT_EQ(result, 1);
+    pop_fpa();
+    ASSERT_FP_EQ(reg_fpa, 0, 1);
 }
 
 int main(void) {
