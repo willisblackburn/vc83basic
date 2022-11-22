@@ -36,7 +36,6 @@ static void test_stack_alloc_free(void) {
     initialize_program();
 }
 
-
 static void set_line(const char* data, size_t length) {
     line_buffer.number = 0;
     line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
