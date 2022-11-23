@@ -33,7 +33,7 @@ evaluate_vectors:
         .word   evaluate_paren              ; XH_PAREN
 
 evaluate_variable:
-        jsr     decode_variable         ; Returns variable index in 0
+        jsr     decode_variable         ; Returns variable index in A
         jsr     set_variable_value_ptr  ; Calculate address of variable
         ldy     #1
         lda     (variable_value_ptr),y  ; High byte of variable value
