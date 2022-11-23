@@ -185,8 +185,7 @@ mul8:
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
-; Callers can use BC to pass parameters to the target function. The _vt entry point uses the existing value of
-; vector_table_pointer and does not touch X, so it can also be used to pass data.
+; Callers can use BC to pass parameters to the target function.
 ; Since Y, the vector index, can never exceed 127, the ASL will clear the carry flag, and it will still be clear
 ; when control reaches the target routine.
 ; AX = address of the vector table (the _vt entry point uses the value still in vector_table_ptr)
