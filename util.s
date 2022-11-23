@@ -234,7 +234,6 @@ div10:
 
 invoke_indexed_vector:
         stax    vector_table_ptr
-invoke_indexed_vector_vt:
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
