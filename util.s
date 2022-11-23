@@ -228,7 +228,7 @@ div10:
 ; Callers can use BC to pass parameters to the target function.
 ; Since Y, the vector index, can never exceed 127, the ASL will clear the carry flag, and it will still be clear
 ; when control reaches the target routine.
-; AX = address of the vector table (the _vt entry point uses the value still in vector_table_ptr)
+; AX = address of the vector table
 ; Y = the index of the vector
 ; BC SAFE
 
