@@ -567,6 +567,55 @@ static void test_fdiv(void) {
     ASSERT_FP_EQ(reg_fpa, -6, 314159);
 }
 
+static void test_fcmp(void) {
+    Float value;
+    int result;
+
+    PRINT_TEST_NAME();
+    
+    // 0 <=> 0 = 0
+    SET_FP(reg_fpa, 0, 0);
+    SET_FP(value, 0, 0);
+    result = fcmp(&value);
+    ASSERT_EQ(result, 0);
+
+    // 1 <=> 1 = 0
+    SET_FP(reg_fpa, 0, 1);
+    SET_FP(value, 0, 1);
+    result = fcmp(&value);
+    ASSERT_EQ(result, 0);
+
+    // 1 <=> 0 = 1
+    SET_FP(reg_fpa, 0, 1);
+    SET_FP(value, 0, 0);
+    result = fcmp(&value);
+    ASSERT_EQ(result, 1);
+
+    // 0 <=> 1 = -1
+    SET_FP(reg_fpa, 0, 0);
+    SET_FP(value, 0, 1);
+    result = fcmp(&value);
+    ASSERT_EQ(result, -1);
+
+    // 1E1 <=> 1 = 1
+    SET_FP(reg_fpa, 1, 1);
+    SET_FP(value, 0, 1);
+    result = fcmp(&value);
+    ASSERT_EQ(result, 1);
+
+    // 1 <=> 1E1 = -1
+    SET_FP(reg_fpa, 0, 1);
+    SET_FP(value, 1, 1);
+    result = fcmp(&value);
+    ASSERT_EQ(result, -1);
+
+    // 10 <=> 1E1 = 0
+    SET_FP(reg_fpa, 0, 10);
+    SET_FP(value, 1, 1);
+    result = fcmp(&value);
+    ASSERT_EQ(result, 0);
+}    
+
 int main(void) {
     initialize_target();
     test_load_fpa();
@@ -584,5 +633,6 @@ int main(void) {
     test_fsub();
     test_fmul();
     test_fdiv();
+    test_fcmp();
     return 0;
 }

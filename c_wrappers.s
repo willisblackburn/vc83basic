@@ -201,6 +201,23 @@ _fdiv:
 .export _fdiv
         jmp     fdiv
 
+_fcmp:
+.export _fcmp
+        jsr     fcmp
+        bne     @not_equal
+        ldax    #0
+        rts
+
+@not_equal:
+        bcs     @greater                ; Carry set means no borrow so A >= B
+        ldax    #-1
+        rts
+
+@greater:
+        lda     #$01
+        ldax    #1
+        rts
+
 ; list.s
 
 _list_line:

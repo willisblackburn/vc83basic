@@ -110,10 +110,11 @@ int string_to_fp(void);
 int char_to_digit(char c);
 void int_to_fp(int value);
 int truncate_fp_to_int(void);
-void fadd(const Float* value);
-void fsub(const Float* value);
-void fmul(const Float* value);
-void fdiv(const Float* value);
+void fadd(Float* value);
+void fsub(Float* value);
+void fmul(Float* value);
+void fdiv(Float* value);
+int fcmp(Float* value);
 
 // list.s
 int list_line(const void* line_ptr);

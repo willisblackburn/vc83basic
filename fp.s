@@ -35,6 +35,7 @@ fp_ptr: .res 2
 ; Loads FP value into FPA.
 ; AX = address of the value to load
 ; Uses Y but does not use X after the _ptr entry point.
+; BC SAFE, DE SAFE
 
 load_fpa:
         stax    fp_ptr                  ; FP value address into fp_ptr
@@ -50,6 +51,7 @@ load_fpa_with_ptr:                      ; Entry point if fp_ptr is already set
 ; Stores FP value from FPA into memory.
 ; AX = destination address
 ; Uses Y but does not use X after the _ptr1 entry point.
+; BC SAFE, DE SAFE
 
 store_fpa:
         stax    fp_ptr                  ; FP value address into fp_ptr
@@ -1042,4 +1044,20 @@ fdiv_with_ptr:
         rts
 
 @err_overflow:
+        rts
+
+; Compare two floating-point values.
+; Returns result in N and C flags, in the same way that the CMP instruction works.
+
+fcmp:
+        stax    fp_ptr
+fcmp_with_ptr:
+        jsr     fsub_with_ptr           ; Subtract the two
+        sec                             ; Set carry ("no borrow") in case they're equal
+        jsr     fpa_is_zero             ; Check for zero
+        beq     @done
+        lda     FPA+Float::s            ; Load significand
+        eor     #$80                    ; Flip sign bit; if (A-B) < 0 then A < B and we return carry clear 
+        asl     A                       ; Shift into C
+@done:
         rts

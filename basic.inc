@@ -96,10 +96,11 @@
 .global char_to_digit
 .global int_to_fp
 .global truncate_fp_to_int
-.global fadd
-.global fsub
-.global fmul
-.global fdiv
+.global fadd, fadd_with_ptr
+.global fsub, fsub_with_ptr
+.global fmul, fmul_with_ptr
+.global fdiv, fdiv_with_ptr
+.global fcmp, fcmp_with_ptr
 
 ; input.s
 .global exec_input
