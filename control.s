@@ -188,9 +188,7 @@ exec_pop:
 exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
         jsr     pop_fpa
-        sta     B                       ; Store low byte of result in B
-        txa                             ; Transfer high byte into X
-        ora     B                       ; Or the high and low bytes together
+        jsr     fpa_is_zero             ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
         jsr     dispatch_next_statement ; Otherwise execute the THEN
 @done:
