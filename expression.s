@@ -57,7 +57,7 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression
-        dec     osp                     ; Pop the open paren
+        inc     osp                     ; Pop the open paren
         rts
 
 push_operator:
@@ -207,9 +207,9 @@ unary_op_minus:
 
 unary_op_not:
         jsr     pop_fpa                 ; Get value
-        stx     B
-        clc                             ; Carry will be used to set the result; default is 0
-        ora     B                       ; OR the low and high bytes together
+        jsr     truncate_fp_to_int
+        lda     FPA+Float::s             
+        ora     FPA+Float::s+1          ; OR the low and high bytes of significand together
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
 
@@ -316,25 +316,31 @@ stack_free:
         rts
 
 op_and:
-        jsr     pop_fpa
-        stax    BC
-        jsr     pop_fpa
-        and     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        and     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
+        jsr     set_up_logical_op
+        and     primary_stack-.sizeof(Float)*2+Float::s,y
+        sta     FPA+Float::s
+        iny
+        lda     FPA+Float::s+1          ; High byte
+        and     primary_stack-.sizeof(Float)*2+Float::s,y
+        sta     FPA+Float::s+1
         jmp     push_fpa
 
 op_or:
-        jsr     pop_fpa
-        stax    BC
-        jsr     pop_fpa
-        ora     B                       ; OR low byte
-        tay                             ; Park in Y
-        txa                             ; Get high byte
-        ora     C                       ; OR high byte
-        tax                             ; Back into X
-        tya                             ; Recover low byte from Y
+        jsr     set_up_logical_op
+        ora     primary_stack-.sizeof(Float)*2+Float::s,y
+        sta     FPA+Float::s
+        iny
+        lda     FPA+Float::s+1          ; High byte
+        ora     primary_stack-.sizeof(Float)*2+Float::s,y
+        sta     FPA+Float::s+1
         jmp     push_fpa
+
+set_up_logical_op:
+        jsr     pop_fpa                 ; Sets fp_ptr
+        jsr     truncate_fp_to_int
+        jsr     store_fpa_with_ptr      ; Copy it back to freed part of stack
+        jsr     pop_fpa                 ; Resets fp_ptr to point to second parameter
+        jsr     truncate_fp_to_int
+        ldy     psp
+        lda     FPA+Float::s            ; Low byte of FPA significand
+        rts

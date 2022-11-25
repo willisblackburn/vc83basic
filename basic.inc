@@ -90,7 +90,9 @@
 .global stack_alloc, stack_free
 
 ; fp.s
-.global load_fpa, store_fpa, clear_fpa
+.global load_fpa, load_fpa_with_ptr
+.global store_fpa, store_fpa_with_ptr
+.global clear_fpa
 .global swap_fpa
 .global fpa_is_zero
 .global fneg
