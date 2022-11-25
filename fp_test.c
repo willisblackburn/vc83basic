@@ -622,6 +622,40 @@ static void test_fcmp(void) {
     ASSERT_EQ(result, -1);
 }    
 
+// --------------------------------------------------------------------------------------------------------------------
+
+static void test_load_fp0(void) {
+    Float value;
+    PRINT_TEST_NAME();
+    SET_FP(value, 1, 1418858818L);
+    load_fp0(&value);
+    ASSERT_FP_EQ(fp0, 1, 1418858818L);
+    SET_FP(value, 1, 12345678L);
+    load_fp0(&value);
+    ASSERT_FP_EQ(fp0, 1, 12345678L);
+    ASSERT_FP_EQ(fp1, 1, 1418858818L);
+}
+
+static void test_store_fp0(void) {
+    Float value;
+    PRINT_TEST_NAME();
+    SET_FP(fp0, 1, 1418858818L);
+    store_fp0(&value);
+    ASSERT_FP_EQ(value, 1, 1418858818L);
+}
+
+static void test_swap_fp0_fp1(void) {
+    Float value;
+    PRINT_TEST_NAME();
+    SET_FP(value, 1, 1418858818L);
+    load_fp0(&value);
+    SET_FP(value, 1, 12345678L);
+    load_fp0(&value);
+    swap_fp0_fp1();
+    ASSERT_FP_EQ(fp0, 1, 1418858818L);
+    ASSERT_FP_EQ(fp1, 1, 12345678L);
+}
+
 int main(void) {
     initialize_target();
     test_load_fpa();
@@ -640,5 +674,8 @@ int main(void) {
     test_fmul();
     test_fdiv();
     test_fcmp();
+    test_load_fp0();
+    test_store_fp0();
+    test_swap_fp0_fp1();
     return 0;
 }

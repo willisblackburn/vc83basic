@@ -27,6 +27,12 @@ FPA: .res .sizeof(Float) + 4
 ; Secondary FP register
 FPB: .res .sizeof(Float)
 
+fp0: .res .sizeof(Float)
+fp0x: .res .sizeof(Float::s)
+fp1: .res .sizeof(Float)
+fp1x: .res .sizeof(Float::s)
+grs: .res 1
+
 ; fp_ptr holds a pointer to the other argument in two-float operations
 fp_ptr: .res 2
 
@@ -1062,3 +1068,49 @@ fcmp_with_ptr:
         rol     A                       ; Roll set carry bit into A to ensure zero flag is not set
 @done:
         rts
+
+; ---------------------------------------------------------------------------------------------------------------------
+
+; Loads a new value into FP0 and moves the existing value to FP1.
+; AX = a pointer to the value to load
+
+load_fp0:
+        stax        fp_ptr              ; Store the pointer to the new value
+        ldy         #.sizeof(Float)-1   ; Count down so we can use rollover to escape
+@next_byte:
+        ldx         fp0,y               ; Copy FP0 value to FP1
+        stx         fp1,y
+        lda         (fp_ptr),y          ; Copy memory value to FP0
+        sta         fp0,y
+        dey                             ; One down
+        bpl         @next_byte          ; Continue if it hasn't rolled over
+        rts
+
+; Stores the value in FP0 into memory.
+; AX = destination address
+
+store_fp0:
+        stax    fp_ptr                  ; FP value address into fp_ptr
+        ldy     #.sizeof(Float)-1       ; Same countdown strategy as before
+@next_byte:
+        lda     fp0,y                   ; Copy FP0 value to memory
+        sta     (fp_ptr),y
+        dey
+        bpl     @next_byte
+        rts
+
+; Swaps FP0 and FP1.
+
+swap_fp0_fp1:
+        ldy     #.sizeof(Float)-1
+@next_byte:
+        lda     fp1,y
+        ldx     fp0,y
+        stx     fp1,y
+        sta     fp0,y
+        dey
+        bpl     @next_byte
+        rts
+
+fadd2:
+

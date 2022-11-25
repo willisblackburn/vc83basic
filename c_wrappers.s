@@ -14,6 +14,9 @@
 
 .export _reg_fpa = FPA
 
+.export _fp0 = fp0
+.export _fp1 = fp1
+
 .export _bp = bp
 .export _lp = lp
 .export _src_ptr = src_ptr
@@ -217,6 +220,18 @@ _fcmp:
         lda     #$01
         ldax    #1
         rts
+
+_load_fp0:
+.export _load_fp0
+        jmp     load_fp0
+
+_store_fp0:
+.export _store_fp0
+        jmp     store_fp0
+
+_swap_fp0_fp1:
+.export _swap_fp0_fp1
+        jmp     swap_fp0_fp1
 
 ; list.s
 

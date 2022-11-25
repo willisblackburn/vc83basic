@@ -25,6 +25,7 @@
 
 .globalzp BC, B, C, DE, D, E
 .globalzp FPA
+.globalzp fp0, fp1
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -102,6 +103,10 @@
 .global fmul, fmul_with_ptr
 .global fdiv, fdiv_with_ptr
 .global fcmp, fcmp_with_ptr
+
+.global load_fp0
+.global store_fp0
+.global swap_fp0_fp1
 
 ; input.s
 .global exec_input
