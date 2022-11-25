@@ -72,5 +72,5 @@ def(PS_RUNNING,         hex(01))
 
 comment Other constants
 
-def(OP_STACK_SIZE, 16)
 def(PRIMARY_STACK_SIZE, 240)
+def(OP_STACK_SIZE, 16)
