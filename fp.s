@@ -1057,8 +1057,9 @@ fcmp_with_ptr:
         sec                             ; Set carry ("no borrow") in case they're equal
         jsr     fpa_is_zero             ; Check for zero
         beq     @done
-        lda     FPA+Float::s            ; Load significand
-        eor     #$80                    ; Flip sign bit; if (A-B) < 0 then A < B and we return carry clear 
-        asl     A                       ; Shift into C
+        lda     FPA+Float::s+3          ; Load high byte of significand to access sign bit
+        eor     #$80                    ; Flip sign bit; if (A-B) < 0 then A < B and we return carry clear
+        sec 
+        rol     A                       ; Roll set carry bit into A to ensure zero flag is not set
 @done:
         rts
