@@ -51,6 +51,7 @@
 .global buffer
 .global line_buffer
 .global primary_stack
+.global op_stack
 
 ; Functions
 

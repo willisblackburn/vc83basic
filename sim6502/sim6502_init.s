@@ -17,6 +17,21 @@ initialize_target:
         sta     $FFFF                   ; BRK vector high byte
         rts
 
+; Buffers
+
+.segment "BUFFERS"
+
+buffer: .res 256
+line_buffer: .res 256
+
+; Ensure that primary stack and operator stack fit together in a page
+.assert PRIMARY_STACK_SIZE + OP_STACK_SIZE = 256, error
+
+; Primary stack
+primary_stack: .res PRIMARY_STACK_SIZE
+; Operator stack
+op_stack: .res OP_STACK_SIZE
+
 ; Debugging helpers
 
 .zeropage
