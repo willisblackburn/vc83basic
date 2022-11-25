@@ -10,7 +10,7 @@
 .bss
 
 ; 256-byte buffer for I/O functions
-buffer := $200
+buffer: .res 256
 
 ; A single-byte buffer for the char operations
 io_char: .res 1
