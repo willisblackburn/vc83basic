@@ -2,10 +2,6 @@
 .include "../macros.inc"
 .include "../basic.inc"
 
-buffer := $200
-
-.code 
-
 getchar = KEYIN
 newline = CROUT
 
