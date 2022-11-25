@@ -3,3 +3,7 @@
 
 initialize_target:
         rts
+
+; Buffers
+
+buffer := $200
