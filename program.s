@@ -37,11 +37,6 @@ lp: .res 1
 ; Whether the program is not running, running, stopped, or awaiting reset.
 program_state: .res 1
 
-.bss
-
-; The program line produced by the parser
-line_buffer: .res 256
-
 .code
 
 ; Initializes a new program.

@@ -10,13 +10,6 @@ psp: .res 1
 ; Minimum operator precedence used in process_operators
 min_precedence: .res 1
 
-.bss
-
-; Op stack
-op_stack: .res OP_STACK_SIZE
-; Primary stack
-primary_stack: .res PRIMARY_STACK_SIZE
-
 .code
 
 evaluate_expression:

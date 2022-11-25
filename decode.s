@@ -44,6 +44,7 @@ decode_expression:
 @start:
         ldy     lp                      ; Peek at next byte in token stream
         lda     (line_ptr),y
+        debug $00
         ldy     #XH_VAR                 ; First handler is VAR
         tax                             ; Store it in X for now (sets flags from decoded byte)
         bmi     @dispatch               ; Handle variable           (1xxx xxxx)
