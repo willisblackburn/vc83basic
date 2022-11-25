@@ -6,12 +6,15 @@ initialize_target:
 
 ; Buffers
 
-buffer := $200
-line_buffer := $300
-
 .segment "BUFFERS"
 
+buffer := $200
+line_buffer: .res 256
+
+; Ensure that primary stack and operator stack fit together in unused part of page 3
+.assert PRIMARY_STACK_SIZE + OP_STACK_SIZE = 208, error
+
 ; Primary stack
-primary_stack: .res PRIMARY_STACK_SIZE
+primary_stack := $300
 ; Operator stack
-op_stack: .res OP_STACK_SIZE
+op_stack := $300 + PRIMARY_STACK_SIZE
