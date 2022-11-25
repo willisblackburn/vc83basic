@@ -34,11 +34,6 @@ variable_value_ptr: .res 2
 ; Read/write position in line
 lp: .res 1
 
-.bss
-
-; The program line produced by the parser
-line_buffer: .res 256
-
 .code
 
 ; Initializes a new program.
