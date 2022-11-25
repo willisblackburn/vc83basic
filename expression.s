@@ -196,7 +196,7 @@ call_binary_operator:
         jsr     stack_free
         jsr     pop_fpa                 ; Other operand into FPA
         pla                             ; Get previous stack pointer back
-        jsr     calculate_primary_stack_ptr     ; Calculate stack pointer
+        ldx     #>primary_stack         ; Segment of stack
         stax    fp_ptr
         rts                             ; This does JMP to the operator handler
 
@@ -237,7 +237,7 @@ push_fpa:
         lda     #.sizeof(Float)         ; Allocate enough space for a float on the stack
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
-        jsr     calculate_primary_stack_ptr
+        ldx     #>primary_stack         ; Segment of stack
         jsr     store_fpa               ; Store FPA in the AX address
 @done:
         rts
@@ -247,7 +247,7 @@ pop_fpa:
         lda     #.sizeof(Float)         ; Free space for float
         jsr     stack_free
         tya                             ; Previous position back in A to calculate pointer
-        jsr     calculate_primary_stack_ptr
+        ldx     #>primary_stack         ; Segment of stack
         jsr     load_fpa                ; Load value into FPA
         rts
 
@@ -258,7 +258,7 @@ push_variable:
         lda     #.sizeof(Float)         ; Make space on the stack
         jsr     stack_alloc
         bcs     @done
-        jsr     calculate_primary_stack_ptr
+        ldx     #>primary_stack         ; Segment of stack
         stax    BC                      ; BC -> the target address on the stack
         ldy     #0                      ; Index
 @next:
@@ -275,7 +275,8 @@ push_variable:
 
 pop_variable:
         jsr     set_variable_value_ptr
-        jsr     calculate_primary_stack_ptr
+        lda     psp                     ; Get stack pointer
+        ldx     #>primary_stack         ; Segment of stack
         stax    BC                      ; BC -> the source address on the stack
         lda     #.sizeof(Float)         ; Free this many bytes
         jsr     stack_free
@@ -287,20 +288,6 @@ pop_variable:
         cpy     #.sizeof(Float)
         bne     @next                   ; More bytes to copy
         clc                             ; Signal success
-        rts
-
-; Calculates a stack pointer given a stack position.
-; A = the stack position
-; Returns the stack pointer in AX
-; Y SAFE, BC SAFE, DE SAFE
-
-calculate_primary_stack_ptr:
-        clc
-        adc     #<primary_stack         ; Add value in A to the primary stack address
-        ldx     #>primary_stack         ; High byte in X
-        bcc     @done                   ; Don't increment X if carry is clear
-        inx
-@done:
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
