@@ -614,6 +614,12 @@ static void test_fcmp(void) {
     SET_FP(value, 1, 1);
     result = fcmp(&value);
     ASSERT_EQ(result, 0);
+    
+    // 0 <=> 1000 = 0
+    SET_FP(reg_fpa, 0, 0);
+    SET_FP(value, 0, 1000);
+    result = fcmp(&value);
+    ASSERT_EQ(result, -1);
 }    
 
 int main(void) {
