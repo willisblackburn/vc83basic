@@ -47,7 +47,7 @@ flag_indicators: .res 8
 
 .code
 
-format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X FPA=%04X%04X-%04X%04X-%02.2X %.8s", $0A, $00
+format: .byte "$%02X: A=%02X X=%02X Y=%02X SP=%02X FPA=%04X%04X-%04X%04X-%02X %.8s", $0A, $00
 flag_names: .byte "NV-BDIZC"
 
 ; Prints the register values to stderr.
