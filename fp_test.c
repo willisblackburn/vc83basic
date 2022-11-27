@@ -629,32 +629,126 @@ static void test_load_fp0(void) {
     PRINT_TEST_NAME();
     SET_FP(value, 1, 1418858818L);
     load_fp0(&value);
-    ASSERT_FP_EQ(fp0, 1, 1418858818L);
-    SET_FP(value, 1, 12345678L);
+    ASSERT_FP_EQ(FP0, 1, 1418858818L);
+    SET_FP(value, 2, 12345678L);
     load_fp0(&value);
-    ASSERT_FP_EQ(fp0, 1, 12345678L);
-    ASSERT_FP_EQ(fp1, 1, 1418858818L);
+    ASSERT_FP_EQ(FP0, 2, 12345678L);
+    ASSERT_FP_EQ(FP1, 1, 1418858818L);
 }
 
 static void test_store_fp0(void) {
     Float value;
     PRINT_TEST_NAME();
-    SET_FP(fp0, 1, 1418858818L);
+    SET_FP(FP0, 1, 1418858818L);
     store_fp0(&value);
     ASSERT_FP_EQ(value, 1, 1418858818L);
 }
 
 static void test_swap_fp0_fp1(void) {
-    Float value;
     PRINT_TEST_NAME();
-    SET_FP(value, 1, 1418858818L);
-    load_fp0(&value);
-    SET_FP(value, 1, 12345678L);
-    load_fp0(&value);
+    SET_FP(FP0, 2, 12345678L);
+    SET_FP(FP1, 1, 1418858818L);
     swap_fp0_fp1();
-    ASSERT_FP_EQ(fp0, 1, 1418858818L);
-    ASSERT_FP_EQ(fp1, 1, 12345678L);
+    ASSERT_FP_EQ(FP0, 1, 1418858818L);
+    ASSERT_FP_EQ(FP1, 2, 12345678L);
 }
+
+static void call_normalize(signed char e, long x, long s, signed char e_result, long s_result) {
+    SET_FP(FP0, e, s);
+    FP0x = x;
+    fprintf(stderr, "normalize(%08LX%08LX-%02X)\n", x, s, (unsigned char)e);
+    normalize();
+    ASSERT_FP_EQ(FP0, e_result, s_result);
+}
+
+static void test_normalize(void) {
+    PRINT_TEST_NAME();
+
+    // 0
+    call_normalize(0, 0, 0, 0, 0);
+    // 0 significand with any exponent normalizes to 0
+    call_normalize(120, 0, 0, 0, 0);
+
+    //                      3         2         1         0           3         2         1         0
+    //                     10987654321098765432109876543210          10987654321098765432109876543210
+
+    // 1
+    call_normalize(0, 0x00, 0x00000001, -30, 0x40000000);
+    // -1
+    call_normalize(0, 0xFF, 0xFFFFFFFF, -31, 0x80000000);
+    // 2,147,483,647
+    call_normalize(0, 0x00, 0x7FFFFFFF, 0, 0x7FFFFFFF);
+    // -2,147,483,648
+    call_normalize(0, 0xFF, 0x80000000, 0, 0x80000000);
+    // 4,294,967,296
+    call_normalize(0, 0x01, 0x00000000, 2, 0x40000000);
+}
+
+static void test_int_to_fp2(void) {
+    PRINT_TEST_NAME();
+
+    int_to_fp2(1);
+    ASSERT_FP_EQ(FP0, 0, 0x40000000);
+}
+
+static void call_fadd2(char e_0, long s_0, char e_1, long s_1, char e_result, long s_result) {
+    SET_FP(FP0, e_0, s_0);
+    SET_FP(FP1, e_1, s_1);
+    fprintf(stderr, "fadd(%08LX-%02X, %08LX-%02X)\n", s_0, (unsigned char)e_0, s_1, (unsigned char)e_1);
+    fadd2();
+    ASSERT_FP_EQ(FP0, e_result, s_result);
+}
+
+static void test_fadd2(void) {
+    PRINT_TEST_NAME();
+
+    // 0 + 0
+    call_fadd2(0, 0, 0, 0, 0, 0);
+    // 1 + 1
+    call_fadd2(0, 0x40000000, 0, 0x40000000, 1, 0x40000000);
+    // 1 = 0.0002441406
+    call_fadd2(0, 0x40000000, -12, 0x40000000, 0, 0x40040000);
+    // 1 + 3.14159
+    call_fadd2(0, 0x4CB2F000, 0, 0x40000000, 1, 0x46597800);
+
+    
+    // // 1 + 1E1
+    // SET_FP(reg_fpa, 0, 1);
+    // SET_FP(value, 1, 1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 0, 11);
+    // // 1E1 + 1
+    // SET_FP(reg_fpa, 1, 1);
+    // SET_FP(value, 0, 1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 0, 11);
+    // // 1 + 3.14159
+    // SET_FP(reg_fpa, 0, 1);
+    // SET_FP(value, -5, 314159);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, -5, 414159);
+    // // 1 + -1
+    // SET_FP(reg_fpa, 0, 1);
+    // SET_FP(value, 0, -1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 0, 0);
+    // // 1E1 + -1
+    // SET_FP(reg_fpa, 1, 1);
+    // SET_FP(value, 0, -1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 0, 9);
+    // // 1 + -1E1
+    // SET_FP(reg_fpa, 0, 1);
+    // SET_FP(value, 1, -1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 0, -9);
+    // // LONG_MAX + 1
+    // SET_FP(reg_fpa, 0, LONG_MAX);
+    // SET_FP(value, 0, 1);
+    // fadd(&value);
+    // ASSERT_FP_EQ(reg_fpa, 1, -9);
+}
+
 
 int main(void) {
     initialize_target();
@@ -677,5 +771,8 @@ int main(void) {
     test_load_fp0();
     test_store_fp0();
     test_swap_fp0_fp1();
+    test_normalize();
+    test_int_to_fp2();
+    test_fadd2();
     return 0;
 }

@@ -4,11 +4,13 @@
 ; Floating Point Math Routines
 ;
 ; Format is 40 bits (5 bytes):
-; eeeeeeee tttttttt tttttttt tttttttt tttttttt .
+; seeeeeee st.tttttt tttttttt tttttttt tttttttt
 ;
 ; e = exponent, 8 bits, two's complement
+;     If e = -128 and s != then number is subnormal
+;     If e = -128 and s = 0 then NaN
 ; t = significand, 40 bits, two's complement
-; . = implied decimal point after significand
+; . = implied decimal point after first digit of significand
 ;
 ; Exponent range is 10^-128 to 10^127
 ; Significand range is -2,147,483,648 to 2,147,483,647
@@ -27,10 +29,14 @@ FPA: .res .sizeof(Float) + 4
 ; Secondary FP register
 FPB: .res .sizeof(Float)
 
-fp0: .res .sizeof(Float)
-fp0x: .res .sizeof(Float::s)
-fp1: .res .sizeof(Float)
-fp1x: .res .sizeof(Float::s)
+FP0: .res .sizeof(Float)
+FP0e = FP0+Float::e
+FP0s = FP0+Float::s
+FP0x: .res .sizeof(Float::s)
+FP1: .res .sizeof(Float)
+FP1e = FP1+Float::e
+FP1s = FP1+Float::s
+FP2s: .res .sizeof(Float::s)
 grs: .res 1
 
 ; fp_ptr holds a pointer to the other argument in two-float operations
@@ -1078,10 +1084,10 @@ load_fp0:
         stax        fp_ptr              ; Store the pointer to the new value
         ldy         #.sizeof(Float)-1   ; Count down so we can use rollover to escape
 @next_byte:
-        ldx         fp0,y               ; Copy FP0 value to FP1
-        stx         fp1,y
+        ldx         FP0,y               ; Copy FP0 value to FP1
+        stx         FP1,y
         lda         (fp_ptr),y          ; Copy memory value to FP0
-        sta         fp0,y
+        sta         FP0,y
         dey                             ; One down
         bpl         @next_byte          ; Continue if it hasn't rolled over
         rts
@@ -1093,7 +1099,7 @@ store_fp0:
         stax    fp_ptr                  ; FP value address into fp_ptr
         ldy     #.sizeof(Float)-1       ; Same countdown strategy as before
 @next_byte:
-        lda     fp0,y                   ; Copy FP0 value to memory
+        lda     FP0,y                   ; Copy FP0 value to memory
         sta     (fp_ptr),y
         dey
         bpl     @next_byte
@@ -1104,13 +1110,211 @@ store_fp0:
 swap_fp0_fp1:
         ldy     #.sizeof(Float)-1
 @next_byte:
-        lda     fp1,y
-        ldx     fp0,y
-        stx     fp1,y
-        sta     fp0,y
+        lda     FP1,y
+        ldx     FP0,y
+        stx     FP1,y
+        sta     FP0,y
         dey
         bpl     @next_byte
         rts
 
-fadd2:
+; Checks if FP0 is zero.
+; Returns with the zero flag set and 0 in A if FP0 is zero, otherwise the zero flag will be clear.
 
+fp0_is_zero:
+        lda     FP0+Float::s            ; OR all the significand bytes together
+        ora     FP0+Float::s+1
+        ora     FP0+Float::s+2
+        ora     FP0+Float::s+3
+        rts
+
+; Converts a 16-bit integer in AX into a floating-point number in FP0.
+
+int_to_fp2:
+        sta     FP0s                    ; Store 16-bit FP value
+        stx     FP0s+1
+        asl     A                       ; Shift sign bit into carry
+        ldy     #0                      ; Sign extension byte is 0 by default
+        bcc     @positive               ; Number is positive
+        dey                             ; Number was negative; sign extend with 1s
+@positive:
+        sty     FP0s+2                  ; Store sign extension bytes
+        sty     FP0s+3
+        lda     #30                     ; Have to shift this number left 30 places to get original value
+        sta     FP0e
+        jmp     normalize_left     
+
+; Return error 
+
+overflow:
+        sec
+        rts
+
+; Shifts the 40-bit FP0 extended significand one place to the right and re-attempts normalization.
+; Invoked from normalize when the significand doesn't fit into 32 bits.
+
+shift_right_normalize:
+        lda     FP0e                    ; Check exponent for overflow
+        cmp     #$7F
+        beq     overflow
+        inc     FP0e                    ; Increase exponent
+        lda     FP0x                    ; Low byte of FP0x
+        asl     A                       ; Shift sign bit into carry
+        ror     FP0x                    ; Right shift low byte of FP0x plus FP0s with sign extension
+        ror     FP0s+3
+        ror     FP0s+2
+        ror     FP0s+1
+        ror     FP0s
+
+; Fall through
+
+; Normalizes the value in FP0. Normalization shifts the FP0 significand (adjusting the exponent each time)
+; until the most-significant bit (excluding the sign bit) differs from the sign bit. The normalize function acts on
+; the 40-bit FP0 extended significand and normalizes to the 32-bit FP0 significand.
+
+normalize:
+
+; First check if there are any significant bits in the low byte of FP0x,
+; indicating the significand is greater than one.
+
+        lda     FP0s+3                  ; Most significant byte of FP0s
+        asl     A                       ; Shift sign bit into carry
+        lda     FP0x
+        adc     #0                      ; If adding the low byte of FP0x and sign bit = 0, then no significant bits
+        bne     shift_right_normalize   ; There are significant bits, so shift right and try again
+
+; Entry point if the significand fits within 32 bits.
+; First check if FP0 is zero. If so then make exponent zero and return.
+; If FP0 is not zero then it means that normalization is guaranteed to end: either the sign bit is 0, and one of
+; the other significand bits is 1 (since the significand overall is not zero); or the sign bit is 1, and eventually
+; we'll see a 0 bit, because we shift in 0s from the right.
+
+normalize_left:
+        jsr     fp0_is_zero             ; Check if FP0 is zero
+        debug $00
+        bne     @coarse
+        sta     FP0+Float::e            ; Make sure exponent is also zero
+        rts
+
+@coarse:
+        ldy     FP0+Float::s+3          ; Get high byte of significand
+        debug $10
+        beq     @coarse_shift           ; Check for 0
+        iny                             ; Check for -1 (sets zero flag if increment produces 0)
+        bne     @fine                   ; If not -1 then try fine shift
+
+; The high byte is either 0 or -1 ($FF). If the MSB of the next byte has the correct sign then we can shift the
+; significand left eight places by moving whole bytes.
+
+@coarse_shift:
+        lda     FP0+Float::s+2          ; Candidate for high byte
+        debug $20
+        tay                             ; Hold in Y
+        eor     FP0+Float::s+3          ; XOR with current high byte
+        and     #$80                    ; Isolate MSB; if it's zero then MSBs match
+        bne     @fine                   ; But if not, try fine-shifting
+        lda     FP0+Float::e            ; Get exponent
+        sec
+        sbc     #8                      ; Trial subtraction of 8
+        bvs     @fine                   ; If subtracting produced signed overflow then try fine shift
+        sta     FP0+Float::e            ; Otherwise update exponent
+        sty     FP0+Float::s+3          ; Store new high byte
+        ldy     FP0+Float::s+1          ; Shift other bytes
+        sty     FP0+Float::s+2          
+        ldy     FP0+Float::s
+        sty     FP0+Float::s+1
+        ldy     #0                      ; Store 0 in last byte
+        sty     FP0+Float::s
+        beq     @coarse                 ; Unconditional
+
+@fine_shift:
+        asl     FP0+Float::s            ; Shift left one bit
+        rol     FP0+Float::s+1
+        rol     FP0+Float::s+2
+        rol     FP0+Float::s+3
+        dec     FP0+Float::e
+
+@fine:
+        lda     FP0+Float::s+3          ; Get the high byte of significand
+        debug $30
+        asl     A                       ; Shift right one
+        eor     FP0+Float::s+3          ; XOR with original value
+        and     #$80                    ; Isolate MSB
+        bne     @done                   ; Significand is normalized
+        lda     FP0+Float::e            ; Get exponent
+        cmp     #$80                    ; Make sure not already minimum value
+        bne     @fine_shift             ; Okay to shift; otherwise fall through to underflow
+
+@underflow:
+        sec                             ; Signal error
+        rts
+
+@done:
+        debug $40
+        clc                             ; Signal success
+        rts
+
+swap_fadd2:
+        jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
+
+; Fall through
+
+; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
+
+fadd2:
+        lda     FP0e                    ; FP0 exponent
+        sec
+        sbc     FP1e                    ; Compare exponents: FP0e - FP1e
+        debug $80
+        beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
+        bvs     swap_fadd2              ; If we overflowed then FP1e is larger; swap and try again
+        tax                             ; Keep track of difference in X
+        mva     #0, grs                 ; Initialize GRS to 0
+@next_bit:
+        lda     FP1+Float::s+3          ; Get most-significant byte of significand
+        debug $90
+        asl     A                       ; Shift MSB into C
+        ror     FP1+Float::s+3          ; Shift FP1 significand right with sign extension
+        ror     FP1+Float::s+2
+        ror     FP1+Float::s+1
+        ror     FP1+Float::s
+        lda     grs                     ; Get GRS
+        and     #$01                    ; Isolate sticky bit
+        ror     grs                     ; Rotate carry into grs
+        ora     grs                     ; OR with the sticky bit
+        sta     grs                     ; Store back in grs
+        inc     FP1+Float::e            ; Increment exponent (will not overflow b/c is always less FP0 exponenet)
+        dex
+        bne     @next_bit
+@equal_exponents:
+        debug $A0
+        ldy     #0                      ; By default sign-extend with 0
+        lda     FP0s+3                  ; Get most-significant byte of significand
+        bpl     @positive
+        dey                             ; Significand is not positive so sign-extend with ones
+@positive:
+        debug $A1
+        clc
+        lda     FP0+Float::s            ; Add the significands
+        adc     FP1+Float::s
+        sta     FP0+Float::s
+        lda     FP0+Float::s+1
+        adc     FP1+Float::s+1
+        sta     FP0+Float::s+1
+        lda     FP0+Float::s+2
+        adc     FP1+Float::s+2
+        sta     FP0+Float::s+2
+        lda     FP0+Float::s+3
+        adc     FP1+Float::s+3
+        sta     FP0+Float::s+3
+        bcc     @no_carry
+        iny                             ; Add carry to the extended significand
+@no_carry:
+        debug $A2
+        sty     FP0x                    ; Store extended significand
+
+; TODO; check for signed overflow
+; TODO: round
+
+@finish:
+        jmp     normalize               ; Normalize result and return

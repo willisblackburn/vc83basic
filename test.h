@@ -26,10 +26,20 @@ typedef struct Float {
 
 extern Float reg_fpa;
 #pragma zpsym ("reg_fpa")
-extern Float fp0;
-#pragma zpsym ("fp0")
-extern Float fp1;
-#pragma zpsym ("fp1")
+extern Float FP0;
+#pragma zpsym ("FP0")
+extern signed char FP0e;
+#pragma zpsym ("FP0e")
+extern long FP0s;
+#pragma zpsym ("FP0s")
+extern long FP0x;
+#pragma zpsym ("FP0x")
+extern Float FP1;
+#pragma zpsym ("FP1")
+extern signed char FP1e;
+#pragma zpsym ("FP1e")
+extern long FP1s;
+#pragma zpsym ("FP1s")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -123,6 +133,9 @@ int fcmp(Float* value);
 void load_fp0(const Float* value);
 void store_fp0(Float* value);
 void swap_fp0_fp1(void);
+void int_to_fp2(int value);
+void normalize(void);
+void fadd2(void);
 
 // list.s
 int list_line(const void* line_ptr);

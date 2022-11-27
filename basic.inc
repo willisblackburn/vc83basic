@@ -25,7 +25,8 @@
 
 .globalzp BC, B, C, DE, D, E
 .globalzp FPA
-.globalzp fp0, fp1
+.globalzp FP0, FP0e, FP0s, FP0x, FP1, FP1e, FP1s, FP1x
+.globalzp grs
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -107,6 +108,9 @@
 .global load_fp0
 .global store_fp0
 .global swap_fp0_fp1
+.global int_to_fp2
+.global normalize
+.global fadd2
 
 ; input.s
 .global exec_input
