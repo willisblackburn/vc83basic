@@ -109,6 +109,7 @@
 .global store_fp0
 .global swap_fp0_fp1
 .global int_to_fp2
+.global truncate_fp_to_int2
 .global normalize
 .global fadd2
 

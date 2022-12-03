@@ -1128,23 +1128,71 @@ fp0_is_zero:
         ora     FP0+Float::s+3
         rts
 
-; Converts a 16-bit integer in AX into a floating-point number in FP0.
+; Assumes that the 32-bit value in the FP0 significand is an integer and converts it to a float.
 
 int_to_fp2:
-        sta     FP0s                    ; Store 16-bit FP value
-        stx     FP0s+1
-        asl     A                       ; Shift sign bit into carry
-        ldy     #0                      ; Sign extension byte is 0 by default
-        bcc     @positive               ; Number is positive
-        dey                             ; Number was negative; sign extend with 1s
-@positive:
-        sty     FP0s+2                  ; Store sign extension bytes
-        sty     FP0s+3
         lda     #30                     ; Have to shift this number left 30 places to get original value
         sta     FP0e
         jmp     normalize_left     
 
-; Return error 
+; Returns the greatest 32-bit integer less than or equal to the input value.
+; To generate the integer value we shift the significand (and adjust the exponent) until the exponent is 0; the
+; integer part will now be to the left of the binary point. But because that would push the integer part off the
+; left end of the significand field, instead we adjust until the exponent is 30, at which point the integer value
+; will be in the significand field of FP0.
+
+truncate_fp_to_int2:
+        jsr     sign_extend_to_40_bits
+        lda     FP0e                    ; Get the exponent
+        sec
+        sbc     #31                     ; Target exponent value is 30, but subtract 31
+        tay                             ; Otherwise A is -(number of shifts) - 1, so we pre-increment and check for 0
+        bcc     @decrement              ; If we borrowed to subtract 31, then E < 31 or E <= 30; ok!
+        rts                             ; Otherwise return with carry set
+
+@shift:
+        jsr     shift_right             ; Otherwise shift right
+@decrement:
+        iny                             ; For example if E was 30 then A = (30-31) = -1, so INY gives 0 and we stop
+        bne     @shift                  ; If not 0 then continue
+
+@return_value:
+        clc                             ; Signal success
+        rts
+
+; Utility function to sign-extend the FP0 significand to low byte of FP0x.
+; Returns the value used for the sign extension in X.
+
+sign_extend_to_40_bits:
+        ldx     #0                      ; Use 0 as the sign-extension value by default
+        lda     FP0s+3                  ; High byte of FP0s
+        bpl     @positive
+        dex                             ; If negative then sign-extend with 1s
+@positive:
+        stx     FP0x                    ; Store in low byte of FP0x
+        rts
+
+; Utility function to shift the 40-bit extended significand of FP0 right by one bit and increment exponent.
+; The caller is responsible for testing for exponent overflow before calling.
+
+shift_right:
+        lda     FP0x                    ; Low byte of FP0x
+        asl     A                       ; Shift sign bit into carry
+        ror     FP0x                    ; Right shift low byte of FP0x plus FP0s with sign extension
+
+; Fall through
+
+; Shift the 32-bit significand of FP0 one place to the right, shifting in the carry
+
+shift_right_from_carry:
+        ror     FP0s+3
+        ror     FP0s+2
+        ror     FP0s+1
+        ror     FP0s
+        inc     FP0e                    ; Increase exponent
+        rts
+
+; Returns an error to the caller.
 
 overflow:
         sec
@@ -1157,14 +1205,7 @@ shift_right_normalize:
         lda     FP0e                    ; Check exponent for overflow
         cmp     #$7F
         beq     overflow
-        inc     FP0e                    ; Increase exponent
-        lda     FP0x                    ; Low byte of FP0x
-        asl     A                       ; Shift sign bit into carry
-        ror     FP0x                    ; Right shift low byte of FP0x plus FP0s with sign extension
-        ror     FP0s+3
-        ror     FP0s+2
-        ror     FP0s+1
-        ror     FP0s
+        jsr     shift_right             ; Use shift_right to shift the remaining 32 bits
 
 ; Fall through
 
@@ -1191,14 +1232,12 @@ normalize:
 
 normalize_left:
         jsr     fp0_is_zero             ; Check if FP0 is zero
-        debug $00
         bne     @coarse
         sta     FP0+Float::e            ; Make sure exponent is also zero
         rts
 
 @coarse:
         ldy     FP0+Float::s+3          ; Get high byte of significand
-        debug $10
         beq     @coarse_shift           ; Check for 0
         iny                             ; Check for -1 (sets zero flag if increment produces 0)
         bne     @fine                   ; If not -1 then try fine shift
@@ -1208,7 +1247,6 @@ normalize_left:
 
 @coarse_shift:
         lda     FP0+Float::s+2          ; Candidate for high byte
-        debug $20
         tay                             ; Hold in Y
         eor     FP0+Float::s+3          ; XOR with current high byte
         and     #$80                    ; Isolate MSB; if it's zero then MSBs match
@@ -1236,7 +1274,6 @@ normalize_left:
 
 @fine:
         lda     FP0+Float::s+3          ; Get the high byte of significand
-        debug $30
         asl     A                       ; Shift right one
         eor     FP0+Float::s+3          ; XOR with original value
         and     #$80                    ; Isolate MSB
@@ -1250,7 +1287,6 @@ normalize_left:
         rts
 
 @done:
-        debug $40
         clc                             ; Signal success
         rts
 
@@ -1265,14 +1301,12 @@ fadd2:
         lda     FP0e                    ; FP0 exponent
         sec
         sbc     FP1e                    ; Compare exponents: FP0e - FP1e
-        debug $80
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
         bvs     swap_fadd2              ; If we overflowed then FP1e is larger; swap and try again
         tax                             ; Keep track of difference in X
         mva     #0, grs                 ; Initialize GRS to 0
 @next_bit:
         lda     FP1+Float::s+3          ; Get most-significant byte of significand
-        debug $90
         asl     A                       ; Shift MSB into C
         ror     FP1+Float::s+3          ; Shift FP1 significand right with sign extension
         ror     FP1+Float::s+2
@@ -1287,13 +1321,12 @@ fadd2:
         dex
         bne     @next_bit
 @equal_exponents:
-        debug $A0
+        jsr     sign_extend_to_40_bits  ; Sign-extend FP0
         ldy     #0                      ; By default sign-extend with 0
         lda     FP0s+3                  ; Get most-significant byte of significand
         bpl     @positive
         dey                             ; Significand is not positive so sign-extend with ones
 @positive:
-        debug $A1
         clc
         lda     FP0+Float::s            ; Add the significands
         adc     FP1+Float::s
@@ -1310,7 +1343,6 @@ fadd2:
         bcc     @no_carry
         iny                             ; Add carry to the extended significand
 @no_carry:
-        debug $A2
         sty     FP0x                    ; Store extended significand
 
 ; TODO; check for signed overflow

@@ -242,6 +242,11 @@ _int_to_fp2:
 .export _int_to_fp2
         jmp     int_to_fp2
 
+_truncate_fp_to_int2:
+.export _truncate_fp_to_int2
+        jsr     truncate_fp_to_int2
+        jmp     return_carry_flag
+
 _normalize:
 .export _normalize
         jmp     normalize

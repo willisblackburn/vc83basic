@@ -133,7 +133,8 @@ int fcmp(Float* value);
 void load_fp0(const Float* value);
 void store_fp0(Float* value);
 void swap_fp0_fp1(void);
-void int_to_fp2(int value);
+void int_to_fp2(void);
+int truncate_fp_to_int2(void);
 void normalize(void);
 void fadd2(void);
 
