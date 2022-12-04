@@ -627,135 +627,66 @@ static void test_fcmp(void) {
 
 // --------------------------------------------------------------------------------------------------------------------
 
+typedef struct LoadStoreTestCase {
+    Float f;
+    UnpackedFloat u;
+} LoadStoreTestCase;
+
+static LoadStoreTestCase load_store_test_cases[] = {
+    { { 0x00000000, 0 }, { 0x00000000, -127, POSITIVE } },
+    { { 0x00000000, 128 }, { 0x80000000, 0, POSITIVE } },
+    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 30, POSITIVE } },
+    { { 0x80000000, 159 }, { 0x80000000, 31, NEGATIVE } },
+    { { 0x08442211, 128 }, { 0x88442211, 0, POSITIVE } },
+    // Smallest possible normalized exponent
+    { { 0x00000000, 1 }, { 0x80000000, -127, POSITIVE } },
+    // Subnormal
+    { { 0x00000400, 0 }, { 0x00000400, -127, POSITIVE } },
+};
+
 static void test_load_fpx(void) {
     Float value;
+    LoadStoreTestCase* test_case;
+    int i;
+
     PRINT_TEST_NAME();
 
-    // 0
-    SET_FP(value, 0, 0x00000000);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, -127);
-    ASSERT_EQ(FP0t, 0x00000000);
-
-    // 1
-    SET_FP(value, 128, 0x00000000);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, 0);
-    ASSERT_EQ(FP0t, 0x80000000);
-
-    // -1
-    SET_FP(value, 128, 0x80000000);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, NEGATIVE);
-    ASSERT_EQ(FP0e, 0);
-    ASSERT_EQ(FP0t, 0x80000000);
-
-    // 2,147,483,647
-    SET_FP(value, 158, 0x7FFFFFFE);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, 30);
-    ASSERT_EQ(FP0t, 0xFFFFFFFE);
-
-    // -2,147,483,648
-    SET_FP(value, 159, 0x80000000);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, NEGATIVE);
-    ASSERT_EQ(FP0e, 31);
-    ASSERT_EQ(FP0t, 0x80000000);
-
-    // 2,286,166,545
-    SET_FP(value, 128, 0x08442211);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, 0);
-    ASSERT_EQ(FP0t, 0x88442211);
-
-    // Smallest possible normalized exponent
-    SET_FP(value, 1, 0x00000000);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, -127);
-    ASSERT_EQ(FP0t, 0x80000000);
-
-    // Subnormal
-    SET_FP(value, 0, 0x00000400);
-    load_fpx(&FP0, &value);
-    ASSERT_EQ(FP0s, POSITIVE);
-    ASSERT_EQ(FP0e, -127);
-    ASSERT_EQ(FP0t, 0x00000400);
-
-    // Make sure storing to FP1 works
-    SET_FP(value, 128, 0x08442211);
-    load_fpx(&FP1, &value);
-    ASSERT_EQ(FP1s, POSITIVE);
-    ASSERT_EQ(FP1e, 0);
-    ASSERT_EQ(FP1t, 0x88442211);
+    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
+        test_case = load_store_test_cases + i;
+        fprintf(stderr, "load_fpx(t=$%08X, e=$%02X)\n", test_case->f.t, test_case->f.e);
+        SET_FP(value, test_case->f.e, test_case->f.t);
+        load_fpx(&FP0, &value);
+        ASSERT_EQ(FP0s, test_case->u.s);
+        ASSERT_EQ(FP0e, test_case->u.e);
+        ASSERT_EQ(FP0t, test_case->u.t);
+        load_fpx(&FP1, &value);
+        ASSERT_EQ(FP1s, test_case->u.s);
+        ASSERT_EQ(FP1e, test_case->u.e);
+        ASSERT_EQ(FP1t, test_case->u.t);
+    }
 }
 
 static void test_store_fpx(void) {
     Float value;
+    LoadStoreTestCase* test_case;
+    int i;
+
     PRINT_TEST_NAME();
 
-    // Test cases are same as test_load_fpx but reversed
-
-    // 0
-    FP0s = POSITIVE;
-    FP0e = -127;
-    FP0t = 0x00000000;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 0, 0x00000000);
-
-    // 1
-    FP0s = POSITIVE;
-    FP0e = 0;
-    FP0t = 0x80000000;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 128, 0x00000000);
-
-    // 2,147,483,647
-    FP0s = POSITIVE;
-    FP0e = 30;
-    FP0t = 0xFFFFFFFE;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 158, 0x7FFFFFFE);
-
-    // -2,147,483,648
-    FP0s = NEGATIVE;
-    FP0e = 31;
-    FP0t = 0x80000000;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 159, 0x80000000);
-
-    // 2,286,166,545
-    FP0s = POSITIVE;
-    FP0e = 0;
-    FP0t = 0x88442211;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 128, 0x08442211);
-
-    // Smallest possible normalized exponent
-    FP0s = POSITIVE;
-    FP0e = -127;
-    FP0t = 0x80000000;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 1, 0x00000000);
-
-    // Subnormal
-    FP0s = POSITIVE;
-    FP0e = -127;
-    FP0t = 0x00000400;
-    store_fpx(&FP0, &value);
-    ASSERT_FP_EQ(value, 0, 0x00000400);
-
-    // Make sure storing to FP1 works
-    FP1s = POSITIVE;
-    FP1e = 0;
-    FP1t = 0x88442211;
-    store_fpx(&FP1, &value);
-    ASSERT_FP_EQ(value, 128, 0x08442211);
+    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
+        test_case = load_store_test_cases + i;
+        fprintf(stderr, "store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", test_case->u.t, test_case->u.e, test_case->u.s);
+        FP0s = test_case->u.s;
+        FP0e = test_case->u.e;
+        FP0t = test_case->u.t;
+        store_fpx(&FP0, &value);
+        ASSERT_FP_EQ(value, test_case->f.e, test_case->f.t);
+        FP1s = test_case->u.s;
+        FP1e = test_case->u.e;
+        FP1t = test_case->u.t;
+        store_fpx(&FP1, &value);
+        ASSERT_FP_EQ(value, test_case->f.e, test_case->f.t);
+    }
 }
 
 // static void test_swap_fp0_fp1(void) {
