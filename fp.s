@@ -21,7 +21,7 @@ MAXDIGITS = 10
 
 .zeropage
 
-; We make a lot of assumptions about the size of Float in ths module.
+; We make a lot of assumptions about the size of Float in this module.
 .assert .sizeof(Float) = 5, error
 .assert .sizeof(Float::t) = 4, error
 .assert .sizeof(Float::e) = 1, error
