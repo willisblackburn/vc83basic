@@ -20,9 +20,24 @@
     .endif
 .endmacro
 
+.macro lday address
+    .if (.match (.left (1, {address}), #))
+            lda     #<(.right (.tcount ({address})-1, {address}))
+            ldy     #>(.right (.tcount ({address})-1, {address}))
+    .else
+            lda     address
+            ldy     address+1
+    .endif
+.endmacro
+
 .macro stax address
         sta     address
         stx     address+1
+.endmacro
+
+.macro stay address
+        sta     address
+        sty     address+1
 .endmacro
 
 ; Moves an 8-bit value through A, X, or Y.
@@ -65,6 +80,13 @@
         stax    to
 .endmacro
 
+; Moves a 16-bit value through AY.
+
+.macro mvay from, to
+        lday    from
+        stay    to
+.endmacro
+
 ; Pushes a memory value onto the stack via A.
 
 .macro  ldpha   value
@@ -87,6 +109,14 @@
         pha
 .endmacro
 
+; Pushes a 16-bit value from AY onto the stack. Note the value is pushed in reverse byte order (big-endian).
+
+.macro  phay
+        pha
+        tya
+        pha
+.endmacro
+
 ; Pulls a value from the stack to memory via A.
 
 .macro  plsta   value
@@ -106,5 +136,13 @@
 .macro  plax
         pla
         tax
+        pla
+.endmacro
+
+; Pulls a 16-bit big-endian value from the stack into AY.
+
+.macro  play
+        pla
+        tay
         pla
 .endmacro

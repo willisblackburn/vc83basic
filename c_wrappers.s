@@ -15,12 +15,7 @@
 .export _reg_fpa = FPA
 
 .export _FP0 = FP0
-.export _FP0e = FP0e
-.export _FP0s = FP0s
-.export _FP0x = FP0x
 .export _FP1 = FP1
-.export _FP1e = FP1e
-.export _FP1s = FP1s
 
 .export _bp = bp
 .export _lp = lp
@@ -226,34 +221,42 @@ _fcmp:
         ldax    #1
         rts
 
-_load_fp0:
-.export _load_fp0
-        jmp     load_fp0
+_load_fpx:
+.export _load_fpx
+        stax    BC                      ; value pointer
+        jsr     popax                   ; fpx pointer
+        tax
+        lday    BC
+        jmp     load_fpx
 
-_store_fp0:
-.export _store_fp0
-        jmp     store_fp0
+_store_fpx:
+.export _store_fpx
+        stax    BC                      ; value pointer
+        jsr     popax                   ; fpx pointer
+        tax
+        lday    BC
+        jmp     store_fpx
 
-_swap_fp0_fp1:
-.export _swap_fp0_fp1
-        jmp     swap_fp0_fp1
+; _swap_fp0_fp1:
+; .export _swap_fp0_fp1
+;         jmp     swap_fp0_fp1
 
-_int_to_fp2:
-.export _int_to_fp2
-        jmp     int_to_fp2
+; _int_to_fp2:
+; .export _int_to_fp2
+;         jmp     int_to_fp2
 
-_truncate_fp_to_int2:
-.export _truncate_fp_to_int2
-        jsr     truncate_fp_to_int2
-        jmp     return_carry_flag
+; _truncate_fp_to_int2:
+; .export _truncate_fp_to_int2
+;         jsr     truncate_fp_to_int2
+;         jmp     return_carry_flag
 
-_normalize:
-.export _normalize
-        jmp     normalize
+; _normalize:
+; .export _normalize
+;         jmp     normalize
 
-_fadd2:
-.export _fadd2
-        jmp     fadd2
+; _fadd2:
+; .export _fadd2
+;         jmp     fadd2
 
 ; list.s
 

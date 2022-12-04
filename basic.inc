@@ -17,8 +17,8 @@
 .endstruct
 
 .struct Float
-    e .res 1    ; Exponent
-    s .res 4    ; Significand
+    t .res 4
+    e .res 1
 .endstruct
 
 ; Zero Page
@@ -105,13 +105,13 @@
 .global fdiv, fdiv_with_ptr
 .global fcmp, fcmp_with_ptr
 
-.global load_fp0
-.global store_fp0
-.global swap_fp0_fp1
-.global int_to_fp2
-.global truncate_fp_to_int2
-.global normalize
-.global fadd2
+.global load_fpx
+.global store_fpx
+; .global swap_fp0_fp1
+; .global int_to_fp2
+; .global truncate_fp_to_int2
+; .global normalize
+; .global fadd2
 
 ; input.s
 .global exec_input

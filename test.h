@@ -18,28 +18,24 @@ typedef struct Line {
 } Line;
 
 typedef struct Float {
-    signed char e;
-    long s;
+    unsigned long t;
+    unsigned char e;
 } Float;
+
+typedef struct UnpackedFloat {
+    unsigned long t;
+    signed char e;
+    signed char s;
+} UnpackedFloat;
 
 // Zero Page
 
 extern Float reg_fpa;
 #pragma zpsym ("reg_fpa")
-extern Float FP0;
+extern UnpackedFloat FP0;
 #pragma zpsym ("FP0")
-extern signed char FP0e;
-#pragma zpsym ("FP0e")
-extern long FP0s;
-#pragma zpsym ("FP0s")
-extern long FP0x;
-#pragma zpsym ("FP0x")
-extern Float FP1;
+extern UnpackedFloat FP1;
 #pragma zpsym ("FP1")
-extern signed char FP1e;
-#pragma zpsym ("FP1e")
-extern long FP1s;
-#pragma zpsym ("FP1s")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -130,13 +126,13 @@ void fmul(Float* value);
 void fdiv(Float* value);
 int fcmp(Float* value);
 
-void load_fp0(const Float* value);
-void store_fp0(Float* value);
-void swap_fp0_fp1(void);
-void int_to_fp2(void);
-int truncate_fp_to_int2(void);
-void normalize(void);
-void fadd2(void);
+void load_fpx(UnpackedFloat* fpx, const Float* value);
+void store_fpx(const UnpackedFloat* fpx, Float* value);
+// void swap_fp0_fp1(void);
+// void int_to_fp2(void);
+// int truncate_fp_to_int2(void);
+// void normalize(void);
+// void fadd2(void);
 
 // list.s
 int list_line(const void* line_ptr);
