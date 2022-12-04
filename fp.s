@@ -3,20 +3,17 @@
 
 ; Floating Point Math Routines
 ;
-; Format is IEEE 754 single-precision with 40-bit extended significand (5 bytes):
+; Format is single-precision with 40-bit extended significand (5 bytes):
 ; eeeeeeee stttttt tttttttt tttttttt tttttttt
 ;
-; e = exponent, 8 bits, excess-127
+; e = exponent, 8 bits, excess-128 (MSB is inverted)
 ;     If e = 0 and s = 0 then value = 0
-;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
-;     If 1 <= e <= 254 then actual exponent is e-127 and actual significand is 1+t (implied 1. before t)
-;     If e = 255 then value is +/- infinity (t = 0) or NaN (t != 0)
+;     If e = 0 and s != 0 then number is subnormal and actual exponent is -127
+;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
 ; t = significand, 40 bits
 ;
-; IEEE 754 stores sign bit first, but we move it to the significand to simplify the pack/unpack logic.
 ; The 40-byte value is stored in little-endian format, i.e., lowest byte of significand comes first.
 
-BIAS = 127
 MAXDIGITS = 10
 
 .zeropage
@@ -30,12 +27,6 @@ MAXDIGITS = 10
 FPA: .res .sizeof(Float) + 4
 ; Secondary FP register
 FPB: .res .sizeof(Float)
-
-.struct UnpackedFloat
-    t .res 4
-    e .res 1
-    s .res 1
-.endstruct
 
 FP0: .res .sizeof(UnpackedFloat)
 FP0t = FP0+UnpackedFloat::t
@@ -1091,6 +1082,10 @@ fcmp_with_ptr:
 ; AY = a pointer to the value to load
 ; X = either #FP0 or #FP1
 
+; Y indexes Float starting at position 0 so make sure everything is in the right place.
+.assert Float::t = 0, error
+.assert Float::e = 4, error
+
 load_fpx:
         stay    fp_ptr                  ; Store the pointer to the new value
         ldy     #0                      ; Start with low byte of significand
@@ -1111,9 +1106,8 @@ load_fpx:
         sta     UnpackedFloat::t+3,x    ; Store high 7 bits of significand
         iny     
         lda     (fp_ptr),y              ; Exponent
-        beq     @subnormal_or_zero      ; Handle as subnormal; significand MSB will be 0
-        sec
-        sbc     #BIAS                   ; Subtract bias; e is now in 2's complement form
+        beq     @subnormal_or_zero      ; Handle as subnormal; significand MSB will be 0 in this case
+        eor     #$80                    ; Invert MSB
         sta     UnpackedFloat::e,x      ; Store exponent
         lda     #$80                    ; High bit of significand
         ora     UnpackedFloat::t+3,x    ; OR with high byte
@@ -1121,7 +1115,7 @@ load_fpx:
         rts
 
 @subnormal_or_zero:
-        lda     #$82                    ; Exponent is -126 ($82 is two's complement of -126)
+        lda     #$81                    ; Exponent is -127 ($81)
         sta     UnpackedFloat::e,x      ; Store exponent
         rts
 
@@ -1148,8 +1142,7 @@ store_fpx:
         sta     (fp_ptr),y              ; Save
         iny
         lda     UnpackedFloat::e,x
-        clc
-        adc     #BIAS                   ; Add back the bias
+        eor     #$80                    ; Invert MSB for storage
         sta     (fp_ptr),y              ; Store
         rts
 
@@ -1164,7 +1157,7 @@ store_fpx:
 ; Swaps FP0 and FP1.
 
 swap_fp0_fp1:
-        ldy     #.sizeof(Float)-1
+        ldy     #.sizeof(UnpackedFloat)-1
 @next_byte:
         lda     FP1,y
         ldx     FP0,y
@@ -1178,10 +1171,10 @@ swap_fp0_fp1:
 ; Returns with the zero flag set and 0 in A if FP0 is zero, otherwise the zero flag will be clear.
 
 fp0_is_zero:
-        lda     FP0+Float::t            ; OR all the significand bytes together
-        ora     FP0+Float::t+1
-        ora     FP0+Float::t+2
-        ora     FP0+Float::t+3
+        lda     FP0t                    ; OR all the significand bytes together
+        ora     FP0t+1
+        ora     FP0t+2
+        ora     FP0t+3
         rts
 
 ; Assumes that the 32-bit value in the FP0 significand is an integer and converts it to a float.
@@ -1232,19 +1225,11 @@ sign_extend_to_40_bits:
 ; The caller is responsible for testing for exponent overflow before calling.
 
 shift_right:
-        lda     FP0x                    ; Low byte of FP0x
-        asl     A                       ; Shift sign bit into carry
-        ror     FP0x                    ; Right shift low byte of FP0x plus FP0s with sign extension
-
-; Fall through
-
-; Shift the 32-bit significand of FP0 one place to the right, shifting in the carry
-
-shift_right_from_carry:
-        ror     FP0s+3
-        ror     FP0s+2
-        ror     FP0s+1
-        ror     FP0s
+        lsr     FP0x                    ; Right shift low byte of FP0x plus FP0t
+        ror     FP0t+3
+        ror     FP0t+2
+        ror     FP0t+1
+        ror     FP0t
         inc     FP0e                    ; Increase exponent
         rts
 
@@ -1271,13 +1256,9 @@ shift_right_normalize:
 
 normalize:
 
-; First check if there are any significant bits in the low byte of FP0x,
-; indicating the significand is greater than one.
+; First check if there are any bits set in the low byte of FP0x, indicating the significand is >= 2.
 
-        lda     FP0s+3                  ; Most significant byte of FP0s
-        asl     A                       ; Shift sign bit into carry
-        lda     FP0x
-        adc     #0                      ; If adding the low byte of FP0x and sign bit = 0, then no significant bits
+        lda     FP0x                    ; Check first extension byte
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
@@ -1289,61 +1270,50 @@ normalize:
 normalize_left:
         jsr     fp0_is_zero             ; Check if FP0 is zero
         bne     @coarse
-        sta     FP0+Float::e            ; Make sure exponent is also zero
+        sta     FP0e                    ; Make sure exponent is also zero
         rts
 
 @coarse:
-        ldy     FP0+Float::t+3          ; Get high byte of significand
-        beq     @coarse_shift           ; Check for 0
-        iny                             ; Check for -1 (sets zero flag if increment produces 0)
-        bne     @fine                   ; If not -1 then try fine shift
+        ldy     FP0t+3                  ; Get high byte of significand
+        bne     @fine                   ; If not 0 then try fine shift
 
-; The high byte is either 0 or -1 ($FF). If the MSB of the next byte has the correct sign then we can shift the
-; significand left eight places by moving whole bytes.
+; The high byte is 0, so shift left 8 bits using byte moves.
 
 @coarse_shift:
-        lda     FP0+Float::t+2          ; Candidate for high byte
-        tay                             ; Hold in Y
-        eor     FP0+Float::t+3          ; XOR with current high byte
-        and     #$80                    ; Isolate MSB; if it's zero then MSBs match
-        bne     @fine                   ; But if not, try fine-shifting
-        lda     FP0+Float::e            ; Get exponent
+        debug $00
+        lda     FP0e                    ; Get exponent
         sec
         sbc     #8                      ; Trial subtraction of 8
         bvs     @fine                   ; If subtracting produced signed overflow then try fine shift
-        sta     FP0+Float::e            ; Otherwise update exponent
-        sty     FP0+Float::t+3          ; Store new high byte
-        ldy     FP0+Float::t+1          ; Shift other bytes
-        sty     FP0+Float::t+2          
-        ldy     FP0+Float::t
-        sty     FP0+Float::t+1
-        ldy     #0                      ; Store 0 in last byte
-        sty     FP0+Float::t
+        cmp     #$80                    ; Check if it went to -128
+        beq     @fine                   ; If so then can't apply coarse shift; do fine shift instead
+        sta     FP0e                    ; Otherwise update exponent
+        lda     FP0t+2
+        sta     FP0t+3                  ; Store new high byte
+        lda     FP0t+1                  ; Shift other bytes
+        sta     FP0t+2          
+        lda     FP0t
+        sta     FP0t+1
+        lda     #0                      ; Store 0 in last byte
+        sta     FP0t
         beq     @coarse                 ; Unconditional
 
 @fine_shift:
-        asl     FP0+Float::t            ; Shift left one bit
-        rol     FP0+Float::t+1
-        rol     FP0+Float::t+2
-        rol     FP0+Float::t+3
-        dec     FP0+Float::e
+        debug $10
+        asl     FP0t                    ; Shift left one bit
+        rol     FP0t+1
+        rol     FP0t+2
+        rol     FP0t+3
+        dec     FP0e
 
 @fine:
-        lda     FP0+Float::t+3          ; Get the high byte of significand
-        asl     A                       ; Shift right one
-        eor     FP0+Float::t+3          ; XOR with original value
-        and     #$80                    ; Isolate MSB
-        bne     @done                   ; Significand is normalized
-        lda     FP0+Float::e            ; Get exponent
-        cmp     #$80                    ; Make sure not already minimum value
+        lda     FP0t+3                  ; Get the high byte of significand
+        bmi     @done                   ; Significand is normalized
+        lda     FP0e                    ; Get exponent
+        cmp     #$81                    ; Make sure not already minimum value (-127)
         bne     @fine_shift             ; Okay to shift; otherwise fall through to underflow
 
-@underflow:
-        sec                             ; Signal error
-        rts
-
 @done:
-        clc                             ; Signal success
         rts
 
 swap_fadd2:

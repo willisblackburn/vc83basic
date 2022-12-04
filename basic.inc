@@ -21,11 +21,17 @@
     e .res 1
 .endstruct
 
+.struct UnpackedFloat
+    t .res 4
+    e .res 1
+    s .res 1
+.endstruct
+
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
 .globalzp FPA
-.globalzp FP0, FP0e, FP0s, FP0x, FP1, FP1e, FP1s, FP1x
+.globalzp FP0, FP0t, FP0e, FP0s, FP0x, FP1, FP1t, FP1e, FP1s, FP2t
 .globalzp grs
 .globalzp bp
 .globalzp name_ptr
@@ -110,7 +116,7 @@
 ; .global swap_fp0_fp1
 ; .global int_to_fp2
 ; .global truncate_fp_to_int2
-; .global normalize
+.global normalize
 ; .global fadd2
 
 ; input.s

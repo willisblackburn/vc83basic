@@ -25,7 +25,7 @@ typedef struct Float {
 typedef struct UnpackedFloat {
     unsigned long t;
     signed char e;
-    signed char s;
+    unsigned char s;
 } UnpackedFloat;
 
 // Zero Page
@@ -34,8 +34,24 @@ extern Float reg_fpa;
 #pragma zpsym ("reg_fpa")
 extern UnpackedFloat FP0;
 #pragma zpsym ("FP0")
+extern unsigned long FP0t;
+#pragma zpsym ("FP0t")
+extern signed char FP0e;
+#pragma zpsym ("FP0e")
+extern unsigned char FP0s;
+#pragma zpsym ("FP0s")
+extern unsigned long FP0x;
+#pragma zpsym ("FP0x")
 extern UnpackedFloat FP1;
 #pragma zpsym ("FP1")
+extern unsigned long FP1t;
+#pragma zpsym ("FP1t")
+extern signed char FP1e;
+#pragma zpsym ("FP1e")
+extern unsigned char FP1s;
+#pragma zpsym ("FP1s")
+extern unsigned long FP2t;
+#pragma zpsym ("FP2t")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -131,7 +147,7 @@ void store_fpx(const UnpackedFloat* fpx, Float* value);
 // void swap_fp0_fp1(void);
 // void int_to_fp2(void);
 // int truncate_fp_to_int2(void);
-// void normalize(void);
+void normalize(void);
 // void fadd2(void);
 
 // list.s

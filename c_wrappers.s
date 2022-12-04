@@ -15,7 +15,15 @@
 .export _reg_fpa = FPA
 
 .export _FP0 = FP0
+.export _FP0t = FP0t
+.export _FP0e = FP0e
+.export _FP0s = FP0s
+.export _FP0x = FP0x
 .export _FP1 = FP1
+.export _FP1t = FP1t
+.export _FP1e = FP1e
+.export _FP1s = FP1s
+.export _FP2t = FP2t
 
 .export _bp = bp
 .export _lp = lp
@@ -250,9 +258,9 @@ _store_fpx:
 ;         jsr     truncate_fp_to_int2
 ;         jmp     return_carry_flag
 
-; _normalize:
-; .export _normalize
-;         jmp     normalize
+_normalize:
+.export _normalize
+        jmp     normalize
 
 ; _fadd2:
 ; .export _fadd2
