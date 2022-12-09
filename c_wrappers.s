@@ -262,9 +262,9 @@ _normalize:
 .export _normalize
         jmp     normalize
 
-; _fadd2:
-; .export _fadd2
-;         jmp     fadd2
+_fadd2:
+.export _fadd2
+        jmp     fadd2
 
 ; list.s
 

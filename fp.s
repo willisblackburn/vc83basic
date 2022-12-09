@@ -1191,7 +1191,6 @@ int_to_fp2:
 ; will be in the significand field of FP0.
 
 truncate_fp_to_int2:
-        jsr     sign_extend_to_40_bits
         lda     FP0e                    ; Get the exponent
         sec
         sbc     #31                     ; Target exponent value is 30, but subtract 31
@@ -1209,23 +1208,12 @@ truncate_fp_to_int2:
         clc                             ; Signal success
         rts
 
-; Utility function to sign-extend the FP0 significand to low byte of FP0x.
-; Returns the value used for the sign extension in X.
-
-sign_extend_to_40_bits:
-        ldx     #0                      ; Use 0 as the sign-extension value by default
-        lda     FP0s+3                  ; High byte of FP0s
-        bpl     @positive
-        dex                             ; If negative then sign-extend with 1s
-@positive:
-        stx     FP0x                    ; Store in low byte of FP0x
-        rts
-
 ; Utility function to shift the 40-bit extended significand of FP0 right by one bit and increment exponent.
 ; The caller is responsible for testing for exponent overflow before calling.
 
 shift_right:
         lsr     FP0x                    ; Right shift low byte of FP0x plus FP0t
+shift_right_from_carry:
         ror     FP0t+3
         ror     FP0t+2
         ror     FP0t+1
@@ -1324,17 +1312,17 @@ swap_fadd2:
 ; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
 
 fadd2:
+        mva     #0, GRS                 ; Initialize GRS to 0 (TODO: make sure we handle GRS and rounding correctly.)
         lda     FP0e                    ; FP0 exponent
         sec
         sbc     FP1e                    ; Compare exponents: FP0e - FP1e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
-        bvs     swap_fadd2              ; If we overflowed then FP1e is larger; swap and try again
-        tax                             ; Keep track of difference in X
-        mva     #0, GRS                 ; Initialize GRS to 0
-@next_bit:
-        lda     FP1+Float::t+3          ; Get most-significant byte of significand
-        asl     A                       ; Shift MSB into C
-        ror     FP1+Float::t+3          ; Shift FP1 significand right with sign extension
+        bvs     @return_larger          ; Exponent difference >127 so addition has no effect
+        bmi     swap_fadd2              ; FP1e is larger, so swap and do it again
+        tax                             ; Exponent different is in X and is >0
+@align:
+        debug $00
+        lsr     FP1+Float::t+3          ; Shift FP1 significand right
         ror     FP1+Float::t+2
         ror     FP1+Float::t+1
         ror     FP1+Float::t
@@ -1343,16 +1331,11 @@ fadd2:
         ror     GRS                     ; Rotate carry into GRS
         ora     GRS                     ; OR with the sticky bit
         sta     GRS                     ; Store back in GRS
-        inc     FP1+Float::e            ; Increment exponent (will not overflow b/c is always less FP0 exponenet)
+        inc     FP1+Float::e            ; Increment exponent
         dex
-        bne     @next_bit
+        bne     @align
 @equal_exponents:
-        jsr     sign_extend_to_40_bits  ; Sign-extend FP0
-        ldy     #0                      ; By default sign-extend with 0
-        lda     FP0s+3                  ; Get most-significant byte of significand
-        bpl     @positive
-        dey                             ; Significand is not positive so sign-extend with ones
-@positive:
+        debug $10
         clc
         lda     FP0+Float::t            ; Add the significands
         adc     FP1+Float::t
@@ -1366,13 +1349,20 @@ fadd2:
         lda     FP0+Float::t+3
         adc     FP1+Float::t+3
         sta     FP0+Float::t+3
-        bcc     @no_carry
-        iny                             ; Add carry to the extended significand
-@no_carry:
-        sty     FP0x                    ; Store extended significand
+        lda     #0                      ; Extended significand
+        adc     #0                      ; Do 0+0+carry
+        debug $11
+        sta     FP0x
+        bcc     @finish                 ; Unconditional; carry will always be clear here
 
-; TODO; check for signed overflow
+; The difference between exponents is >127, so just return the larger number (identified by N flag).
+
+@return_larger:
+        bmi     @finish                 ; A was larger so just return
+        jsr     swap_fp0_fp1            ; Otherwise swap, then fall through to return B
+
 ; TODO: round
 
 @finish:
         jmp     normalize               ; Normalize result and return
+

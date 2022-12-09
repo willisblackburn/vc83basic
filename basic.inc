@@ -117,7 +117,7 @@
 ; .global int_to_fp2
 ; .global truncate_fp_to_int2
 .global normalize
-; .global fadd2
+.global fadd2
 
 ; input.s
 .global exec_input
