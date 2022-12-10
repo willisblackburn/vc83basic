@@ -715,7 +715,7 @@ static void call_normalize(char s, char e, long x, long t, char grs, char expect
     FP0e = e;
     FP0t = t;
     FP0x = x;
-    GRS = grs;
+    FPr = grs;
     fprintf(stderr, "normalize(xt=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", x, t, e, s, grs);
     normalize();
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);

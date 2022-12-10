@@ -50,10 +50,10 @@ extern char FP1e;
 #pragma zpsym ("FP1e")
 extern char FP1s;
 #pragma zpsym ("FP1s")
-extern unsigned long FP2t;
-#pragma zpsym ("FP2t")
-extern char GRS;
-#pragma zpsym ("GRS")
+extern unsigned long FPt;
+#pragma zpsym ("FPt")
+extern char FPr;
+#pragma zpsym ("FPr")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;

@@ -37,8 +37,8 @@ FP1: .res .sizeof(UnpackedFloat)
 FP1t = FP1+UnpackedFloat::t
 FP1e = FP1+UnpackedFloat::e
 FP1s = FP1+UnpackedFloat::s
-FP2t: .res .sizeof(UnpackedFloat::t)
-GRS: .res 1
+FPt: .res .sizeof(UnpackedFloat::t)
+FPr: .res 1
 
 ; fp_ptr holds a pointer to the other argument in two-float operations
 fp_ptr: .res 2
@@ -1198,6 +1198,29 @@ negate_fp0_significand:
         sta     FP0x
         rts
 
+; Adds the significands of FP0 and FP1.
+; Returns the high byte of the result in A.
+
+add_significands:
+        clc                     
+add_significands_with_carry:
+        lda     FP0t                    ; Add the significands
+        adc     FP1t
+        sta     FP0t
+        lda     FP0t+1
+        adc     FP1t+1
+        sta     FP0t+1
+        lda     FP0t+2
+        adc     FP1t+2
+        sta     FP0t+2
+        lda     FP0t+3
+        adc     FP1t+3
+        sta     FP0t+3
+        lda     FP0x                    ; Extended significand
+        adc     #0                      ; Extended significand of FP1 is always 0
+        sta     FP0x
+        rts
+
 ; Assumes that the 32-bit value in the FP0 significand is an integer and converts it to a float.
 
 int_to_fp2:
@@ -1239,11 +1262,7 @@ shift_right_from_carry:
         ror     FP0t+2
         ror     FP0t+1
         ror     FP0t
-        ror     GRS                     ; Rotate carry into GRS; sticky bit rotates into carry
-        lda     #0                      ; Clear A
-        rol     A                       ; Rotate carry (sticky bit) into LSB of A
-        ora     GRS                     ; OR into GRS
-        sta     GRS                     ; Store back into GRS
+        ror     FPr                     ; Rotate carry into FPr
         inc     FP0e                    ; Increase exponent
         rts
 
@@ -1310,14 +1329,14 @@ normalize_left:
         sta     FP0t+2          
         lda     FP0t
         sta     FP0t+1
-        lda     GRS                     ; GRS byte goes into FP0t
+        lda     FPr                     ; FPr byte goes into FP0t
         sta     FP0t
-        lda     #0                      ; GRS becomes 0
-        sta     GRS
+        lda     #0                      ; FPr becomes 0
+        sta     FPr
         beq     @coarse                 ; Unconditional
 
 @fine_shift:
-        asl     GRS                     ; Shift left one bit
+        asl     FPr                     ; Shift left one bit
         rol     FP0t
         rol     FP0t+1
         rol     FP0t+2
@@ -1335,24 +1354,18 @@ normalize_left:
 ; Round the result, which will possibly require another right shift.
 
 @round:
-        asl     GRS                     ; Shift GRS high bit into carry
+        asl     FPr                     ; Shift FPr high bit into carry
         debug $B0
-        bcc     @done                   ; If nothing there then don't have to add
-        lda     #0                      ; Otherwise add it to FP0 significand
-        sta     GRS                     ; While we have a zero in A, clear GRS
-        adc     FP0t
-        sta     FP0t
-        lda     #0
-        adc     FP0t+1
-        sta     FP0t+1
-        lda     #0
-        adc     FP0t+2
-        sta     FP0t+2
-        lda     #0
-        adc     FP0t+3
-        sta     FP0t+3
+        bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
+        lda     #0                      ; Set FP1 significand to 0, then add it and the carry to FP0
+        sta     FP1t
+        sta     FP1t+1
+        sta     FP1t+2
+        sta     FP1t+3
+        sta     FPr                     ; Also clear FPr since it has been used to round up
+        jsr     add_significands_with_carry
         debug $B1
-        bcc     @done                   ; If carry clear at this point then all done
+        beq     @done                   ; If return was 0 then all done
         jsr     shift_right_from_carry  ; Otherwise have to shift right again
 
 @done:
@@ -1366,7 +1379,7 @@ swap_fadd2:
 ; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
 
 fadd2:
-        mva     #0, GRS                 ; Initialize GRS to 0 (TODO: make sure we handle GRS and rounding correctly.)
+        mva     #0, FPr                 ; Initialize FPr to 0
         sta     FP0x                    ; Also clear FP0 extended significand
         lda     FP1e                    ; FP0 exponent
         sec
@@ -1403,22 +1416,7 @@ fadd2:
         debug $14
 @equal_signs:
         debug $20
-        clc                     
-        lda     FP0+Float::t            ; Add the significands
-        adc     FP1+Float::t
-        sta     FP0+Float::t
-        lda     FP0+Float::t+1
-        adc     FP1+Float::t+1
-        sta     FP0+Float::t+1
-        lda     FP0+Float::t+2
-        adc     FP1+Float::t+2
-        sta     FP0+Float::t+2
-        lda     FP0+Float::t+3
-        adc     FP1+Float::t+3
-        sta     FP0+Float::t+3
-        lda     FP0x                    ; Extended significand
-        adc     #0                      ; Extended significand of FP1 is always 0
-        sta     FP0x
+        jsr     add_significands
         debug $21
         tax                             ; Temporarily store in X
         bpl     @result_is_positive     ; Result was positive
@@ -1430,8 +1428,6 @@ fadd2:
         eor     FP1s                    ; Result is neg if FP1 was neg or result is now neg but not both
         sta     FP0s
         debug $23
-
-; TODO: round
 
 @finish:
         debug $30
