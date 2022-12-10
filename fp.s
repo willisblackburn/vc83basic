@@ -1167,14 +1167,27 @@ swap_fp0_fp1:
         bpl     @next_byte
         rts
 
-; Checks if FP0 is zero.
-; Returns with the zero flag set and 0 in A if FP0 is zero, otherwise the zero flag will be clear.
+; Clears FP0 or FP1.
+; X = either #FP0 or #FP1
 
-fp0_is_zero:
-        lda     FP0t                    ; OR all the significand bytes together
-        ora     FP0t+1
-        ora     FP0t+2
-        ora     FP0t+3
+clear_fpx:
+        lda     #0
+        sta     UnpackedFloat::t,x
+        sta     UnpackedFloat::t+1,x
+        sta     UnpackedFloat::t+2,x
+        sta     UnpackedFloat::t+3,x
+        sta     UnpackedFloat::e,x
+        sta     UnpackedFloat::s,x
+
+; Checks if FP0 or FP1 is zero.
+; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
+; X = either #FP0 or #FP1
+
+fpx_is_zero:
+        lda     UnpackedFloat::t,x      ; OR all the significand bytes together
+        ora     UnpackedFloat::t+1,x
+        ora     UnpackedFloat::t+2,x
+        ora     UnpackedFloat::t+3,x
         rts
 
 ; Generates the two's complement of the FP0 significand by subtracting it from 0.
@@ -1268,17 +1281,17 @@ shift_right_from_carry:
 
 ; Returns an error to the caller.
 
-overflow:
-        sec
-        rts
-
 ; Shifts the 40-bit FP0 extended significand one place to the right and re-attempts normalization.
 ; Invoked from normalize when the significand doesn't fit into 32 bits.
 
 shift_right_normalize:
         lda     FP0e                    ; Check exponent for overflow
         cmp     #$7F
-        beq     overflow
+        bne     @no_overflow
+        sec                             ; Signal error
+        rts
+
+@no_overflow:
         jsr     shift_right             ; Use shift_right to shift the remaining 32 bits
 
 ; Fall through
@@ -1303,7 +1316,8 @@ normalize:
 
 normalize_left:
         debug $81
-        jsr     fp0_is_zero             ; Check if FP0 is zero
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Check if FP0 is zero
         bne     @coarse
         sta     FP0e                    ; Make sure exponent is also zero
         rts
@@ -1439,3 +1453,123 @@ fadd2:
         bmi     @finish                 ; A was larger so just return
         jsr     swap_fp0_fp1            ; Otherwise swap
         jmp     @finish
+
+; Subtract FP1 from FP0.
+; Simply negates the sign of FP1 and forward to fadd.
+
+fsub2:
+        lda     FP1s
+        eor     #$80
+        sta     FP1s
+        jsr     fadd2
+
+; Multiplies FP0 and FP1, leaving the normalized result in FP0.
+
+fmul2:
+        clc
+        lda     FP0e                    ; FP0 exponent
+        adc     FP1e                    ; Add in FP1e exponent
+        bvc     @no_overflow           
+        sec                             ; Signal error
+        rts
+
+@no_overflow:
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Is FP0 zero?
+        beq     @done                   ; Yes, just return
+        ldx     #FP1
+        jsr     fpx_is_zero             ; Test FP1
+        beq     @return_zero
+
+
+@return_zero:
+        ldx     #FP0
+        jsr     clear_fpx
+        clc                             ; Signal success
+        rts
+
+
+@done:
+        rts
+
+
+
+
+
+
+;         stax    fp_ptr
+; fmul_with_ptr:
+;         jsr     negate_negative         ; Make both operands positive
+;         rol     E                       ; Roll the flag into E (don't care what was there before)
+;         jsr     swap_fpa_with_ptr
+;         jsr     negate_negative         ; Make both operands positive
+;         rol     E                       ; Roll the flag into E (don't care what was there before)
+;         jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
+;         ldy     #Float::e
+;         lda     (fp_ptr),y              ; Load value exponent
+;         clc
+;         adc     FPA+Float::e            ; Add FPA exponent
+;         bvs     @err_overflow           ; If overflow then fail
+;         sta     FPA+Float::e            ; Store result exponent back in FPA
+;         jsr     mul_significands
+;         jsr     shrink_significand
+;         lda     E                       ; Bits 0-1 of E are negative flags
+;         lsr     A                       ; Bit 0 of A is bit 1 from E
+;         eor     E                       ; Effectively EORs the two bits together
+;         lsr     A                       ; Shift it into carry
+;         bcc     @positive               ; If both bits were 0 or 1 then product is positive
+;         jsr     fneg                    ; Product is negative
+; @positive:
+;         rts
+
+; @err_overflow:
+;         rts
+
+; ; Multiplies the significands of FPA and fp_ptr, leaving a 64-bit result in FPA.
+
+; mul_significands:
+;         jsr     copy_fpa_to_fpb         ; FPA -> FPB so we can use FPA for product
+;         lda     #0                      ; Zero out the high 32 bits of the product
+;         sta     FPA+Float::t+4          
+;         sta     FPA+Float::t+5           
+;         sta     FPA+Float::t+6
+;         sta     FPA+Float::t+7
+;         ldx     #32                     ; 32 multiplication cycles
+; @next_bit:
+;         lsr     FPB+Float::t+3          ; Shift the multiplicand right
+;         ror     FPB+Float::t+2
+;         ror     FPB+Float::t+1
+;         ror     FPB+Float::t
+;         bcc     @skip                   ; Bit 0 of multiplicand was zero; don't add
+;         ldy     #Float::t
+;         clc
+;         lda     FPA+Float::t+4          ; Add value to high 32 bits of FPA
+;         adc     (fp_ptr),y
+;         sta     FPA+Float::t+4
+;         iny
+;         lda     FPA+Float::t+5
+;         adc     (fp_ptr),y
+;         sta     FPA+Float::t+5
+;         iny
+;         lda     FPA+Float::t+6
+;         adc     (fp_ptr),y
+;         sta     FPA+Float::t+6
+;         iny
+;         lda     FPA+Float::t+7
+;         adc     (fp_ptr),y
+;         sta     FPA+Float::t+7
+; @skip:
+;         ror     FPA+Float::t+7          ; Shift carry and 64-bit FPA significand one place to right
+;         ror     FPA+Float::t+6
+;         ror     FPA+Float::t+5
+;         ror     FPA+Float::t+4
+;         ror     FPA+Float::t+3
+;         ror     FPA+Float::t+2
+;         ror     FPA+Float::t+1
+;         ror     FPA+Float::t
+;         dex                             ; Decrement bit counter
+;         bne     @next_bit               ; Keep going
+;         rts
+
+
+
