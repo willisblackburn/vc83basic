@@ -1177,6 +1177,27 @@ fp0_is_zero:
         ora     FP0t+3
         rts
 
+; Generates the two's complement of the FP0 significand by subtracting it from 0.
+
+negate_fp0_significand:
+        sec
+        lda     #0
+        sbc     FP0t
+        sta     FP0t
+        lda     #0
+        sbc     FP0t+1
+        sta     FP0t+1
+        lda     #0
+        sbc     FP0t+2
+        sta     FP0t+2
+        lda     #0
+        sbc     FP0t+3
+        sta     FP0t+3
+        lda     #0
+        sbc     FP0x
+        sta     FP0x
+        rts
+
 ; Assumes that the 32-bit value in the FP0 significand is an integer and converts it to a float.
 
 int_to_fp2:
@@ -1313,13 +1334,14 @@ swap_fadd2:
 
 fadd2:
         mva     #0, GRS                 ; Initialize GRS to 0 (TODO: make sure we handle GRS and rounding correctly.)
+        sta     FP0x                    ; Also clear FP0 extended significand
         lda     FP0e                    ; FP0 exponent
         sec
         sbc     FP1e                    ; Compare exponents: FP0e - FP1e
-        beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
         bvs     @return_larger          ; Exponent difference >127 so addition has no effect
         bmi     swap_fadd2              ; FP1e is larger, so swap and do it again
-        tax                             ; Exponent different is in X and is >0
+        tax                             ; Exponent different is in X and is >=0
+        beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
 @align:
         debug $00
         lsr     FP1+Float::t+3          ; Shift FP1 significand right
@@ -1334,9 +1356,27 @@ fadd2:
         inc     FP1+Float::e            ; Increment exponent
         dex
         bne     @align
+
+; If both arguments have the same sign, just add and use the sign of FP0.
+; If one is negative, put it in FP0 and negate it.
+
 @equal_exponents:
+        lda     FP0s
         debug $10
-        clc
+        eor     FP1s                    ; XOR signs together
+        debug $11
+        bpl     @equal_signs            ; Signs are the same
+        lda     FP0s                    ; Check the FP0 sign
+        debug $12
+        bmi     @fp0_is_negative        ; FP0 is already the negative one
+        jsr     swap_fp0_fp1            ; FP1 was negative, but swap them so now FP0 is negative
+        debug $13
+@fp0_is_negative:
+        jsr     negate_fp0_significand  ; This makes the sign bit of FP0t in FP0x match FP0s
+        debug $14
+@equal_signs:
+        debug $20
+        clc                     
         lda     FP0+Float::t            ; Add the significands
         adc     FP1+Float::t
         sta     FP0+Float::t
@@ -1349,20 +1389,30 @@ fadd2:
         lda     FP0+Float::t+3
         adc     FP1+Float::t+3
         sta     FP0+Float::t+3
-        lda     #0                      ; Extended significand
-        adc     #0                      ; Do 0+0+carry
-        debug $11
+        lda     FP0x                    ; Extended significand
+        adc     #0                      ; Extended significand of FP1 is always 0
         sta     FP0x
-        bcc     @finish                 ; Unconditional; carry will always be clear here
+        debug $21
+        tax                             ; Temporarily store in X
+        bpl     @result_is_positive     ; Result was positive
+        jsr     negate_fp0_significand  ; Result was negative so negate    
+        debug $22
+@result_is_positive:
+        txa                             ; Recover high byte of result
+        and     #$80                    ; Isolate sign bit (which will be 1)
+        eor     FP1s                    ; Result is neg if FP1 was neg or result is now neg but not both
+        sta     FP0s
+        debug $23
+
+; TODO: round
+
+@finish:
+        debug $30
+        jmp     normalize               ; Normalize result and return
 
 ; The difference between exponents is >127, so just return the larger number (identified by N flag).
 
 @return_larger:
         bmi     @finish                 ; A was larger so just return
-        jsr     swap_fp0_fp1            ; Otherwise swap, then fall through to return B
-
-; TODO: round
-
-@finish:
-        jmp     normalize               ; Normalize result and return
-
+        jsr     swap_fp0_fp1            ; Otherwise swap
+        jmp     @finish
