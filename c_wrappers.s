@@ -24,6 +24,7 @@
 .export _FP1e = FP1e
 .export _FP1s = FP1s
 .export _FP2t = FP2t
+.export _GRS = GRS
 
 .export _bp = bp
 .export _lp = lp

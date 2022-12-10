@@ -1239,6 +1239,11 @@ shift_right_from_carry:
         ror     FP0t+2
         ror     FP0t+1
         ror     FP0t
+        ror     GRS                     ; Rotate carry into GRS; sticky bit rotates into carry
+        lda     #0                      ; Clear A
+        rol     A                       ; Rotate carry (sticky bit) into LSB of A
+        ora     GRS                     ; OR into GRS
+        sta     GRS                     ; Store back into GRS
         inc     FP0e                    ; Increase exponent
         rts
 
@@ -1267,6 +1272,7 @@ normalize:
 
 ; First check if there are any bits set in the low byte of FP0x, indicating the significand is >= 2.
 
+        debug $80
         lda     FP0x                    ; Check first extension byte
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
@@ -1277,19 +1283,20 @@ normalize:
 ; we'll see a 0 bit, because we shift in 0s from the right.
 
 normalize_left:
+        debug $81
         jsr     fp0_is_zero             ; Check if FP0 is zero
         bne     @coarse
         sta     FP0e                    ; Make sure exponent is also zero
         rts
 
 @coarse:
+        debug $90
         ldy     FP0t+3                  ; Get high byte of significand
         bne     @fine                   ; If not 0 then try fine shift
 
 ; The high byte is 0, so shift left 8 bits using byte moves.
 
 @coarse_shift:
-        debug $00
         lda     FP0e                    ; Get exponent
         sec
         sbc     #8                      ; Trial subtraction of 8
@@ -1303,24 +1310,50 @@ normalize_left:
         sta     FP0t+2          
         lda     FP0t
         sta     FP0t+1
-        lda     #0                      ; Store 0 in last byte
+        lda     GRS                     ; GRS byte goes into FP0t
         sta     FP0t
+        lda     #0                      ; GRS becomes 0
+        sta     GRS
         beq     @coarse                 ; Unconditional
 
 @fine_shift:
-        debug $10
-        asl     FP0t                    ; Shift left one bit
+        asl     GRS                     ; Shift left one bit
+        rol     FP0t
         rol     FP0t+1
         rol     FP0t+2
         rol     FP0t+3
         dec     FP0e
 
 @fine:
+        debug $A0
         lda     FP0t+3                  ; Get the high byte of significand
-        bmi     @done                   ; Significand is normalized
+        bmi     @round                  ; Significand is normalized
         lda     FP0e                    ; Get exponent
         cmp     #$81                    ; Make sure not already minimum value (-127)
-        bne     @fine_shift             ; Okay to shift; otherwise fall through to underflow
+        bne     @fine_shift             ; Okay to shift; otherwise leave as subnormal and fall through
+
+; Round the result, which will possibly require another right shift.
+
+@round:
+        asl     GRS                     ; Shift GRS high bit into carry
+        debug $B0
+        bcc     @done                   ; If nothing there then don't have to add
+        lda     #0                      ; Otherwise add it to FP0 significand
+        sta     GRS                     ; While we have a zero in A, clear GRS
+        adc     FP0t
+        sta     FP0t
+        lda     #0
+        adc     FP0t+1
+        sta     FP0t+1
+        lda     #0
+        adc     FP0t+2
+        sta     FP0t+2
+        lda     #0
+        adc     FP0t+3
+        sta     FP0t+3
+        debug $B1
+        bcc     @done                   ; If carry clear at this point then all done
+        jsr     shift_right_from_carry  ; Otherwise have to shift right again
 
 @done:
         rts
@@ -1335,25 +1368,19 @@ swap_fadd2:
 fadd2:
         mva     #0, GRS                 ; Initialize GRS to 0 (TODO: make sure we handle GRS and rounding correctly.)
         sta     FP0x                    ; Also clear FP0 extended significand
-        lda     FP0e                    ; FP0 exponent
+        lda     FP1e                    ; FP0 exponent
         sec
-        sbc     FP1e                    ; Compare exponents: FP0e - FP1e
-        bvs     @return_larger          ; Exponent difference >127 so addition has no effect
-        bmi     swap_fadd2              ; FP1e is larger, so swap and do it again
-        tax                             ; Exponent different is in X and is >=0
+        sbc     FP0e                    ; Compare exponents: FP1e - FP0e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
+        bvs     @return_larger          ; Exponent difference >127 so addition has no effect
+        bmi     swap_fadd2              ; FP0e is larger, so swap and do it again
+        tax                             ; Exponent different is in X and is >=0
+
+; FP0 exponent is less than FP1 exponent, so shift FP0 significand left X places to align binary points.
+
 @align:
         debug $00
-        lsr     FP1+Float::t+3          ; Shift FP1 significand right
-        ror     FP1+Float::t+2
-        ror     FP1+Float::t+1
-        ror     FP1+Float::t
-        lda     GRS                     ; Get GRS
-        and     #$01                    ; Isolate sticky bit
-        ror     GRS                     ; Rotate carry into GRS
-        ora     GRS                     ; OR with the sticky bit
-        sta     GRS                     ; Store back in GRS
-        inc     FP1+Float::e            ; Increment exponent
+        jsr     shift_right
         dex
         bne     @align
 

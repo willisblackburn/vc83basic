@@ -710,12 +710,13 @@ static void test_store_fpx(void) {
 //     ASSERT_FLOAT_EQ(FP1, 2, 12345678L);
 // }
 
-static void call_normalize(char s, char e, long x, long t, char expect_e, long expect_t) {
+static void call_normalize(char s, char e, long x, long t, char grs, char expect_e, long expect_t) {
     FP0s = s;
     FP0e = e;
     FP0t = t;
     FP0x = x;
-    fprintf(stderr, "normalize($%08LX%08LX-%02X-%02X)\n", x, t, e, s);
+    GRS = grs;
+    fprintf(stderr, "normalize(xt=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", x, t, e, s, grs);
     normalize();
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
@@ -724,26 +725,26 @@ static void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_normalize(POSITIVE, 0, 0, 0, 0, 0);
+    call_normalize(POSITIVE, 0, 0, 0, 0, 0, 0);
     // 0 significand with any exponent normalizes to 0
-    call_normalize(POSITIVE, 127, 0, 0, 0, 0);
+    call_normalize(POSITIVE, 127, 0, 0, 0, 0, 0);
     // 1
-    call_normalize(POSITIVE, 31, 0x00, 0x00000001, 0, 0x80000000);
+    call_normalize(POSITIVE, 31, 0x00, 0x00000001, 0, 0, 0x80000000);
     // -1
-    call_normalize(NEGATIVE, 31, 0x00, 0x00000001, 0, 0x80000000);
+    call_normalize(NEGATIVE, 31, 0x00, 0x00000001, 0, 0, 0x80000000);
     // 32,767
-    call_normalize(POSITIVE, 30, 0x00, 0x00007FFF, 13, 0xFFFE0000);
+    call_normalize(POSITIVE, 30, 0x00, 0x00007FFF, 0, 13, 0xFFFE0000);
     // 2,147,483,647
-    call_normalize(POSITIVE, 30, 0x00, 0x7FFFFFFF, 29, 0xFFFFFFFE);
+    call_normalize(POSITIVE, 30, 0x00, 0x7FFFFFFF, 0, 29, 0xFFFFFFFE);
     // -2,147,483,648
-    call_normalize(NEGATIVE, 30, 0x00, 0x80000000, 30, 0x80000000);
+    call_normalize(NEGATIVE, 30, 0x00, 0x80000000, 0, 30, 0x80000000);
     // 2,286,166,545
-    call_normalize(POSITIVE, 30, 0x00, 0x88442211, 30, 0x88442211);
+    call_normalize(POSITIVE, 30, 0x00, 0x88442211, 0, 30, 0x88442211);
     // 4,294,967,296
-    call_normalize(POSITIVE, 30, 0x01, 0x00000000, 31, 0x80000000);
+    call_normalize(POSITIVE, 30, 0x01, 0x00000000, 0, 31, 0x80000000);
     // Subnormal
-    call_normalize(POSITIVE, -119, 0x00, 0x00001234, -127, 0x00123400);
-    call_normalize(POSITIVE, -120, 0x00, 0x00001234, -127, 0x00091A00);
+    call_normalize(POSITIVE, -119, 0x00, 0x00001234, 0, -127, 0x00123400);
+    call_normalize(POSITIVE, -120, 0x00, 0x00001234, 0, -127, 0x00091A00);
 }
 
 // static void call_int_to_fp2(long value, char expect_e, long expect_t) {
@@ -792,7 +793,8 @@ static void call_fadd2(char s_0, char e_0, long t_0, char s_1, char e_1, long t_
                        char expect_s, char expect_e, long expect_t, int line) {
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  fp_test.c:%d: fadd(%08LX-%02X-%02X, %08LX-%02X-%02X)\n", line, t_0, e_0, s_0, t_1, e_1, s_1);
+    fprintf(stderr, "  fp_test.c:%d: fadd(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", line,
+            t_0, e_0, s_0, t_1, e_1, s_1);
     fadd2();
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
@@ -824,8 +826,12 @@ static void test_fadd2(void) {
     call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, 1, 0xC90FCF80, POSITIVE, 2, 0x8487E7C0, __LINE__);
     // 1 + 0.00000000046566128730
     call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -31, 0x80000000, POSITIVE, 0, 0x80000001, __LINE__);
-    // 1 + 0.00000000023283064365
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -32, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    // 1 + 0.00000000011641532182 (should round down)
+    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -33, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    // 1 + 0.00000000023283064365 (should round up)
+    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -32, 0x80000000, POSITIVE, 0, 0x80000001, __LINE__);
+    // 1 + 0.00000000034924596547 (should round up)
+    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -32, 0xC0000000, POSITIVE, 0, 0x80000001, __LINE__);
     
     // // 1 + 1E1
     // SET_FLOAT(reg_fpa, 0, 1);

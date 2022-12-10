@@ -32,7 +32,7 @@
 .globalzp BC, B, C, DE, D, E
 .globalzp FPA
 .globalzp FP0, FP0t, FP0e, FP0s, FP0x, FP1, FP1t, FP1e, FP1s, FP2t
-.globalzp grs
+.globalzp GRS
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
