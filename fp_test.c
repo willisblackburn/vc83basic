@@ -645,15 +645,15 @@ typedef struct LoadStoreTestCase {
 } LoadStoreTestCase;
 
 static LoadStoreTestCase load_store_test_cases[] = {
-    { { 0x00000000, 0 }, { 0x00000000, -127, POSITIVE } },
-    { { 0x00000000, 128 }, { 0x80000000, 0, POSITIVE } },
-    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 30, POSITIVE } },
-    { { 0x80000000, 159 }, { 0x80000000, 31, NEGATIVE } },
-    { { 0x08442211, 128 }, { 0x88442211, 0, POSITIVE } },
+    { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
+    { { 0x00000000, 128 }, { 0x80000000, 128, POSITIVE } },
+    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 158, POSITIVE } },
+    { { 0x80000000, 159 }, { 0x80000000, 159, NEGATIVE } },
+    { { 0x08442211, 128 }, { 0x88442211, 128, POSITIVE } },
     // Smallest possible normalized exponent
-    { { 0x00000000, 1 }, { 0x80000000, -127, POSITIVE } },
+    { { 0x00000000, 1 }, { 0x80000000, 1, POSITIVE } },
     // Subnormal
-    { { 0x00000400, 0 }, { 0x00000400, -127, POSITIVE } },
+    { { 0x00000400, 0 }, { 0x00000400, 1, POSITIVE } },
 };
 
 static void test_load_fpx(void) {
@@ -665,7 +665,8 @@ static void test_load_fpx(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "load_fpx(t=$%08X, e=$%02X)\n", test_case->f.t, test_case->f.e);
+        fprintf(stderr, "  fp_test.c:%d: load_fpx(t=$%08X, e=$%02X)\n", __LINE__, 
+                test_case->f.t, test_case->f.e);
         SET_FLOAT(value, test_case->f.e, test_case->f.t);
         load_fpx(&FP0, &value);
         ASSERT_EQ(FP0s, test_case->u.s);
@@ -687,7 +688,8 @@ static void test_store_fpx(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", test_case->u.t, test_case->u.e, test_case->u.s);
+        fprintf(stderr, "store_fpx(fp_test.c:%d: t=$%08X, e=$%02X, s=$%02X)\n", __LINE__,
+                test_case->u.t, test_case->u.e, test_case->u.s);
         FP0s = test_case->u.s;
         FP0e = test_case->u.e;
         FP0t = test_case->u.t;
@@ -710,13 +712,13 @@ static void test_store_fpx(void) {
 //     ASSERT_FLOAT_EQ(FP1, 2, 12345678L);
 // }
 
-static void call_normalize(char s, char e, long x, long t, char grs, char expect_e, long expect_t) {
+static void call_normalize(char s, char e, long x, long t, char grs, char expect_e, long expect_t, int line) {
     FP0s = s;
     FP0e = e;
     FP0t = t;
     FP0x = x;
     FPr = grs;
-    fprintf(stderr, "normalize(xt=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", x, t, e, s, grs);
+    fprintf(stderr, "  fp_test.c:%d: normalize(xt=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", line, x, t, e, s, grs);
     normalize();
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
@@ -725,26 +727,26 @@ static void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_normalize(POSITIVE, 0, 0, 0, 0, 0, 0);
+    call_normalize(POSITIVE, 1, 0, 0, 0, 1, 0, __LINE__);
     // 0 significand with any exponent normalizes to 0
-    call_normalize(POSITIVE, 127, 0, 0, 0, 0, 0);
+    call_normalize(POSITIVE, 127, 0, 0, 0, 1, 0, __LINE__);
     // 1
-    call_normalize(POSITIVE, 31, 0x00, 0x00000001, 0, 0, 0x80000000);
+    call_normalize(POSITIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // -1
-    call_normalize(NEGATIVE, 31, 0x00, 0x00000001, 0, 0, 0x80000000);
+    call_normalize(NEGATIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // 32,767
-    call_normalize(POSITIVE, 30, 0x00, 0x00007FFF, 0, 13, 0xFFFE0000);
+    call_normalize(POSITIVE, 158, 0x00, 0x00007FFF, 0x00, 141, 0xFFFE0000, __LINE__);
     // 2,147,483,647
-    call_normalize(POSITIVE, 30, 0x00, 0x7FFFFFFF, 0, 29, 0xFFFFFFFE);
+    call_normalize(POSITIVE, 158, 0x00, 0x7FFFFFFF, 0x00, 157, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
-    call_normalize(NEGATIVE, 30, 0x00, 0x80000000, 0, 30, 0x80000000);
+    call_normalize(NEGATIVE, 158, 0x00, 0x80000000, 0x00, 158, 0x80000000, __LINE__);
     // 2,286,166,545
-    call_normalize(POSITIVE, 30, 0x00, 0x88442211, 0, 30, 0x88442211);
+    call_normalize(POSITIVE, 158, 0x00, 0x88442211, 0x00, 158, 0x88442211, __LINE__);
     // 4,294,967,296
-    call_normalize(POSITIVE, 30, 0x01, 0x00000000, 0, 31, 0x80000000);
+    call_normalize(POSITIVE, 158, 0x01, 0x00000000, 0x00, 159, 0x80000000, __LINE__);
     // Subnormal
-    call_normalize(POSITIVE, -119, 0x00, 0x00001234, 0, -127, 0x00123400);
-    call_normalize(POSITIVE, -120, 0x00, 0x00001234, 0, -127, 0x00091A00);
+    call_normalize(POSITIVE, 9, 0x00, 0x00001234, 0x00, 1, 0x00123400, __LINE__);
+    call_normalize(POSITIVE, 8, 0x00, 0x00001234, 0x00, 1, 0x00091A00, __LINE__);
 }
 
 // static void call_int_to_fp2(long value, char expect_e, long expect_t) {
@@ -803,35 +805,35 @@ static void test_fadd2(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
-    call_fadd2(POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0, __LINE__);
+    call_fadd2(POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0, __LINE__);
     // 1 + 1
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, 0, 0x80000000, POSITIVE, 1, 0x80000000, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, __LINE__);
     // 0.5 + 0.5
-    call_fadd2(POSITIVE, -1, 0x80000000, POSITIVE, -1, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
     // -1 + (-1)
-    call_fadd2(NEGATIVE, 0, 0x80000000, NEGATIVE, 0, 0x80000000, NEGATIVE, 1, 0x80000000, __LINE__);
+    call_fadd2(NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, __LINE__);
     // 1 + (-1)
-    call_fadd2(POSITIVE, 0, 0x80000000, NEGATIVE, 0, 0x80000000, POSITIVE, 0, 0, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0, __LINE__);
     // -2 + 1
-    call_fadd2(NEGATIVE, 1, 0x80000000, POSITIVE, 0, 0x80000000, NEGATIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, __LINE__);
     // 1 + (-2)
-    call_fadd2(POSITIVE, 0, 0x80000000, NEGATIVE, 1, 0x80000000, NEGATIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, __LINE__);
     // -1 + 2
-    call_fadd2(NEGATIVE, 0, 0x80000000, POSITIVE, 1, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
     // 2 + (-1)
-    call_fadd2(POSITIVE, 1, 0x80000000, NEGATIVE, 0, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
     // 1 + 0.0001220703125
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -13, 0x80000000, POSITIVE, 0, 0x80040000, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000, __LINE__);
     // 1 + 3.14159
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, 1, 0xC90FCF80, POSITIVE, 2, 0x8487E7C0, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0, __LINE__);
     // 1 + 0.00000000046566128730
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -31, 0x80000000, POSITIVE, 0, 0x80000001, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001, __LINE__);
     // 1 + 0.00000000011641532182 (should round down)
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -33, 0x80000000, POSITIVE, 0, 0x80000000, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
     // 1 + 0.00000000023283064365 (should round up)
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -32, 0x80000000, POSITIVE, 0, 0x80000001, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001, __LINE__);
     // 1 + 0.00000000034924596547 (should round up)
-    call_fadd2(POSITIVE, 0, 0x80000000, POSITIVE, -32, 0xC0000000, POSITIVE, 0, 0x80000001, __LINE__);
+    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001, __LINE__);
     
     // // 1 + 1E1
     // SET_FLOAT(reg_fpa, 0, 1);

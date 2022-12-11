@@ -1107,7 +1107,6 @@ load_fpx:
         iny     
         lda     (fp_ptr),y              ; Exponent
         beq     @subnormal_or_zero      ; Handle as subnormal; significand MSB will be 0 in this case
-        eor     #$80                    ; Invert MSB
         sta     UnpackedFloat::e,x      ; Store exponent
         lda     #$80                    ; High bit of significand
         ora     UnpackedFloat::t+3,x    ; OR with high byte
@@ -1115,7 +1114,7 @@ load_fpx:
         rts
 
 @subnormal_or_zero:
-        lda     #$81                    ; Exponent is -127 ($81)
+        lda     #$01                    ; Exponent is -127 ($01)
         sta     UnpackedFloat::e,x      ; Store exponent
         rts
 
@@ -1142,7 +1141,6 @@ store_fpx:
         sta     (fp_ptr),y              ; Save
         iny
         lda     UnpackedFloat::e,x
-        eor     #$80                    ; Invert MSB for storage
         sta     (fp_ptr),y              ; Store
         rts
 
@@ -1151,7 +1149,7 @@ store_fpx:
         sta     (fp_ptr),y              ; Save
         iny
         lda     #0
-        sta     (fp_ptr),y              ; Exponent is zero
+        sta     (fp_ptr),y              ; Save exponent as zero
         rts
 
 ; Swaps FP0 and FP1.
@@ -1286,7 +1284,7 @@ shift_right_from_carry:
 
 shift_right_normalize:
         lda     FP0e                    ; Check exponent for overflow
-        cmp     #$7F
+        cmp     #$FF
         bne     @no_overflow
         sec                             ; Signal error
         rts
@@ -1317,9 +1315,10 @@ normalize:
 normalize_left:
         debug $81
         ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 is zero
+        jsr     fpx_is_zero             ; Check if FP0 is zero (TODO: check round bits too)
         bne     @coarse
-        sta     FP0e                    ; Make sure exponent is also zero
+        lda     #1                      ; Lowest possible exponent
+        sta     FP0e                    ; Store
         rts
 
 @coarse:
@@ -1333,9 +1332,8 @@ normalize_left:
         lda     FP0e                    ; Get exponent
         sec
         sbc     #8                      ; Trial subtraction of 8
-        bvs     @fine                   ; If subtracting produced signed overflow then try fine shift
-        cmp     #$80                    ; Check if it went to -128
-        beq     @fine                   ; If so then can't apply coarse shift; do fine shift instead
+        bcc     @fine                   ; If subtracting required a borrow then try fine shift
+        beq     @fine                   ; If it went to 0 then can't apply coarse shift; do fine shift instead
         sta     FP0e                    ; Otherwise update exponent
         lda     FP0t+2
         sta     FP0t+3                  ; Store new high byte
@@ -1362,7 +1360,7 @@ normalize_left:
         lda     FP0t+3                  ; Get the high byte of significand
         bmi     @round                  ; Significand is normalized
         lda     FP0e                    ; Get exponent
-        cmp     #$81                    ; Make sure not already minimum value (-127)
+        cmp     #1                      ; Make sure not already minimum value (-127)
         bne     @fine_shift             ; Okay to shift; otherwise leave as subnormal and fall through
 
 ; Round the result, which will possibly require another right shift.
@@ -1399,8 +1397,8 @@ fadd2:
         sec
         sbc     FP0e                    ; Compare exponents: FP1e - FP0e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
-        bvs     @return_larger          ; Exponent difference >127 so addition has no effect
-        bmi     swap_fadd2              ; FP0e is larger, so swap and do it again
+        bcc     swap_fadd2              ; If borrow then FP0e is larger, so swap and try again
+        bmi     @return_larger          ; Exponent difference >127 so addition has no effect
         tax                             ; Exponent different is in X and is >=0
 
 ; FP0 exponent is less than FP1 exponent, so shift FP0 significand left X places to align binary points.
