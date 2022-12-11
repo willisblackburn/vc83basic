@@ -30,6 +30,18 @@ typedef struct UnpackedFloat {
 
 // Zero Page
 
+extern int reg_bc;
+#pragma zpsym ("reg_bc")
+extern char reg_b;
+#pragma zpsym ("reg_b")
+extern char reg_c;
+#pragma zpsym ("reg_c")
+extern int reg_de;
+#pragma zpsym ("reg_de")
+extern char reg_d;
+#pragma zpsym ("reg_d")
+extern char reg_e;
+#pragma zpsym ("reg_e")
 extern Float reg_fpa;
 #pragma zpsym ("reg_fpa")
 extern UnpackedFloat FP0;
@@ -40,8 +52,6 @@ extern char FP0e;
 #pragma zpsym ("FP0e")
 extern char FP0s;
 #pragma zpsym ("FP0s")
-extern long FP0x;
-#pragma zpsym ("FP0x")
 extern UnpackedFloat FP1;
 #pragma zpsym ("FP1")
 extern unsigned long FP1t;
@@ -50,10 +60,10 @@ extern char FP1e;
 #pragma zpsym ("FP1e")
 extern char FP1s;
 #pragma zpsym ("FP1s")
-extern unsigned long FPt;
-#pragma zpsym ("FPt")
-extern char FPr;
-#pragma zpsym ("FPr")
+extern unsigned long FPX;
+#pragma zpsym ("FPX")
+extern unsigned long FPY;
+#pragma zpsym ("FPY")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -151,6 +161,8 @@ void store_fpx(const UnpackedFloat* fpx, Float* value);
 // int truncate_fp_to_int2(void);
 void normalize(void);
 void fadd2(void);
+void fsub2(void);
+void fmul2(void);
 
 // list.s
 int list_line(const void* line_ptr);

@@ -31,8 +31,7 @@
 
 .globalzp BC, B, C, DE, D, E
 .globalzp FPA
-.globalzp FP0, FP0t, FP0e, FP0s, FP0x, FP1, FP1t, FP1e, FP1s, FPt
-.globalzp FPr
+.globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FPX, FPY
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -118,6 +117,8 @@
 ; .global truncate_fp_to_int2
 .global normalize
 .global fadd2
+.global fsub2
+.global fmul2
 
 ; input.s
 .global exec_input

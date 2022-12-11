@@ -12,19 +12,25 @@
 
 ; Aliases for globals
 
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
+
 .export _reg_fpa = FPA
 
 .export _FP0 = FP0
 .export _FP0t = FP0t
 .export _FP0e = FP0e
 .export _FP0s = FP0s
-.export _FP0x = FP0x
 .export _FP1 = FP1
 .export _FP1t = FP1t
 .export _FP1e = FP1e
 .export _FP1s = FP1s
-.export _FPt = FPt
-.export _FPr = FPr
+.export _FPX = FPX
+.export _FPY = FPY
 
 .export _bp = bp
 .export _lp = lp
@@ -266,6 +272,14 @@ _normalize:
 _fadd2:
 .export _fadd2
         jmp     fadd2
+
+_fsub2:
+.export _fsub2
+        jmp     fsub2
+
+_fmul2:
+.export _fmul2
+        jmp     fmul2
 
 ; list.s
 

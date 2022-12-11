@@ -1,4 +1,4 @@
-.include "macros.inc"
+ .include "macros.inc"
 .include "basic.inc"
 
 ; Floating Point Math Routines
@@ -13,7 +13,11 @@
 ; t = significand, 40 bits
 ;
 ; The 40-byte value is stored in little-endian format, i.e., lowest byte of significand comes first.
+;
+; In this module, B is used as the "rounding" register and C is used as the high byte of the result exponent
+; prior to normalization.
 
+BIAS = 128
 MAXDIGITS = 10
 
 .zeropage
@@ -32,15 +36,14 @@ FP0: .res .sizeof(UnpackedFloat)
 FP0t = FP0+UnpackedFloat::t
 FP0e = FP0+UnpackedFloat::e
 FP0s = FP0+UnpackedFloat::s
-FP0x: .res .sizeof(UnpackedFloat::t)
 FP1: .res .sizeof(UnpackedFloat)
 FP1t = FP1+UnpackedFloat::t
 FP1e = FP1+UnpackedFloat::e
 FP1s = FP1+UnpackedFloat::s
-FPt: .res .sizeof(UnpackedFloat::t)
-FPr: .res 1
+FPX: .res .sizeof(UnpackedFloat::t)
+FPY: .res .sizeof(UnpackedFloat::t)
 
-; fp_ptr holds a pointer to the other argument in two-float operations
+; fp_ptr holds a pointer to the other argument in two-float operations (TODO: eliminate and replace with BC or FPX)
 fp_ptr: .res 2
 
 .code
@@ -1165,23 +1168,25 @@ swap_fp0_fp1:
         bpl     @next_byte
         rts
 
-; Clears FP0 or FP1.
-; X = either #FP0 or #FP1
+; Clears the significand of FP0 or FP1, or FPX or FPY.
+; X = either #FP0/#FP0t, #FP1/#FP1t, #FPX, or #FPY
+; Returns 0 in A.
 
-clear_fpx:
+.assert UnpackedFloat::t = 0, error
+
+clear_significand:
         lda     #0
-        sta     UnpackedFloat::t,x
-        sta     UnpackedFloat::t+1,x
-        sta     UnpackedFloat::t+2,x
-        sta     UnpackedFloat::t+3,x
-        sta     UnpackedFloat::e,x
-        sta     UnpackedFloat::s,x
+        sta     0,x
+        sta     1,x
+        sta     2,x
+        sta     3,x
+        rts
 
 ; Checks if FP0 or FP1 is zero.
 ; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
 ; X = either #FP0 or #FP1
 
-fpx_is_zero:
+significand_is_zero:
         lda     UnpackedFloat::t,x      ; OR all the significand bytes together
         ora     UnpackedFloat::t+1,x
         ora     UnpackedFloat::t+2,x
@@ -1205,8 +1210,8 @@ negate_fp0_significand:
         sbc     FP0t+3
         sta     FP0t+3
         lda     #0
-        sbc     FP0x
-        sta     FP0x
+        sbc     FPX
+        sta     FPX
         rts
 
 ; Adds the significands of FP0 and FP1.
@@ -1227,9 +1232,9 @@ add_significands_with_carry:
         lda     FP0t+3
         adc     FP1t+3
         sta     FP0t+3
-        lda     FP0x                    ; Extended significand
+        lda     FPX                     ; Extended significand
         adc     #0                      ; Extended significand of FP1 is always 0
-        sta     FP0x
+        sta     FPX
         rts
 
 ; Assumes that the 32-bit value in the FP0 significand is an integer and converts it to a float.
@@ -1267,13 +1272,13 @@ truncate_fp_to_int2:
 ; The caller is responsible for testing for exponent overflow before calling.
 
 shift_right:
-        lsr     FP0x                    ; Right shift low byte of FP0x plus FP0t
+        lsr     FPX                     ; Right shift low byte of FPX plus FP0t
 shift_right_from_carry:
         ror     FP0t+3
         ror     FP0t+2
         ror     FP0t+1
         ror     FP0t
-        ror     FPr                     ; Rotate carry into FPr
+        ror     B                       ; Rotate carry into rounding register
         inc     FP0e                    ; Increase exponent
         rts
 
@@ -1297,13 +1302,14 @@ shift_right_normalize:
 ; Normalizes the value in FP0. Normalization shifts the FP0 significand (adjusting the exponent each time)
 ; until the most-significant bit (excluding the sign bit) differs from the sign bit. The normalize function acts on
 ; the 40-bit FP0 extended significand and normalizes to the 32-bit FP0 significand.
+; Normalize 
 
 normalize:
 
-; First check if there are any bits set in the low byte of FP0x, indicating the significand is >= 2.
+; First check if there are any bits set in the low byte of FPX, indicating the significand is >= 2.
 
         debug $80
-        lda     FP0x                    ; Check first extension byte
+        lda     FPX                     ; Check first extension byte
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
@@ -1315,7 +1321,8 @@ normalize:
 normalize_left:
         debug $81
         ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 is zero (TODO: check round bits too)
+        jsr     significand_is_zero     ; Check if FP0 is zero (TODO: check round bits too)
+        debug $82
         bne     @coarse
         lda     #1                      ; Lowest possible exponent
         sta     FP0e                    ; Store
@@ -1341,14 +1348,14 @@ normalize_left:
         sta     FP0t+2          
         lda     FP0t
         sta     FP0t+1
-        lda     FPr                     ; FPr byte goes into FP0t
+        lda     B                       ; Rounding register goes into FP0t
         sta     FP0t
-        lda     #0                      ; FPr becomes 0
-        sta     FPr
+        lda     #0                      ; Clear rounding register
+        sta     B
         beq     @coarse                 ; Unconditional
 
 @fine_shift:
-        asl     FPr                     ; Shift left one bit
+        asl     B                       ; Shift left one bit
         rol     FP0t
         rol     FP0t+1
         rol     FP0t+2
@@ -1366,21 +1373,19 @@ normalize_left:
 ; Round the result, which will possibly require another right shift.
 
 @round:
-        asl     FPr                     ; Shift FPr high bit into carry
+        asl     B                       ; Shift rounding register high bit into carry
         debug $B0
         bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
-        lda     #0                      ; Set FP1 significand to 0, then add it and the carry to FP0
-        sta     FP1t
-        sta     FP1t+1
-        sta     FP1t+2
-        sta     FP1t+3
-        sta     FPr                     ; Also clear FPr since it has been used to round up
+        ldx     #FP1t
+        jsr     clear_significand
+        sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
         debug $B1
         beq     @done                   ; If return was 0 then all done
         jsr     shift_right_from_carry  ; Otherwise have to shift right again
 
 @done:
+        clc                             ; Signal success
         rts
 
 swap_fadd2:
@@ -1391,8 +1396,9 @@ swap_fadd2:
 ; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
 
 fadd2:
-        mva     #0, FPr                 ; Initialize FPr to 0
-        sta     FP0x                    ; Also clear FP0 extended significand
+        mva     #0, B                   ; Initialize the rounding register to 0
+        sta     C                       ; Clear the extended exponent register
+        sta     FPX                     ; Also clear FP0 extended significand
         lda     FP1e                    ; FP0 exponent
         sec
         sbc     FP0e                    ; Compare exponents: FP1e - FP0e
@@ -1424,7 +1430,7 @@ fadd2:
         jsr     swap_fp0_fp1            ; FP1 was negative, but swap them so now FP0 is negative
         debug $13
 @fp0_is_negative:
-        jsr     negate_fp0_significand  ; This makes the sign bit of FP0t in FP0x match FP0s
+        jsr     negate_fp0_significand  ; This makes the sign bit of FP0t match FP0s
         debug $14
 @equal_signs:
         debug $20
@@ -1459,115 +1465,115 @@ fsub2:
         lda     FP1s
         eor     #$80
         sta     FP1s
-        jsr     fadd2
+        jmp     fadd2
 
 ; Multiplies FP0 and FP1, leaving the normalized result in FP0.
 
-fmul2:
-        clc
-        lda     FP0e                    ; FP0 exponent
-        adc     FP1e                    ; Add in FP1e exponent
-        bvc     @no_overflow           
-        sec                             ; Signal error
-        rts
+.assert BIAS = 128, error
 
-@no_overflow:
+fmul2:
         ldx     #FP0
-        jsr     fpx_is_zero             ; Is FP0 zero?
+        jsr     significand_is_zero     ; Is FP0 zero?
+        debug $42
         beq     @done                   ; Yes, just return
         ldx     #FP1
-        jsr     fpx_is_zero             ; Test FP1
+        jsr     significand_is_zero     ; Test FP1
+        debug $43
         beq     @return_zero
-
+        clc
+        lda     FP0e                    ; FP0 exponent
+        adc     FP1e                    ; Add in FP0e exponent
+        debug $40
+        ldx     #0                      ; X is high byte of this 16-bit math operation
+        bcc     @no_carry               ; No carry so don't INX
+        inx                             ; High bit is 1
+        clc                             ; Ensure carry is always clear at next step
+@no_carry:
+        sbc     #BIAS-1                 ; Subtract BIAS; "borrow" flag is set so it will subtract 1 more
+        bcs     @no_borrow
+        dex
+@no_borrow:
+        debug $41
+        dex                             ; If X was 0 before, this will make it negative
+        bmi     @no_overflow
+        sec                             ; Signal failure
+        rts                             ; Return with carry set
 
 @return_zero:
         ldx     #FP0
-        jsr     clear_fpx
+        jsr     clear_significand
+        lda     #1
+        sta     FP0e                    ; Exponent must be 1
+@done:
         clc                             ; Signal success
         rts
 
+@no_overflow:
+        sta     FP0e                    ; Store exponent
 
-@done:
-        rts
+; Do 32 bit multiplication of FP0 and FP1 significands.
 
+        lda     FP0t                    ; Copy FP0t into FPY
+        sta     FPY
+        lda     FP0t+1
+        sta     FPY+1
+        lda     FP0t+2
+        sta     FPY+2
+        lda     FP0t+3
+        sta     FPY+3
+        ldx     #FPX                    ; Clear the extended significand of FP0
+        jsr     clear_significand
+        ldy     #32                     ; 32 multiplication cycles
 
+@next_bit:
+        lsr     FP1t+3                  ; Shift FP1 significand right              
+        ror     FP1t+2
+        ror     FP1t+1
+        ror     FP1t
+        debug $50
+        bcc     @skip                   ; FP1 LSB was 0 so don't need to add anything
+        clc                             ; Add significand in FPY to FPX (TODO: try to use add_significands)      
+        lda     FPX
+        adc     FPY
+        sta     FPX
+        lda     FPX+1
+        adc     FPY+1
+        sta     FPX+1
+        lda     FPX+2
+        adc     FPY+2
+        sta     FPX+2
+        lda     FPX+3
+        adc     FPY+3                   ; This will never overflow because high bit of FPX will always be zero
+        sta     FPX+3
+@skip:
+        lsr     FPX+3                   ; 64-bit right shift
+        ror     FPX+2
+        ror     FPX+1
+        ror     FPX
+        ror     FP0t+3
+        ror     FP0t+2
+        ror     FP0t+1
+        ror     FP0t
+        dey                             ; Done with one cycle
+        bne     @next_bit
 
+; The 64-bit product in FP0t and FPX is in the range 0 to almost 4, and the binary point is between
+; bits 61 and 62 (assuming MSB is 63). Use byte copy to shift it 32 places into FP0t with the next-lower byte in
+; the rounding register.
 
-
-
-;         stax    fp_ptr
-; fmul_with_ptr:
-;         jsr     negate_negative         ; Make both operands positive
-;         rol     E                       ; Roll the flag into E (don't care what was there before)
-;         jsr     swap_fpa_with_ptr
-;         jsr     negate_negative         ; Make both operands positive
-;         rol     E                       ; Roll the flag into E (don't care what was there before)
-;         jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
-;         ldy     #Float::e
-;         lda     (fp_ptr),y              ; Load value exponent
-;         clc
-;         adc     FPA+Float::e            ; Add FPA exponent
-;         bvs     @err_overflow           ; If overflow then fail
-;         sta     FPA+Float::e            ; Store result exponent back in FPA
-;         jsr     mul_significands
-;         jsr     shrink_significand
-;         lda     E                       ; Bits 0-1 of E are negative flags
-;         lsr     A                       ; Bit 0 of A is bit 1 from E
-;         eor     E                       ; Effectively EORs the two bits together
-;         lsr     A                       ; Shift it into carry
-;         bcc     @positive               ; If both bits were 0 or 1 then product is positive
-;         jsr     fneg                    ; Product is negative
-; @positive:
-;         rts
-
-; @err_overflow:
-;         rts
-
-; ; Multiplies the significands of FPA and fp_ptr, leaving a 64-bit result in FPA.
-
-; mul_significands:
-;         jsr     copy_fpa_to_fpb         ; FPA -> FPB so we can use FPA for product
-;         lda     #0                      ; Zero out the high 32 bits of the product
-;         sta     FPA+Float::t+4          
-;         sta     FPA+Float::t+5           
-;         sta     FPA+Float::t+6
-;         sta     FPA+Float::t+7
-;         ldx     #32                     ; 32 multiplication cycles
-; @next_bit:
-;         lsr     FPB+Float::t+3          ; Shift the multiplicand right
-;         ror     FPB+Float::t+2
-;         ror     FPB+Float::t+1
-;         ror     FPB+Float::t
-;         bcc     @skip                   ; Bit 0 of multiplicand was zero; don't add
-;         ldy     #Float::t
-;         clc
-;         lda     FPA+Float::t+4          ; Add value to high 32 bits of FPA
-;         adc     (fp_ptr),y
-;         sta     FPA+Float::t+4
-;         iny
-;         lda     FPA+Float::t+5
-;         adc     (fp_ptr),y
-;         sta     FPA+Float::t+5
-;         iny
-;         lda     FPA+Float::t+6
-;         adc     (fp_ptr),y
-;         sta     FPA+Float::t+6
-;         iny
-;         lda     FPA+Float::t+7
-;         adc     (fp_ptr),y
-;         sta     FPA+Float::t+7
-; @skip:
-;         ror     FPA+Float::t+7          ; Shift carry and 64-bit FPA significand one place to right
-;         ror     FPA+Float::t+6
-;         ror     FPA+Float::t+5
-;         ror     FPA+Float::t+4
-;         ror     FPA+Float::t+3
-;         ror     FPA+Float::t+2
-;         ror     FPA+Float::t+1
-;         ror     FPA+Float::t
-;         dex                             ; Decrement bit counter
-;         bne     @next_bit               ; Keep going
-;         rts
-
-
-
+        lda     FP0t+3                  ; Bits 24-31 go into rounding register
+        sta     B
+        lda     FPX+3
+        sta     FP0t+3
+        lda     FPX+2
+        sta     FP0t+2
+        lda     FPX+1
+        sta     FP0t+1
+        lda     FPX
+        sta     FP0t
+        inc     FP0e                    ; Account for the binary point being off by 1
+        debug $60
+        lda     FP0s                    ; Get sign of FP0
+        eor     FP1s                    ; If both are pos or neg, then pos, else neg
+        sta     FP0s
+        jmp     normalize               ; Normalize and return

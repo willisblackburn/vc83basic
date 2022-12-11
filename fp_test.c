@@ -712,13 +712,13 @@ static void test_store_fpx(void) {
 //     ASSERT_FLOAT_EQ(FP1, 2, 12345678L);
 // }
 
-static void call_normalize(char s, char e, long x, long t, char grs, char expect_e, long expect_t, int line) {
+static void call_normalize(char s, char e, long x, long t, char b, char expect_e, long expect_t, int line) {
     FP0s = s;
     FP0e = e;
+    FPX = x;
     FP0t = t;
-    FP0x = x;
-    FPr = grs;
-    fprintf(stderr, "  fp_test.c:%d: normalize(xt=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", line, x, t, e, s, grs);
+    reg_b = b;
+    fprintf(stderr, "  fp_test.c:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", line, x, t, e, s, b);
     normalize();
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
@@ -791,13 +791,16 @@ static void test_normalize(void) {
 //     call_truncate_fp_to_int2(12, 0x40400000, 4112);
 // }
 
-static void call_fadd2(char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
-                       char expect_s, char expect_e, long expect_t, int line) {
+#define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
+            call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
+
+static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
+                    char expect_s, char expect_e, long expect_t, int line) {
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  fp_test.c:%d: fadd(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", line,
+    fprintf(stderr, "  fp_test.c:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", line, f_name,
             t_0, e_0, s_0, t_1, e_1, s_1);
-    fadd2();
+    f();
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
@@ -805,35 +808,35 @@ static void test_fadd2(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
-    call_fadd2(POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 + 1
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
     // 0.5 + 0.5
-    call_fadd2(POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
     // -1 + (-1)
-    call_fadd2(NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, __LINE__);
+    CALL_FP(fadd2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000);
     // 1 + (-1)
-    call_fadd2(POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -2 + 1
-    call_fadd2(NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // 1 + (-2)
-    call_fadd2(POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
     // -1 + 2
-    call_fadd2(NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
     // 2 + (-1)
-    call_fadd2(POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 + 0.0001220703125
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
     // 1 + 3.14159
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
     // 1 + 0.00000000046566128730
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
     // 1 + 0.00000000011641532182 (should round down)
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 + 0.00000000023283064365 (should round up)
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
     // 1 + 0.00000000034924596547 (should round up)
-    call_fadd2(POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001, __LINE__);
+    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
     
     // // 1 + 1E1
     // SET_FLOAT(reg_fpa, 0, 1);
@@ -872,6 +875,63 @@ static void test_fadd2(void) {
     // ASSERT_FLOAT_EQ(reg_fpa, 1, -9);
 }
 
+static void test_fsub2(void) {
+    PRINT_TEST_NAME();
+
+    // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
+
+    // 0 - 0
+    CALL_FP(fsub2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    // 1 - 1
+    CALL_FP(fsub2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    // -1 - (-1)
+    CALL_FP(fsub2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    // 1 - (-1)
+    CALL_FP(fsub2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
+}
+
+static void test_fmul2(void) {
+    PRINT_TEST_NAME();
+
+    // 0 * 0
+    CALL_FP(fmul2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    // 1 * 1
+    CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    // 1 * -1
+    CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // -1 * 1
+    CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // -1 * -1
+    CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    // 2 * 2
+    CALL_FP(fmul2, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 130, 0x80000000);
+    // 0.5 + 0.5
+    CALL_FP(fmul2, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 126, 0x80000000);
+    // // 1 + (-1)
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    // // -2 + 1
+    // CALL_FP(fmul2, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // // 1 + (-2)
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // // -1 + 2
+    // CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
+    // // 2 + (-1)
+    // CALL_FP(fmul2, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    // // 1 + 0.0001220703125
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
+    // // 1 + 3.14159
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
+    // // 1 + 0.00000000046566128730
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
+    // // 1 + 0.00000000011641532182 (should round down)
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
+    // // 1 + 0.00000000023283064365 (should round up)
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
+    // // 1 + 0.00000000034924596547 (should round up)
+    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
+}
+
+
 int main(void) {
     initialize_target();
     // test_load_fpa();
@@ -897,5 +957,7 @@ int main(void) {
     // test_int_to_fp2();
     // test_truncate_fp_to_int2();
     test_fadd2();
+    test_fsub2();
+    test_fmul2();
     return 0;
 }
