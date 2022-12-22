@@ -60,10 +60,8 @@ extern char FP1e;
 #pragma zpsym ("FP1e")
 extern char FP1s;
 #pragma zpsym ("FP1s")
-extern unsigned long FPX;
-#pragma zpsym ("FPX")
-extern unsigned long FPY;
-#pragma zpsym ("FPY")
+extern unsigned long FP2;
+#pragma zpsym ("FP2")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -148,6 +146,7 @@ int string_to_fp(void);
 int char_to_digit(char c);
 void int_to_fp(int value);
 int truncate_fp_to_int(void);
+void adjust_exponent(char add, char subtract);
 void fadd(Float* value);
 void fsub(Float* value);
 void fmul(Float* value);
@@ -156,9 +155,9 @@ int fcmp(Float* value);
 
 void load_fpx(UnpackedFloat* fpx, const Float* value);
 void store_fpx(const UnpackedFloat* fpx, Float* value);
-// void swap_fp0_fp1(void);
-// void int_to_fp2(void);
-// int truncate_fp_to_int2(void);
+void swap_fp0_fp1(void);
+void int_to_fp2(void);
+int truncate_fp_to_int2(void);
 void normalize(void);
 void fadd2(void);
 void fsub2(void);

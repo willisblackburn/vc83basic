@@ -29,9 +29,9 @@
 
 ; Zero Page
 
-.globalzp BC, B, C, DE, D, E
+.globalzp BCDE, BC, B, C, DE, D, E
 .globalzp FPA
-.globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FPX, FPY
+.globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -112,9 +112,10 @@
 
 .global load_fpx
 .global store_fpx
-; .global swap_fp0_fp1
-; .global int_to_fp2
-; .global truncate_fp_to_int2
+.global swap_fp0_fp1
+.global int_to_fp2
+.global truncate_fp_to_int2
+.global adjust_exponent
 .global normalize
 .global fadd2
 .global fsub2

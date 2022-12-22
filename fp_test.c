@@ -665,7 +665,7 @@ static void test_load_fpx(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  fp_test.c:%d: load_fpx(t=$%08X, e=$%02X)\n", __LINE__, 
+        fprintf(stderr, "  %s:%d: load_fpx(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
                 test_case->f.t, test_case->f.e);
         SET_FLOAT(value, test_case->f.e, test_case->f.t);
         load_fpx(&FP0, &value);
@@ -688,7 +688,7 @@ static void test_store_fpx(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "store_fpx(fp_test.c:%d: t=$%08X, e=$%02X, s=$%02X)\n", __LINE__,
+        fprintf(stderr, "  %s:%d: store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
         FP0s = test_case->u.s;
         FP0e = test_case->u.e;
@@ -703,22 +703,44 @@ static void test_store_fpx(void) {
     }
 }
 
-// static void test_swap_fp0_fp1(void) {
-//     PRINT_TEST_NAME();
-//     SET_FLOAT(FP0, 2, 12345678L);
-//     SET_FLOAT(FP1, 1, 1418858818L);
-//     swap_fp0_fp1();
-//     ASSERT_FLOAT_EQ(FP0, 1, 1418858818L);
-//     ASSERT_FLOAT_EQ(FP1, 2, 12345678L);
-// }
+static void test_swap_fp0_fp1(void) {
+    PRINT_TEST_NAME();
+    SET_FPX(FP0, POSITIVE, 2, 12345678L);
+    SET_FPX(FP1, NEGATIVE, 1, 1418858818L);
+    swap_fp0_fp1();
+    ASSERT_FPX_EQ(FP0, NEGATIVE, 1, 1418858818L);
+    ASSERT_FPX_EQ(FP1, POSITIVE, 2, 12345678L);
+}
+
+static void test_adjust_exponent(void) {
+    PRINT_TEST_NAME();
+    SET_FPX(FP0, POSITIVE, 0, 0);
+    adjust_exponent(0, 0);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 0, 0);
+    ASSERT_EQ(reg_c, 0);
+    adjust_exponent(1, 0);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 1, 0);
+    ASSERT_EQ(reg_c, 0);
+    adjust_exponent(0, 1);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 0, 0);
+    ASSERT_EQ(reg_c, 0);
+    SET_FPX(FP0, POSITIVE, 192, 0);
+    adjust_exponent(192, 0);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 128, 0);
+    ASSERT_EQ(reg_c, 1);
+    SET_FPX(FP0, POSITIVE, 0, 0);
+    adjust_exponent(0, 192);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 64, 0);
+    ASSERT_EQ(reg_c, 255);
+}
 
 static void call_normalize(char s, char e, long x, long t, char b, char expect_e, long expect_t, int line) {
     FP0s = s;
     FP0e = e;
-    FPX = x;
+    FP2 = x;
     FP0t = t;
     reg_b = b;
-    fprintf(stderr, "  fp_test.c:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", line, x, t, e, s, b);
+    fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
@@ -749,47 +771,52 @@ static void test_normalize(void) {
     call_normalize(POSITIVE, 8, 0x00, 0x00001234, 0x00, 1, 0x00091A00, __LINE__);
 }
 
-// static void call_int_to_fp2(long value, char expect_e, long expect_t) {
-//     SET_FLOAT(FP0, 0, value);
-//     fprintf(stderr, "int_to_fp2(%ld)\n", value);
-//     int_to_fp2();
-//     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
-// }
+typedef struct IntConversionTestCase {
+    long value;
+    UnpackedFloat u;
+} IntConversionTestCase;
 
-// static void test_int_to_fp2(void) {
-//     PRINT_TEST_NAME();
+static IntConversionTestCase int_conversion_test_cases[] = {
+    { 0, { 0x00000000, 1, POSITIVE } },
+    { 1, { 0x80000000, 128, POSITIVE } },
+    { -1, { 0x80000000, 128, NEGATIVE } },
+    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
+    { -2147483648, { 0x80000000, 159, NEGATIVE } },
+    { 4112, { 0x80800000, 140, POSITIVE } },
+};
 
-//     call_int_to_fp2(0, 0, 0x00000000);
-//     call_int_to_fp2(1, 0, 0x40000000);
-//     call_int_to_fp2(-1, -1, 0x80000000);
-//     call_int_to_fp2(32767, 14, 0x7FFF0000);
-//     call_int_to_fp2(-32768, 14, 0x80000000);
-//     call_int_to_fp2(4112, 12, 0x40400000);
-// }
+static void test_int_to_fp2(void) {
+    IntConversionTestCase* test_case;
+    int i;
 
-// static void call_truncate_fp_to_int2(char e, long s, long expect_value) {
-//     int err;
-//     SET_FLOAT(FP0, e, s);
-//     fprintf(stderr, "truncate_fp_to_int2(%d, $%08LX)\n", e, s);
-//     err = truncate_fp_to_int2();
-//     ASSERT_EQ(err, 0);
-//     ASSERT_EQ(FP0s, expect_value);
-// }
+    PRINT_TEST_NAME();
 
-// static void test_truncate_fp_to_int2(void) {
-//     int result;
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: int_to_fp2(%ld)\n", __FILE__, __LINE__, test_case->value);
+        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
+        int_to_fp2();
+        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+    }
+}
 
-//     PRINT_TEST_NAME();
-    
-//     // Same cases as in test_int_to_fp2, only in reverse.
+static void test_truncate_fp_to_int2(void) {
+    IntConversionTestCase* test_case;
+    int i;
+    int err;
 
-//     call_truncate_fp_to_int2(0, 0x00000000, 0);
-//     call_truncate_fp_to_int2(0, 0x40000000, 1);
-//     // call_truncate_fp_to_int2(-1, 0x80000000, -1);
-//     call_truncate_fp_to_int2(14, 0x7FFF0000, 32767);
-//     call_truncate_fp_to_int2(14, 0x80000000, -32768);
-//     call_truncate_fp_to_int2(12, 0x40400000, 4112);
-// }
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int2(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
+            test_case->u.t, test_case->u.e, test_case->u.s);
+        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        err = truncate_fp_to_int2();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
+    }
+}
 
 #define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
             call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
@@ -798,7 +825,7 @@ static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, lon
                     char expect_s, char expect_e, long expect_t, int line) {
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  fp_test.c:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", line, f_name,
+    fprintf(stderr, "  %s:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line, f_name,
             t_0, e_0, s_0, t_1, e_1, s_1);
     f();
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
@@ -905,8 +932,12 @@ static void test_fmul2(void) {
     CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 2 * 2
     CALL_FP(fmul2, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 130, 0x80000000);
-    // 0.5 + 0.5
+    // 0.5 * 0.5
     CALL_FP(fmul2, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 126, 0x80000000);
+    // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -127)
+    CALL_FP(fmul2, POSITIVE, 57, 0x80000000, POSITIVE, 57, 0x80000000, POSITIVE, 1, 0x00010000);
+
+
     // // 1 + (-1)
     // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // // -2 + 1
@@ -952,10 +983,11 @@ int main(void) {
     // test_fcmp();
     test_load_fpx();
     test_store_fpx();
-    // test_swap_fp0_fp1();
+    test_swap_fp0_fp1();
+    test_adjust_exponent();
     test_normalize();
-    // test_int_to_fp2();
-    // test_truncate_fp_to_int2();
+    test_int_to_fp2();
+    test_truncate_fp_to_int2();
     test_fadd2();
     test_fsub2();
     test_fmul2();

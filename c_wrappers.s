@@ -29,8 +29,7 @@
 .export _FP1t = FP1t
 .export _FP1e = FP1e
 .export _FP1s = FP1s
-.export _FPX = FPX
-.export _FPY = FPY
+.export _FP2 = FP2
 
 .export _bp = bp
 .export _lp = lp
@@ -252,18 +251,27 @@ _store_fpx:
         lday    BC
         jmp     store_fpx
 
-; _swap_fp0_fp1:
-; .export _swap_fp0_fp1
-;         jmp     swap_fp0_fp1
+_swap_fp0_fp1:
+.export _swap_fp0_fp1
+        jmp     swap_fp0_fp1
 
-; _int_to_fp2:
-; .export _int_to_fp2
-;         jmp     int_to_fp2
+_int_to_fp2:
+.export _int_to_fp2
+        jmp     int_to_fp2
 
-; _truncate_fp_to_int2:
-; .export _truncate_fp_to_int2
-;         jsr     truncate_fp_to_int2
-;         jmp     return_carry_flag
+_truncate_fp_to_int2:
+.export _truncate_fp_to_int2
+        jsr     truncate_fp_to_int2
+        jmp     return_carry_flag
+
+_adjust_exponent:
+.export _adjust_exponent
+        pha                             ; popa uses Y so can't move it immediately
+        jsr     popa
+        tax                             ; Add byte
+        pla
+        tay                             ; Subtract byte
+        jmp     adjust_exponent
 
 _normalize:
 .export _normalize
