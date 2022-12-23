@@ -162,6 +162,7 @@ void normalize(void);
 void fadd2(void);
 void fsub2(void);
 void fmul2(void);
+int fcmp2(void);
 
 // list.s
 int list_line(const void* line_ptr);

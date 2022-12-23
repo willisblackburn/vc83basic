@@ -289,6 +289,23 @@ _fmul2:
 .export _fmul2
         jmp     fmul2
 
+_fcmp2:
+.export _fcmp2
+        jsr     fcmp2
+        bne     @not_equal
+        ldax    #0
+        rts
+
+@not_equal:
+        bcs     @greater                ; Carry set means no borrow so A >= B
+        ldax    #-1
+        rts
+
+@greater:
+        lda     #$01
+        ldax    #1
+        rts
+
 ; list.s
 
 _list_line:

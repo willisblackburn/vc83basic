@@ -962,6 +962,39 @@ static void test_fmul2(void) {
     // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
 }
 
+static void call_fcmp2(char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
+                       int expect_result, int line) {
+    int result;
+    SET_FPX(FP0, s_0, e_0, t_0);
+    SET_FPX(FP1, s_1, e_1, t_1);
+    fprintf(stderr, "  %s:%d: fcmp2(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line,
+            t_0, e_0, s_0, t_1, e_1, s_1);
+    result = fcmp2();
+    ASSERT_EQ(result, expect_result);
+}
+
+static void test_fcmp2(void) {
+    PRINT_TEST_NAME();
+
+    // 0 <=> 0
+    call_fcmp2(POSITIVE, 0, 0, POSITIVE, 0, 0, 0, __LINE__);
+    // 1 <=> 0
+    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 0, 0, 1, __LINE__);
+    // 0 <=> 1
+    call_fcmp2(POSITIVE, 0, 0, POSITIVE, 128, 0x80000000, -1, __LINE__);
+    // 2 <=> 1
+    call_fcmp2(POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    // 1 <=> 2
+    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, -1, __LINE__);
+    // 1+e <=> 1
+    call_fcmp2(POSITIVE, 128, 0x80000001, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    // 1 <=> 1+e
+    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000001, -1, __LINE__);
+    // 2^126 <=> 1+e
+    call_fcmp2(POSITIVE, 254, 0x80000000, POSITIVE, 128, 0x80000001, 1, __LINE__);
+    // 1+e <=> 2^126
+    call_fcmp2(POSITIVE, 128, 0x80000001, POSITIVE, 254, 0x80000000, -1, __LINE__);
+}
 
 int main(void) {
     initialize_target();
@@ -991,5 +1024,6 @@ int main(void) {
     test_fadd2();
     test_fsub2();
     test_fmul2();
+    test_fcmp2();
     return 0;
 }

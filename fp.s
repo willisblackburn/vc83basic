@@ -1441,6 +1441,41 @@ normalize:
         clc                             ; Signal success
         rts
 
+; Converts FP number in FP0 into a string.
+; Writes the string to buffer at the position specified by bp. Does not perform any error checking; there must 
+; be enough space in the buffer for the write to succeed.
+
+; fp_to_string2:
+;         ldx     bp                      ; Write position in output buffer
+
+; ; Handle 0 as a special case.
+; ; The number is 0 if the significand is zero regardless of exponent.
+
+;         jsr     significand_is_zero
+;         bne     @not_zero
+;         lda     #'0'
+;         sta     buffer,x
+;         inx
+;         jmp     @done
+
+; ; If sign is negaitve, output a '-'.
+
+; @not_zero:
+;         lda     FP0s
+;         bpl     @positive
+;         lda     #'-'
+;         sta     buffer,x
+;         inx
+
+; ; Scale the value until the value is >= 2^32/10 and < 2^32.
+
+; @positive:
+
+
+
+
+
+
 swap_fadd2:
         jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
 
@@ -1463,7 +1498,6 @@ fadd2:
 ; FP0 exponent is less than FP1 exponent, so shift FP0 significand left X places to align binary points.
 
 @align:
-        debug $00
         jsr     shift_right
         dex
         bne     @align
@@ -1473,34 +1507,24 @@ fadd2:
 
 @equal_exponents:
         lda     FP0s
-        debug $10
         eor     FP1s                    ; XOR signs together
-        debug $11
         bpl     @equal_signs            ; Signs are the same
         lda     FP0s                    ; Check the FP0 sign
-        debug $12
         bmi     @fp0_negative           ; FP0 is already the negative one
         jsr     swap_fp0_fp1            ; FP1 was negative, but swap them so now FP0 is negative
-        debug $13
 @fp0_negative:
         jsr     negate_significand      ; This makes the sign bit of FP0t match FP0s
-        debug $14
 @equal_signs:
-        debug $20
         jsr     add_significands
-        debug $21
         tax                             ; Temporarily store in X
         bpl     @positive               ; Result was positive
         jsr     negate_significand      ; Result was negative so negate    
-        debug $22
 @positive:
         txa                             ; Recover high byte of result
         and     #$80                    ; Isolate sign bit (which will be 1)
         eor     FP1s                    ; Result is neg if FP1 was neg or result is now neg but not both
         sta     FP0s
-        debug $23
 @finish:
-        debug $30
         jmp     normalize               ; Normalize result and return
 
 ; The difference between exponents is >127, so just return the larger number (identified by N flag).
@@ -1524,11 +1548,9 @@ fsub2:
 fmul2:
         ldx     #FP0
         jsr     significand_is_zero     ; Is FP0 zero?
-        debug $42
         beq     @done                   ; Yes, just return
         ldx     #FP1
         jsr     significand_is_zero     ; Test FP1
-        debug $43
         bne     @do_multiply
 
 @return_zero:
@@ -1561,7 +1583,6 @@ fmul2:
         ror     FP1t+2
         ror     FP1t+1
         ror     FP1t
-        debug $50
         bcc     @skip                   ; FP1 LSB was 0 so don't need to add anything
         clc                             ; Add significand in BCDE to FP2 (TODO: try to use add_significands)      
         lda     FP2
@@ -1608,12 +1629,43 @@ fmul2:
         ldx     FP1e                    ; Add FP1e to FP0e
         ldy     #BIAS                   ; Subtract bias
         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
-
-
-
         inc     FP0e                    ; Account for the binary point being off by 1
-        debug $60
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
         sta     FP0s
         jmp     normalize               ; Normalize and return
+
+; Compares FP0 with FP1.
+; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
+; FP0 >= FP1.
+
+fcmp2:
+        lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
+        cmp     FP0s                    ; Subtract sign of FP0
+        beq     @same_sign              ; If same sign then continue
+        rts                             ; Carry set if FP1s was negative and FP0s was positive -> FP0 is greater
+
+@same_sign:
+        lda     FP0e                    ; FP0 exponent
+        cmp     FP1e                    ; Subtract FP1 exponent 1
+        beq     @same_e                 ; If same exponent then continue
+        rts                             ; Carry set if FP0e was greater -> FP0 is greater
+
+@same_e:
+        lda     FP0t+3                  ; Compare significands (just 32 bits)
+        cmp     FP1t+3
+        debug $00
+        bne     @done
+        lda     FP0t+2
+        sbc     FP1t+2
+        debug $01
+        bne     @done
+        lda     FP0t+1
+        sbc     FP1t+1
+        debug $02
+        bne     @done
+        lda     FP0t
+        sbc     FP1t
+        debug $03
+@done:
+        rts                             ; Flags will be set correctly here

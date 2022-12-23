@@ -120,6 +120,7 @@
 .global fadd2
 .global fsub2
 .global fmul2
+.global fcmp2
 
 ; input.s
 .global exec_input
