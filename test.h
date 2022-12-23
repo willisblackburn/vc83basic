@@ -42,8 +42,6 @@ extern char reg_d;
 #pragma zpsym ("reg_d")
 extern char reg_e;
 #pragma zpsym ("reg_e")
-extern Float reg_fpa;
-#pragma zpsym ("reg_fpa")
 extern UnpackedFloat FP0;
 #pragma zpsym ("FP0")
 extern unsigned long FP0t;
