@@ -135,34 +135,20 @@ int encode_number(int number);
 int encode_byte(char value);
 
 // fp.s
-void load_fpa(const Float* value);
-void store_fpa(Float* value);
-void clear_fpa(void);
-void swap_fpa(Float* value);
-int fpa_is_zero(void);
-void fneg(void);
-void fp_to_string(void);
-int string_to_fp(void);
-int char_to_digit(char c);
-void int_to_fp(int value);
-int truncate_fp_to_int(void);
-void adjust_exponent(char add, char subtract);
-void fadd(Float* value);
-void fsub(Float* value);
-void fmul(Float* value);
-void fdiv(Float* value);
-int fcmp(Float* value);
-
 void load_fpx(UnpackedFloat* fpx, const Float* value);
 void store_fpx(const UnpackedFloat* fpx, Float* value);
 void swap_fp0_fp1(void);
-void int_to_fp2(void);
-int truncate_fp_to_int2(void);
+void int_to_fp(void);
+int truncate_fp_to_int(void);
+int fp_to_string(void);
+int string_to_fp(void);
+int char_to_digit(char c);
+void adjust_exponent(char add, char subtract);
 void normalize(void);
-void fadd2(void);
-void fsub2(void);
-void fmul2(void);
-int fcmp2(void);
+void fadd(void);
+void fsub(void);
+void fmul(void);
+int fcmp(void);
 
 // list.s
 int list_line(const void* line_ptr);

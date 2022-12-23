@@ -19,8 +19,6 @@
 .export _reg_d = D
 .export _reg_e = E
 
-.export _reg_fpa = FPA
-
 .export _FP0 = FP0
 .export _FP0t = FP0t
 .export _FP0e = FP0e
@@ -154,87 +152,6 @@ _stack_free:
 
 ; fp.s
 
-_load_fpa:
-.export _load_fpa
-        jmp     load_fpa
-
-_store_fpa:
-.export _store_fpa
-        jmp     store_fpa
-
-_clear_fpa:
-.export _clear_fpa
-        jmp     clear_fpa
-
-_swap_fpa:
-.export _swap_fpa
-        jmp     swap_fpa
-
-_fpa_is_zero:
-.export _fpa_is_zero
-        jsr     fpa_is_zero
-        jmp     return_zero_flag
-
-_fneg:
-.export _fneg
-        jmp     fneg
-
-_char_to_digit:
-.export _char_to_digit
-        jsr     char_to_digit
-        jmp     return_carry_flag
-
-_int_to_fp:
-.export _int_to_fp
-        jmp     int_to_fp
-
-_truncate_fp_to_int:
-.export _truncate_fp_to_int
-        jsr     truncate_fp_to_int
-        jmp     return_carry_flag
-
-_fp_to_string:
-.export _fp_to_string
-        jmp     fp_to_string
-
-_string_to_fp:
-.export _string_to_fp
-        jsr     string_to_fp
-        jmp     return_carry_flag
-
-_fadd:
-.export _fadd
-        jmp     fadd
-
-_fsub:
-.export _fsub
-        jmp     fsub
-
-_fmul:
-.export _fmul
-        jmp     fmul
-
-_fdiv:
-.export _fdiv
-        jmp     fdiv
-
-_fcmp:
-.export _fcmp
-        jsr     fcmp
-        bne     @not_equal
-        ldax    #0
-        rts
-
-@not_equal:
-        bcs     @greater                ; Carry set means no borrow so A >= B
-        ldax    #-1
-        rts
-
-@greater:
-        lda     #$01
-        ldax    #1
-        rts
-
 _load_fpx:
 .export _load_fpx
         stax    BC                      ; value pointer
@@ -255,13 +172,18 @@ _swap_fp0_fp1:
 .export _swap_fp0_fp1
         jmp     swap_fp0_fp1
 
-_int_to_fp2:
-.export _int_to_fp2
-        jmp     int_to_fp2
+_int_to_fp:
+.export _int_to_fp
+        jmp     int_to_fp
 
-_truncate_fp_to_int2:
-.export _truncate_fp_to_int2
-        jsr     truncate_fp_to_int2
+_truncate_fp_to_int:
+.export _truncate_fp_to_int
+        jsr     truncate_fp_to_int
+        jmp     return_carry_flag
+
+_char_to_digit:
+.export _char_to_digit
+        jsr     char_to_digit
         jmp     return_carry_flag
 
 _adjust_exponent:
@@ -273,25 +195,34 @@ _adjust_exponent:
         tay                             ; Subtract byte
         jmp     adjust_exponent
 
+_fp_to_string:
+.export _fp_to_string
+        jmp     fp_to_string
+
+_string_to_fp:
+.export _string_to_fp
+        jsr     string_to_fp
+        jmp     return_carry_flag
+
 _normalize:
 .export _normalize
         jmp     normalize
 
-_fadd2:
-.export _fadd2
-        jmp     fadd2
+_fadd:
+.export _fadd
+        jmp     fadd
 
-_fsub2:
-.export _fsub2
-        jmp     fsub2
+_fsub:
+.export _fsub
+        jmp     fsub
 
-_fmul2:
-.export _fmul2
-        jmp     fmul2
+_fmul:
+.export _fmul
+        jmp     fmul
 
-_fcmp2:
-.export _fcmp2
-        jsr     fcmp2
+_fcmp:
+.export _fcmp
+        jsr     fcmp
         bne     @not_equal
         ldax    #0
         rts

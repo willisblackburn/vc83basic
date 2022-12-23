@@ -30,7 +30,6 @@
 ; Zero Page
 
 .globalzp BCDE, BC, B, C, DE, D, E
-.globalzp FPA
 .globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2
 .globalzp bp
 .globalzp name_ptr
@@ -95,32 +94,21 @@
 .global stack_alloc, stack_free
 
 ; fp.s
-.global load_fpa, store_fpa, clear_fpa
-.global swap_fpa
-.global fpa_is_zero
-.global fneg
-.global fp_to_string
-.global string_to_fp
-.global char_to_digit
-.global int_to_fp
-.global truncate_fp_to_int
-.global fadd, fadd_with_ptr
-.global fsub, fsub_with_ptr
-.global fmul, fmul_with_ptr
-.global fdiv, fdiv_with_ptr
-.global fcmp, fcmp_with_ptr
-
 .global load_fpx
 .global store_fpx
 .global swap_fp0_fp1
-.global int_to_fp2
-.global truncate_fp_to_int2
+.global int_to_fp
+.global truncate_fp_to_int
+.global fp_to_string
+.global string_to_fp
+.global char_to_digit
 .global adjust_exponent
 .global normalize
-.global fadd2
-.global fsub2
-.global fmul2
-.global fcmp2
+.global fadd
+.global fsub
+.global fmul
+.global fdiv
+.global fcmp
 
 ; input.s
 .global exec_input

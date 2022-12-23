@@ -25,617 +25,227 @@
     ASSERT_EQ(fpx.t, t_value); \
 } while (0)
 
-static void test_load_fpa(void) {
-    Float value;
-    PRINT_TEST_NAME();
-    SET_FLOAT(value, 1, 1418858818L);
-    clear_fpa();
-    load_fpa(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 1, 1418858818L);
-}
+// static void call_fp_to_string(void) {
+//     bp = 0;
+//     fp_to_string();
+//     buffer[bp] = '\0';
+// }
 
-static void test_store_fpa(void) {
-    Float value;
-    PRINT_TEST_NAME();
-    SET_FLOAT(reg_fpa, 1, 1418858818L);
-    store_fpa(&value);
-    ASSERT_FLOAT_EQ(value, 1, 1418858818L);
-}
+// static void test_fp_to_string(void) {
 
-static void test_clear_fpa(void) {
-    PRINT_TEST_NAME();
-    SET_FLOAT(reg_fpa, 1, 1418858818L);
-    clear_fpa();
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-}
+//     PRINT_TEST_NAME();
 
-static void test_fp_is_zero(void) {
-    int result;
-    PRINT_TEST_NAME();
-    SET_FLOAT(reg_fpa, 1, 1418858818L);
-    result = fpa_is_zero();
-    ASSERT_EQ(result, 0);
-    SET_FLOAT(reg_fpa, 0, 0L);
-    result = fpa_is_zero();
-    ASSERT_EQ(result, 1);
-    SET_FLOAT(reg_fpa, 1, 0L);
-    result = fpa_is_zero();
-    ASSERT_EQ(result, 1);
-}
+//     // 0
+//     SET_FLOAT(reg_fpa, 0, 0);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "0");
+//     // 100
+//     SET_FLOAT(reg_fpa, 0, 100);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "100");
+//     // -100
+//     SET_FLOAT(reg_fpa, 0, -100);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "-100");
+//     // 2E2 (should be 200 since value is in printable range)
+//     SET_FLOAT(reg_fpa, 2, 2);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "200");
+//     // 3.14159
+//     SET_FLOAT(reg_fpa, -5, 314159);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "3.14159");
+//     // 0.0314159
+//     SET_FLOAT(reg_fpa, -7, 314159);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "0.0314159");
+//     // 6.0221409E23
+//     SET_FLOAT(reg_fpa, 16, 60221409);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "6.0221409E23");
+//     // 0.00729734813
+//     SET_FLOAT(reg_fpa, -11, 729734813);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "7.29734813E-3");
 
-static void test_fneg(void) {
-    PRINT_TEST_NAME();
-    SET_FLOAT(reg_fpa, 1, 1418858818L);
-    fneg();
-    ASSERT_FLOAT_EQ(reg_fpa, 1, -1418858818L);
-    fneg();
-    ASSERT_FLOAT_EQ(reg_fpa, 1, 1418858818L);
-}
+//     // Exponent edge cases
+//     // +/- 1E9 should print without E
+//     // +/- 1E10 should print in scientific
+//     SET_FLOAT(reg_fpa, 9, 1);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "1000000000");
+//     SET_FLOAT(reg_fpa, 9, -1);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "-1000000000");
+//     SET_FLOAT(reg_fpa, 10, 1);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "1E10");
+//     SET_FLOAT(reg_fpa, 10, -1);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "-1E10");
+//     // Test for logic that removes trailing zeros
+//     SET_FLOAT(reg_fpa, -2, 1000);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "10");
+//     SET_FLOAT(reg_fpa, -6, 1000);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "0.001");
+//     SET_FLOAT(reg_fpa, 15, 100);
+//     call_fp_to_string();
+//     ASSERT_STRING_EQ(buffer, "1E17");
+// }
 
-static void test_char_to_digit(void) {
-    int err;
+// static int call_string_to_fp(const char* s) {
+//     strcpy(buffer, s);
+//     bp = 0;
+//     return string_to_fp();
+// }
 
-    PRINT_TEST_NAME();
+// static void test_string_to_fp(void) {
+//     int err;
 
-    err = char_to_digit('0');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    err = char_to_digit('9');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 9);
-    err = char_to_digit('0'-1);
-    ASSERT_NE(err, 0);
-    err = char_to_digit('9'+1);
-    ASSERT_NE(err, 0);
-    err = char_to_digit(' ');
-    ASSERT_NE(err, 0);
-    err = char_to_digit('A');
-    ASSERT_NE(err, 0);
-    err = char_to_digit(0);
-    ASSERT_NE(err, 0);
-    err = char_to_digit(255);
-    ASSERT_NE(err, 0);
-}
+//     PRINT_TEST_NAME();
 
-void test_swap_fpa(void) {
-    Float value;
-    PRINT_TEST_NAME();
-    clear_fpa();
-    SET_FLOAT(value, 1, 1418858818L);
-    swap_fpa(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 1, 1418858818L);
-    ASSERT_FLOAT_EQ(value, 0, 0);
-}
-
-static void test_int_to_fp(void) {
-    PRINT_TEST_NAME();
-    // 0
-    int_to_fp(0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    // 100
-    int_to_fp(100);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 100);
-    // 1000
-    int_to_fp(1000);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1000);
-    // -1
-    int_to_fp(-1);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -1);
-    // -1000
-    int_to_fp(-1000);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -1000);
-    // 32767
-    int_to_fp(32767);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 32767);
-    // -32768
-    int_to_fp((int)-32768L);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -32768L);
-}
-
-static void test_truncate_fp_to_int(void) {
-    char err;
-    int* int_value_ptr = (int*)((char*)&reg_fpa + offsetof(Float, t));
-
-    PRINT_TEST_NAME();
-
-    // 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 0);
-    // 10 as 10E+0
-    SET_FLOAT(reg_fpa, 0, 10);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 10);
-    // 10 as 1E+1
-    SET_FLOAT(reg_fpa, 1, 1);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 10);
-    // 10 as 100E-1
-    SET_FLOAT(reg_fpa, -1, 100);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 10);
-    // -10
-    SET_FLOAT(reg_fpa, 0, -10);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, -10);
-    // 3.14159 -> 3
-    SET_FLOAT(reg_fpa, -5, 314159);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 3);
-    // 32767
-    SET_FLOAT(reg_fpa, 0, 32767);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, 32767);
-    // -32768
-    SET_FLOAT(reg_fpa, 0, (int)-32768L);
-    err = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(*int_value_ptr, (int)-32768L);
-    // 100000 -> overflow
-    SET_FLOAT(reg_fpa, 5, 1);
-    err = truncate_fp_to_int();
-}
-
-static void call_fp_to_string(void) {
-    bp = 0;
-    fp_to_string();
-    buffer[bp] = '\0';
-}
-
-static void test_fp_to_string(void) {
-
-    PRINT_TEST_NAME();
-
-    // 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "0");
-    // 100
-    SET_FLOAT(reg_fpa, 0, 100);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "100");
-    // -100
-    SET_FLOAT(reg_fpa, 0, -100);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "-100");
-    // 2E2 (should be 200 since value is in printable range)
-    SET_FLOAT(reg_fpa, 2, 2);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "200");
-    // 3.14159
-    SET_FLOAT(reg_fpa, -5, 314159);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "3.14159");
-    // 0.0314159
-    SET_FLOAT(reg_fpa, -7, 314159);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "0.0314159");
-    // 6.0221409E23
-    SET_FLOAT(reg_fpa, 16, 60221409);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "6.0221409E23");
-    // 0.00729734813
-    SET_FLOAT(reg_fpa, -11, 729734813);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "7.29734813E-3");
-
-    // Exponent edge cases
-    // +/- 1E9 should print without E
-    // +/- 1E10 should print in scientific
-    SET_FLOAT(reg_fpa, 9, 1);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "1000000000");
-    SET_FLOAT(reg_fpa, 9, -1);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "-1000000000");
-    SET_FLOAT(reg_fpa, 10, 1);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "1E10");
-    SET_FLOAT(reg_fpa, 10, -1);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "-1E10");
-    // Test for logic that removes trailing zeros
-    SET_FLOAT(reg_fpa, -2, 1000);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "10");
-    SET_FLOAT(reg_fpa, -6, 1000);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "0.001");
-    SET_FLOAT(reg_fpa, 15, 100);
-    call_fp_to_string();
-    ASSERT_STRING_EQ(buffer, "1E17");
-}
-
-static int call_string_to_fp(const char* s) {
-    strcpy(buffer, s);
-    bp = 0;
-    return string_to_fp();
-}
-
-static void test_string_to_fp(void) {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    // 0
-    err = call_string_to_fp("0");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    ASSERT_EQ(bp, 1);
-    err = call_string_to_fp("0.0");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp(".0");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
-    ASSERT_EQ(bp, 2);
-    err = call_string_to_fp("0.");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    ASSERT_EQ(bp, 2);
-    err = call_string_to_fp(".");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    ASSERT_EQ(bp, 1);
-    // 100
-    err = call_string_to_fp("100");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 100);
-    ASSERT_EQ(bp, 3);
-    // -100
-    err = call_string_to_fp("-100");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -100);
-    ASSERT_EQ(bp, 4);
-    // 2E2
-    err = call_string_to_fp("2E2");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 2, 2);
-    ASSERT_EQ(bp, 3);
-    // 3.14159
-    err = call_string_to_fp("3.14159");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, -5, 314159);
-    ASSERT_EQ(bp, 7);
-    // 6.0221409E23
-    err = call_string_to_fp("6.0221409E23");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 16, 60221409);
-    ASSERT_EQ(bp, 12);
-    // Significand limits
-    err = call_string_to_fp("2147483647");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, LONG_MAX);
-    ASSERT_EQ(bp, 10);
-    err = call_string_to_fp("-2147483648");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, LONG_MIN);
-    ASSERT_EQ(bp, 11);
-    // Exponent limits
-    err = call_string_to_fp("1E127");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 127, 1);
-    ASSERT_EQ(bp, 5);
-    err = call_string_to_fp("1E-127");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, -127, 1);
-    ASSERT_EQ(bp, 6);
-    // Significand out of range 
-    err = call_string_to_fp("2147483648");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("-2147483649");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("5000000000");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("-5000000000");
-    ASSERT_NE(err, 0);
-    // Exponent out of range
-    err = call_string_to_fp("1E128");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("1E1000");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("1E-128");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("1E-1000");
-    ASSERT_NE(err, 0);
-    // Adjusted e out of range
-    err = call_string_to_fp("3.14159E-125");
-    ASSERT_NE(err, 0);
-    // Characters after the number
-    err = call_string_to_fp("10 ");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 2);
-    err = call_string_to_fp("10X");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 2);
-    err = call_string_to_fp("10. ");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp("10.X");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp("10E");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp("10E ");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp("10EX");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    ASSERT_EQ(bp, 3);
-    err = call_string_to_fp("10E1 ");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, 1, 10);
-    ASSERT_EQ(bp, 4);
-    err = call_string_to_fp("10E-1 ");
-    ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(reg_fpa, -1, 10);
-    ASSERT_EQ(bp, 5);
-    // Various empty values
-    err = call_string_to_fp("");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp(" ");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("E");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("E1");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("X");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("- ");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("-E1");
-    ASSERT_NE(err, 0);
-    err = call_string_to_fp("-X");
-    ASSERT_NE(err, 0);
-}
-
-static void test_fadd(void) {
-    Float value;
-
-    PRINT_TEST_NAME();
-
-    // 0 + 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    SET_FLOAT(value, 0, 0);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    // 1 + 1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, 1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 2);
-    // 1 + 1E1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 1, 1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 11);
-    // 1E1 + 1
-    SET_FLOAT(reg_fpa, 1, 1);
-    SET_FLOAT(value, 0, 1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 11);
-    // 1 + 3.14159
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, -5, 314159);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -5, 414159);
-    // 1 + -1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, -1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    // 1E1 + -1
-    SET_FLOAT(reg_fpa, 1, 1);
-    SET_FLOAT(value, 0, -1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 9);
-    // 1 + -1E1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 1, -1);
-    fadd(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -9);
-    // // LONG_MAX + 1
-    // SET_FLOAT(reg_fpa, 0, LONG_MAX);
-    // SET_FLOAT(value, 0, 1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 1, -9);
-}
-
-static void test_fsub(void) {
-    Float value;
-
-    PRINT_TEST_NAME();
-
-    // Don't need many fsub tests since it just negates its argument and calls fadd.
-
-    // 3.14159 - 1.14159 = 2
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, -5, 114159);
-    fsub(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -5, 200000);
-    // -100 - 2.5 = -102.5
-    SET_FLOAT(reg_fpa, 2, -1);
-    SET_FLOAT(value, -1, 25);
-    fsub(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -1, -1025);
-}
-
-static void test_fmul(void) {
-    Float value;
-
-    PRINT_TEST_NAME();
-
-    // 0 * 0 = 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    SET_FLOAT(value, 0, 0);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    // 1 * 1 = 1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, 1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1);
-    // 1E1 * 1 = 1E1
-    SET_FLOAT(reg_fpa, 1, 1);
-    SET_FLOAT(value, 0, 1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 1, 1);
-    // 1,000,000,000 * 1,000,000,000
-    SET_FLOAT(reg_fpa, 0, 1000000000);
-    SET_FLOAT(value, 0, 1000000000);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 9, 1000000000);
-    // 3.14159 * 1E5 = 314159
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, 5, 1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 314159);
-    // 1 * -1 = -1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, -1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -1);
-    // -1 * 1 = -1
-    SET_FLOAT(reg_fpa, 0, -1);
-    SET_FLOAT(value, 0, 1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, -1);
-    // -1 * -1 = 1
-    SET_FLOAT(reg_fpa, 0, -1);
-    SET_FLOAT(value, 0, -1);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1);
-    // 3.14159 * 3.14159
-    // TODO: should round up not truncate
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, -5, 314159);
-    fmul(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -8, 986958772);
-}
-
-static void test_fdiv(void) {
-    Float value;
-
-    PRINT_TEST_NAME();
-    
-    // 1 / 1 = 1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, 1);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1);
-    
-    SET_FLOAT(reg_fpa, 0, 10);
-    SET_FLOAT(value, 0, 1);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
-    
-    // 1000000000 / 1 = 1000000000
-    SET_FLOAT(reg_fpa, 0, 1000000000);
-    SET_FLOAT(value, 0, 1);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1000000000);
-    
-    // 8 / 2 = 4
-    SET_FLOAT(reg_fpa, 0, 8);
-    SET_FLOAT(value, 0, 2);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 4);
-    
-    // 3.14159 / 1 = 3.14159
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, 0, 1);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -5, 314159);
-    
-    // 3.14159 / 1E1 = 0.314159
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, 1, 1);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -6, 314159);
-    
-    // 3 / 10 = 0.3
-    SET_FLOAT(reg_fpa, 0, 3);
-    SET_FLOAT(value, 0, 10);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -1, 3);
-    
-    // 3.14159 / 10 = 0.314159
-    SET_FLOAT(reg_fpa, -5, 314159);
-    SET_FLOAT(value, 0, 10);
-    fdiv(&value);
-    ASSERT_FLOAT_EQ(reg_fpa, -6, 314159);
-}
-
-static void test_fcmp(void) {
-    Float value;
-    int result;
-
-    PRINT_TEST_NAME();
-    
-    // 0 <=> 0 = 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    SET_FLOAT(value, 0, 0);
-    result = fcmp(&value);
-    ASSERT_EQ(result, 0);
-
-    // 1 <=> 1 = 0
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, 1);
-    result = fcmp(&value);
-    ASSERT_EQ(result, 0);
-
-    // 1 <=> 0 = 1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 0, 0);
-    result = fcmp(&value);
-    ASSERT_EQ(result, 1);
-
-    // 0 <=> 1 = -1
-    SET_FLOAT(reg_fpa, 0, 0);
-    SET_FLOAT(value, 0, 1);
-    result = fcmp(&value);
-    ASSERT_EQ(result, -1);
-
-    // 1E1 <=> 1 = 1
-    SET_FLOAT(reg_fpa, 1, 1);
-    SET_FLOAT(value, 0, 1);
-    result = fcmp(&value);
-    ASSERT_EQ(result, 1);
-
-    // 1 <=> 1E1 = -1
-    SET_FLOAT(reg_fpa, 0, 1);
-    SET_FLOAT(value, 1, 1);
-    result = fcmp(&value);
-    ASSERT_EQ(result, -1);
-
-    // 10 <=> 1E1 = 0
-    SET_FLOAT(reg_fpa, 0, 10);
-    SET_FLOAT(value, 1, 1);
-    result = fcmp(&value);
-    ASSERT_EQ(result, 0);
-    
-    // 0 <=> 1000 = 0
-    SET_FLOAT(reg_fpa, 0, 0);
-    SET_FLOAT(value, 0, 1000);
-    result = fcmp(&value);
-    ASSERT_EQ(result, -1);
-}    
+//     // 0
+//     err = call_string_to_fp("0");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
+//     ASSERT_EQ(bp, 1);
+//     err = call_string_to_fp("0.0");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp(".0");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
+//     ASSERT_EQ(bp, 2);
+//     err = call_string_to_fp("0.");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
+//     ASSERT_EQ(bp, 2);
+//     err = call_string_to_fp(".");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
+//     ASSERT_EQ(bp, 1);
+//     // 100
+//     err = call_string_to_fp("100");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 100);
+//     ASSERT_EQ(bp, 3);
+//     // -100
+//     err = call_string_to_fp("-100");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, -100);
+//     ASSERT_EQ(bp, 4);
+//     // 2E2
+//     err = call_string_to_fp("2E2");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 2, 2);
+//     ASSERT_EQ(bp, 3);
+//     // 3.14159
+//     err = call_string_to_fp("3.14159");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, -5, 314159);
+//     ASSERT_EQ(bp, 7);
+//     // 6.0221409E23
+//     err = call_string_to_fp("6.0221409E23");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 16, 60221409);
+//     ASSERT_EQ(bp, 12);
+//     // Significand limits
+//     err = call_string_to_fp("2147483647");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, LONG_MAX);
+//     ASSERT_EQ(bp, 10);
+//     err = call_string_to_fp("-2147483648");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, LONG_MIN);
+//     ASSERT_EQ(bp, 11);
+//     // Exponent limits
+//     err = call_string_to_fp("1E127");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 127, 1);
+//     ASSERT_EQ(bp, 5);
+//     err = call_string_to_fp("1E-127");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, -127, 1);
+//     ASSERT_EQ(bp, 6);
+//     // Significand out of range 
+//     err = call_string_to_fp("2147483648");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("-2147483649");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("5000000000");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("-5000000000");
+//     ASSERT_NE(err, 0);
+//     // Exponent out of range
+//     err = call_string_to_fp("1E128");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("1E1000");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("1E-128");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("1E-1000");
+//     ASSERT_NE(err, 0);
+//     // Adjusted e out of range
+//     err = call_string_to_fp("3.14159E-125");
+//     ASSERT_NE(err, 0);
+//     // Characters after the number
+//     err = call_string_to_fp("10 ");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 2);
+//     err = call_string_to_fp("10X");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 2);
+//     err = call_string_to_fp("10. ");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp("10.X");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp("10E");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp("10E ");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp("10EX");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 0, 10);
+//     ASSERT_EQ(bp, 3);
+//     err = call_string_to_fp("10E1 ");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, 1, 10);
+//     ASSERT_EQ(bp, 4);
+//     err = call_string_to_fp("10E-1 ");
+//     ASSERT_EQ(err, 0);
+//     ASSERT_FLOAT_EQ(reg_fpa, -1, 10);
+//     ASSERT_EQ(bp, 5);
+//     // Various empty values
+//     err = call_string_to_fp("");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp(" ");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("E");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("E1");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("X");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("- ");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("-E1");
+//     ASSERT_NE(err, 0);
+//     err = call_string_to_fp("-X");
+//     ASSERT_NE(err, 0);
+// }
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -712,6 +322,86 @@ static void test_swap_fp0_fp1(void) {
     ASSERT_FPX_EQ(FP1, POSITIVE, 2, 12345678L);
 }
 
+typedef struct IntConversionTestCase {
+    long value;
+    UnpackedFloat u;
+} IntConversionTestCase;
+
+static IntConversionTestCase int_conversion_test_cases[] = {
+    { 0, { 0x00000000, 1, POSITIVE } },
+    { 1, { 0x80000000, 128, POSITIVE } },
+    { -1, { 0x80000000, 128, NEGATIVE } },
+    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
+    { -2147483648, { 0x80000000, 159, NEGATIVE } },
+    { 4112, { 0x80800000, 140, POSITIVE } },
+};
+
+static void test_int_to_fp(void) {
+    IntConversionTestCase* test_case;
+    int i;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: int_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
+        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
+        int_to_fp();
+        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+    }
+}
+
+static void test_truncate_fp_to_int(void) {
+    IntConversionTestCase* test_case;
+    int i;
+    int err;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
+            test_case->u.t, test_case->u.e, test_case->u.s);
+        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        err = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
+    }
+}
+
+static void test_char_to_digit(void) {
+    int err;
+
+    PRINT_TEST_NAME();
+
+    err = char_to_digit('0');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 0);
+    err = char_to_digit('9');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 9);
+    err = char_to_digit('0'-1);
+    ASSERT_NE(err, 0);
+    err = char_to_digit('9'+1);
+    ASSERT_NE(err, 0);
+    err = char_to_digit(' ');
+    ASSERT_NE(err, 0);
+    err = char_to_digit('A');
+    ASSERT_NE(err, 0);
+    err = char_to_digit(0);
+    ASSERT_NE(err, 0);
+    err = char_to_digit(255);
+    ASSERT_NE(err, 0);
+}
+
+static void test_fp_to_string(void) {
+    PRINT_TEST_NAME();
+}
+
+static void test_string_to_fp(void) {
+    PRINT_TEST_NAME();
+}
+
 static void test_adjust_exponent(void) {
     PRINT_TEST_NAME();
     SET_FPX(FP0, POSITIVE, 0, 0);
@@ -771,53 +461,6 @@ static void test_normalize(void) {
     call_normalize(POSITIVE, 8, 0x00, 0x00001234, 0x00, 1, 0x00091A00, __LINE__);
 }
 
-typedef struct IntConversionTestCase {
-    long value;
-    UnpackedFloat u;
-} IntConversionTestCase;
-
-static IntConversionTestCase int_conversion_test_cases[] = {
-    { 0, { 0x00000000, 1, POSITIVE } },
-    { 1, { 0x80000000, 128, POSITIVE } },
-    { -1, { 0x80000000, 128, NEGATIVE } },
-    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
-    { -2147483648, { 0x80000000, 159, NEGATIVE } },
-    { 4112, { 0x80800000, 140, POSITIVE } },
-};
-
-static void test_int_to_fp2(void) {
-    IntConversionTestCase* test_case;
-    int i;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: int_to_fp2(%ld)\n", __FILE__, __LINE__, test_case->value);
-        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
-        int_to_fp2();
-        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-    }
-}
-
-static void test_truncate_fp_to_int2(void) {
-    IntConversionTestCase* test_case;
-    int i;
-    int err;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: truncate_fp_to_int2(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
-            test_case->u.t, test_case->u.e, test_case->u.s);
-        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-        err = truncate_fp_to_int2();
-        ASSERT_EQ(err, 0);
-        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
-    }
-}
-
 #define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
             call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
 
@@ -831,39 +474,39 @@ static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, lon
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
-static void test_fadd2(void) {
+static void test_fadd(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
-    CALL_FP(fadd2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fadd, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 + 1
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
     // 0.5 + 0.5
-    CALL_FP(fadd2, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
     // -1 + (-1)
-    CALL_FP(fadd2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000);
+    CALL_FP(fadd, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000);
     // 1 + (-1)
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -2 + 1
-    CALL_FP(fadd2, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    CALL_FP(fadd, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // 1 + (-2)
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
     // -1 + 2
-    CALL_FP(fadd2, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fadd, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
     // 2 + (-1)
-    CALL_FP(fadd2, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fadd, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 + 0.0001220703125
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
     // 1 + 3.14159
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
     // 1 + 0.00000000046566128730
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
     // 1 + 0.00000000011641532182 (should round down)
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 + 0.00000000023283064365 (should round up)
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
     // 1 + 0.00000000034924596547 (should round up)
-    CALL_FP(fadd2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
     
     // // 1 + 1E1
     // SET_FLOAT(reg_fpa, 0, 1);
@@ -902,128 +545,115 @@ static void test_fadd2(void) {
     // ASSERT_FLOAT_EQ(reg_fpa, 1, -9);
 }
 
-static void test_fsub2(void) {
+static void test_fsub(void) {
     PRINT_TEST_NAME();
 
     // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
 
     // 0 - 0
-    CALL_FP(fsub2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fsub, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 - 1
-    CALL_FP(fsub2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -1 - (-1)
-    CALL_FP(fsub2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // 1 - (-1)
-    CALL_FP(fsub2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
 }
 
-static void test_fmul2(void) {
+static void test_fmul(void) {
     PRINT_TEST_NAME();
 
     // 0 * 0
-    CALL_FP(fmul2, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fmul, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 * 1
-    CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 * -1
-    CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    CALL_FP(fmul, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // -1 * 1
-    CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    CALL_FP(fmul, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // -1 * -1
-    CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fmul, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 2 * 2
-    CALL_FP(fmul2, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 130, 0x80000000);
+    CALL_FP(fmul, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 130, 0x80000000);
     // 0.5 * 0.5
-    CALL_FP(fmul2, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 126, 0x80000000);
+    CALL_FP(fmul, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 126, 0x80000000);
     // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -127)
-    CALL_FP(fmul2, POSITIVE, 57, 0x80000000, POSITIVE, 57, 0x80000000, POSITIVE, 1, 0x00010000);
+    CALL_FP(fmul, POSITIVE, 57, 0x80000000, POSITIVE, 57, 0x80000000, POSITIVE, 1, 0x00010000);
 
 
     // // 1 + (-1)
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // // -2 + 1
-    // CALL_FP(fmul2, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // CALL_FP(fmul, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // // 1 + (-2)
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000);
     // // -1 + 2
-    // CALL_FP(fmul2, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
+    // CALL_FP(fmul, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
     // // 2 + (-1)
-    // CALL_FP(fmul2, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    // CALL_FP(fmul, POSITIVE, 129, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // // 1 + 0.0001220703125
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 115, 0x80000000, POSITIVE, 128, 0x80040000);
     // // 1 + 3.14159
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0xC90FCF80, POSITIVE, 130, 0x8487E7C0);
     // // 1 + 0.00000000046566128730
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 97, 0x80000000, POSITIVE, 128, 0x80000001);
     // // 1 + 0.00000000011641532182 (should round down)
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 128, 0x80000000);
     // // 1 + 0.00000000023283064365 (should round up)
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
     // // 1 + 0.00000000034924596547 (should round up)
-    // CALL_FP(fmul2, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
+    // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
 }
 
-static void call_fcmp2(char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
+static void call_fcmp(char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
                        int expect_result, int line) {
     int result;
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  %s:%d: fcmp2(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line,
+    fprintf(stderr, "  %s:%d: fcmp(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line,
             t_0, e_0, s_0, t_1, e_1, s_1);
-    result = fcmp2();
+    result = fcmp();
     ASSERT_EQ(result, expect_result);
 }
 
-static void test_fcmp2(void) {
+static void test_fcmp(void) {
     PRINT_TEST_NAME();
 
     // 0 <=> 0
-    call_fcmp2(POSITIVE, 0, 0, POSITIVE, 0, 0, 0, __LINE__);
+    call_fcmp(POSITIVE, 0, 0, POSITIVE, 0, 0, 0, __LINE__);
     // 1 <=> 0
-    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 0, 0, 1, __LINE__);
+    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 0, 0, 1, __LINE__);
     // 0 <=> 1
-    call_fcmp2(POSITIVE, 0, 0, POSITIVE, 128, 0x80000000, -1, __LINE__);
+    call_fcmp(POSITIVE, 0, 0, POSITIVE, 128, 0x80000000, -1, __LINE__);
     // 2 <=> 1
-    call_fcmp2(POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    call_fcmp(POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, 1, __LINE__);
     // 1 <=> 2
-    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, -1, __LINE__);
+    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, -1, __LINE__);
     // 1+e <=> 1
-    call_fcmp2(POSITIVE, 128, 0x80000001, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    call_fcmp(POSITIVE, 128, 0x80000001, POSITIVE, 128, 0x80000000, 1, __LINE__);
     // 1 <=> 1+e
-    call_fcmp2(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000001, -1, __LINE__);
+    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000001, -1, __LINE__);
     // 2^126 <=> 1+e
-    call_fcmp2(POSITIVE, 254, 0x80000000, POSITIVE, 128, 0x80000001, 1, __LINE__);
+    call_fcmp(POSITIVE, 254, 0x80000000, POSITIVE, 128, 0x80000001, 1, __LINE__);
     // 1+e <=> 2^126
-    call_fcmp2(POSITIVE, 128, 0x80000001, POSITIVE, 254, 0x80000000, -1, __LINE__);
+    call_fcmp(POSITIVE, 128, 0x80000001, POSITIVE, 254, 0x80000000, -1, __LINE__);
 }
 
 int main(void) {
     initialize_target();
-    // test_load_fpa();
-    // test_store_fpa();
-    // test_clear_fpa();
-    // test_fp_is_zero();
-    // test_fneg();
-    // test_char_to_digit();
-    // test_swap_fpa();
-    // test_int_to_fp();
-    // test_truncate_fp_to_int();
-    // test_fp_to_string();
-    // test_string_to_fp();
-    // test_fadd();
-    // test_fsub();
-    // test_fmul();
-    // test_fdiv();
-    // test_fcmp();
     test_load_fpx();
     test_store_fpx();
     test_swap_fp0_fp1();
+    test_int_to_fp();
+    test_truncate_fp_to_int();
+    test_char_to_digit();
+    test_fp_to_string();
+    test_string_to_fp();
     test_adjust_exponent();
     test_normalize();
-    test_int_to_fp2();
-    test_truncate_fp_to_int2();
-    test_fadd2();
-    test_fsub2();
-    test_fmul2();
-    test_fcmp2();
+    test_fadd();
+    test_fsub();
+    test_fmul();
+    test_fcmp();
     return 0;
 }
