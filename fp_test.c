@@ -104,7 +104,7 @@ typedef struct IntConversionTestCase {
 } IntConversionTestCase;
 
 static IntConversionTestCase int_conversion_test_cases[] = {
-    { 0, { 0x00000000, 1, POSITIVE } },
+    { 0, { 0x00000000, 0, POSITIVE } },
     { 1, { 0x80000000, 128, POSITIVE } },
     { -1, { 0x80000000, 128, NEGATIVE } },
     { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
@@ -184,11 +184,13 @@ static void test_fp_to_string(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_fp_to_string(POSITIVE, 0, 0, "0", __LINE__);
-//     // 100
-//     SET_FLOAT(reg_fpa, 0, 100);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "100");
+    call_fp_to_string(POSITIVE, 0, 0x00000000, "0", __LINE__);
+    // 1
+    call_fp_to_string(POSITIVE, 128, 0x80000000, "1", __LINE__);
+    // // 100
+    // SET_FLOAT(reg_fpa, 0, 100);
+    // call_fp_to_string(POSITIVE, );
+    // ASSERT_STRING_EQ(buffer, "100");
 //     // -100
 //     SET_FLOAT(reg_fpa, 0, -100);
 //     call_fp_to_string();
@@ -432,9 +434,9 @@ static void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_normalize(POSITIVE, 1, 0, 0, 0, 1, 0, __LINE__);
+    call_normalize(POSITIVE, 0, 0, 0, 0, 0, 0, __LINE__);
     // 0 significand with any exponent normalizes to 0
-    call_normalize(POSITIVE, 127, 0, 0, 0, 1, 0, __LINE__);
+    call_normalize(POSITIVE, 127, 0, 0, 0, 0, 0, __LINE__);
     // 1
     call_normalize(POSITIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // -1
@@ -472,7 +474,7 @@ static void test_fadd(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
-    CALL_FP(fadd, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fadd, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
     // 1 + 1
     CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
     // 0.5 + 0.5
@@ -480,7 +482,7 @@ static void test_fadd(void) {
     // -1 + (-1)
     CALL_FP(fadd, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000);
     // 1 + (-1)
-    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 0, 0);
     // -2 + 1
     CALL_FP(fadd, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // 1 + (-2)
@@ -545,11 +547,11 @@ static void test_fsub(void) {
     // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
 
     // 0 - 0
-    CALL_FP(fsub, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fsub, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
     // 1 - 1
-    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 0, 0);
     // -1 - (-1)
-    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 0, 0);
     // 1 - (-1)
     CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
 }
@@ -558,7 +560,7 @@ static void test_fmul(void) {
     PRINT_TEST_NAME();
 
     // 0 * 0
-    CALL_FP(fmul, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    CALL_FP(fmul, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
     // 1 * 1
     CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
     // 1 * -1
@@ -571,6 +573,12 @@ static void test_fmul(void) {
     CALL_FP(fmul, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 130, 0x80000000);
     // 0.5 * 0.5
     CALL_FP(fmul, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 126, 0x80000000);
+    // 10 * 10
+    CALL_FP(fmul, POSITIVE, 131, 0xA0000000, POSITIVE, 131, 0xA0000000, POSITIVE, 134, 0xC8000000);
+    // 100 * 10
+    CALL_FP(fmul, POSITIVE, 134, 0xC8000000, POSITIVE, 131, 0xA0000000, POSITIVE, 137, 0xFA000000);
+    // 1000 * 10
+    CALL_FP(fmul, POSITIVE, 137, 0xFA000000, POSITIVE, 131, 0xA0000000, POSITIVE, 141, 0x9C400000);
     // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -127)
     CALL_FP(fmul, POSITIVE, 57, 0x80000000, POSITIVE, 57, 0x80000000, POSITIVE, 1, 0x00010000);
 

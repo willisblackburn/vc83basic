@@ -565,6 +565,7 @@ fpx_is_zero:
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 negate_significand:
         sec
@@ -662,7 +663,9 @@ div10_significand:
 
 int_to_fp:
         mva     #159, FP0e              ; Have to shift left 31 places (to exponent 128) to get original value
-        mva     #0, FP2                 ; Clear low byte of extended significand
+        mva     #0, C                   ; Set exponent high byte to 0
+        sta     B                       ; Set round register to 0
+        sta     FP2                     ; Clear low byte of extended significand
         lda     FP0t+3                  ; Check sign bit
         and     #$80                    ; Isolate sign bit
         sta     FP0s                    ; Store
@@ -703,11 +706,11 @@ truncate_fp_to_int:
 ; Writes the string to buffer at the position specified by bp. Does not perform any error checking; there must 
 ; be enough space in the buffer for the write to succeed.
 
-string_max: .byte 159, $00, $00, $00, $00       ; 2^31
-string_min: .byte 155, $4C, $CC, $CC, $CC       ; 2^31/10
+ten: .byte $00, $00, $00, $20, 131
+string_max: .byte $00, $00, $00, $00, 159       ; 2^31     (2,147,483,648  )
+string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^31/10  (  214,748,364.8)
 
 fp_to_string:
-
         lda     FP0s                    ; Check for negative value
         bpl     @positive               ; Nope
         ldx     bp                      ; Write index
@@ -719,10 +722,11 @@ fp_to_string:
 ; The number is 0 if the significand is zero regardless of exponent.
 
 @positive:
+        mva     #0, E                   ; E keeps track of how much we have scaled up or down
+        sta     FP0s                    ; Also set sign to positive since we already printed '-'
         ldx     #FP0
         jsr     fpx_is_zero
-        debug $00
-        bne     @not_zero
+        bne     @maybe_scale_up
         ldx     bp                      ; Write index
         lda     #'0'
         sta     buffer
@@ -730,9 +734,44 @@ fp_to_string:
         clc                             ; Signal success
         rts
 
-@not_zero:
+@scale_up:
+        lday    #ten
+        ldx     #FP1
+        jsr     load_fpx
+        jsr     fmul                    ; Multiply FP0 by 10
+        inc     E
+@maybe_scale_up:
+        debug $00
+        lday    #string_min             ; Load minimum value
+        ldx     #FP1                    ; Into FP1
+        jsr     load_fpx
+        jsr     fcmp                    ; Compare w/FP0; carry set means FP0 >= FP1
+        debug $01
+        bcc     @scale_up
+        bcs     @maybe_scale_down       ; Unconditional skip past scale down code
+
+@scale_down:
+        lday    ten
+        ldx     #FP1
+        jsr     load_fpx
+        jsr     fdiv                    ; Divide FP0 by 10
+        dec     E
+@maybe_scale_down:
+        debug $10
+        lday    #string_max             ; Load maximum value
+        ldx     #FP1                    ; Into FP1
+        jsr     load_fpx
+        jsr     fcmp                    ; Compare w/FP0; carry clear means FP0 < FP1
+        debug $11
+        bcs     @scale_down
+
+@generate_digits:
+        jsr     truncate_fp_to_int      ; Make into a 32-bit integer
+
+
 
 @done:
+        debug $20
         rts
 
 
@@ -826,8 +865,8 @@ normalize:
 
 ; First check if there are any bits set in the low byte of FP2, indicating the significand is >= 2.
 
-        debug $80
         lda     FP2                     ; Check first extension byte
+        debug $80
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
@@ -844,14 +883,14 @@ normalize:
 ; we'll see a 0 bit, because we shift in 0s from the right.
 
 @check_zero:
-        debug $81
         ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 is zero (TODO: check round bits too)
+        debug $81
+        jsr     fpx_is_zero             ; Check if FP0 is zero
         debug $82
         bne     @coarse
         ldx     B                       ; Check round
         bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
-        lda     #1                      ; It's really zero; set lowest possible exponent and return
+        lda     #0                      ; It's really zero; set lowest possible exponent and return
         sta     FP0e
         rts
 
@@ -986,17 +1025,13 @@ fsub:
 fmul:
         ldx     #FP0
         jsr     fpx_is_zero             ; Is FP0 zero?
-        beq     @done                   ; Yes, just return
+        beq     @return_zero            ; Yes, just return
         ldx     #FP1
         jsr     fpx_is_zero             ; Test FP1
         bne     @do_multiply
-
 @return_zero:
         ldx     #FP0
-        jsr     clear_significand
-        lda     #1
-        sta     FP0e                    ; Exponent must be 1
-@done:
+        jsr     clear_fpx               ; Return zero
         clc                             ; Signal success
         rts
 
@@ -1036,7 +1071,7 @@ fmul:
         adc     BCDE+3                  ; This will never overflow because high bit of FP2 will always be zero
         sta     FP2+3
 @skip:
-        lsr     FP2+3                   ; 64-bit right shift
+        ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit
         ror     FP2+2
         ror     FP2+1
         ror     FP2
@@ -1085,26 +1120,32 @@ fdiv:
 fcmp:
         lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
         cmp     FP0s                    ; Subtract sign of FP0
+        ; debug $60
         beq     @same_sign              ; If same sign then continue
         rts                             ; Carry set if FP1s was negative and FP0s was positive -> FP0 is greater
 
 @same_sign:
         lda     FP0e                    ; FP0 exponent
         cmp     FP1e                    ; Subtract FP1 exponent 1
+        ; debug $61
         beq     @same_e                 ; If same exponent then continue
         rts                             ; Carry set if FP0e was greater -> FP0 is greater
 
 @same_e:
         lda     FP0t+3                  ; Compare significands (just 32 bits)
         cmp     FP1t+3
+        ; debug $62
         bne     @done
         lda     FP0t+2
         sbc     FP1t+2
+        ; debug $63
         bne     @done
         lda     FP0t+1
         sbc     FP1t+1
+        ; debug $64
         bne     @done
         lda     FP0t
         sbc     FP1t
+        ; debug $65
 @done:
         rts                             ; Flags will be set correctly here
