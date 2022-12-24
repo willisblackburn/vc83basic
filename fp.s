@@ -19,6 +19,8 @@
 ; B holds the rounding byte, and C holds the high byte of the exponent.
 ; Both B and C are used by the normalize function.
 
+; TODO: make sure B and C are handled correctly in each function.
+
 BIAS = 128
 MAXDIGITS = 10
 
@@ -509,35 +511,38 @@ copy_fp0_fp1:
         sta     FP1e
         ldx     #FP1t
 
-; Copies FP0 to another register.
+; Copies the significand of FP0 to another register.
 ; X = either #FP1/#FP1t, #FP2, or #BCDE
+
+; UnpackedFloat::t must be 0 in order for this to work with FP2 or BCDE.
+.assert UnpackedFloat::t = 0, error
 
 copy_significand:
         lda     FP0t
-        sta     0,x
+        sta     UnpackedFloat::t,x
         lda     FP0t+1
-        sta     1,x
+        sta     UnpackedFloat::t+1,x
         lda     FP0t+2
-        sta     2,x
+        sta     UnpackedFloat::t+2,x
         lda     FP0t+3
-        sta     3,x
+        sta     UnpackedFloat::t+3,x
         rts
 
-; Checks if FP0 or FP1 is zero.
-; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
+; Sets either FP0 or FP1 to zero.
 ; X = either #FP0 or #FP1
 
-significand_is_zero:
-        lda     UnpackedFloat::t,x      ; OR all the significand bytes together
-        ora     UnpackedFloat::t+1,x
-        ora     UnpackedFloat::t+2,x
-        ora     UnpackedFloat::t+3,x
-        rts
+clear_fpx:
+        lda     #0
+        sta     UnpackedFloat::e,x
+        sta     UnpackedFloat::s,x
+
+; Fall through
 
 ; Clears the significand of FP0 or FP1, or FP2 or BCDE.
-; X = either #FP0/#FP0t, #FP1/#FP1t, #FP2, or #BCDE
+; X = either #FP0, #FP1, #FP2, or #BCDE
 ; Returns 0 in A.
 
+; UnpackedFloat::t must be 0 in order for this to work with FP2 or BCDE.
 .assert UnpackedFloat::t = 0, error
 
 clear_significand:
@@ -546,6 +551,17 @@ clear_significand:
         sta     1,x
         sta     2,x
         sta     3,x
+        rts
+
+; Checks if FP0 or FP1 is zero.
+; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
+; X = either #FP0 or #FP1
+
+fpx_is_zero:
+        lda     UnpackedFloat::t,x      ; OR all the significand bytes together
+        ora     UnpackedFloat::t+1,x
+        ora     UnpackedFloat::t+2,x
+        ora     UnpackedFloat::t+3,x
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
@@ -691,37 +707,39 @@ string_max: .byte 159, $00, $00, $00, $00       ; 2^31
 string_min: .byte 155, $4C, $CC, $CC, $CC       ; 2^31/10
 
 fp_to_string:
-        ldx     bp                      ; Write position in output buffer
+
+        lda     FP0s                    ; Check for negative value
+        bpl     @positive               ; Nope
+        ldx     bp                      ; Write index
+        lda     #'-'                    ; Minus sign
+        sta     buffer,x
+        inc     bp                      ; Update index
 
 ; Handle 0 as a special case.
 ; The number is 0 if the significand is zero regardless of exponent.
 
-        ldx     #FP0t
-        jsr     significand_is_zero
+@positive:
+        ldx     #FP0
+        jsr     fpx_is_zero
+        debug $00
         bne     @not_zero
+        ldx     bp                      ; Write index
         lda     #'0'
-        sta     buffer,x
-        inx
-        jmp     @done
-
-; If sign is negaitve, output a '-'.
+        sta     buffer
+        inc     bp                      ; Update index
+        clc                             ; Signal success
+        rts
 
 @not_zero:
-        lda     FP0s
-        bpl     @positive
-        lda     #'-'
-        sta     buffer,x
-        inx
-
-; Scale the value until the value is >= 2^32/10 and < 2^32.
-
-@positive:
 
 @done:
         rts
 
 
 string_to_fp:
+        ldx     #FP0
+        jsr     clear_fpx               ; Reset to zero
+        clc                             ; Signal success
         rts
 
 ; Converts the character in A into a digit.
@@ -827,8 +845,8 @@ normalize:
 
 @check_zero:
         debug $81
-        ldx     #FP0t
-        jsr     significand_is_zero     ; Check if FP0 is zero (TODO: check round bits too)
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Check if FP0 is zero (TODO: check round bits too)
         debug $82
         bne     @coarse
         ldx     B                       ; Check round
@@ -966,11 +984,11 @@ fsub:
 ; Multiplies FP0 and FP1, leaving the normalized result in FP0.
 
 fmul:
-        ldx     #FP0t
-        jsr     significand_is_zero     ; Is FP0 zero?
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Is FP0 zero?
         beq     @done                   ; Yes, just return
-        ldx     #FP1t
-        jsr     significand_is_zero     ; Test FP1
+        ldx     #FP1
+        jsr     fpx_is_zero             ; Test FP1
         bne     @do_multiply
 
 @return_zero:
@@ -1079,18 +1097,14 @@ fcmp:
 @same_e:
         lda     FP0t+3                  ; Compare significands (just 32 bits)
         cmp     FP1t+3
-        debug $00
         bne     @done
         lda     FP0t+2
         sbc     FP1t+2
-        debug $01
         bne     @done
         lda     FP0t+1
         sbc     FP1t+1
-        debug $02
         bne     @done
         lda     FP0t
         sbc     FP1t
-        debug $03
 @done:
         rts                             ; Flags will be set correctly here

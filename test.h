@@ -137,12 +137,13 @@ void load_fpx(UnpackedFloat* fpx, const Float* value);
 void store_fpx(const UnpackedFloat* fpx, Float* value);
 void swap_fp0_fp1(void);
 void int_to_fp(void);
-int truncate_fp_to_int(void);
-int fp_to_string(void);
-int string_to_fp(void);
-int char_to_digit(char c);
+char truncate_fp_to_int(void);
+void fp_to_string(void);
+char string_to_fp(void);
+char char_to_digit(char c);
 void adjust_exponent(char add, char subtract);
 void normalize(void);
+// TODO: all should return char; check return in tests
 void fadd(void);
 void fsub(void);
 void fmul(void);

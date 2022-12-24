@@ -25,20 +25,166 @@
     ASSERT_EQ(fpx.t, t_value); \
 } while (0)
 
-// static void call_fp_to_string(void) {
-//     bp = 0;
-//     fp_to_string();
-//     buffer[bp] = '\0';
-// }
+typedef struct LoadStoreTestCase {
+    Float f;
+    UnpackedFloat u;
+} LoadStoreTestCase;
 
-// static void test_fp_to_string(void) {
+static LoadStoreTestCase load_store_test_cases[] = {
+    { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
+    { { 0x00000000, 128 }, { 0x80000000, 128, POSITIVE } },
+    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 158, POSITIVE } },
+    { { 0x80000000, 159 }, { 0x80000000, 159, NEGATIVE } },
+    { { 0x08442211, 128 }, { 0x88442211, 128, POSITIVE } },
+    // Smallest possible normalized exponent
+    { { 0x00000000, 1 }, { 0x80000000, 1, POSITIVE } },
+    // Subnormal
+    { { 0x00000400, 0 }, { 0x00000400, 1, POSITIVE } },
+};
 
-//     PRINT_TEST_NAME();
+static void test_load_fpx(void) {
+    Float value;
+    LoadStoreTestCase* test_case;
+    int i;
 
-//     // 0
-//     SET_FLOAT(reg_fpa, 0, 0);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "0");
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
+        test_case = load_store_test_cases + i;
+        fprintf(stderr, "  %s:%d: load_fpx(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
+                test_case->f.t, test_case->f.e);
+        SET_FLOAT(value, test_case->f.e, test_case->f.t);
+        load_fpx(&FP0, &value);
+        ASSERT_EQ(FP0s, test_case->u.s);
+        ASSERT_EQ(FP0e, test_case->u.e);
+        ASSERT_EQ(FP0t, test_case->u.t);
+        load_fpx(&FP1, &value);
+        ASSERT_EQ(FP1s, test_case->u.s);
+        ASSERT_EQ(FP1e, test_case->u.e);
+        ASSERT_EQ(FP1t, test_case->u.t);
+    }
+}
+
+static void test_store_fpx(void) {
+    Float value;
+    LoadStoreTestCase* test_case;
+    int i;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
+        test_case = load_store_test_cases + i;
+        fprintf(stderr, "  %s:%d: store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
+                test_case->u.t, test_case->u.e, test_case->u.s);
+        FP0s = test_case->u.s;
+        FP0e = test_case->u.e;
+        FP0t = test_case->u.t;
+        store_fpx(&FP0, &value);
+        ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
+        FP1s = test_case->u.s;
+        FP1e = test_case->u.e;
+        FP1t = test_case->u.t;
+        store_fpx(&FP1, &value);
+        ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
+    }
+}
+
+static void test_swap_fp0_fp1(void) {
+    PRINT_TEST_NAME();
+    SET_FPX(FP0, POSITIVE, 2, 12345678L);
+    SET_FPX(FP1, NEGATIVE, 1, 1418858818L);
+    swap_fp0_fp1();
+    ASSERT_FPX_EQ(FP0, NEGATIVE, 1, 1418858818L);
+    ASSERT_FPX_EQ(FP1, POSITIVE, 2, 12345678L);
+}
+
+typedef struct IntConversionTestCase {
+    long value;
+    UnpackedFloat u;
+} IntConversionTestCase;
+
+static IntConversionTestCase int_conversion_test_cases[] = {
+    { 0, { 0x00000000, 1, POSITIVE } },
+    { 1, { 0x80000000, 128, POSITIVE } },
+    { -1, { 0x80000000, 128, NEGATIVE } },
+    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
+    { -2147483648, { 0x80000000, 159, NEGATIVE } },
+    { 4112, { 0x80800000, 140, POSITIVE } },
+};
+
+static void test_int_to_fp(void) {
+    IntConversionTestCase* test_case;
+    int i;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: int_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
+        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
+        int_to_fp();
+        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+    }
+}
+
+static void test_truncate_fp_to_int(void) {
+    IntConversionTestCase* test_case;
+    int i;
+    char err;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
+            test_case->u.t, test_case->u.e, test_case->u.s);
+        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        err = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
+    }
+}
+
+static void test_char_to_digit(void) {
+    char err;
+
+    PRINT_TEST_NAME();
+
+    err = char_to_digit('0');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 0);
+    err = char_to_digit('9');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(reg_a, 9);
+    err = char_to_digit('0'-1);
+    ASSERT_NE(err, 0);
+    err = char_to_digit('9'+1);
+    ASSERT_NE(err, 0);
+    err = char_to_digit(' ');
+    ASSERT_NE(err, 0);
+    err = char_to_digit('A');
+    ASSERT_NE(err, 0);
+    err = char_to_digit(0);
+    ASSERT_NE(err, 0);
+    err = char_to_digit(255);
+    ASSERT_NE(err, 0);
+}
+
+static void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
+    fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X s=%02X)\n", __FILE__, line, t, e, s);
+    SET_FPX(FP0, s, e, t);
+    bp = 0;
+    fp_to_string();
+    buffer[bp] = '\0';
+    ASSERT_STRING_EQ(buffer, expect_string);
+}
+
+static void test_fp_to_string(void) {
+
+    PRINT_TEST_NAME();
+
+    // 0
+    call_fp_to_string(POSITIVE, 0, 0, "0", __LINE__);
 //     // 100
 //     SET_FLOAT(reg_fpa, 0, 100);
 //     call_fp_to_string();
@@ -93,24 +239,25 @@
 //     SET_FLOAT(reg_fpa, 15, 100);
 //     call_fp_to_string();
 //     ASSERT_STRING_EQ(buffer, "1E17");
-// }
+}
 
-// static int call_string_to_fp(const char* s) {
-//     strcpy(buffer, s);
-//     bp = 0;
-//     return string_to_fp();
-// }
+static void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
+    char err;
+    fprintf(stderr, "  %s:%d: fp_to_string(\"%s\")\n", __FILE__, line, string);
+    strcpy(buffer, string);
+    bp = 0;
+    err = string_to_fp();
+    ASSERT_EQ(err, 0);
+    ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
+}
 
-// static void test_string_to_fp(void) {
-//     int err;
+static void test_string_to_fp(void) {
+    char err;
 
-//     PRINT_TEST_NAME();
+    PRINT_TEST_NAME();
 
-//     // 0
-//     err = call_string_to_fp("0");
-//     ASSERT_EQ(err, 0);
-//     ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-//     ASSERT_EQ(bp, 1);
+    // 0
+    call_string_to_fp("0", POSITIVE, 0, 0, __LINE__);
 //     err = call_string_to_fp("0.0");
 //     ASSERT_EQ(err, 0);
 //     ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
@@ -245,161 +392,6 @@
 //     ASSERT_NE(err, 0);
 //     err = call_string_to_fp("-X");
 //     ASSERT_NE(err, 0);
-// }
-
-// --------------------------------------------------------------------------------------------------------------------
-
-typedef struct LoadStoreTestCase {
-    Float f;
-    UnpackedFloat u;
-} LoadStoreTestCase;
-
-static LoadStoreTestCase load_store_test_cases[] = {
-    { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
-    { { 0x00000000, 128 }, { 0x80000000, 128, POSITIVE } },
-    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 158, POSITIVE } },
-    { { 0x80000000, 159 }, { 0x80000000, 159, NEGATIVE } },
-    { { 0x08442211, 128 }, { 0x88442211, 128, POSITIVE } },
-    // Smallest possible normalized exponent
-    { { 0x00000000, 1 }, { 0x80000000, 1, POSITIVE } },
-    // Subnormal
-    { { 0x00000400, 0 }, { 0x00000400, 1, POSITIVE } },
-};
-
-static void test_load_fpx(void) {
-    Float value;
-    LoadStoreTestCase* test_case;
-    int i;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
-        test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: load_fpx(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
-                test_case->f.t, test_case->f.e);
-        SET_FLOAT(value, test_case->f.e, test_case->f.t);
-        load_fpx(&FP0, &value);
-        ASSERT_EQ(FP0s, test_case->u.s);
-        ASSERT_EQ(FP0e, test_case->u.e);
-        ASSERT_EQ(FP0t, test_case->u.t);
-        load_fpx(&FP1, &value);
-        ASSERT_EQ(FP1s, test_case->u.s);
-        ASSERT_EQ(FP1e, test_case->u.e);
-        ASSERT_EQ(FP1t, test_case->u.t);
-    }
-}
-
-static void test_store_fpx(void) {
-    Float value;
-    LoadStoreTestCase* test_case;
-    int i;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
-        test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
-                test_case->u.t, test_case->u.e, test_case->u.s);
-        FP0s = test_case->u.s;
-        FP0e = test_case->u.e;
-        FP0t = test_case->u.t;
-        store_fpx(&FP0, &value);
-        ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
-        FP1s = test_case->u.s;
-        FP1e = test_case->u.e;
-        FP1t = test_case->u.t;
-        store_fpx(&FP1, &value);
-        ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
-    }
-}
-
-static void test_swap_fp0_fp1(void) {
-    PRINT_TEST_NAME();
-    SET_FPX(FP0, POSITIVE, 2, 12345678L);
-    SET_FPX(FP1, NEGATIVE, 1, 1418858818L);
-    swap_fp0_fp1();
-    ASSERT_FPX_EQ(FP0, NEGATIVE, 1, 1418858818L);
-    ASSERT_FPX_EQ(FP1, POSITIVE, 2, 12345678L);
-}
-
-typedef struct IntConversionTestCase {
-    long value;
-    UnpackedFloat u;
-} IntConversionTestCase;
-
-static IntConversionTestCase int_conversion_test_cases[] = {
-    { 0, { 0x00000000, 1, POSITIVE } },
-    { 1, { 0x80000000, 128, POSITIVE } },
-    { -1, { 0x80000000, 128, NEGATIVE } },
-    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
-    { -2147483648, { 0x80000000, 159, NEGATIVE } },
-    { 4112, { 0x80800000, 140, POSITIVE } },
-};
-
-static void test_int_to_fp(void) {
-    IntConversionTestCase* test_case;
-    int i;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: int_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
-        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
-        int_to_fp();
-        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-    }
-}
-
-static void test_truncate_fp_to_int(void) {
-    IntConversionTestCase* test_case;
-    int i;
-    int err;
-
-    PRINT_TEST_NAME();
-
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: truncate_fp_to_int(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
-            test_case->u.t, test_case->u.e, test_case->u.s);
-        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-        err = truncate_fp_to_int();
-        ASSERT_EQ(err, 0);
-        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
-    }
-}
-
-static void test_char_to_digit(void) {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    err = char_to_digit('0');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    err = char_to_digit('9');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 9);
-    err = char_to_digit('0'-1);
-    ASSERT_NE(err, 0);
-    err = char_to_digit('9'+1);
-    ASSERT_NE(err, 0);
-    err = char_to_digit(' ');
-    ASSERT_NE(err, 0);
-    err = char_to_digit('A');
-    ASSERT_NE(err, 0);
-    err = char_to_digit(0);
-    ASSERT_NE(err, 0);
-    err = char_to_digit(255);
-    ASSERT_NE(err, 0);
-}
-
-static void test_fp_to_string(void) {
-    PRINT_TEST_NAME();
-}
-
-static void test_string_to_fp(void) {
-    PRINT_TEST_NAME();
 }
 
 static void test_adjust_exponent(void) {
@@ -424,7 +416,8 @@ static void test_adjust_exponent(void) {
     ASSERT_EQ(reg_c, 255);
 }
 
-static void call_normalize(char s, char e, long x, long t, char b, char expect_e, long expect_t, int line) {
+static void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
+                           char expect_e, unsigned long expect_t, int line) {
     FP0s = s;
     FP0e = e;
     FP2 = x;
@@ -464,8 +457,9 @@ static void test_normalize(void) {
 #define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
             call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
 
-static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
-                    char expect_s, char expect_e, long expect_t, int line) {
+static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, unsigned long t_0,
+                    char s_1, char e_1, unsigned long t_1,
+                    char expect_s, char expect_e, unsigned long expect_t, int line) {
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
     fprintf(stderr, "  %s:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line, f_name,
@@ -605,7 +599,7 @@ static void test_fmul(void) {
     // CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
 }
 
-static void call_fcmp(char s_0, char e_0, long t_0, char s_1, char e_1, long t_1,
+static void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
                        int expect_result, int line) {
     int result;
     SET_FPX(FP0, s_0, e_0, t_0);
