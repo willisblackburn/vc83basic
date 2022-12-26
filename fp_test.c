@@ -187,10 +187,12 @@ static void test_fp_to_string(void) {
     call_fp_to_string(POSITIVE, 0, 0x00000000, "0", __LINE__);
     // 1
     call_fp_to_string(POSITIVE, 128, 0x80000000, "1", __LINE__);
-    // // 100
-    // SET_FLOAT(reg_fpa, 0, 100);
-    // call_fp_to_string(POSITIVE, );
-    // ASSERT_STRING_EQ(buffer, "100");
+    // 25
+    call_fp_to_string(POSITIVE, 132, 0xC8000000, "25", __LINE__);
+    // 100
+    call_fp_to_string(POSITIVE, 134, 0xC8000000, "100", __LINE__);
+    // 100
+    call_fp_to_string(NEGATIVE, 134, 0xC8000000, "-100", __LINE__);
 //     // -100
 //     SET_FLOAT(reg_fpa, 0, -100);
 //     call_fp_to_string();

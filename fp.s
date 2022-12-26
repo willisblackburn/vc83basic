@@ -15,7 +15,6 @@
 ; The 40-byte value is stored in little-endian format, i.e., lowest byte of significand comes first.
 ;
 ; In this module:
-; BCDE is used for multiplication.
 ; B holds the rounding byte, and C holds the high byte of the exponent.
 ; Both B and C are used by the normalize function.
 
@@ -39,7 +38,9 @@ FP1: .res .sizeof(UnpackedFloat)
 FP1t = FP1+UnpackedFloat::t
 FP1e = FP1+UnpackedFloat::e
 FP1s = FP1+UnpackedFloat::s
+; TODO: combine with other ZP variables that aren't needed for FP
 FP2: .res .sizeof(UnpackedFloat::t)
+FP3: .res .sizeof(UnpackedFloat::t)
 
 .code
 
@@ -512,9 +513,9 @@ copy_fp0_fp1:
         ldx     #FP1t
 
 ; Copies the significand of FP0 to another register.
-; X = either #FP1/#FP1t, #FP2, or #BCDE
+; X = either #FP1/#FP1t, #FP2, or #FP3
 
-; UnpackedFloat::t must be 0 in order for this to work with FP2 or BCDE.
+; UnpackedFloat::t must be 0 in order for this to work with FP2 or FP3.
 .assert UnpackedFloat::t = 0, error
 
 copy_significand:
@@ -538,11 +539,11 @@ clear_fpx:
 
 ; Fall through
 
-; Clears the significand of FP0 or FP1, or FP2 or BCDE.
-; X = either #FP0, #FP1, #FP2, or #BCDE
+; Clears the significand of FP0 or FP1, or FP2 or FP3.
+; X = either #FP0, #FP1, #FP2, or #FP3
 ; Returns 0 in A.
 
-; UnpackedFloat::t must be 0 in order for this to work with FP2 or BCDE.
+; UnpackedFloat::t must be 0 in order for this to work with FP2 or FP3.
 .assert UnpackedFloat::t = 0, error
 
 clear_significand:
@@ -556,6 +557,8 @@ clear_significand:
 ; Checks if FP0 or FP1 is zero.
 ; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
 ; X = either #FP0 or #FP1
+
+; TODO: fp0_is_zero
 
 fpx_is_zero:
         lda     UnpackedFloat::t,x      ; OR all the significand bytes together
@@ -723,6 +726,7 @@ fp_to_string:
 
 @positive:
         mva     #0, E                   ; E keeps track of how much we have scaled up or down
+        sta     D                       ; D is the number of generated digits
         sta     FP0s                    ; Also set sign to positive since we already printed '-'
         ldx     #FP0
         jsr     fpx_is_zero
@@ -764,16 +768,53 @@ fp_to_string:
         jsr     fcmp                    ; Compare w/FP0; carry clear means FP0 < FP1
         debug $11
         bcs     @scale_down
+        jsr     truncate_fp_to_int      ; Make into a 32-bit integer
+        debug $12
+
+; Generate digits. Repeatedly divide FPA by 10, generate remainder in A.
+; Will always generate at least one digit, which cannot be zero because we
+; handled zero above.
+; Ignore any initial zeros.
 
 @generate_digits:
-        jsr     truncate_fp_to_int      ; Make into a 32-bit integer
-
-
-
-@done:
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
+        beq     @output                 ; If zero then done generating digits; go to output
+        jsr     div10_significand       ; The remainder in A is the digit
         debug $20
-        rts
+        tax                             ; Move remainder into X
+        ora     D                       ; Or with number of digits; tests if both are zero
+        beq     @skip_zero              ; If so then skip this zero
+        txa                             ; Otherwise get the digit back
+        debug $21
+        clc                     
+        adc     #'0'                    ; Convert to ASCII
+        pha                             ; Use stack to store digits
+        inc     D                       ; Number of generated digits += 1
+        bne     @generate_digits        ; Unconditional
 
+@skip_zero:
+        dec     E                       ; We divided significand by 10 without emitting a zero, so decrease E
+        jmp     @generate_digits        ; Keep generating digits
+
+; There are D generated digits.
+; The number is now 10^E times the original number.
+;   * If E <= 0 then -E extra 0s at the end. length = Y + (-E)
+;   * If E == -1 then one extra 0 at the end.
+;   * If E == 0 then decimal point goes at the end (i.e., we didn't have to scale the number).
+;   * If E == 1 then decimal point goes before last digit.
+;   * If E == Y then decimal point goes before first digit.
+;   * If E >= Y then decimal point plus (e - n) 0s. length = n + (e - n) = e
+; Length is always E 
+
+@output:
+        pla                             ; Get digit
+        ldx     bp                      ; Buffer output position
+        sta     buffer,x
+        inc     bp                      ; Next position
+        dec     D                       ; One less generated digit
+        bne     @output                 ; Still more digits
+        rts
 
 string_to_fp:
         ldx     #FP0
@@ -845,20 +886,20 @@ shift_right_normalize:
 ; until the most-significant bit is 1. The normalize function acts on the 40-bit FP0 extended significand and
 ; normalizes to the 32-bit FP0 significand.
 ; Normalization handles several different cases:
-; * If FP2 (the high byte of the 40-bit significand) has a value (if the significand is >=2),
-; then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
-; addition or subtraction overflowed the 32-bit significand.
-; * If the biased exponent is <-31, then return zero. This is an underflow condition; we cannot bring the exponent
-; within range without shifting all the bits of the exponent away.
-; * If the biased exponent is <1, then shift right (increase exponent) until it is 1.
-; * If the 32-bit significand, and the round register B, are zero, then return zero. This avoids fruitlessly
-; shifting left in search of a 1 to put in the most-significant bit.
-; * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand, or the exponent
-; reaches -127.
-; * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
-; * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
-; (increase exponent) once again.
-; * If the exponent is >127, fail with an overflow error.
+;   * If FP2 (the high byte of the 40-bit significand) has a value (if the significand is >=2),
+;   then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
+;   addition or subtraction overflowed the 32-bit significand.
+;   * If the biased exponent is <-31, then return zero. This is an underflow condition; we cannot bring the exponent
+;   within range without shifting all the bits of the exponent away.
+;   * If the biased exponent is <1, then shift right (increase exponent) until it is 1.
+;   * If the 32-bit significand, and the round register B, are zero, then return zero. This avoids fruitlessly
+;   shifting left in search of a 1 to put in the most-significant bit.
+;   * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand, or the exponent
+;   reaches -127.
+;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
+;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
+;   (increase exponent) once again.
+;   * If the exponent is >127, fail with an overflow error.
 ; Otherwise, return the final result.
 
 normalize:
@@ -1039,14 +1080,14 @@ fmul:
 
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
-        lda     FP0t                    ; Copy FP0t into BCDE
-        sta     BCDE
+        lda     FP0t                    ; Copy FP0t into FP3
+        sta     FP3
         lda     FP0t+1
-        sta     BCDE+1
+        sta     FP3+1
         lda     FP0t+2
-        sta     BCDE+2
+        sta     FP3+2
         lda     FP0t+3
-        sta     BCDE+3
+        sta     FP3+3
         ldx     #FP2                    ; Clear the extended significand of FP0
         jsr     clear_significand
         ldy     #32                     ; 32 multiplication cycles
@@ -1057,18 +1098,18 @@ fmul:
         ror     FP1t+1
         ror     FP1t
         bcc     @skip                   ; FP1 LSB was 0 so don't need to add anything
-        clc                             ; Add significand in BCDE to FP2 (TODO: try to use add_significands)      
+        clc                             ; Add significand in FP3 to FP2 (TODO: try to use add_significands)      
         lda     FP2
-        adc     BCDE
+        adc     FP3
         sta     FP2
         lda     FP2+1
-        adc     BCDE+1
+        adc     FP3+1
         sta     FP2+1
         lda     FP2+2
-        adc     BCDE+2
+        adc     FP3+2
         sta     FP2+2
         lda     FP2+3
-        adc     BCDE+3                  ; This will never overflow because high bit of FP2 will always be zero
+        adc     FP3+3                   ; This will never overflow because high bit of FP2 will always be zero
         sta     FP2+3
 @skip:
         ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit

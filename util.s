@@ -249,6 +249,7 @@ invoke_indexed_vector:
 ; in buffer (i.e., it is equal to bp).
 ; AX = the number to format
 ; bp = the position within buffer (updated)
+; TODO: replace this with call to fp_to_string
 
 format_number:
         sta     B                       ; Keep low byte in B while we use A for other things
