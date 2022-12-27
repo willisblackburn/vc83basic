@@ -231,42 +231,6 @@ FP3: .res .sizeof(UnpackedFloat::t)
 ;         jsr     output_y_digits
 ;         jmp     @done
 
-; ; Output Y (possibly zero) digits from the stack.
-; ; The digits are on the stack, behind the JSR return address, so we pop
-; ; the return address off, stash it in BC, and then restore it before returning.
-; ; X = the current buffer position (updated)
-; ; BC SAFE
-
-; output_y_digits:
-;         plstaa  BC
-; @output_digit:
-;         dey
-;         bmi     @done
-;         pla
-;         sta     buffer,x
-;         inx
-;         bne     @output_digit           ; Unconditional
-
-; @done:
-;         ldphaa  BC
-;         rts
-
-; ; Output Y (possibly zero) zero digits.
-; ; X = the current buffer position (updated)
-; ; BC SAFEM, DE SAFE
-
-; output_y_zeros:
-;         lda     #'0'                    ; Prepare to output '0'
-; @output_zero:
-;         dey
-;         bmi     @done
-;         sta     buffer,x
-;         inx
-;         bne     @output_zero            ; Unconditional
-    
-; @done:
-;         rts
-
 ; ; Internal subroutine to eliminate trailing zeros after the decimal point by
 ; ; backing up X. Remember that X always points to the next position.
 ; ; X = the current buffer position
@@ -749,12 +713,12 @@ fp_to_string:
         lday    #string_min             ; Load minimum value
         ldx     #FP1                    ; Into FP1
         jsr     load_fpx
-        jsr     fcmp                    ; Compare w/FP0; carry set means FP0 >= FP1
+        jsr     fcmp                    ; Carry clear (borrow set) means FP0 < FP1 so we have to scale up
         debug $01
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
-
 @scale_down:
+        jmp $0000
         lday    ten
         ldx     #FP1
         jsr     load_fpx
@@ -765,7 +729,7 @@ fp_to_string:
         lday    #string_max             ; Load maximum value
         ldx     #FP1                    ; Into FP1
         jsr     load_fpx
-        jsr     fcmp                    ; Compare w/FP0; carry clear means FP0 < FP1
+        jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
         debug $11
         bcs     @scale_down
         jsr     truncate_fp_to_int      ; Make into a 32-bit integer
@@ -794,27 +758,93 @@ fp_to_string:
         bne     @generate_digits        ; Unconditional
 
 @skip_zero:
-        dec     E                       ; We divided significand by 10 without emitting a zero, so decrease E
+        dec     E                       ; We divided significand by 10 without emitting a digit, so decrease E
         jmp     @generate_digits        ; Keep generating digits
 
 ; There are D generated digits.
 ; The number is now 10^E times the original number.
-;   * If E <= 0 then -E extra 0s at the end. length = Y + (-E)
+;   * If E <= 0 then -E extra 0s at the end. length = D + (-E)
 ;   * If E == -1 then one extra 0 at the end.
 ;   * If E == 0 then decimal point goes at the end (i.e., we didn't have to scale the number).
 ;   * If E == 1 then decimal point goes before last digit.
-;   * If E == Y then decimal point goes before first digit.
-;   * If E >= Y then decimal point plus (e - n) 0s. length = n + (e - n) = e
-; Length is always E 
+;   * If E == D then decimal point goes before first digit.
+;   * If E >= D then decimal point plus (E - D) 0s. length = D + (E - D) = E
 
 @output:
-        pla                             ; Get digit
-        ldx     bp                      ; Buffer output position
-        sta     buffer,x
-        inc     bp                      ; Next position
-        dec     D                       ; One less generated digit
-        bne     @output                 ; Still more digits
+        ldx     bp                      ; Load buffer position into X
+        lda     E
+        debug $30
+        bmi     @negative_exponent
+        cmp     #11                     ; Check if more than 10 digits
+        debug $31
+        bcs     @scientific             ; More than 10 digits; print in scientific notation
+        ldy     D                       ; D digits
+        debug $32
+        jsr     output_y_digits
+        jmp     @done
+
+@negative_exponent:
+        lda     #0                      ; Generate -E by subtracting E from 0
+        sec
+        sbc     E                       ; Guaranteed to clear carry (set borrow)
+        debug $40
+        tay                             ; Save -E value in Y
+        adc     D                       ; Add in D
+        cmp     #11                     ; Check if more than 10 digits
+        debug $41
+        bcs     @scientific             ; More than 10 digits; print in scientific notation
+        ldy     D                       ; Output D digits
+        debug $42
+        jsr     output_y_digits
+        lda     E                       ; Followed by -E zeros
+        eor     #$FF                    ; Two's complement of E then add D gives D + (-E)
+        tay             
+        iny
+        debug $43
+        jsr     output_y_zeros
+        jmp     @done
+
+@scientific:
+
+@done:
+        stx     bp                      ; Update bp
         rts
+
+; Output Y (possibly zero) digits from the stack.
+; The digits are on the stack, behind the JSR return address, so we pop the return address off, stash it in BC, 
+; and then restore it before returning.
+; X = the current buffer position (updated)
+; BC SAFE
+
+output_y_digits:
+        plstaa  BC                      ; Save return address in BC
+@output_digit:
+        dey                             ; Pre-decrement digit count
+        bmi     @done                   ; If it's gone negative then return
+        pla
+        sta     buffer,x
+        inx
+        bne     @output_digit           ; Unconditional
+
+@done:
+        ldphaa  BC                      ; Restore return addresss
+        rts
+
+; Output Y (possibly zero) zero digits.
+; X = the current buffer position (updated)
+; BC SAFE, DE SAFE
+
+output_y_zeros:
+        lda     #'0'                    ; Prepare to output '0'
+@output_zero:
+        dey
+        bmi     @done
+        sta     buffer,x
+        inx
+        bne     @output_zero            ; Unconditional
+@done:
+        rts
+
 
 string_to_fp:
         ldx     #FP0
@@ -871,8 +901,6 @@ adjust_exponent:
 @no_borrow:
         stx     C                       ; Store in C
         rts
-
-; Returns an error to the caller.
 
 ; Shifts the 40-bit FP0 extended significand one place to the right and re-attempts normalization.
 ; Invoked from normalize when the significand doesn't fit into 32 bits.
@@ -1137,6 +1165,7 @@ fmul:
         sta     FP0t+1
         lda     FP2
         sta     FP0t
+        mva     #0, FP2                 ; Clear extended significand
 
 ; Calculate exponent.
 

@@ -187,21 +187,16 @@ static void test_fp_to_string(void) {
     call_fp_to_string(POSITIVE, 0, 0x00000000, "0", __LINE__);
     // 1
     call_fp_to_string(POSITIVE, 128, 0x80000000, "1", __LINE__);
+    // -1
+    call_fp_to_string(NEGATIVE, 128, 0x80000000, "-1", __LINE__);
     // 25
     call_fp_to_string(POSITIVE, 132, 0xC8000000, "25", __LINE__);
     // 100
     call_fp_to_string(POSITIVE, 134, 0xC8000000, "100", __LINE__);
-    // 100
+    // -100
     call_fp_to_string(NEGATIVE, 134, 0xC8000000, "-100", __LINE__);
-//     // -100
-//     SET_FLOAT(reg_fpa, 0, -100);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "-100");
-//     // 2E2 (should be 200 since value is in printable range)
-//     SET_FLOAT(reg_fpa, 2, 2);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "200");
-//     // 3.14159
+    // 3.14159
+    call_fp_to_string(POSITIVE, 129, 0xC90FCF80, "3.14159", __LINE__);
 //     SET_FLOAT(reg_fpa, -5, 314159);
 //     call_fp_to_string();
 //     ASSERT_STRING_EQ(buffer, "3.14159");
