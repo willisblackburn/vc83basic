@@ -206,19 +206,28 @@ _string_to_fp:
 
 _normalize:
 .export _normalize
-        jmp     normalize
+        jsr     normalize
+        jmp     return_carry_flag
 
 _fadd:
 .export _fadd
-        jmp     fadd
+        jsr     fadd
+        jmp     return_carry_flag
 
 _fsub:
 .export _fsub
-        jmp     fsub
+        jsr     fsub
+        jmp     return_carry_flag
 
 _fmul:
 .export _fmul
-        jmp     fmul
+        jsr     fmul
+        jmp     return_carry_flag
+
+_fdiv:
+.export _fdiv
+        jsr     fdiv
+        jmp     return_carry_flag
 
 ; Possible returns from fcmp are:
 ; C + Z         -> A = B

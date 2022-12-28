@@ -1043,6 +1043,7 @@ normalize:
         bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
         lda     #0                      ; It's really zero; set lowest possible exponent and return
         sta     FP0e
+        clc                             ; Signal success
         rts
 
 @coarse:

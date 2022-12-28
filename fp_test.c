@@ -122,13 +122,15 @@ static void test_adjust_exponent(void) {
 
 static void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
                            char expect_e, unsigned long expect_t, int line) {
+    char err;
     FP0s = s;
     FP0e = e;
     FP2 = x;
     FP0t = t;
     reg_b = b;
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
-    normalize();
+    err = normalize();
+    ASSERT_EQ(err, 0);
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
 
@@ -208,14 +210,16 @@ static void test_truncate_fp_to_int(void) {
 #define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
             call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
 
-static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, unsigned long t_0,
+static void call_fp(const char* f_name, char (*f)(void), char s_0, char e_0, unsigned long t_0,
                     char s_1, char e_1, unsigned long t_1,
                     char expect_s, char expect_e, unsigned long expect_t, int line) {
+    char err;
     SET_FPX(FP0, s_0, e_0, t_0);
     SET_FPX(FP1, s_1, e_1, t_1);
     fprintf(stderr, "  %s:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line, f_name,
             t_0, e_0, s_0, t_1, e_1, s_1);
-    f();
+    err = f();
+    ASSERT_EQ(err, 0);
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 

@@ -144,11 +144,11 @@ void fp_to_string(void);
 char string_to_fp(void);
 char char_to_digit(char c);
 void adjust_exponent(char add, char subtract);
-void normalize(void);
-// TODO: all should return char; check return in tests
-void fadd(void);
-void fsub(void);
-void fmul(void);
+char normalize(void);
+char fadd(void);
+char fsub(void);
+char fmul(void);
+char fdiv(void);
 int fcmp(void);
 
 // list.s
