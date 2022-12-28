@@ -763,32 +763,57 @@ fp_to_string:
 
 ; There are D generated digits.
 ; The number is now 10^E times the original number.
-;   * If E <= 0 then -E extra 0s at the end. length = D + (-E)
-;   * If E == -1 then one extra 0 at the end.
-;   * If E == 0 then decimal point goes at the end (i.e., we didn't have to scale the number).
-;   * If E == 1 then decimal point goes before last digit.
-;   * If E == D then decimal point goes before first digit.
-;   * If E >= D then decimal point plus (E - D) 0s. length = D + (E - D) = E
+;   * If E <= 0 then print D digits, -E extra 0s at the end; length = D + (-E)
+;   * If 0 < E < D then print D-E digits, '.', E digits
+;   * If E >= D then print '0.', (E - D) 0s, then D digits
 
 @output:
         ldx     bp                      ; Load buffer position into X
         lda     E
         debug $30
-        bmi     @negative_exponent
+        beq     @whole                  ; Branch to @whole for the E <= 0 cases
+        bmi     @whole
         cmp     #11                     ; Check if more than 10 digits
         debug $31
         bcs     @scientific             ; More than 10 digits; print in scientific notation
-        ldy     D                       ; D digits
+        sec
+        sbc     D                       ; Calculate E - D
         debug $32
-        jsr     output_y_digits
-        jmp     @done
+        bmi     @digits_before_decimal  ; If negative then print some digits before the decimal point
+        tay                             ; Otherwise it's the number of leading zeros
+        lda     '0'                     ; Output '0' before decimal
+        sta     buffer,x
+        inx
+@decimal:
+        lda     #'.'                    ; Output decimal point
+        sta     buffer,x
+        inx
+        debug $33
+        jsr     output_y_zeros          ; Output (possibly zero) leading zeros
+@finish:
+        ldy     D
+        debug $34
+        jsr     output_y_digits         ; Finish writing
+@done:
+        stx     bp
+        rts
 
-@negative_exponent:
+@digits_before_decimal:
+        eor     #$FF                    ; A is E - D but we need D - E so negate
+        tay
+        iny                             ; +1 to complete negation
+        debug $40
+        jsr     output_y_digits
+        mva     E, D                    ; E is the number of digits remaining after decimal point
+        ldy     #0                      ; Number of zeros after decimal point
+        jmp     @decimal
+
+@whole:
         lda     #0                      ; Generate -E by subtracting E from 0
         sec
         sbc     E                       ; Guaranteed to clear carry (set borrow)
+        sta     E                       ; Save positive E
         debug $40
-        tay                             ; Save -E value in Y
         adc     D                       ; Add in D
         cmp     #11                     ; Check if more than 10 digits
         debug $41
@@ -796,19 +821,13 @@ fp_to_string:
         ldy     D                       ; Output D digits
         debug $42
         jsr     output_y_digits
-        lda     E                       ; Followed by -E zeros
-        eor     #$FF                    ; Two's complement of E then add D gives D + (-E)
-        tay             
-        iny
+        ldy     E                       ; Followed by -E zeros
         debug $43
         jsr     output_y_zeros
         jmp     @done
 
 @scientific:
 
-@done:
-        stx     bp                      ; Update bp
-        rts
 
 ; Output Y (possibly zero) digits from the stack.
 ; The digits are on the stack, behind the JSR return address, so we pop the return address off, stash it in BC, 
