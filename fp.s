@@ -674,8 +674,8 @@ truncate_fp_to_int:
 ; be enough space in the buffer for the write to succeed.
 
 ten: .byte $00, $00, $00, $20, 131
-string_max: .byte $00, $00, $00, $00, 159       ; 2^31     (2,147,483,648  )
-string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^31/10  (  214,748,364.8)
+string_max: .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
+string_min: .byte $CC, $CC, $CC, $4C, 156       ; 2^31/10  (  429,496,729.6)
 
 fp_to_string:
         lda     FP0s                    ; Check for negative value
@@ -699,7 +699,6 @@ fp_to_string:
         lda     #'0'
         sta     buffer
         inc     bp                      ; Update index
-        clc                             ; Signal success
         rts
 
 @scale_up:
@@ -707,7 +706,7 @@ fp_to_string:
         ldx     #FP1
         jsr     load_fpx
         jsr     fmul                    ; Multiply FP0 by 10
-        inc     E
+        dec     E                       ; Have to divide by 10 to get back to original number
 @maybe_scale_up:
         debug $00
         lday    #string_min             ; Load minimum value
@@ -718,12 +717,12 @@ fp_to_string:
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
-        jmp $0000
+        jmp $0000 ; TODO: remove
         lday    ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fdiv                    ; Divide FP0 by 10
-        dec     E
+        inc     E                       ; Have to multiply by 10 to get back to original number
 @maybe_scale_down:
         debug $10
         lday    #string_max             ; Load maximum value
@@ -734,69 +733,56 @@ fp_to_string:
         bcs     @scale_down
         jsr     truncate_fp_to_int      ; Make into a 32-bit integer
         debug $12
-
-; Generate digits. Repeatedly divide FPA by 10, generate remainder in A.
-; Will always generate at least one digit, which cannot be zero because we
-; handled zero above.
-; Ignore any initial zeros.
-
-@generate_digits:
-        ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
-        beq     @output                 ; If zero then done generating digits; go to output
-        jsr     div10_significand       ; The remainder in A is the digit
-        debug $20
-        tax                             ; Move remainder into X
-        ora     D                       ; Or with number of digits; tests if both are zero
-        beq     @skip_zero              ; If so then skip this zero
-        txa                             ; Otherwise get the digit back
-        debug $21
-        clc                     
-        adc     #'0'                    ; Convert to ASCII
-        pha                             ; Use stack to store digits
-        inc     D                       ; Number of generated digits += 1
-        bne     @generate_digits        ; Unconditional
-
-@skip_zero:
-        dec     E                       ; We divided significand by 10 without emitting a digit, so decrease E
-        jmp     @generate_digits        ; Keep generating digits
+        jsr     generate_digits
 
 ; There are D generated digits.
-; The number is now 10^E times the original number.
-;   * If E <= 0 then print D digits, -E extra 0s at the end; length = D + (-E)
-;   * If 0 < E < D then print D-E digits, '.', E digits
-;   * If E >= D then print '0.', (E - D) 0s, then D digits
+; The adjustment factor is 10^E, that is, current number * 10^E = original number.
+;   * If E >= 0 then print D digits, E extra 0s at the end; length = D + E
+;   * If -E < D then print D - (-E) digits, '.', -E digits
+;   * If -E >= -D (i.e., D - (-E) <= 0) then print '0.', -(D - (-E)) 0s, then D digits
 
 @output:
+        clc                             ; It will be convenient for carry to be clear shortly
         ldx     bp                      ; Load buffer position into X
         lda     E
         debug $30
-        beq     @whole                  ; Branch to @whole for the E <= 0 cases
-        bmi     @whole
+        bpl     @whole                  ; Branch to @whole for the E >= 0 cases
+        eor     #$FF                    ; It's easier to deal with E if it's positive so negate it giving (-E - 1)
+        adc     #1                      ; Add 1 to complete negation
         cmp     #11                     ; Check if more than 10 digits
         debug $31
         bcs     @scientific             ; More than 10 digits; print in scientific notation
+        sta     E                       ; E = -E
+        lda     D                       ; Calculate D - E
         sec
-        sbc     D                       ; Calculate E - D
+        sbc     E
         debug $32
-        bmi     @digits_before_decimal  ; If negative then print some digits before the decimal point
-        tay                             ; Otherwise it's the number of leading zeros
-        lda     '0'                     ; Output '0' before decimal
-        sta     buffer,x
-        inx
+        beq     @initial_zero           ; If 0 or negative then print initial '0.'
+        bmi     @initial_zero
+        tay
+        jsr     output_y_digits
+        iny                             ; Output no 0s after the decimal; Y is -1 so INY will increase it to 0
+        mva     E, D                    ; Output E digits later
+        debug $33
 @decimal:
         lda     #'.'                    ; Output decimal point
         sta     buffer,x
         inx
-        debug $33
         jsr     output_y_zeros          ; Output (possibly zero) leading zeros
-@finish:
         ldy     D
-        debug $34
-        jsr     output_y_digits         ; Finish writing
+        jsr     output_y_digits
 @done:
         stx     bp
         rts
+
+@initial_zero:
+        eor     #$FF                    ; A is E - D but we need D - E so negate
+        tay
+        iny                             ; +1 to complete negation; will output this many 0s after the decimal point
+        lda     #'0'                    ; Output '0' before decimal
+        sta     buffer,x
+        inx
+        jmp     @decimal
 
 @digits_before_decimal:
         eor     #$FF                    ; A is E - D but we need D - E so negate
@@ -809,10 +795,6 @@ fp_to_string:
         jmp     @decimal
 
 @whole:
-        lda     #0                      ; Generate -E by subtracting E from 0
-        sec
-        sbc     E                       ; Guaranteed to clear carry (set borrow)
-        sta     E                       ; Save positive E
         debug $40
         adc     D                       ; Add in D
         cmp     #11                     ; Check if more than 10 digits
@@ -821,13 +803,94 @@ fp_to_string:
         ldy     D                       ; Output D digits
         debug $42
         jsr     output_y_digits
-        ldy     E                       ; Followed by -E zeros
+        ldy     E                       ; Followed by E zeros
         debug $43
         jsr     output_y_zeros
         jmp     @done
 
 @scientific:
+        debug $50
+        ldy     #1                      ; Print 1 digit before the decimal point
+        jsr     output_y_digits
+        lda     #'.'                    ; Output decimal point
+        sta     buffer,x
+        inx
+        ldy     D                       ; Output the remaining digits
+        dey                             ; Minus one for the first digit
+        jsr     output_y_digits
+        debug $51
+        lda     #'E'                    ; Exponent
+        sta     buffer,x
+        inx
 
+; Print the exponent value.
+; We could just suffix the number with "E" followed by the negated E value.
+; But we've shifted the decimal D-1 places to the left, so we need to add D-1 to the exponent.
+
+        dec     D                       ; Account for missing digit
+        lda     E                       ; Start with exponent
+        debug $52
+        clc
+        adc     D                       ; Add D
+        debug $53
+        bpl     @positive_e
+        tay                             ; Stash exponent value in Y
+        lda     #'-'
+        sta     buffer,x
+        inx
+        dey                             ; We're going to negate so decrement E while it's still stashed in Y
+        tya                             ; Get exponent value back from Y
+        eor     #$FF                    ; Complete negation
+@positive_e:
+        debug $54
+        sta     FP0t                    ; Save in significand
+        mva     #0, FP0t+1
+        sta     FP0t+2
+        sta     FP0t+3
+        sta     D                       ; Reset number of digits and scaling factor
+        sta     E
+        stx     bp                      ; generate_digits will clobber X so save it
+        jsr     generate_digits
+        debug $55
+        ldx     bp                      ; Recover X
+        ldy     D
+        jsr     output_y_digits
+        ldy     E
+        jsr     output_y_zeros
+        jmp     @done        
+
+; Generate digits. Repeatedly divide FPA by 10, generate remainder in A.
+; Will always generate at least one digit, which cannot be zero because we
+; handled zero above.
+; Ignore any initial zeros and increment E instead.
+
+generate_digits:
+        plstaa  BC                      ; Save return address
+@next_digit:
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
+        beq     @no_more_digits         ; If zero then done generating digits; go to output
+        jsr     div10_significand       ; The remainder in A is the digit
+        debug $20
+        tax                             ; Move remainder into X
+        ora     D                       ; Or with number of digits; tests if both are zero
+        beq     @skip_zero              ; If so then skip this zero
+        txa                             ; Otherwise get the digit back
+        debug $21
+        clc                     
+        adc     #'0'                    ; Convert to ASCII
+        pha                             ; Use stack to store digits
+        inc     D                       ; Number of generated digits += 1
+        bne     @next_digit             ; Unconditional
+
+@skip_zero:
+        inc     E                       ; We divided significand by 10 without emitting a digit, so increase E
+        jmp     @next_digit             ; Keep generating digits
+
+@no_more_digits:
+        debug $22
+        ldphaa  BC                      ; Restore return address
+        rts
 
 ; Output Y (possibly zero) digits from the stack.
 ; The digits are on the stack, behind the JSR return address, so we pop the return address off, stash it in BC, 

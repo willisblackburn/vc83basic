@@ -220,21 +220,27 @@ _fmul:
 .export _fmul
         jmp     fmul
 
+; Possible returns from fcmp are:
+; C + Z         -> A = B
+; C + NOT Z     -> A > B
+; NOT C + Z     -> (not possible)
+; NOT C + NOT Z -> A < B
+
 _fcmp:
 .export _fcmp
         jsr     fcmp
-        bne     @not_equal
+        bcc     @less                   ; Carry cleawr means borrow so A < B
+        beq     @equal
+        lda     #$01
+        ldax    #1
+        rts
+
+@equal:
         ldax    #0
         rts
 
-@not_equal:
-        bcs     @greater                ; Carry set means no borrow so A >= B
+@less:
         ldax    #-1
-        rts
-
-@greater:
-        lda     #$01
-        ldax    #1
         rts
 
 ; list.s
