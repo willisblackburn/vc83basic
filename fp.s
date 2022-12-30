@@ -377,10 +377,11 @@ add_significands_with_carry:
 ; Multiplies the FPA significand by 10. Copies the FP0 value into FP1.
 ; On return the carry will be set if the multiplication caused an overflow.
 ; On overflow, the original value can be recovered from FP1.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+; Y SAFE, BC SAFE, DE SAFE
 
 mul10_significand:
-        jsr     copy_fp0_fp1
+        ldx     #FP1t
+        jsr     copy_significand
         jsr     @shift_significand      ; *2
         bcs     @overflow
         jsr     @shift_significand      ; *4
@@ -759,10 +760,11 @@ shift_right_from_carry:
 @skip:
         rts
 
-; Adjusts the 16-bit exponent of FP0 (extended to C) by first adding the value in X and then subtracting
-; the value in Y.
+; Adjusts the 16-bit unsigned biased exponent of FP0 (zero-extended to C) by first adding the value in X
+; and then subtracting the value in Y.
 
 adjust_exponent:
+        debug $C0
         clc                             ; Clear carry to prepare for add
         txa                             ; Get the value to add from X
         ldx     #0                      ; X is now the high byte
@@ -1048,7 +1050,7 @@ fmul:
         sta     FP0t
         mva     #0, FP2                 ; Clear extended significand
 
-; Calculate exponent.
+; Calculate exponent and sign.
 
         ldx     FP1e                    ; Add FP1e to FP0e
         ldy     #BIAS                   ; Subtract bias
@@ -1059,10 +1061,81 @@ fmul:
         sta     FP0s
         jmp     normalize               ; Normalize and return
 
-; Divides FP0 by FP1, leaving the normalized quotient in FP0.
+; Divides FP0 by the value in FP1, returning the quotient in FP0.
+; Shifts the dividend left into the FP0 extended significand. After each shift, check if it's greater than the
+; dividend; if so then add one to the significand. After 32 operations, the quotient will be in the lower 32 bits
+; of FPA and the remainder will be in the upper 32 bits.
 
 fdiv:
+        ldx     #FP0
+        jsr     fpx_is_zero             ; Is FP0 zero?
+        beq     @return_zero            ; Yes, just return
+        ldx     #FP1
+        jsr     fpx_is_zero             ; Test FP1
+        bne     @do_divide
+        sec                             ; Error if FP1 is zero
         rts
+
+@return_zero:
+        ldx     #FP0
+        jsr     clear_fpx               ; Return zero
+        clc                             ; Signal success
+        rts
+
+@do_divide:
+        ldx     #FP2
+        jsr     clear_significand       ; Clear out exstended significand bits
+        ldy     #32                     ; 32 division cycles
+@next_bit:
+        asl     FP0t
+        rol     FP0t+1
+        rol     FP0t+2
+        rol     FP0t+3
+        rol     FP2
+        rol     FP2+1
+        rol     FP2+2
+        rol     FP2+3
+        lda     FP2+3                   ; Compare FP0 extended siginficand with FP1 (divisor)
+        cmp     FP1t+3
+        bcc     @less_than_divisor
+        lda     FP2+2
+        sbc     FP1t+2
+        bcc     @less_than_divisor
+        lda     FP2+1
+        sbc     FP1t+1
+        bcc     @less_than_divisor
+        lda     FP2
+        sbc     FP1t
+        bcc     @less_than_divisor
+        sec                             ; Subtract dividend in FP1 from FP0 extended significand
+        lda     FP2+3
+        sbc     FP1t+3
+        sta     FP2+3
+        lda     FP2+2
+        sbc     FP1t+2
+        sta     FP2+2
+        lda     FP2+1
+        sbc     FP1t+1
+        sta     FP2+1
+        lda     FP2
+        sbc     FP1t
+        sta     FP2
+        inc     FP0t                    ; Increment quotient
+@less_than_divisor:
+        dey                             ; One bit done
+        bne     @next_bit               ; Continue if more
+
+; The 32-bit quotient in FP0t is in the range 0.5 to almost 2, if both numbers were normalized.
+
+; Calculate exponent and sign.
+
+        ldx     #BIAS                   ; Subtract FP1e from FP0e and add back the bias
+        ldy     FP1e                    ; Subtract bias
+        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+        lda     FP0s                    ; Get sign of FP0
+        eor     FP1s                    ; If both are pos or neg, then pos, else neg
+        sta     FP0s
+        jmp     normalize               ; Normalize and return
 
 ; Compares FP0 with FP1.
 ; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
