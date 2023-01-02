@@ -17,6 +17,8 @@
 ; In this module:
 ; B holds the rounding byte, and C holds the high byte of the exponent.
 ; Both B and C are used by the normalize function.
+; E is used in fdiv to track the exponent adjustment introduced by normalizing a subnormal divisor.
+; D and E are also used by the string conversion functions.
 
 ; TODO: make sure B and C are handled correctly in each function.
 
@@ -38,7 +40,6 @@ FP1: .res .sizeof(UnpackedFloat)
 FP1t = FP1+UnpackedFloat::t
 FP1e = FP1+UnpackedFloat::e
 FP1s = FP1+UnpackedFloat::s
-; TODO: combine with other ZP variables that aren't needed for FP
 FP2: .res .sizeof(UnpackedFloat::t)
 FP3: .res .sizeof(UnpackedFloat::t)
 
@@ -187,7 +188,7 @@ FP3: .res .sizeof(UnpackedFloat::t)
 .assert Float::e = 4, error
 
 load_fpx:
-        stay    BC                      ; FP value address into BC
+        stay    BC                      ; FP value address into DE
         ldy     #0                      ; Start with low byte of significand
         lda     (BC),y
         sta     UnpackedFloat::t,x
@@ -275,20 +276,17 @@ copy_fp0_fp1:
         ldx     #FP1t
 
 ; Copies the significand of FP0 to another register.
-; X = either #FP1/#FP1t, #FP2, or #FP3
-
-; UnpackedFloat::t must be 0 in order for this to work with FP2 or FP3.
-.assert UnpackedFloat::t = 0, error
+; X = either #FP1t, #FP2, or #FP3
 
 copy_significand:
         lda     FP0t
-        sta     UnpackedFloat::t,x
+        sta     0,x
         lda     FP0t+1
-        sta     UnpackedFloat::t+1,x
+        sta     1,x
         lda     FP0t+2
-        sta     UnpackedFloat::t+2,x
+        sta     2,x
         lda     FP0t+3
-        sta     UnpackedFloat::t+3,x
+        sta     3,x
         rts
 
 ; Sets either FP0 or FP1 to zero.
@@ -302,11 +300,8 @@ clear_fpx:
 ; Fall through
 
 ; Clears the significand of FP0 or FP1, or FP2 or FP3.
-; X = either #FP0, #FP1, #FP2, or #FP3
+; X = either #FP0t, #FP1t, #FP2, or #FP3
 ; Returns 0 in A.
-
-; UnpackedFloat::t must be 0 in order for this to work with FP2 or FP3.
-.assert UnpackedFloat::t = 0, error
 
 clear_significand:
         lda     #0
@@ -320,7 +315,7 @@ clear_significand:
 ; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
 ; X = either #FP0 or #FP1
 
-; TODO: fp0_is_zero
+; TODO: add fp0_is_zero
 
 fpx_is_zero:
         lda     UnpackedFloat::t,x      ; OR all the significand bytes together
@@ -1083,58 +1078,93 @@ fdiv:
         rts
 
 @do_divide:
-        ldx     #FP2
-        jsr     clear_significand       ; Clear out exstended significand bits
-        ldy     #32                     ; 32 division cycles
-@next_bit:
-        asl     FP0t
-        rol     FP0t+1
-        rol     FP0t+2
-        rol     FP0t+3
-        rol     FP2
-        rol     FP2+1
-        rol     FP2+2
-        rol     FP2+3
-        lda     FP2+3                   ; Compare FP0 extended siginficand with FP1 (divisor)
-        cmp     FP1t+3
-        bcc     @less_than_divisor
-        lda     FP2+2
-        sbc     FP1t+2
-        bcc     @less_than_divisor
-        lda     FP2+1
-        sbc     FP1t+1
-        bcc     @less_than_divisor
-        lda     FP2
-        sbc     FP1t
-        bcc     @less_than_divisor
-        sec                             ; Subtract dividend in FP1 from FP0 extended significand
-        lda     FP2+3
-        sbc     FP1t+3
-        sta     FP2+3
-        lda     FP2+2
-        sbc     FP1t+2
-        sta     FP2+2
-        lda     FP2+1
-        sbc     FP1t+1
-        sta     FP2+1
-        lda     FP2
-        sbc     FP1t
-        sta     FP2
-        inc     FP0t                    ; Increment quotient
-@less_than_divisor:
-        dey                             ; One bit done
-        bne     @next_bit               ; Continue if more
+;         mva     #0, B                   ; Clear rounding register
+;         sta     FP2                     ; Also clear extended significand
+;         mva     #BIAS, D                ; D keeps track of how much bias to add; adjust up if we shift divisor left
+;         ldy     #32                     ; 32 division cycles
+;         bne     @trial_subtract         ; Pretend that we shifted dividend right and then shifted it back left
 
-; The 32-bit quotient in FP0t is in the range 0.5 to almost 2, if both numbers were normalized.
+; @update:
+;         sta     FP2                     ; Update FP0 extended significand with result of subtraction
+;         plsta   FP0+3
+;         plsta   FP0+2
+;         plsta   FP0+1
+;         plsta   FP0
+;         inc     FP0                     ; Increment quotient
+; @continue:
+;         dey                             ; One bit down
+;         beq     @finish
+;         asl     FP0t                    ; Shift extended dividend left one palce
+;         rol     FP0t+1
+;         rol     FP0t+2
+;         rol     FP0t+3
+;         rol     FP2
+; @trial_subtract:
+;         sec                             ; Subtract FP1 significand from FP0 and save result on stack
+;         lda     FP0t        
+;         sbc     FP1t
+;         pha
+;         lda     FP0t+1        
+;         sbc     FP1t+1
+;         pha
+;         lda     FP0t+2      
+;         sbc     FP1t+2
+;         pha
+;         lda     FP0t+3      
+;         sbc     FP1t+3
+;         pha
+;         lda     FP2
+;         sbc     #0                      ; Extended significand of divisor is always 0, but there might be a borrow
+;         bpl     @update                 ; If result was positive then update significand with result of subtract
+;         bmi     @continue               ; If result was negative then continue
 
-; Calculate exponent and sign.
 
-        ldx     #BIAS                   ; Subtract FP1e from FP0e and add back the bias
-        ldy     FP1e                    ; Subtract bias
-        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
-        lda     FP0s                    ; Get sign of FP0
-        eor     FP1s                    ; If both are pos or neg, then pos, else neg
-        sta     FP0s
+
+
+;         rol     FP2
+;         rol     FP2+1
+;         rol     FP2+2
+;         rol     FP2+3
+;         lda     FP2+3                   ; Compare FP0 extended siginficand with FP1 (divisor)
+;         cmp     FP1t+3
+;         bcc     @less_than_divisor
+;         lda     FP2+2
+;         sbc     FP1t+2
+;         bcc     @less_than_divisor
+;         lda     FP2+1
+;         sbc     FP1t+1
+;         bcc     @less_than_divisor
+;         lda     FP2
+;         sbc     FP1t
+;         bcc     @less_than_divisor
+;         sec                             ; Subtract dividend in FP1 from FP0 extended significand
+;         lda     FP2+3
+;         sbc     FP1t+3
+;         sta     FP2+3
+;         lda     FP2+2
+;         sbc     FP1t+2
+;         sta     FP2+2
+;         lda     FP2+1
+;         sbc     FP1t+1
+;         sta     FP2+1
+;         lda     FP2
+;         sbc     FP1t
+;         sta     FP2
+;         inc     FP0t                    ; Increment quotient
+; @less_than_divisor:
+;         dey                             ; One bit done
+;         bne     @next_bit               ; Continue if more
+
+; ; The 32-bit quotient in FP0t is in the range 0.5 to almost 2, if both numbers were normalized.
+
+; ; Calculate exponent and sign.
+
+;         ldx     #BIAS                   ; Subtract FP1e from FP0e and add back the bias
+;         ldy     FP1e                    ; Subtract bias
+;         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+;         lda     FP0s                    ; Get sign of FP0
+;         eor     FP1s                    ; If both are pos or neg, then pos, else neg
+;         sta     FP0s
         jmp     normalize               ; Normalize and return
 
 ; Compares FP0 with FP1.
