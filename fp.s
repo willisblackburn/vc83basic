@@ -539,25 +539,21 @@ fp_to_string:
         clc                             ; It will be convenient for carry to be clear shortly
         ldx     bp                      ; Load buffer position into X
         lda     E
-        debug $30
         bpl     @whole                  ; Branch to @whole for the E >= 0 cases
         eor     #$FF                    ; It's easier to deal with E if it's positive so negate it giving (-E - 1)
         adc     #1                      ; Add 1 to complete negation
         cmp     #11                     ; Check if more than 10 digits
-        debug $31
         bcs     @scientific             ; More than 10 digits; print in scientific notation
         sta     E                       ; E = -E
         lda     D                       ; Calculate D - E
         sec
         sbc     E
-        debug $32
         beq     @initial_zero           ; If 0 or negative then print initial '0.'
         bmi     @initial_zero
         tay
         jsr     output_y_digits
         iny                             ; Output no 0s after the decimal; Y is -1 so INY will increase it to 0
         mva     E, D                    ; Output E digits later
-        debug $33
 @decimal:
         lda     #'.'                    ; Output decimal point
         sta     buffer,x
@@ -582,28 +578,22 @@ fp_to_string:
         eor     #$FF                    ; A is E - D but we need D - E so negate
         tay
         iny                             ; +1 to complete negation
-        debug $40
         jsr     output_y_digits
         mva     E, D                    ; E is the number of digits remaining after decimal point
         ldy     #0                      ; Number of zeros after decimal point
         jmp     @decimal
 
 @whole:
-        debug $40
         adc     D                       ; Add in D
         cmp     #11                     ; Check if more than 10 digits
-        debug $41
         bcs     @scientific             ; More than 10 digits; print in scientific notation
         ldy     D                       ; Output D digits
-        debug $42
         jsr     output_y_digits
         ldy     E                       ; Followed by E zeros
-        debug $43
         jsr     output_y_zeros
         jmp     @done
 
 @scientific:
-        debug $50
         ldy     #1                      ; Print 1 digit before the decimal point
         jsr     output_y_digits
         lda     #'.'                    ; Output decimal point
@@ -612,7 +602,6 @@ fp_to_string:
         ldy     D                       ; Output the remaining digits
         dey                             ; Minus one for the first digit
         jsr     output_y_digits
-        debug $51
         lda     #'E'                    ; Exponent
         sta     buffer,x
         inx
@@ -623,10 +612,8 @@ fp_to_string:
 
         dec     D                       ; Account for missing digit
         lda     E                       ; Start with exponent
-        debug $52
         clc
         adc     D                       ; Add D
-        debug $53
         bpl     @positive_e
         tay                             ; Stash exponent value in Y
         lda     #'-'
@@ -636,7 +623,6 @@ fp_to_string:
         tya                             ; Get exponent value back from Y
         eor     #$FF                    ; Complete negation
 @positive_e:
-        debug $54
         sta     FP0t                    ; Save in significand
         mva     #0, FP0t+1
         sta     FP0t+2
@@ -645,7 +631,6 @@ fp_to_string:
         sta     E
         stx     bp                      ; generate_digits will clobber X so save it
         jsr     generate_digits
-        debug $55
         ldx     bp                      ; Recover X
         ldy     D
         jsr     output_y_digits
@@ -665,12 +650,10 @@ generate_digits:
         jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
         jsr     div10_significand       ; The remainder in A is the digit
-        debug $20
         tax                             ; Move remainder into X
         ora     D                       ; Or with number of digits; tests if both are zero
         beq     @skip_zero              ; If so then skip this zero
         txa                             ; Otherwise get the digit back
-        debug $21
         clc                     
         adc     #'0'                    ; Convert to ASCII
         pha                             ; Use stack to store digits
@@ -682,7 +665,6 @@ generate_digits:
         jmp     @next_digit             ; Keep generating digits
 
 @no_more_digits:
-        debug $22
         ldphaa  BC                      ; Restore return address
         rts
 
@@ -1067,7 +1049,7 @@ fdiv:
         beq     @return_zero            ; Yes, just return
         ldx     #FP1
         jsr     fpx_is_zero             ; Test FP1
-        bne     @do_divide
+        bne     @initalize
         sec                             ; Error if FP1 is zero
         rts
 
@@ -1077,95 +1059,94 @@ fdiv:
         clc                             ; Signal success
         rts
 
-@do_divide:
-;         mva     #0, B                   ; Clear rounding register
-;         sta     FP2                     ; Also clear extended significand
-;         mva     #BIAS, D                ; D keeps track of how much bias to add; adjust up if we shift divisor left
-;         ldy     #32                     ; 32 division cycles
-;         bne     @trial_subtract         ; Pretend that we shifted dividend right and then shifted it back left
+@initalize:
+        mva     #0, FP2                 ; Clear extended significand
+        mva     #BIAS, D                ; D keeps track of how much bias to add
 
-; @update:
-;         sta     FP2                     ; Update FP0 extended significand with result of subtraction
-;         plsta   FP0+3
-;         plsta   FP0+2
-;         plsta   FP0+1
-;         plsta   FP0
-;         inc     FP0                     ; Increment quotient
-; @continue:
-;         dey                             ; One bit down
-;         beq     @finish
-;         asl     FP0t                    ; Shift extended dividend left one palce
-;         rol     FP0t+1
-;         rol     FP0t+2
-;         rol     FP0t+3
-;         rol     FP2
-; @trial_subtract:
-;         sec                             ; Subtract FP1 significand from FP0 and save result on stack
-;         lda     FP0t        
-;         sbc     FP1t
-;         pha
-;         lda     FP0t+1        
-;         sbc     FP1t+1
-;         pha
-;         lda     FP0t+2      
-;         sbc     FP1t+2
-;         pha
-;         lda     FP0t+3      
-;         sbc     FP1t+3
-;         pha
-;         lda     FP2
-;         sbc     #0                      ; Extended significand of divisor is always 0, but there might be a borrow
-;         bpl     @update                 ; If result was positive then update significand with result of subtract
-;         bmi     @continue               ; If result was negative then continue
+; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
+; we'd have to shift the least-significant bit into some other location (presumably B). But the very first thing we
+; do in the @divide subfunction is shift the dividend left one place. So instead of shifting right into B and then
+; having to shift B left, we just don't shift anything and, the first time through, JSR to a point in @divide after the
+; shift left.
 
+        mva     #1, B
+        jsr     @divide_skip_shift
+        ldx     #3                      ; Store this value FP3 position 3
+        bpl     @store_quotient         ; Unconditional
 
+@next_quotient_byte:
+        mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
+        jsr     @divide                 ; Call divide function; next 8 bits of quotient bits now in B
+@store_quotient:
+; TODO: build quotient in FP0 and use copy_significand to copy original significand to FP3
+        lda     B                       ; Get quotient byte
+        sta     FP3,x
+        dex
+        bpl     @next_quotient_byte     ; If X is still >= 0 then more bytes to do
+        mva     FP3, FP0                ; Quotient is in FP3; copy it into FP0
+        mva     FP3+1, FP0+1
+        mva     FP3+2, FP0+2
+        mva     FP3+3, FP0+3
 
+; Calculate exponent and sign.
 
-;         rol     FP2
-;         rol     FP2+1
-;         rol     FP2+2
-;         rol     FP2+3
-;         lda     FP2+3                   ; Compare FP0 extended siginficand with FP1 (divisor)
-;         cmp     FP1t+3
-;         bcc     @less_than_divisor
-;         lda     FP2+2
-;         sbc     FP1t+2
-;         bcc     @less_than_divisor
-;         lda     FP2+1
-;         sbc     FP1t+1
-;         bcc     @less_than_divisor
-;         lda     FP2
-;         sbc     FP1t
-;         bcc     @less_than_divisor
-;         sec                             ; Subtract dividend in FP1 from FP0 extended significand
-;         lda     FP2+3
-;         sbc     FP1t+3
-;         sta     FP2+3
-;         lda     FP2+2
-;         sbc     FP1t+2
-;         sta     FP2+2
-;         lda     FP2+1
-;         sbc     FP1t+1
-;         sta     FP2+1
-;         lda     FP2
-;         sbc     FP1t
-;         sta     FP2
-;         inc     FP0t                    ; Increment quotient
-; @less_than_divisor:
-;         dey                             ; One bit done
-;         bne     @next_bit               ; Continue if more
-
-; ; The 32-bit quotient in FP0t is in the range 0.5 to almost 2, if both numbers were normalized.
-
-; ; Calculate exponent and sign.
-
-;         ldx     #BIAS                   ; Subtract FP1e from FP0e and add back the bias
-;         ldy     FP1e                    ; Subtract bias
-;         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
-;         lda     FP0s                    ; Get sign of FP0
-;         eor     FP1s                    ; If both are pos or neg, then pos, else neg
-;         sta     FP0s
+        ldy     FP1e                    ; Subtract FP1e from FP0e
+        ldx     D                       ; Add bias
+        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+        lda     FP0s                    ; Get sign of FP0
+        eor     FP1s                    ; If both are pos or neg, then pos, else neg
+        sta     FP0s
         jmp     normalize               ; Normalize and return
+
+; Compare the dividend in FP0+FP2 to the divisor FP1.
+; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
+; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
+; initialized to 1, then it will loop 8 times.
+
+@divide:
+        asl     FP0t                    ; Shift dividend left one bit
+        rol     FP0t+1
+        rol     FP0t+2
+        rol     FP0t+3
+        rol     FP2
+@divide_skip_shift:
+        debug $40
+        sec                             ; If FP2 is >0 then divisor FP1 <= dividend FP2 so we want carry to be set
+        lda     FP2                     ; Dividend extended significand
+        bne     @compare_done
+        lda     FP0t+3
+        cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FP2
+        bne     @compare_done           ; If not equal then result is in carry; if equal then check next byte, etc.
+        lda     FP0t+2
+        cmp     FP1t+2
+        bne     @compare_done
+        lda     FP0t+1
+        cmp     FP1t+1
+        bne     @compare_done
+        lda     FP0t
+        cmp     FP1t
+@compare_done:
+        bcc     @skip_subtract          ; If carry clear (borrow set) then divisor > dividend; don't subtract
+        lda     FP0t
+        sbc     FP1t
+        sta     FP0t
+        lda     FP0t+1
+        sbc     FP1t+1
+        sta     FP0t+1
+        lda     FP0t+2
+        sbc     FP1t+2
+        sta     FP0t+2
+        lda     FP0t+3
+        sbc     FP1t+3
+        sta     FP0t+3
+        lda     FP2                     ; Possibly have to borrow from extended significand
+        sbc     #0
+        sta     FP2
+        sec                             ; Set carry so we roll 1 bit into quotient
+@skip_subtract:
+        rol     B                       ; Roll the carry left into quotient
+        bcc     @divide                 ; Continue if 1 bit has not emerged from B
+        rts
 
 ; Compares FP0 with FP1.
 ; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
@@ -1174,32 +1155,26 @@ fdiv:
 fcmp:
         lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
         cmp     FP0s                    ; Subtract sign of FP0
-        ; debug $60
         beq     @same_sign              ; If same sign then continue
         rts                             ; Carry set if FP1s was negative and FP0s was positive -> FP0 is greater
 
 @same_sign:
         lda     FP0e                    ; FP0 exponent
         cmp     FP1e                    ; Subtract FP1 exponent 1
-        ; debug $61
         beq     @same_e                 ; If same exponent then continue
         rts                             ; Carry set if FP0e was greater -> FP0 is greater
 
 @same_e:
         lda     FP0t+3                  ; Compare significands (just 32 bits)
         cmp     FP1t+3
-        ; debug $62
         bne     @done
         lda     FP0t+2
         sbc     FP1t+2
-        ; debug $63
         bne     @done
         lda     FP0t+1
         sbc     FP1t+1
-        ; debug $64
         bne     @done
         lda     FP0t
         sbc     FP1t
-        ; debug $65
 @done:
         rts                             ; Flags will be set correctly here

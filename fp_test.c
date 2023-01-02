@@ -363,12 +363,12 @@ static void test_fmul(void) {
 static void test_fdiv(void) {
     PRINT_TEST_NAME();
 
-    // // 1 / 1
-    // CALL_FP(fdiv, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
-    // // 2 / 1
-    // CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
-    // // 2 / 2
-    // CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
+    // 1 / 1
+    CALL_FP(fdiv, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000);
+    // 2 / 1
+    CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
+    // 2 / 2
+    CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
 }
 
 static void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
