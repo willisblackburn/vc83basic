@@ -604,11 +604,13 @@ fp_to_string:
 @scientific:
         ldy     #1                      ; Print 1 digit before the decimal point
         jsr     output_y_digits
+        ldy     D                       ; Output the remaining digits
+        dey                             ; Minus one for the first digit
+        beq     @skip_decimal           ; If no digits after decimal, skip the decimal
         lda     #'.'                    ; Output decimal point
         sta     buffer,x
         inx
-        ldy     D                       ; Output the remaining digits
-        dey                             ; Minus one for the first digit
+@skip_decimal:
         jsr     output_y_digits
         lda     #'E'                    ; Exponent
         sta     buffer,x

@@ -256,42 +256,6 @@ static void test_fadd(void) {
     CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 128, 0x80000001);
     // 1 + 0.00000000034924596547 (should round up)
     CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 96, 0xC0000000, POSITIVE, 128, 0x80000001);
-    
-    // // 1 + 1E1
-    // SET_FLOAT(reg_fpa, 0, 1);
-    // SET_FLOAT(value, 1, 1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 0, 11);
-    // // 1E1 + 1
-    // SET_FLOAT(reg_fpa, 1, 1);
-    // SET_FLOAT(value, 0, 1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 0, 11);
-    // // 1 + 3.14159
-    // SET_FLOAT(reg_fpa, 0, 1);
-    // SET_FLOAT(value, -5, 314159);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, -5, 414159);
-    // // 1 + -1
-    // SET_FLOAT(reg_fpa, 0, 1);
-    // SET_FLOAT(value, 0, -1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
-    // // 1E1 + -1
-    // SET_FLOAT(reg_fpa, 1, 1);
-    // SET_FLOAT(value, 0, -1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 0, 9);
-    // // 1 + -1E1
-    // SET_FLOAT(reg_fpa, 0, 1);
-    // SET_FLOAT(value, 1, -1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 0, -9);
-    // // LONG_MAX + 1
-    // SET_FLOAT(reg_fpa, 0, LONG_MAX);
-    // SET_FLOAT(value, 0, 1);
-    // fadd(&value);
-    // ASSERT_FLOAT_EQ(reg_fpa, 1, -9);
 }
 
 static void test_fsub(void) {
@@ -475,48 +439,13 @@ static void test_fp_to_string(void) {
     // 2^-120
     call_fp_to_string(POSITIVE, 8, 0x80000000, "7.52316385E-37", __LINE__);
 
-
-//     SET_FLOAT(reg_fpa, -5, 314159);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "3.14159");
-//     // 0.0314159
-//     SET_FLOAT(reg_fpa, -7, 314159);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "0.0314159");
-//     // 6.0221409E23
-//     SET_FLOAT(reg_fpa, 16, 60221409);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "6.0221409E23");
-//     // 0.00729734813
-//     SET_FLOAT(reg_fpa, -11, 729734813);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "7.29734813E-3");
-
-//     // Exponent edge cases
-//     // +/- 1E9 should print without E
-//     // +/- 1E10 should print in scientific
-//     SET_FLOAT(reg_fpa, 9, 1);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "1000000000");
-//     SET_FLOAT(reg_fpa, 9, -1);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "-1000000000");
-//     SET_FLOAT(reg_fpa, 10, 1);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "1E10");
-//     SET_FLOAT(reg_fpa, 10, -1);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "-1E10");
-//     // Test for logic that removes trailing zeros
-//     SET_FLOAT(reg_fpa, -2, 1000);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "10");
-//     SET_FLOAT(reg_fpa, -6, 1000);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "0.001");
-//     SET_FLOAT(reg_fpa, 15, 100);
-//     call_fp_to_string();
-//     ASSERT_STRING_EQ(buffer, "1E17");
+    // Exponent edge cases
+    // +/- 1E9 should print without E
+    // +/- 1E10 should print in scientific
+    call_fp_to_string(POSITIVE, 157, 0xEE6B2800, "1000000000", __LINE__);
+    call_fp_to_string(NEGATIVE, 157, 0xEE6B2800, "-1000000000", __LINE__);
+    call_fp_to_string(POSITIVE, 161, 0x9502F900, "1E10", __LINE__);
+    call_fp_to_string(NEGATIVE, 161, 0x9502F900, "-1E10", __LINE__);
 }
 
 static void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
