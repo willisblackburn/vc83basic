@@ -369,6 +369,28 @@ add_significands_with_carry:
         sta     FP2
         rts
 
+; Utility function to shift the FP0 significand right by one bit and increment exponent.
+
+shift_right:
+        clc
+shift_right_from_carry:
+        ror     FP0t+3
+        ror     FP0t+2
+        ror     FP0t+1
+        ror     FP0t
+        rts
+
+; Utility function to shift the FP0 significand left by one bit.
+
+shift_left:
+        clc
+shift_left_from_carry:
+        rol     FP0t
+        rol     FP0t+1
+        rol     FP0t+2
+        rol     FP0t+3
+        rts
+
 ; Multiplies the FPA significand by 10. Copies the FP0 value into FP1.
 ; On return the carry will be set if the multiplication caused an overflow.
 ; On overflow, the original value can be recovered from FP1.
@@ -377,24 +399,14 @@ add_significands_with_carry:
 mul10_significand:
         ldx     #FP1t
         jsr     copy_significand
-        jsr     @shift_significand      ; *2
+        jsr     shift_left              ; *2
         bcs     @overflow
-        jsr     @shift_significand      ; *4
+        jsr     shift_left_from_carry   ; *4
         bcs     @overflow
         jsr     add_significands        ; *5
         bcs     @overflow
-        jsr     @shift_significand      ; *10
+        jsr     shift_left_from_carry   ; *10
 @overflow:
-        rts
-
-; Shifts the signifiand of FPA left, multiplying it by 2.
-; TODO: merge with other cases like div10_significand.
-
-@shift_significand:
-        asl     FP0t
-        rol     FP0t+1
-        rol     FP0t+2
-        rol     FP0t+3
         rts
 
 ; Divides the FP0 significand by 10.
@@ -406,10 +418,7 @@ div10_significand:
         lda     #0                      ; Initialize remainder to 0
         ldx     #32                     ; 32 bits
 @next_bit:
-        asl     FP0t                    ; LSB of FPA+1 (least significant byte) is now 0
-        rol     FP0t+1
-        rol     FP0t+2
-        rol     FP0t+3
+        jsr     shift_left              ; LSB of FPA+1 (least significant byte) is now 0
         rol     A                       ; Bits from significand move into A
         cmp     #10                     ; C ("don't borrow") set if A>=10
         bcc     @not_10                 ; It's <10
@@ -720,23 +729,6 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-; Utility function to shift the 40-bit extended significand of FP0 right by one bit and increment exponent.
-; The caller is responsible for testing for exponent overflow before calling.
-
-shift_right:
-        lsr     FP2                     ; Right shift low byte of FP2 plus FP0t
-shift_right_from_carry:
-        ror     FP0t+3
-        ror     FP0t+2
-        ror     FP0t+1
-        ror     FP0t
-        ror     B                       ; Rotate carry into rounding register
-        inc     FP0e                    ; Increase exponent
-        bne     @skip                   ; Skip increment of exponent high byte FP0e did not roll over
-        inc     C                       ; Increment high byte
-@skip:
-        rts
-
 ; Adjusts the 16-bit unsigned biased exponent of FP0 (zero-extended to C) by first adding the value in X
 ; and then subtracting the value in Y.
 
@@ -765,7 +757,12 @@ adjust_exponent:
 ; Invoked from normalize when the significand doesn't fit into 32 bits.
 
 shift_right_normalize:
-        jsr     shift_right             ; Use shift_right to shift the remaining 32 bits
+        lsr     FP2                     ; Shift FP2 right
+        jsr     shift_right_from_carry  ; Shift the remaining 32 bits; output in carry
+        ror     B                       ; Rotate carry into rounding register
+        inc     FP0e                    ; Increase exponent
+        bne     normalize               ; Skip increment of exponent high byte FP0e did not roll over
+        inc     C                       ; Increment high byte
 
 ; Fall through
 
@@ -850,10 +847,7 @@ normalize:
 
 @fine_shift:
         asl     B                       ; Shift left one bit starting from rounding register
-        rol     FP0t
-        rol     FP0t+1
-        rol     FP0t+2
-        rol     FP0t+3
+        jsr     shift_left_from_carry
         dec     FP0e
 
 @fine:
@@ -876,7 +870,9 @@ normalize:
         jsr     add_significands_with_carry
         debug $B1
         beq     @done                   ; If the value written to FP2 was 0 then all done
+        sec                             ; Only 1 bit can possibly in FP2, so don't need to shift FP2
         jsr     shift_right_from_carry  ; Otherwise have to shift right again
+        inc     FP0e                    ; Increase exponent
 
 @done:
         clc                             ; Signal success
@@ -901,10 +897,12 @@ fadd:
         bmi     @return_larger          ; Exponent difference >127 so addition has no effect
         tax                             ; Exponent different is in X and is >=0
 
-; FP0 exponent is less than FP1 exponent, so shift FP0 significand left X places to align binary points.
+; FP0 exponent is less than FP1 exponent, so shift FP0 significand right X places to align binary points.
 
 @align:
         jsr     shift_right
+        ror     B                       ; Rotate carry into rounding register
+        inc     FP0e
         dex
         bne     @align
 
@@ -968,16 +966,10 @@ fmul:
 
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
-        lda     FP0t                    ; Copy FP0t into FP3
-        sta     FP3
-        lda     FP0t+1
-        sta     FP3+1
-        lda     FP0t+2
-        sta     FP3+2
-        lda     FP0t+3
-        sta     FP3+3
         ldx     #FP2                    ; Clear the extended significand of FP0
         jsr     clear_significand
+        ldx     #FP3                    ; FP3 holds the original significand
+        jsr     copy_significand
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
@@ -1060,7 +1052,9 @@ fdiv:
         rts
 
 @initalize:
-        mva     #0, FP2                 ; Clear extended significand
+        ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
+        jsr     copy_significand
+        mva     #0, FP3                 ; Extended significand will be in FP3
         mva     #BIAS, D                ; D keeps track of how much bias to add
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
@@ -1078,15 +1072,10 @@ fdiv:
         mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
         jsr     @divide                 ; Call divide function; next 8 bits of quotient bits now in B
 @store_quotient:
-; TODO: build quotient in FP0 and use copy_significand to copy original significand to FP3
         lda     B                       ; Get quotient byte
-        sta     FP3,x
+        sta     FP0,x
         dex
         bpl     @next_quotient_byte     ; If X is still >= 0 then more bytes to do
-        mva     FP3, FP0                ; Quotient is in FP3; copy it into FP0
-        mva     FP3+1, FP0+1
-        mva     FP3+2, FP0+2
-        mva     FP3+3, FP0+3
 
 ; Calculate exponent and sign.
 
@@ -1104,44 +1093,44 @@ fdiv:
 ; initialized to 1, then it will loop 8 times.
 
 @divide:
-        asl     FP0t                    ; Shift dividend left one bit
-        rol     FP0t+1
-        rol     FP0t+2
-        rol     FP0t+3
-        rol     FP2
+        asl     FP2                     ; Shift dividend left one bit
+        rol     FP2+1
+        rol     FP2+2
+        rol     FP2+3
+        rol     FP3
 @divide_skip_shift:
         debug $40
         sec                             ; If FP2 is >0 then divisor FP1 <= dividend FP2 so we want carry to be set
-        lda     FP2                     ; Dividend extended significand
+        lda     FP3                     ; Dividend extended significand
         bne     @compare_done
-        lda     FP0t+3
+        lda     FP2+3
         cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FP2
         bne     @compare_done           ; If not equal then result is in carry; if equal then check next byte, etc.
-        lda     FP0t+2
+        lda     FP2+2
         cmp     FP1t+2
         bne     @compare_done
-        lda     FP0t+1
+        lda     FP2+1
         cmp     FP1t+1
         bne     @compare_done
-        lda     FP0t
+        lda     FP2
         cmp     FP1t
 @compare_done:
         bcc     @skip_subtract          ; If carry clear (borrow set) then divisor > dividend; don't subtract
-        lda     FP0t
+        lda     FP2
         sbc     FP1t
-        sta     FP0t
-        lda     FP0t+1
-        sbc     FP1t+1
-        sta     FP0t+1
-        lda     FP0t+2
-        sbc     FP1t+2
-        sta     FP0t+2
-        lda     FP0t+3
-        sbc     FP1t+3
-        sta     FP0t+3
-        lda     FP2                     ; Possibly have to borrow from extended significand
-        sbc     #0
         sta     FP2
+        lda     FP2+1
+        sbc     FP1t+1
+        sta     FP2+1
+        lda     FP2+2
+        sbc     FP1t+2
+        sta     FP2+2
+        lda     FP2+3
+        sbc     FP1t+3
+        sta     FP2+3
+        lda     FP3                     ; Possibly have to borrow from extended significand
+        sbc     #0
+        sta     FP3
         sec                             ; Set carry so we roll 1 bit into quotient
 @skip_subtract:
         rol     B                       ; Roll the carry left into quotient
