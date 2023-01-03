@@ -493,7 +493,6 @@ fp_to_string:
 
 @positive:
         mva     #0, E                   ; E keeps track of how much we have scaled up or down
-        sta     D                       ; D is the number of generated digits
         sta     FP0s                    ; Also set sign to positive since we already printed '-'
         ldx     #FP0
         jsr     fpx_is_zero
@@ -520,8 +519,7 @@ fp_to_string:
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
-        jmp $0000 ; TODO: remove
-        lday    ten
+        lday    #ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fdiv                    ; Divide FP0 by 10
@@ -536,6 +534,7 @@ fp_to_string:
         bcs     @scale_down
         jsr     truncate_fp_to_int      ; Make into a 32-bit integer
         debug $12
+        mva     #0, D                   ; D is the number of generated digits
         jsr     generate_digits
 
 ; There are D generated digits.
@@ -659,6 +658,7 @@ generate_digits:
         jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
         jsr     div10_significand       ; The remainder in A is the digit
+        debug $20
         tax                             ; Move remainder into X
         ora     D                       ; Or with number of digits; tests if both are zero
         beq     @skip_zero              ; If so then skip this zero
@@ -783,7 +783,7 @@ shift_right_normalize:
 ;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
 ;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
 ;   (increase exponent) once again.
-;   * If the exponent is >127, fail with an overflow error.
+;   * If the exponent is >127, fail with an overflow error.n (TODO: need to handle this)
 ; Otherwise, return the final result.
 
 normalize:

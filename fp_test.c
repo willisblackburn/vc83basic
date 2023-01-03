@@ -369,6 +369,12 @@ static void test_fdiv(void) {
     CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
     // 2 / 2
     CALL_FP(fdiv, POSITIVE, 129, 0x80000000, POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000);
+    // 100 / 10
+    CALL_FP(fdiv, POSITIVE, 134, 0xC8000000, POSITIVE, 131, 0xA0000000, POSITIVE, 131, 0xA0000000);
+    // 1000 / 10
+    CALL_FP(fdiv, POSITIVE, 137, 0xFA000000, POSITIVE, 131, 0xA0000000, POSITIVE, 134, 0xC8000000);
+    // 10000 / 10
+    CALL_FP(fdiv, POSITIVE, 141, 0x9C400000, POSITIVE, 131, 0xA0000000, POSITIVE, 137, 0xFA000000);
 }
 
 static void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
@@ -464,6 +470,8 @@ static void test_fp_to_string(void) {
     call_fp_to_string(POSITIVE, 158, 0xFFFFFFFE, "2147483647", __LINE__);
     // -2,147,483,648
     call_fp_to_string(NEGATIVE, 159, 0x80000000, "-2147483648", __LINE__);
+    // 2^36
+    call_fp_to_string(POSITIVE, 164, 0x80000000, "6.87194767E10", __LINE__);
     // 2^-120
     call_fp_to_string(POSITIVE, 8, 0x80000000, "7.52316385E-37", __LINE__);
 
