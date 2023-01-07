@@ -655,6 +655,7 @@ string_to_fp:
         lday    #ten
         jsr     load_fpx                ; Set FP0 to 10
 @scale_divisor:
+        debug $60
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
         ldx     #FP1
@@ -664,6 +665,7 @@ string_to_fp:
         jmp     @scale_divisor          ; Do it again until D is 0
 
 @scale:
+        debug $61
         jsr     copy_fp0_fp1            ; Move divisor into FP1
         ldx     #FP0
         lday    #fp_temp
@@ -671,6 +673,7 @@ string_to_fp:
         jmp     fdiv                    ; Divide
 
 @whole:
+        debug $70
         clc                             ; Signal success
         rts
 
@@ -1148,19 +1151,25 @@ fdiv:
 ; having to shift B left, we just don't shift anything and, the first time through, JSR to a point in @divide after the
 ; shift left.
 
-        mva     #1, B
+        mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
         jsr     @divide_skip_shift
         ldx     #3                      ; Store this value FP3 position 3
         bpl     @store_quotient         ; Unconditional
 
 @next_quotient_byte:
-        mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
+        mva     #1, B                   ; 8 quotient bits
         jsr     @divide                 ; Call divide function; next 8 bits of quotient bits now in B
 @store_quotient:
         lda     B                       ; Get quotient byte
         sta     FP0,x
         dex
         bpl     @next_quotient_byte     ; If X is still >= 0 then more bytes to do
+        mva     #32, B                  ; Set B to 32 to generate 3 more quotient bits and leave them in B
+        jsr     @divide
+        lsr     B                       ; Need to shift them left 5; easier to roll right 4 through carry
+        ror     B
+        ror     B
+        ror     B
 
 ; Calculate exponent and sign.
 
