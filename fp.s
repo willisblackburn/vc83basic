@@ -367,12 +367,10 @@ fp_to_string:
         jsr     fmul                    ; Multiply FP0 by 10
         dec     E                       ; Have to divide by 10 to get back to original number
 @maybe_scale_up:
-        debug $00
         lday    #string_min             ; Load minimum value
         ldx     #FP1                    ; Into FP1
         jsr     load_fpx
         jsr     fcmp                    ; Carry clear (borrow set) means FP0 < FP1 so we have to scale up
-        debug $01
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
@@ -382,15 +380,12 @@ fp_to_string:
         jsr     fdiv                    ; Divide FP0 by 10
         inc     E                       ; Have to multiply by 10 to get back to original number
 @maybe_scale_down:
-        debug $10
         lday    #string_max             ; Load maximum value
         ldx     #FP1                    ; Into FP1
         jsr     load_fpx
         jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
-        debug $11
         bcs     @scale_down
         jsr     truncate_fp_to_int      ; Make into a 32-bit integer
-        debug $12
         mva     #0, D                   ; D is the number of generated digits
         jsr     generate_digits
 
@@ -517,7 +512,6 @@ generate_digits:
         jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
         jsr     div10_significand       ; The remainder in A is the digit
-        debug $20
         tax                             ; Move remainder into X
         ora     D                       ; Or with number of digits; tests if both are zero
         beq     @skip_zero              ; If so then skip this zero
@@ -607,7 +601,6 @@ string_to_fp:
 
 @not_e:
         jsr     char_to_digit           ; Try to make it into a digit
-        debug $40
         bcs     @not_digit              ; Character was not a digit, '.', or 'E'
         
 ; Multiply FPA by 10 and add in new digit.
@@ -634,7 +627,6 @@ string_to_fp:
         rts
 
 @not_digit:
-        debug $50
         cpy     #$80                    ; Has Y changed at all?
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
         lda     buffer,x                ; Load character again
@@ -644,9 +636,7 @@ string_to_fp:
 
         sty     D                       ; Use D to keep track of how many digits after decimal
         jsr     int_to_fp
-        debug $51
         lda     D                       ; Test number of digits
-        debug $52
         bmi     @whole                  ; If Y is negative or zero then no decimal point or no digits after it
         beq     @whole
         ldx     #FP0
@@ -655,7 +645,6 @@ string_to_fp:
         lday    #ten
         jsr     load_fpx                ; Set FP0 to 10
 @scale_divisor:
-        debug $60
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
         ldx     #FP1
@@ -665,7 +654,6 @@ string_to_fp:
         jmp     @scale_divisor          ; Do it again until D is 0
 
 @scale:
-        debug $61
         jsr     copy_fp0_fp1            ; Move divisor into FP1
         ldx     #FP0
         lday    #fp_temp
@@ -673,137 +661,8 @@ string_to_fp:
         jmp     fdiv                    ; Divide
 
 @whole:
-        debug $70
         clc                             ; Signal success
         rts
-
-; string_to_fp:
-;         ; jsr     clear_fpa               ; Clear FPA
-;         ldx     bp                      ; X is the index into the string
-;         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
-;         lda     buffer,x                ; Check first character
-;         cmp     #'-'                    ; Is the first character a minus?
-;         php                             ; Remember result of this for later
-;         bne     @bypass_increment
-; @next_character:
-;         inx                             ; Increment to the next character
-; @bypass_increment:
-;         lda     buffer,x                ; Get the next character
-;         cmp     #'.'                    ; Is it the decimal point?
-;         bne     @not_decimal_point      ; No
-;         tya                             ; Check if we've already seen a decimal
-;         bpl     @err_multiple_decimals
-;         ldy     #0                      ; Set Y to 0 to count digits after '.'
-;         jmp     @next_character
-
-; @not_decimal_point:
-;         jsr     char_to_digit           ; Try to make it into a digit
-;         bcs     @not_digit              ; Character was not a digit
-;         sta     D                       ; Park digit
-
-; ; Multiply FPA by 10 and add in new digit.
-
-;         jsr     mul10_significand
-;         bcs     @err_overflow
-;         iny                             ; Increment digits after '.'
-;         lda     D                       ; Recall the digit
-;         clc     
-;         adc     FPA+Float::t            ; Add digit to LSB
-;         sta     FPA+Float::t
-;         bcc     @next_character         ; If no carry then next character
-;         inc     FPA+Float::t+1          ; Otherwise increment next byte
-;         bne     @next_character         ; etc,
-;         inc     FPA+Float::t+2
-;         bne     @next_character
-;         inc     FPA+Float::t+3
-;         beq     @err_overflow           ; If significand rolled over to 0 then overflow
-;         jmp     @next_character
-
-; @not_digit:
-;         cpy     #$80                    ; Has Y changed at all?
-;         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
-;         lda     buffer,x                ; Load character again; -1 since we've incremented X
-;         cmp     #'E'                    ; Is it 'E'?
-;         beq     @handle_e               ; Yes
-
-; ; Update the exponent and finish.
-
-; @finish:
-;         tya                             ; Exponent adjustment to A
-;         bpl     @set_exponent           ; If adjustment is positive then use it
-;         lda     #0                      ; Otherwise make it 0
-; @set_exponent:
-;         sta     D                       ; Use D to temporarily store adjustment
-;         sec
-;         lda     FPA+Float::e
-;         sbc     D
-;         bvs     @err_overflow           ; Adjusting E might cause signed overflow
-;         sta     FPA+Float::e            ; Store exponent
-;         plp                             ; Go get the '-' comparison from earlier
-;         bne     @positive               ; There was no '-' at the start of the string
-;         ; jsr     fneg
-;         bpl     @err_overflow_2         ; Overflow if we were expecting negative but number is positive
-;         bmi     @done
-
-; @positive:
-;         lda     FPA+Float::t+3
-;         bmi     @err_overflow_2         ; Overflow if we were expecting positive but number is negative
-; @done:
-;         stx     bp                      ; Update bp
-;         clc                             ; Signal success
-;         rts
-
-; @err_overflow_in_e:
-;         pla                             ; Errors that require two pops
-; @err_overflow:
-; @err_not_digit:
-; @err_multiple_decimals:
-;         pla                             ; Errors that require one pop
-; @err_overflow_2:
-;         sec                             ; Signal failure
-;         rts
-
-; ; There can be 1-3 exponent digits after 'E' optionally prefixed by '-'.
-; ; Parse the number and store in FPA exponent.
-; ; Checks for digits also handle the case of the string ending after 'E' or '-'.
-
-; @handle_e:
-;         inx                             ; Skip 'E'
-;         lda     buffer,x                ; First character
-;         cmp     #'-'                    ; Is it minus?
-;         php                             ; Save the result for later
-;         bne     @bypass_increment_e
-; @next_character_e:
-;         inx                             ; Skip the minus
-; @bypass_increment_e:
-;         lda     buffer,x                ; Next character
-;         jsr     char_to_digit           ; Try to parse as digit
-;         bcs     @finish_e               ; Was not digit
-;         sta     D                       ; Park digit in D
-;         lda     FPA+Float::e            ; Get exponent
-;         asl     A                       ; Exponent *2
-;         bcs     @err_overflow_in_e
-;         asl     A                       ; *4
-;         bcs     @err_overflow_in_e
-;         adc     FPA+Float::e            ; *5, carry guaranteed to be clear
-;         bcs     @err_overflow_in_e
-;         asl     A                       ; *10
-;         bcs     @err_overflow_in_e
-;         adc     D                       ; Add in the new digit
-;         bcs     @err_overflow_in_e
-;         bmi     @err_overflow_in_e      ; If it goes negative then fail
-;         sta     FPA+Float::e
-;         jmp     @next_character_e
-
-; @finish_e:
-;         plp                             ; Get the '-' comparison from before
-;         bne     @finish                 ; If it wasn't negative then all done
-;         lda     FPA+Float::e            ; Negate exponent
-;         eor     #$FF
-;         sta     FPA+Float::e
-;         inc     FPA+Float::e
-;         jmp     @finish
-
 
 ; Converts the character in A into a digit.
 ; Returns the digit in A, carry clear if ok, carry set if error.
@@ -819,7 +678,6 @@ char_to_digit:
 ; and then subtracting the value in Y.
 
 adjust_exponent:
-        debug $C0
         clc                             ; Clear carry to prepare for add
         txa                             ; Get the value to add from X
         ldx     #0                      ; X is now the high byte
@@ -879,7 +737,6 @@ normalize:
 ; First check if there are any bits set in the low byte of FP2, indicating the significand is >= 2.
 
         lda     FP2                     ; Check first extension byte
-        debug $80
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
@@ -897,9 +754,7 @@ normalize:
 
 @check_zero:
         ldx     #FP0
-        debug $81
         jsr     fpx_is_zero             ; Check if FP0 is zero
-        debug $82
         bne     @coarse
         ldx     B                       ; Check round
         bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
@@ -909,7 +764,6 @@ normalize:
         rts
 
 @coarse:
-        debug $90
         ldy     FP0t+3                  ; Get high byte of significand
         bne     @fine                   ; If not 0 then try fine shift
 
@@ -939,7 +793,6 @@ normalize:
         dec     FP0e
 
 @fine:
-        debug $A0
         lda     FP0t+3                  ; Get the high byte of significand
         bmi     @round                  ; Significand is normalized
         lda     FP0e                    ; Get exponent
@@ -950,13 +803,11 @@ normalize:
 
 @round:
         asl     B                       ; Shift rounding register high bit into carry
-        debug $B0
         bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
         ldx     #FP1t
         jsr     clear_significand
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
-        debug $B1
         beq     @done                   ; If the value written to FP2 was 0 then all done
         sec                             ; Only 1 bit can possibly in FP2, so don't need to shift FP2
         jsr     shift_right_from_carry  ; Otherwise have to shift right again
