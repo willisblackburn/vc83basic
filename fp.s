@@ -54,6 +54,8 @@ fp_temp: .res .sizeof(Float)
 .assert Float::t = 0, error
 .assert Float::e = 4, error
 
+load_fp0:
+        ldx     #FP0
 load_fpx:
         stay    BC                      ; FP value address into DE
         ldy     #0                      ; Start with low byte of significand
@@ -90,6 +92,8 @@ load_fpx:
 ; AY = destination address
 ; X = either #FP0 or #FP1
 
+store_fp0:
+        ldx     #FP0
 store_fpx:
         stay    BC                      ; FP value address into BC
         ldy     #0                      ; Start with low byte of significand
@@ -159,6 +163,8 @@ copy_significand:
 ; Sets either FP0 or FP1 to zero.
 ; X = either #FP0 or #FP1
 
+clear_fp0:
+        ldx     #FP0
 clear_fpx:
         lda     #0
         sta     UnpackedFloat::e,x
@@ -182,8 +188,8 @@ clear_significand:
 ; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
 ; X = either #FP0 or #FP1
 
-; TODO: add fp0_is_zero
-
+fp0_is_zero:
+        ldx     #FP0
 fpx_is_zero:
         lda     UnpackedFloat::t,x      ; OR all the significand bytes together
         ora     UnpackedFloat::t+1,x
@@ -351,8 +357,7 @@ fp_to_string:
 @positive:
         mva     #0, E                   ; E keeps track of how much we have scaled up or down
         sta     FP0s                    ; Also set sign to positive since we already printed '-'
-        ldx     #FP0
-        jsr     fpx_is_zero
+        jsr     fp0_is_zero
         bne     @maybe_scale_up
         ldx     bp                      ; Write index
         lda     #'0'
@@ -508,8 +513,7 @@ fp_to_string:
 generate_digits:
         plstaa  BC                      ; Save return address
 @next_digit:
-        ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 significand zero; this will never be true the first time
+        jsr     fp0_is_zero             ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
         jsr     div10_significand       ; The remainder in A is the digit
         tax                             ; Move remainder into X
@@ -573,8 +577,7 @@ output_y_zeros:
 ; Returns the number in FPA and carry clear if ok, carry set if error.
 
 string_to_fp:
-        ldx     #FP0
-        jsr     clear_fpx               ; Reset to zero (including sign)
+        jsr     clear_fp0               ; Reset to zero (including sign)
         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
         ldx     bp                      ; Read index
         lda     buffer,x
@@ -639,11 +642,10 @@ string_to_fp:
         lda     D                       ; Test number of digits
         bmi     @whole                  ; If Y is negative or zero then no decimal point or no digits after it
         beq     @whole
-        ldx     #FP0
         lday    #fp_temp
-        jsr     store_fpx               ; Hold FP0 result in fp_temp
+        jsr     store_fp0               ; Hold FP0 result in fp_temp
         lday    #ten
-        jsr     load_fpx                ; Set FP0 to 10
+        jsr     load_fpx                ; Set FP0 to 10 (X is still FP0 from before)
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
@@ -655,9 +657,8 @@ string_to_fp:
 
 @scale:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
-        ldx     #FP0
         lday    #fp_temp
-        jsr     load_fpx                ; Reload result saved earlier
+        jsr     load_fp0                ; Reload result saved earlier
         jmp     fdiv                    ; Divide
 
 @whole:
@@ -753,8 +754,7 @@ normalize:
 ; we'll see a 0 bit, because we shift in 0s from the right.
 
 @check_zero:
-        ldx     #FP0
-        jsr     fpx_is_zero             ; Check if FP0 is zero
+        jsr     fp0_is_zero             ; Check if FP0 is zero
         bne     @coarse
         ldx     B                       ; Check round
         bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
@@ -889,15 +889,13 @@ fsub:
 ; Multiplies FP0 and FP1, leaving the normalized result in FP0.
 
 fmul:
-        ldx     #FP0
-        jsr     fpx_is_zero             ; Is FP0 zero?
+        jsr     fp0_is_zero             ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
         ldx     #FP1
         jsr     fpx_is_zero             ; Test FP1
         bne     @do_multiply
 @return_zero:
-        ldx     #FP0
-        jsr     clear_fpx               ; Return zero
+        jsr     clear_fp0               ; Return zero
         clc                             ; Signal success
         rts
 
@@ -975,8 +973,7 @@ fmul:
 ; of FPA and the remainder will be in the upper 32 bits.
 
 fdiv:
-        ldx     #FP0
-        jsr     fpx_is_zero             ; Is FP0 zero?
+        jsr     fp0_is_zero             ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
         ldx     #FP1
         jsr     fpx_is_zero             ; Test FP1
@@ -985,8 +982,7 @@ fdiv:
         rts
 
 @return_zero:
-        ldx     #FP0
-        jsr     clear_fpx               ; Return zero
+        jsr     clear_fp0               ; Return zero
         clc                             ; Signal success
         rts
 

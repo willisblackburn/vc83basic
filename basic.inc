@@ -94,8 +94,8 @@
 .global stack_alloc, stack_free
 
 ; fp.s
-.global load_fpx
-.global store_fpx
+.global load_fpx, load_fp0
+.global store_fpx, store_fp0
 .global swap_fp0_fp1
 .global int_to_fp
 .global truncate_fp_to_int
