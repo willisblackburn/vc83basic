@@ -138,9 +138,9 @@ static void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_normalize(POSITIVE, 0, 0, 0, 0, 0, 0, __LINE__);
+    call_normalize(POSITIVE, 0, 0, 0, 0, 1, 0, __LINE__);
     // 0 significand with any exponent normalizes to 0
-    call_normalize(POSITIVE, 127, 0, 0, 0, 0, 0, __LINE__);
+    call_normalize(POSITIVE, 127, 0, 0, 0, 1, 0, __LINE__);
     // 1
     call_normalize(POSITIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // -1
@@ -166,11 +166,11 @@ typedef struct IntConversionTestCase {
 } IntConversionTestCase;
 
 static IntConversionTestCase int_conversion_test_cases[] = {
-    { 0, { 0x00000000, 0, POSITIVE } },
+    { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 128, POSITIVE } },
-    { -1, { 0x80000000, 128, NEGATIVE } },
     { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
-    { -2147483648, { 0x80000000, 159, NEGATIVE } },
+    { 2147483648, { 0x80000000, 159, POSITIVE } },
+    { 4294967295, { 0xFFFFFFFF, 159, POSITIVE } },
     { 4112, { 0x80800000, 140, POSITIVE } },
 };
 
@@ -227,7 +227,7 @@ static void test_fadd(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
-    CALL_FP(fadd, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
+    CALL_FP(fadd, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 + 1
     CALL_FP(fadd, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
     // 0.5 + 0.5
@@ -235,7 +235,7 @@ static void test_fadd(void) {
     // -1 + (-1)
     CALL_FP(fadd, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 129, 0x80000000);
     // 1 + (-1)
-    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 0, 0);
+    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -2 + 1
     CALL_FP(fadd, NEGATIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000);
     // 1 + (-2)
@@ -264,11 +264,11 @@ static void test_fsub(void) {
     // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
 
     // 0 - 0
-    CALL_FP(fsub, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
+    CALL_FP(fsub, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 - 1
-    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 0, 0);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -1 - (-1)
-    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 0, 0);
+    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // 1 - (-1)
     CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
 }
@@ -450,7 +450,7 @@ static void test_fp_to_string(void) {
 
 static void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
     char err;
-    fprintf(stderr, "  %s:%d: fp_to_string(\"%s\")\n", __FILE__, line, string);
+    fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
     bp = 0;
     err = string_to_fp();
@@ -462,7 +462,14 @@ static void test_string_to_fp(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_string_to_fp("0", POSITIVE, 0, 0, __LINE__);
+    call_string_to_fp("0", POSITIVE, 1, 0x00000000, __LINE__);
+    // 1
+    call_string_to_fp("1", POSITIVE, 128, 0x80000000, __LINE__);
+    // -1
+    call_string_to_fp("-1", NEGATIVE, 128, 0x80000000, __LINE__);
+    // 25
+    call_string_to_fp("25", POSITIVE, 132, 0xC8000000, __LINE__);
+    
 //     err = call_string_to_fp("0.0");
 //     ASSERT_EQ(err, 0);
 //     ASSERT_FLOAT_EQ(reg_fpa, -1, 0);
