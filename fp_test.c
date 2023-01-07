@@ -459,6 +459,12 @@ static void test_string_to_fp(void) {
     call_string_to_fp("-100", NEGATIVE, 134, 0xC8000000, __LINE__);
     // 3.14159
     call_string_to_fp("3.14159", POSITIVE, 129, 0xC90FCF81, __LINE__);
+    // 0.0314159
+    call_string_to_fp("0.0314159", POSITIVE, 123, 0x80ADF571, __LINE__);
+    // 2,147,483,647
+    call_string_to_fp("2147483647", POSITIVE, 158, 0xFFFFFFFE, __LINE__);
+    // -2,147,483,648
+    call_string_to_fp("-2147483648", NEGATIVE, 159, 0x80000000, __LINE__);
     
 //     err = call_string_to_fp("0.0");
 //     ASSERT_EQ(err, 0);
