@@ -57,7 +57,7 @@ fp_temp: .res .sizeof(Float)
 load_fp0:
         ldx     #FP0
 load_fpx:
-        stay    BC                      ; FP value address into DE
+        stay    BC                      ; FP value address into BC
         ldy     #0                      ; Start with low byte of significand
         lda     (BC),y
         sta     UnpackedFloat::t,x
