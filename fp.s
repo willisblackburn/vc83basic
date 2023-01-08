@@ -264,7 +264,7 @@ shift_left_from_carry:
         rol     FP0t+3
         rts
 
-; Multiplies the FPA significand by 10. Copies the FP0 value into FP1.
+; Multiplies the FP0 significand by 10. Copies the FP0 value into FP1.
 ; On return the carry will be set if the multiplication caused an overflow.
 ; On overflow, the original value can be recovered from FP1.
 ; Y SAFE, BC SAFE, DE SAFE
@@ -291,7 +291,7 @@ div10_significand:
         lda     #0                      ; Initialize remainder to 0
         ldx     #32                     ; 32 bits
 @next_bit:
-        jsr     shift_left              ; LSB of FPA+1 (least significant byte) is now 0
+        jsr     shift_left              ; LSB of FP0 significand is now 0
         rol     A                       ; Bits from significand move into A
         cmp     #10                     ; C ("don't borrow") set if A>=10
         bcc     @not_10                 ; It's <10
@@ -505,7 +505,7 @@ fp_to_string:
         jsr     output_y_zeros
         jmp     @done        
 
-; Generate digits. Repeatedly divide FPA by 10, generate remainder in A.
+; Generate digits. Repeatedly divide FP0 by 10, generate remainder in A.
 ; Will always generate at least one digit, which cannot be zero because we
 ; handled zero above.
 ; Ignore any initial zeros and increment E instead.
@@ -570,11 +570,11 @@ output_y_zeros:
         rts
 
 
-; Converts a string in bufer into an FP number in FPA.
+; Converts a string in bufer into an FP number in FP0.
 ; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
 ; The caller should skip whitespace (if necessary) before calling this function.
 ; bp = the read position in buffer
-; Returns the number in FPA and carry clear if ok, carry set if error.
+; Returns the number in FP0 and carry clear if ok, carry set if error.
 
 string_to_fp:
         jsr     clear_fp0               ; Reset to zero (including sign)
@@ -606,7 +606,7 @@ string_to_fp:
         jsr     char_to_digit           ; Try to make it into a digit
         bcs     @not_digit              ; Character was not a digit, '.', or 'E'
         
-; Multiply FPA by 10 and add in new digit.
+; Multiply FP0 by 10 and add in new digit.
 
         pha                             ; Park digit on stack
         jsr     mul10_significand
@@ -968,9 +968,6 @@ fmul:
         jmp     normalize               ; Normalize and return
 
 ; Divides FP0 by the value in FP1, returning the quotient in FP0.
-; Shifts the dividend left into the FP0 extended significand. After each shift, check if it's greater than the
-; dividend; if so then add one to the significand. After 32 operations, the quotient will be in the lower 32 bits
-; of FPA and the remainder will be in the upper 32 bits.
 
 fdiv:
         jsr     fp0_is_zero             ; Is FP0 zero?
