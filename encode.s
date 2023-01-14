@@ -6,22 +6,26 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
+; Maximum line length we're willing to encode (leave 16 bytes at end for END statement in immediate mode)
+MAX_LINE_LENGTH = 240
+
 ; Encodes a number.
 ; FP0 = the number to encode
 ; BC SAFE, DE SAFE
 
 encode_number:
-        stax    BC
         lda     #TOKEN_NUM
         jsr     encode
-        ldy     #0
-@loop:
-        ; lda     FPA,y
-        jsr     encode
-        iny
-        cpy     #.sizeof(Float)         ; Copied everything?
-        bne     @loop
-        clc                             ; Success
+        lda     lp
+        cmp     #MAX_LINE_LENGTH-.sizeof(Float) ; Check if enough space for Float
+        bcs     @error                  ; Nope; return with carry set
+        ldy     #>line_buffer           ; High byte of line_buffer in Y
+        jsr     store_fp0
+        lda     lp                      ; Get lp again
+        clc
+        adc     #.sizeof(Float)         ; We already know lp + Float is less than MAX_LINE_LENGTH so carry is clear
+        sta     lp                      ; Update lp
+@error:
         rts
 
 ; Encodes a variable by its ID.
@@ -72,9 +76,9 @@ encode_byte:
 ; Y SAFE, BC SAFE, DE SAFE
 
 encode:
-        ldx     lp
-        cpx     #(254 - Line::data - 1) ; Max length = 255 - 1 (for this byte) - space for END line in immediate mode
-        bcs     @error
+        ldx     lp                      ; lp is line position but it is also the current line length
+        cpx     #MAX_LINE_LENGTH-1      ; Subtract 1 for this byte
+        bcs     @error                  ; If carry set (no borrow) then line length >= MAX_LINE_LENGTH-1
         sta     line_buffer,x
         inc     lp
         rts
