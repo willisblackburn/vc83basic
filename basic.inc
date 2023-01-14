@@ -97,8 +97,8 @@
 .global load_fpx, load_fp0
 .global store_fpx, store_fp0
 .global swap_fp0_fp1
-.global int32_to_fp
-.global truncate_fp_to_int32
+.global int_to_fp, int32_to_fp
+.global truncate_fp_to_int, truncate_fp_to_int32
 .global fp_to_string
 .global string_to_fp
 .global char_to_digit

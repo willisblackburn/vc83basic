@@ -66,6 +66,9 @@ _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
 
+_carry_flag: .res 1
+.export _carry_flag
+
 .code
 
 ; Returns 0 or 1 depending on the carry state,
@@ -76,6 +79,15 @@ return_carry_flag:
         lda     #0
         tax
         rol     A
+        rts
+
+; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
+set_carry_flag:
+        pha                             ; Save return value
+        lda     #0                      ; Roll carry left into A and save in carry_flag
+        rol     A
+        sta     _carry_flag
+        pla                             ; Restore return value
         rts
 
 ; Returns 0 or 1 based on the zero flag state.
@@ -172,9 +184,18 @@ _swap_fp0_fp1:
 .export _swap_fp0_fp1
         jmp     swap_fp0_fp1
 
+_int_to_fp:
+.export _int_to_fp
+        jmp     int_to_fp
+
 _int32_to_fp:
 .export _int32_to_fp
         jmp     int32_to_fp
+
+_truncate_fp_to_int:
+.export _truncate_fp_to_int
+        jsr     truncate_fp_to_int
+        jmp     set_carry_flag
 
 _truncate_fp_to_int32:
 .export _truncate_fp_to_int32

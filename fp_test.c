@@ -161,11 +161,56 @@ static void test_normalize(void) {
 }
 
 typedef struct IntConversionTestCase {
-    long value;
+    int value;
     UnpackedFloat u;
 } IntConversionTestCase;
 
 static IntConversionTestCase int_conversion_test_cases[] = {
+    { 0, { 0x00000000, 1, POSITIVE } },
+    { 1, { 0x80000000, 128, POSITIVE } },
+    { 32767, { 0xFFFE0000, 142, POSITIVE } },
+    { -32768, { 0x80000000, 143, NEGATIVE } },
+    { 4112, { 0x80800000, 140, POSITIVE } },
+};
+
+static void test_int_to_fp(void) {
+    IntConversionTestCase* test_case;
+    int i;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: int_to_fp(%d)\n", __FILE__, __LINE__, test_case->value);
+        int_to_fp(test_case->value);
+        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+    }
+}
+
+static void test_truncate_fp_to_int(void) {
+    IntConversionTestCase* test_case;
+    int i;
+    int value;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
+        test_case = int_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int32(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
+            test_case->u.t, test_case->u.e, test_case->u.s);
+        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        value = truncate_fp_to_int();
+        ASSERT_EQ(carry_flag, 0);
+        ASSERT_EQ(value, test_case->value);
+    }
+}
+
+typedef struct Int32ConversionTestCase {
+    unsigned long value;
+    UnpackedFloat u;
+} Int32ConversionTestCase;
+
+static Int32ConversionTestCase int32_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 128, POSITIVE } },
     { 2147483647UL, { 0xFFFFFFFE, 158, POSITIVE } },
@@ -175,35 +220,35 @@ static IntConversionTestCase int_conversion_test_cases[] = {
 };
 
 static void test_int32_to_fp(void) {
-    IntConversionTestCase* test_case;
+    Int32ConversionTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
 
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: int32_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
-        SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
+    for (i = 0; i < sizeof int32_conversion_test_cases / sizeof *int32_conversion_test_cases; i++) {
+        test_case = int32_conversion_test_cases + i;
+        fprintf(stderr, "  %s:%d: int32_to_fp(%lu)\n", __FILE__, __LINE__, test_case->value);
+        SET_FPX(FP0, POSITIVE, 0, test_case->value);
         int32_to_fp();
         ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
 static void test_truncate_fp_to_int32(void) {
-    IntConversionTestCase* test_case;
+    Int32ConversionTestCase* test_case;
     int i;
     char err;
 
     PRINT_TEST_NAME();
 
-    for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
-        test_case = int_conversion_test_cases + i;
+    for (i = 0; i < sizeof int32_conversion_test_cases / sizeof *int32_conversion_test_cases; i++) {
+        test_case = int32_conversion_test_cases + i;
         fprintf(stderr, "  %s:%d: truncate_fp_to_int32(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
             test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         err = truncate_fp_to_int32();
         ASSERT_EQ(err, 0);
-        ASSERT_EQ(FP0t, (unsigned long)test_case->value);
+        ASSERT_EQ(FP0t, test_case->value);
     }
 }
 
@@ -395,7 +440,6 @@ static void call_fp_to_string(char s, char e, unsigned long t, const char* expec
 }
 
 static void test_fp_to_string(void) {
-
     PRINT_TEST_NAME();
 
     // 0
@@ -609,7 +653,9 @@ int main(void) {
     test_swap_fp0_fp1();
     test_adjust_exponent();
     test_normalize();
+    test_int_to_fp();
     test_int32_to_fp();
+    test_truncate_fp_to_int();
     test_truncate_fp_to_int32();
     test_fadd();
     test_fsub();

@@ -113,6 +113,8 @@ extern char reg_a;
 extern char reg_x;
 extern char reg_y;
 
+extern char carry_flag;
+
 // Prototypes for C wrapper functions
 
 // decode.s
@@ -138,8 +140,10 @@ int encode_byte(char value);
 void load_fpx(UnpackedFloat* fpx, const Float* value);
 void store_fpx(const UnpackedFloat* fpx, Float* value);
 void swap_fp0_fp1(void);
+void int_to_fp(int value);
 void int32_to_fp(void);
-char truncate_fp_to_int32(void);
+char truncate_fp_to_int(void);
+int truncate_fp_to_int32(void);
 void fp_to_string(void);
 char string_to_fp(void);
 char char_to_digit(char c);

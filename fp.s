@@ -198,6 +198,8 @@ fpx_is_zero:
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
+; If calling the negate_significand_16 entry point, which only affects the 2 most significant bytes,
+; ensure the carry is set. 
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 negate_significand:
@@ -208,6 +210,7 @@ negate_significand:
         lda     #0
         sbc     FP0t+1
         sta     FP0t+1
+negate_significand_16:
         lda     #0
         sbc     FP0t+2
         sta     FP0t+2
@@ -302,14 +305,53 @@ div10_significand:
         bne     @next_bit               ; More bits to shift
         rts
 
-; Assumes that the 32-bit value in the top two bytes of FP0 signifcand is an integer and converts it to a float.
+; Accepts a 16-bit int in AX and converts it into a float in FP0.
+; AX = the input value
+
+int_to_fp:
+        sta     FP0t+2                  ; Low byte
+        txa                             ; Move high byte into A
+        sta     FP0t+3
+        and     #$80                    ; Isolate and store sign bit
+        sta     FP0s
+        bpl     @positive               ; Flags set by AND
+        sec                             ; Necessary for negate_significand_16
+        jsr     negate_significand_16
+@positive:
+        mva     #0, FP0t                ; Clear two low bytes
+        sta     FP0t+1
+        lda     #143                    ; Starting exponent = 15
+        bne     int_to_fp_common        ; Unconditional
+        
+; Assumes that the 32-bit value in the FP0 signifcand is an integer and converts it to a float.
 
 int32_to_fp:
-        mva     #159, FP0e              ; Have to shift left 31 places (to exponent 128) to get original value
+        lda     #159                    ; Starting exponent = 31
+
+; Performs the part of integer to float conversion common to 16- and 32-bit cases:
+; clear B, C, and FP2, and normalize.
+
+int_to_fp_common:
+        sta     FP0e                    ; Starting exponent
         mva     #0, C                   ; Set exponent high byte to 0
         sta     B                       ; Set round register to 0
         sta     FP2                     ; Clear low byte of extended significand
         jmp     normalize     
+
+; Truncates the FP value to a 16-bit integer and returns it in AX.
+
+truncate_fp_to_int:
+        lda     #144                    ; Target exponent is 15, but int_to_fp_common requires target+1
+        jsr     truncate_fp_to_int_common
+        lda     FP0s                    ; Was float value negative?
+        bpl     @positive
+        sec                             ; Necessary for negate_significand_16
+        jsr     negate_significand_16
+@positive:
+        lda     FP0t+2                  ; Load return value into AX
+        ldx     FP0t+3
+        clc                             ; Signal success
+        rts
 
 ; Truncates the FP value to a 32-bit integer and leaves it in the FP0 significand field.
 ; To generate the integer value we shift the significand (and adjust the exponent) until the exponent is 0; the
@@ -318,12 +360,18 @@ int32_to_fp:
 ; will be in the significand field of FP0.
 
 truncate_fp_to_int32:
-        mva     #0, FP2                 ; Extend to 40 bits in case we have to shift right
-        lda     FP0e                    ; Get the exponent
-        sec
-        sbc     #160                    ; Target exponent value is 31 (159 with bias), but subtract 32 (160)
-        tay                             ; Otherwise A is -(number of shifts) - 1, so we pre-increment and check for 0
-        bcc     @decrement              ; If we borrowed to subtract 160, then E < 160 or E <= 159; ok!
+        lda     #160                    ; Target exponent value is 31, but int_to_fp_common requires target+1
+
+; Performs the part of float to integer conversion common to 16- and 32-bit cases:
+; adjusts the significand right to reach a target exponent value.
+; A = the target exponent value *plus one* (with bias)
+
+truncate_fp_to_int_common:
+        eor     #$FF                    ; A = (-target) - 1
+        sec                             ; Set carry to ADC completes the two's complement operation
+        adc     FP0e                    ; A = exponent - target+1
+        tay                             ; A = -(number of shifts) - 1, so we pre-increment and check for 0
+        bcc     @decrement              ; If we borrowed to subtract target+1, then E < target+1 or E <= target; ok!
         rts                             ; Otherwise return with carry set
 
 @shift:
