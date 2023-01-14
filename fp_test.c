@@ -32,10 +32,10 @@ typedef struct LoadStoreTestCase {
 
 static LoadStoreTestCase load_store_test_cases[] = {
     { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
-    { { 0x00000000, 128 }, { 0x80000000, 128, POSITIVE } },
-    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 158, POSITIVE } },
-    { { 0x80000000, 159 }, { 0x80000000, 159, NEGATIVE } },
-    { { 0x08442211, 128 }, { 0x88442211, 128, POSITIVE } },
+    { { 0x00000000, 127 }, { 0x80000000, 127, POSITIVE } },
+    { { 0x7FFFFFFE, 157 }, { 0xFFFFFFFE, 157, POSITIVE } },
+    { { 0x80000000, 158 }, { 0x80000000, 158, NEGATIVE } },
+    { { 0x08442211, 127 }, { 0x88442211, 127, POSITIVE } },
     // Smallest possible normalized exponent
     { { 0x00000000, 1 }, { 0x80000000, 1, POSITIVE } },
     // Subnormal
@@ -142,19 +142,19 @@ static void test_normalize(void) {
     // 0 significand with any exponent normalizes to 0
     call_normalize(POSITIVE, 127, 0, 0, 0, 1, 0, __LINE__);
     // 1
-    call_normalize(POSITIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
+    call_normalize(POSITIVE, 127, 0x00, 0x00000001, 0x00, 96, 0x80000000, __LINE__);
     // -1
-    call_normalize(NEGATIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
+    call_normalize(NEGATIVE, 127, 0x00, 0x00000001, 0x00, 96, 0x80000000, __LINE__);
     // 32,767
-    call_normalize(POSITIVE, 158, 0x00, 0x00007FFF, 0x00, 141, 0xFFFE0000, __LINE__);
+    call_normalize(POSITIVE, 157, 0x00, 0x00007FFF, 0x00, 140, 0xFFFE0000, __LINE__);
     // 2,147,483,647
-    call_normalize(POSITIVE, 159, 0x00, 0x7FFFFFFF, 0x00, 158, 0xFFFFFFFE, __LINE__);
+    call_normalize(POSITIVE, 158, 0x00, 0x7FFFFFFF, 0x00, 157, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
-    call_normalize(NEGATIVE, 159, 0x00, 0x80000000, 0x00, 159, 0x80000000, __LINE__);
+    call_normalize(NEGATIVE, 158, 0x00, 0x80000000, 0x00, 158, 0x80000000, __LINE__);
     // 2,286,166,545
-    call_normalize(POSITIVE, 158, 0x00, 0x88442211, 0x00, 158, 0x88442211, __LINE__);
+    call_normalize(POSITIVE, 157, 0x00, 0x88442211, 0x00, 157, 0x88442211, __LINE__);
     // 4,294,967,296
-    call_normalize(POSITIVE, 159, 0x01, 0x00000000, 0x00, 160, 0x80000000, __LINE__);
+    call_normalize(POSITIVE, 158, 0x01, 0x00000000, 0x00, 159, 0x80000000, __LINE__);
     // Subnormal
     call_normalize(POSITIVE, 9, 0x00, 0x00001234, 0x00, 1, 0x00123400, __LINE__);
     call_normalize(POSITIVE, 8, 0x00, 0x00001234, 0x00, 1, 0x00091A00, __LINE__);
