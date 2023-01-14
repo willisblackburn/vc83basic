@@ -174,7 +174,7 @@ static IntConversionTestCase int_conversion_test_cases[] = {
     { 4112, { 0x80800000, 140, POSITIVE } },
 };
 
-static void test_int_to_fp(void) {
+static void test_int32_to_fp(void) {
     IntConversionTestCase* test_case;
     int i;
 
@@ -182,14 +182,14 @@ static void test_int_to_fp(void) {
 
     for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
         test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: int_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
+        fprintf(stderr, "  %s:%d: int32_to_fp(%ld)\n", __FILE__, __LINE__, test_case->value);
         SET_FPX(FP0, POSITIVE, 0, (unsigned long)test_case->value);
-        int_to_fp();
+        int32_to_fp();
         ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
-static void test_truncate_fp_to_int(void) {
+static void test_truncate_fp_to_int32(void) {
     IntConversionTestCase* test_case;
     int i;
     char err;
@@ -198,10 +198,10 @@ static void test_truncate_fp_to_int(void) {
 
     for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
         test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: truncate_fp_to_int(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int32(t=$%08LX e=%02X s=%02X)\n", __FILE__, __LINE__,
             test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-        err = truncate_fp_to_int();
+        err = truncate_fp_to_int32();
         ASSERT_EQ(err, 0);
         ASSERT_EQ(FP0t, (unsigned long)test_case->value);
     }
@@ -609,8 +609,8 @@ int main(void) {
     test_swap_fp0_fp1();
     test_adjust_exponent();
     test_normalize();
-    test_int_to_fp();
-    test_truncate_fp_to_int();
+    test_int32_to_fp();
+    test_truncate_fp_to_int32();
     test_fadd();
     test_fsub();
     test_fmul();

@@ -172,13 +172,13 @@ _swap_fp0_fp1:
 .export _swap_fp0_fp1
         jmp     swap_fp0_fp1
 
-_int_to_fp:
-.export _int_to_fp
-        jmp     int_to_fp
+_int32_to_fp:
+.export _int32_to_fp
+        jmp     int32_to_fp
 
-_truncate_fp_to_int:
-.export _truncate_fp_to_int
-        jsr     truncate_fp_to_int
+_truncate_fp_to_int32:
+.export _truncate_fp_to_int32
+        jsr     truncate_fp_to_int32
         jmp     return_carry_flag
 
 _char_to_digit:

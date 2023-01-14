@@ -304,20 +304,20 @@ div10_significand:
 
 ; Assumes that the 32-bit value in the top two bytes of FP0 signifcand is an integer and converts it to a float.
 
-int_to_fp:
+int32_to_fp:
         mva     #159, FP0e              ; Have to shift left 31 places (to exponent 128) to get original value
         mva     #0, C                   ; Set exponent high byte to 0
         sta     B                       ; Set round register to 0
         sta     FP2                     ; Clear low byte of extended significand
         jmp     normalize     
 
-; Returns the greatest 32-bit integer less than or equal to the input value.
+; Truncates the FP value to a 32-bit integer and leaves it in the FP0 significand field.
 ; To generate the integer value we shift the significand (and adjust the exponent) until the exponent is 0; the
 ; integer part will now be to the left of the binary point. But because that would push the integer part off the
 ; left end of the significand field, instead we adjust until the exponent is 31, at which point the integer value
 ; will be in the significand field of FP0.
 
-truncate_fp_to_int:
+truncate_fp_to_int32:
         mva     #0, FP2                 ; Extend to 40 bits in case we have to shift right
         lda     FP0e                    ; Get the exponent
         sec
@@ -390,7 +390,7 @@ fp_to_string:
         jsr     load_fpx
         jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
         bcs     @scale_down
-        jsr     truncate_fp_to_int      ; Make into a 32-bit integer
+        jsr     truncate_fp_to_int32    ; Make into a 32-bit integer
         mva     #0, D                   ; D is the number of generated digits
         jsr     generate_digits
 
@@ -638,7 +638,7 @@ string_to_fp:
 ; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
         sty     D                       ; Use D to keep track of how many digits after decimal
-        jsr     int_to_fp
+        jsr     int32_to_fp
         lda     D                       ; Test number of digits
         bmi     @whole                  ; If Y is negative or zero then no decimal point or no digits after it
         beq     @whole
@@ -731,7 +731,7 @@ shift_right_normalize:
 ;   * If the exponent is >127, fail with an overflow error.n (TODO: need to handle this)
 ; Otherwise, return the final result.
 ; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
-; int_to_fp) also clobbers all registers.
+; int32_to_fp) also clobbers all registers.
 
 normalize:
 
