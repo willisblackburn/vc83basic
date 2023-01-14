@@ -168,9 +168,9 @@ typedef struct IntConversionTestCase {
 static IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 128, POSITIVE } },
-    { 2147483647, { 0xFFFFFFFE, 158, POSITIVE } },
-    { 2147483648, { 0x80000000, 159, POSITIVE } },
-    { 4294967295, { 0xFFFFFFFF, 159, POSITIVE } },
+    { 2147483647UL, { 0xFFFFFFFE, 158, POSITIVE } },
+    { 2147483648UL, { 0x80000000, 159, POSITIVE } },
+    { 4294967295UL, { 0xFFFFFFFF, 159, POSITIVE } },
     { 4112, { 0x80800000, 140, POSITIVE } },
 };
 
