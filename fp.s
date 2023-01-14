@@ -10,9 +10,8 @@
 ;     If e = 0 and s = 0 then value = 0
 ;     If e = 0 and s != 0 then number is subnormal and actual exponent is -127
 ;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
-; t = significand, 40 bits
-;
-; The 40-byte value is stored in little-endian format, i.e., lowest byte of significand comes first.
+; s = sign
+; t = fractional part of significand, 31 bits, lowest byte first
 ;
 ; In this module:
 ; Both B and C are used by the normalize function. B holds the rounding byte. C holds the high byte of the exponent.
