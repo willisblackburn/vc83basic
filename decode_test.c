@@ -28,28 +28,27 @@ static void test_decode_number(void) {
         12,
         10,
         {
-            TOKEN_NUM, 0x00, 0x00, 0x01, 0x00, 0x00,
-            TOKEN_NUM, 0x00, 0xE8, 0x03, 0x00, 0x00,
-            TOKEN_NUM, 0xFB, 0x2F, 0xCB, 0x04, 0x00,
+            TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
+            TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
+            TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128
         }
     };
-    Float value;
 
     PRINT_TEST_NAME();
 
     line_ptr = &line;
     lp = offsetof(Line, data);
 
-    decode_number();
-    store_fpx(FP0, &value);
-    ASSERT_FLOAT_EQ(value, 0, 256);
+    fprintf(stderr, "line_ptr=%p\n", line_ptr);
 
     decode_number();
-    store_fpx(FP0, &value);
-    ASSERT_FLOAT_EQ(reg_fpa, 0, 1000);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 133, 0xC8000000);
 
     decode_number();
-    ASSERT_FLOAT_EQ(reg_fpa, -5, 314159);
+    ASSERT_FPX_EQ(FP0, POSITIVE, 139, 0x80800000);
+
+    decode_number();
+    ASSERT_FPX_EQ(FP0, POSITIVE, 128, 0xC90FCF81);
 }
 
 extern void* decode_xh_vectors[];
@@ -59,8 +58,8 @@ static int num_count;
 static void xh_number(void) {
     decode_number();
     switch (++num_count) {
-        case 1: ASSERT_FLOAT_EQ(reg_fpa, 0, 4112); break;
-        case 2: ASSERT_FLOAT_EQ(reg_fpa, 0, 3); break;
+        case 1: ASSERT_FPX_EQ(FP0, POSITIVE, 139, 0x80800000); break;
+        case 2: ASSERT_FPX_EQ(FP0, POSITIVE, 128, 0xC0000000); break;
     }
 }
 
@@ -115,12 +114,12 @@ static void test_decode_expression(void) {
         16,
         10,
         {
-            TOKEN_NUM, 0x00, 0x10, 0x10, 0x00, 0x00,  // 4,112
+            TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,  // 4,112
             TOKEN_OP | OP_ADD,        
             TOKEN_PAREN,
             TOKEN_VAR | 1, // X
             TOKEN_OP | OP_DIV,              
-            TOKEN_NUM, 0x00, 0x03, 0x00, 0x00, 0x00, // 3
+            TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, // 3
             TOKEN_NO_VALUE,
             TOKEN_OP | OP_MUL, 
             TOKEN_UNARY_OP | UNARY_OP_MINUS,             

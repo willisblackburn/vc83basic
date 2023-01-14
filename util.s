@@ -203,3 +203,13 @@ invoke_indexed_vector:
         lda     (vector_table_ptr),y    
         sta     E
         jmp     (DE)                    ; Handler function RTS will return from *this* function
+
+; Advance lp by the number of bytes in A.
+
+advance_lp_sizeof_float:
+        lda     #.sizeof(Float)
+advance_lp:
+        clc
+        adc     lp
+        sta     lp
+        rts                             ; Carry should be set on return since we can't overflow line_buffer

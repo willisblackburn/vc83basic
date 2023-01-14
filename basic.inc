@@ -185,6 +185,7 @@
 .global clear_memory, clear_memory_a, clear_memory_de
 .global mul8a, mul8
 .global invoke_indexed_vector
+.global advance_lp_sizeof_float, advance_lp
 
 ; target/*
 .global startup, initialize_target, readline, getchar, write, putchar, newline

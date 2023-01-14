@@ -9,6 +9,9 @@
 ; Maximum line length we're willing to encode (leave 16 bytes at end for END statement in immediate mode)
 MAX_LINE_LENGTH = 240
 
+; Make sure Line didn't get too big
+.assert .sizeof(Line) < 256 - MAX_LINE_LENGTH, error
+
 ; Encodes a number.
 ; FP0 = the number to encode
 ; BC SAFE, DE SAFE
@@ -21,10 +24,7 @@ encode_number:
         bcs     @error                  ; Nope; return with carry set
         ldy     #>line_buffer           ; High byte of line_buffer in Y
         jsr     store_fp0
-        lda     lp                      ; Get lp again
-        clc
-        adc     #.sizeof(Float)         ; We already know lp + Float is less than MAX_LINE_LENGTH so carry is clear
-        sta     lp                      ; Update lp
+        jmp     advance_lp_sizeof_float
 @error:
         rts
 

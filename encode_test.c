@@ -35,10 +35,10 @@ static void test_encode_byte(void) {
 static void test_encode_number(void) {
     int err;
 
-    const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00 };
-    const char line_data_2[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 0x86,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x7A, 0x89,
-        TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 0x81 };
+    const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0 };
+    const char line_data_2[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
+        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
+        TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128 };
 
     PRINT_TEST_NAME();
 
@@ -50,18 +50,18 @@ static void test_encode_number(void) {
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     // 100
-    SET_FPX(FP0, POSITIVE, 134, 0xC8000000);
+    SET_FPX(FP0, POSITIVE, 133, 0xC8000000);
     lp = offsetof(Line, data);
     err = encode_number();
     ASSERT_EQ(err, 0);
 
-    // 1000
-    SET_FPX(FP0, POSITIVE, 137, 0xFA000000);
+    // 4112
+    SET_FPX(FP0, POSITIVE, 139, 0x80800000);
     err = encode_number();
     ASSERT_EQ(err, 0);
 
     // 3.14159
-    SET_FPX(FP0, POSITIVE, 129, 0xC90FCF81);
+    SET_FPX(FP0, POSITIVE, 128, 0xC90FCF81);
     err = encode_number();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);

@@ -66,18 +66,16 @@ decode_expression:
 ; BC SAFE, DE SAFE
 
 decode_number:
-        ldy     lp                      ; Buffer index
-        iny                             ; Skip past TOKEN_NUM
-        ldx     #0                      ; FPA index
-@loop:
-        lda     (line_ptr),y
-        ; sta     FPA,x
-        inx
-        iny
-        cpx     #.sizeof(Float)         ; Copied everything?
-        bne     @loop
-        sty     lp                      ; Store line position
-        rts
+        inc     lp                      ; Skip past token
+        ldy     line_ptr+1              ; High byte of line_ptr
+        lda     line_ptr                ; Low byte
+        clc
+        adc     lp                      ; Add lp
+        bcc     @no_carry
+        iny                             ; Low byte addition overflowed so increment high byte
+@no_carry:
+        jsr     load_fp0
+        jmp     advance_lp_sizeof_float
 
 decode_variable:
         lda     #$7F
