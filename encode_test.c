@@ -42,29 +42,29 @@ static void test_encode_number(void) {
 
     PRINT_TEST_NAME();
 
-    SET_FP(reg_fpa, 0, 0);
+    SET_FPX(FP0, POSITIVE, 1, 0);
     lp = offsetof(Line, data);
     err = encode_number();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
-    SET_FP(reg_fpa, 0, 256);
+    SET_FPX(FP0, POSITIVE, 128, 256);
     lp = offsetof(Line, data);
     err = encode_number();
     ASSERT_EQ(err, 0);
 
-    SET_FP(reg_fpa, 0, 1000);
+    SET_FPX(FP0, POSITIVE, 128, 1000);
     err = encode_number();
     ASSERT_EQ(err, 0);
 
-    SET_FP(reg_fpa, -5, 314159);
+    SET_FPX(FP0, POSITIVE, 123, 314159);
     err = encode_number();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
-    // Encode at end of buffer should fail (doesn't matter what FPA is)
+    // Encode at end of buffer should fail (doesn't matter what FP0 is)
     lp = 252;
     err = encode_number();
     ASSERT_NE(err, 0);

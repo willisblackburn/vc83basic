@@ -97,14 +97,15 @@ print_start:
         ldax    #start_message
         ldy     #start_length
         jsr     write
-        jsr     clear_fpa               ; Clear FPA so we can use it to store free memory
         sec                             ; Calculate free memory; TODO: move to FRE function
         lda     himem_ptr
         sbc     free_ptr
-        sta     FPA+Float::s            ; Store low byte
+        tay                             ; Park low byte
         lda     himem_ptr+1
         sbc     free_ptr+1
-        sta     FPA+Float::s+1          ; Store high byte
+        tax                             ; High byte in X
+        tya                             ; Low byte back into A
+        jsr     int_to_fp               ; Load into FP0
         jsr     print_number
         ldax    #free_message
         ldy     #free_length

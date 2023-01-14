@@ -33,6 +33,7 @@ static void test_decode_number(void) {
             TOKEN_NUM, 0xFB, 0x2F, 0xCB, 0x04, 0x00,
         }
     };
+    Float value;
 
     PRINT_TEST_NAME();
 
@@ -40,13 +41,15 @@ static void test_decode_number(void) {
     lp = offsetof(Line, data);
 
     decode_number();
-    ASSERT_FP_EQ(reg_fpa, 0, 256);
+    store_fpx(FP0, &value);
+    ASSERT_FLOAT_EQ(value, 0, 256);
 
     decode_number();
-    ASSERT_FP_EQ(reg_fpa, 0, 1000);
+    store_fpx(FP0, &value);
+    ASSERT_FLOAT_EQ(reg_fpa, 0, 1000);
 
     decode_number();
-    ASSERT_FP_EQ(reg_fpa, -5, 314159);
+    ASSERT_FLOAT_EQ(reg_fpa, -5, 314159);
 }
 
 extern void* decode_xh_vectors[];
@@ -56,8 +59,8 @@ static int num_count;
 static void xh_number(void) {
     decode_number();
     switch (++num_count) {
-        case 1: ASSERT_FP_EQ(reg_fpa, 0, 4112); break;
-        case 2: ASSERT_FP_EQ(reg_fpa, 0, 3); break;
+        case 1: ASSERT_FLOAT_EQ(reg_fpa, 0, 4112); break;
+        case 2: ASSERT_FLOAT_EQ(reg_fpa, 0, 3); break;
     }
 }
 

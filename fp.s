@@ -3,496 +3,614 @@
 
 ; Floating Point Math Routines
 ;
-; Format is 40 bits (5 bytes):
-; eeeeeeee tttttttt tttttttt tttttttt tttttttt .
+; Format is single-precision with 40-bit extended significand (5 bytes):
+; eeeeeeee stttttt tttttttt tttttttt tttttttt
 ;
-; e = exponent, 8 bits, two's complement
-; t = significand, 40 bits, two's complement
-; . = implied decimal point after significand
+; e = exponent, 8 bits, excess-128 (MSB is inverted)
+;     If e = 0 and s = 0 then value = 0
+;     If e = 0 and s != 0 then number is subnormal and actual exponent is -127
+;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
+; t = significand, 40 bits
 ;
-; Exponent range is 10^-128 to 10^127
-; Significand range is -2,147,483,648 to 2,147,483,647
+; The 40-byte value is stored in little-endian format, i.e., lowest byte of significand comes first.
+;
+; In this module:
+; Both B and C are used by the normalize function. B holds the rounding byte. C holds the high byte of the exponent.
+; Since most operations call normalize at the end, this means that all those operations will clobber B and C.
+; B and C is also used in fdiv to accumulate quotient bits and to track the exponent adjustment introduced by
+; normalizing a subnormal divisor.
+; D and E are used by the string conversion functions.
 
+; TODO: make sure B and C are handled correctly in each function.
+
+BIAS = 128
 MAXDIGITS = 10
 
 .zeropage
 
-; We make a lot of assumptions about the size of Float in ths module.
+; We make a lot of assumptions about the size of Float in this module.
 .assert .sizeof(Float) = 5, error
+.assert .sizeof(Float::t) = 4, error
 .assert .sizeof(Float::e) = 1, error
-.assert .sizeof(Float::s) = 4, error
 
-; FP accumulator + extended significand
-FPA: .res .sizeof(Float) + 4
-; Secondary FP register
-FPB: .res .sizeof(Float)
+FP0: .res .sizeof(UnpackedFloat)
+FP0t = FP0+UnpackedFloat::t
+FP0e = FP0+UnpackedFloat::e
+FP0s = FP0+UnpackedFloat::s
+FP1: .res .sizeof(UnpackedFloat)
+FP1t = FP1+UnpackedFloat::t
+FP1e = FP1+UnpackedFloat::e
+FP1s = FP1+UnpackedFloat::s
+FP2: .res .sizeof(UnpackedFloat::t)
+FP3: .res .sizeof(UnpackedFloat::t)
 
-; fp_ptr holds a pointer to the other argument in two-float operations
-fp_ptr: .res 2
+fp_temp: .res .sizeof(Float)
 
 .code
 
-; Loads FP value into FPA.
-; AX = address of the value to load
-; Uses Y but does not use X after the _ptr entry point.
-; BC SAFE, DE SAFE
+; Floating-point constants
 
-load_fpa:
-        stax    fp_ptr                  ; FP value address into fp_ptr
-load_fpa_with_ptr:                      ; Entry point if fp_ptr is already set
-        ldy     #4                      ; Counts down from 4 to 0 for 5 bytes total
-@next_byte:
-        lda     (fp_ptr),y
-        sta     FPA,y
-        dey                             ; Decrement byte counter
-        bpl     @next_byte              ; Continue if it hasn't rolled over
+one: .byte $00, $00, $00, $00, $80
+ten: .byte $00, $00, $00, $20, 131
+
+; Loads a new Float value from memory into FP0 or FP1.
+; AY = a pointer to the value to load
+; X = either #FP0 or #FP1
+
+; Y indexes Float starting at position 0 so make sure everything is in the right place.
+.assert Float::t = 0, error
+.assert Float::e = 4, error
+
+load_fp0:
+        ldx     #FP0
+load_fpx:
+        stay    BC                      ; FP value address into BC
+        ldy     #0                      ; Start with low byte of significand
+        lda     (BC),y
+        sta     UnpackedFloat::t,x
+        iny
+        lda     (BC),y
+        sta     UnpackedFloat::t+1,x
+        iny
+        lda     (BC),y
+        sta     UnpackedFloat::t+2,x
+        iny
+        lda     (BC),y                  ; High 7 bits of significand plus sign
+        and     #$80                    ; Isolate high bit
+        sta     UnpackedFloat::s,x      ; Store sign (only bit 7 is signifncant)
+        lda     (BC),y                  ; Reload
+        and     #$7F                    ; Isolate significand
+        sta     UnpackedFloat::t+3,x    ; Store high 7 bits of significand
+        iny     
+        lda     (BC),y                  ; Exponent
+        beq     @subnormal_or_zero      ; Handle as subnormal; significand MSB will be 0 in this case
+        sta     UnpackedFloat::e,x      ; Store exponent
+        lda     #$80                    ; High bit of significand
+        ora     UnpackedFloat::t+3,x    ; OR with high byte
+        sta     UnpackedFloat::t+3,x    ; Save back
         rts
 
-; Stores FP value from FPA into memory.
-; AX = destination address
-; Uses Y but does not use X after the _ptr1 entry point.
-; BC SAFE, DE SAFE
-
-store_fpa:
-        stax    fp_ptr                  ; FP value address into fp_ptr
-store_fpa_with_ptr:                     ; Entry point if fp_ptr is already set
-        ldy     #4
-@next_byte:
-        lda     FPA,y
-        sta     (fp_ptr),y
-        dey                             ; Decrement byte counter
-        bpl     @next_byte              ; Continue if it hasn't rolled over
+@subnormal_or_zero:
+        lda     #$01                    ; Exponent is -127 ($01)
+        sta     UnpackedFloat::e,x      ; Store exponent
         rts
 
-; Stores 0 into FPA.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+; Stores the value in FP0 or FP1 as a Float value in memory.
+; AY = destination address
+; X = either #FP0 or #FP1
 
-clear_fpa:
+store_fp0:
+        ldx     #FP0
+store_fpx:
+        stay    BC                      ; FP value address into BC
+        ldy     #0                      ; Start with low byte of significand
+        lda     UnpackedFloat::t,x
+        sta     (BC),y
+        iny
+        lda     UnpackedFloat::t+1,x
+        sta     (BC),y
+        iny
+        lda     UnpackedFloat::t+2,x
+        sta     (BC),y
+        iny
+        lda     UnpackedFloat::t+3,x    ; High byte of significand
+        bpl     @subnormal_or_zero      ; MSB of significand is 0 so this is subnormal or zero
+        and     #$7F                    ; Set MSB to 0
+        ora     UnpackedFloat::s,x      ; OR in the sign bit
+        sta     (BC),y                  ; Save
+        iny
+        lda     UnpackedFloat::e,x
+        sta     (BC),y                  ; Store
+        rts
+
+@subnormal_or_zero:
+        ora     UnpackedFloat::s,x      ; OR in the sign bit
+        sta     (BC),y                  ; Save
+        iny
         lda     #0
-        sta     FPA+Float::e
-        sta     FPA+Float::s
-        sta     FPA+Float::s+1
-        sta     FPA+Float::s+2
-        sta     FPA+Float::s+3
+        sta     (BC),y                  ; Save exponent as zero
         rts
 
-; Swaps FPA with a value in memory.
-; AX = the address of the value in memory
-; BC SAFE, DE SAFE
+; Swaps FP0 and FP1.
 
-swap_fpa:
-        stax    fp_ptr
-swap_fpa_with_ptr:
-        ldy     #4                      ; Y goes from 4 -> 0
+swap_fp0_fp1:
+        ldy     #.sizeof(UnpackedFloat)-1
 @next_byte:
-        ldx     FPA,y                   ; Swap one byte
-        lda     (fp_ptr),y
-        sta     FPA,y                   ; Uses nnnn,y addressing but no way to avoid
-        txa
-        sta     (fp_ptr),y
+        lda     FP1,y
+        ldx     FP0,y
+        stx     FP1,y
+        sta     FP0,y
         dey
-        bpl     @next_byte              ; Continue if it hasn't rolled over
+        bpl     @next_byte
         rts
 
-; Copies FPA to FPB.
-; No return value.
+; Copies FP0 to FP1.
+
+copy_fp0_fp1:
+        lda     FP0s
+        sta     FP1s
+        lda     FP0e
+        sta     FP1e
+        ldx     #FP1t
+
+; Copies the significand of FP0 to another register.
+; X = either #FP1t, #FP2, or #FP3
+
+copy_significand:
+        lda     FP0t
+        sta     0,x
+        lda     FP0t+1
+        sta     1,x
+        lda     FP0t+2
+        sta     2,x
+        lda     FP0t+3
+        sta     3,x
+        rts
+
+; Sets either FP0 or FP1 to zero.
+; X = either #FP0 or #FP1
+
+clear_fp0:
+        ldx     #FP0
+clear_fpx:
+        lda     #0
+        sta     UnpackedFloat::e,x
+        sta     UnpackedFloat::s,x
+
+; Fall through
+
+; Clears the significand of FP0 or FP1, or FP2 or FP3.
+; X = either #FP0t, #FP1t, #FP2, or #FP3
+; Returns 0 in A.
+
+clear_significand:
+        lda     #0
+        sta     0,x
+        sta     1,x
+        sta     2,x
+        sta     3,x
+        rts
+
+; Checks if FP0 or FP1 is zero.
+; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
+; X = either #FP0 or #FP1
+
+fp0_is_zero:
+        ldx     #FP0
+fpx_is_zero:
+        lda     UnpackedFloat::t,x      ; OR all the significand bytes together
+        ora     UnpackedFloat::t+1,x
+        ora     UnpackedFloat::t+2,x
+        ora     UnpackedFloat::t+3,x
+        rts
+
+; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
+; If calling the negate_significand_16 entry point, which only affects the 2 most significant bytes,
+; ensure the carry is set. 
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
-copy_fpa_to_fpb:
-        lda     FPA+Float::e
-        sta     FPB+Float::e
-copy_fpa_significand_to_fpb:
-        lda     FPA+Float::s
-        sta     FPB+Float::s
-        lda     FPA+Float::s+1
-        sta     FPB+Float::s+1
-        lda     FPA+Float::s+2
-        sta     FPB+Float::s+2
-        lda     FPA+Float::s+3
-        sta     FPB+Float::s+3
+negate_significand:
+        sec
+        lda     #0
+        sbc     FP0t
+        sta     FP0t
+        lda     #0
+        sbc     FP0t+1
+        sta     FP0t+1
+negate_significand_16:
+        lda     #0
+        sbc     FP0t+2
+        sta     FP0t+2
+        lda     #0
+        sbc     FP0t+3
+        sta     FP0t+3
+        lda     #0
+        sbc     FP2
+        sta     FP2
         rts
 
-; Copies FPB to FPA.
-; No return value.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+; Adds the significands of FP0 and FP1.
+; Returns the high byte of the result in A.
 
-copy_fpb_to_fpa:
-        lda     FPB+Float::e
-        sta     FPA+Float::e
-copy_fpb_significand_to_fpa:
-        lda     FPB+Float::s
-        sta     FPA+Float::s
-        lda     FPB+Float::s+1
-        sta     FPA+Float::s+1
-        lda     FPB+Float::s+2
-        sta     FPA+Float::s+2
-        lda     FPB+Float::s+3
-        sta     FPA+Float::s+3
+add_significands:
+        clc                     
+add_significands_with_carry:
+        lda     FP0t                    ; Add the significands
+        adc     FP1t
+        sta     FP0t
+        lda     FP0t+1
+        adc     FP1t+1
+        sta     FP0t+1
+        lda     FP0t+2
+        adc     FP1t+2
+        sta     FP0t+2
+        lda     FP0t+3
+        adc     FP1t+3
+        sta     FP0t+3
+        lda     FP2                     ; Extended significand
+        adc     #0                      ; Extended significand of FP1 is always 0
+        sta     FP2
         rts
 
-; Checks if FPA is zero.
-; FPA is zero if the significand is zero.
-; On return, the Z flag will indicate whether FPA is zero. If FPA is zero, A will also be zero.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+; Utility function to shift the FP0 significand right by one bit and increment exponent.
 
-fpa_is_zero:
-        lda     FPA+Float::s
-        ora     FPA+Float::s+1
-        ora     FPA+Float::s+2
-        ora     FPA+Float::s+3
-        rts
-
-; Multiplies the FPA significand by 10. Copies the FPA value into FPB.
-; On return the carry will be set if the multiplication caused an overflow.
-; On overflow, the original value can be recovered from FPB.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
-
-significand_mul_10:
-        jsr     copy_fpa_significand_to_fpb
-        jsr     @shift_significand      ; *2
-        bcs     @overflow
-        jsr     @shift_significand      ; *4
-        bcs     @overflow
-        jsr     @add_significands       ; *5
-        bcs     @overflow
-        jsr     @shift_significand      ; *10
-@overflow:
-        lda     FPA+Float::e
-        lda     FPA+Float::s
-        lda     FPA+Float::s+1
-        lda     FPA+Float::s+2
-        lda     FPA+Float::s+3
-        rts
-
-; Shifts the signifiand of FPA left, multiplying it by 2.
-
-@shift_significand:
-        asl     FPA+Float::s
-        rol     FPA+Float::s+1
-        rol     FPA+Float::s+2
-        rol     FPA+Float::s+3
-        rts
-
-; Adds the significand of FPX to FPA.
-
-@add_significands:
+shift_right:
         clc
-        lda     FPA+Float::s
-        adc     FPB+Float::s
-        sta     FPA+Float::s
-        lda     FPA+Float::s+1
-        adc     FPB+Float::s+1
-        sta     FPA+Float::s+1
-        lda     FPA+Float::s+2
-        adc     FPB+Float::s+2
-        sta     FPA+Float::s+2
-        lda     FPA+Float::s+3
-        adc     FPB+Float::s+3
-        sta     FPA+Float::s+3
+shift_right_from_carry:
+        ror     FP0t+3
+        ror     FP0t+2
+        ror     FP0t+1
+        ror     FP0t
         rts
 
-; Divides the FPA significand by 10.
+; Utility function to shift the FP0 significand left by one bit.
+
+shift_left:
+        clc
+shift_left_from_carry:
+        rol     FP0t
+        rol     FP0t+1
+        rol     FP0t+2
+        rol     FP0t+3
+        rts
+
+; Multiplies the FP0 significand by 10. Copies the FP0 value into FP1.
+; On return the carry will be set if the multiplication caused an overflow.
+; On overflow, the original value can be recovered from FP1.
+; Y SAFE, BC SAFE, DE SAFE
+
+mul10_significand:
+        ldx     #FP1t
+        jsr     copy_significand
+        jsr     shift_left              ; *2
+        bcs     @overflow
+        jsr     shift_left_from_carry   ; *4
+        bcs     @overflow
+        jsr     add_significands        ; *5
+        bcs     @overflow
+        jsr     shift_left_from_carry   ; *10
+@overflow:
+        rts
+
+; Divides the FP0 significand by 10.
 ; Returns the remainder in A.
 ; Uses X to keep track of the shift count.
 ; Y SAFE, BC SAFE, DE SAFE
 
-significand_div_10:
+div10_significand:
         lda     #0                      ; Initialize remainder to 0
         ldx     #32                     ; 32 bits
 @next_bit:
-        asl     FPA+Float::s            ; LSB of FPA+1 (least significant byte) is now 0
-        rol     FPA+Float::s+1
-        rol     FPA+Float::s+2
-        rol     FPA+Float::s+3
+        jsr     shift_left              ; LSB of FP0 significand is now 0
         rol     A                       ; Bits from significand move into A
         cmp     #10                     ; C ("don't borrow") set if A>=10
         bcc     @not_10                 ; It's <10
-        inc     FPA+Float::s            ; Increment quotient
+        inc     FP0t                    ; Increment quotient
         sbc     #10                     ; C will still be set here
 @not_10:
         dex
         bne     @next_bit               ; More bits to shift
         rts
 
-; Divides the extended FPA significand by 10.
-; Identical to signficand_div_10 except the dividend is the 64-bit extended FPA register.
-; Y SAFE, BC SAFE, DE SAFE
+; Accepts a 16-bit int in AX and converts it into a float in FP0.
+; AX = the input value
 
-significand_div_10_ext:
-        lda     #0                      ; Initialize remainder to 0
-        ldx     #64                     ; 64 bits
-@next_bit:
-        asl     FPA+Float::s
-        rol     FPA+Float::s+1
-        rol     FPA+Float::s+2
-        rol     FPA+Float::s+3
-        rol     FPA+Float::s+4
-        rol     FPA+Float::s+5
-        rol     FPA+Float::s+6
-        rol     FPA+Float::s+7
-        rol     A               
-        cmp     #10             
-        bcc     @not_10         
-        inc     FPA+Float::s           
-        sbc     #10             
-@not_10:
-        dex
-        bne     @next_bit       
+int_to_fp:
+        sta     FP0t+2                  ; Low byte
+        txa                             ; Move high byte into A
+        sta     FP0t+3
+        and     #$80                    ; Isolate and store sign bit
+        sta     FP0s
+        bpl     @positive               ; Flags set by AND
+        sec                             ; Necessary for negate_significand_16
+        jsr     negate_significand_16
+@positive:
+        mva     #0, FP0t                ; Clear two low bytes
+        sta     FP0t+1
+        lda     #143                    ; Starting exponent = 15
+        bne     int_to_fp_common        ; Unconditional
+        
+; Assumes that the 32-bit value in the FP0 signifcand is an integer and converts it to a float.
+
+int32_to_fp:
+        lda     #159                    ; Starting exponent = 31
+
+; Performs the part of integer to float conversion common to 16- and 32-bit cases:
+; clear B, C, and FP2, and normalize.
+
+int_to_fp_common:
+        sta     FP0e                    ; Starting exponent
+        mva     #0, C                   ; Set exponent high byte to 0
+        sta     B                       ; Set round register to 0
+        sta     FP2                     ; Clear low byte of extended significand
+        jmp     normalize     
+
+; Truncates the FP value to a 16-bit integer and returns it in AX.
+
+truncate_fp_to_int:
+        lda     #144                    ; Target exponent is 15, but int_to_fp_common requires target+1
+        jsr     truncate_fp_to_int_common
+        lda     FP0s                    ; Was float value negative?
+        bpl     @positive
+        sec                             ; Necessary for negate_significand_16
+        jsr     negate_significand_16
+@positive:
+        lda     FP0t+2                  ; Load return value into AX
+        ldx     FP0t+3
+        clc                             ; Signal success
         rts
 
-; Negates the FPA significand if it is negative.
-; Returns carry set if the significand was negative, carry clear it was not.
-; BC SAFE, DE SAFE
+; Truncates the FP value to a 32-bit integer and leaves it in the FP0 significand field.
+; To generate the integer value we shift the significand (and adjust the exponent) until the exponent is 0; the
+; integer part will now be to the left of the binary point. But because that would push the integer part off the
+; left end of the significand field, instead we adjust until the exponent is 31, at which point the integer value
+; will be in the significand field of FP0.
 
-negate_negative:
-        lda     FPA+Float::s+3          ; MSB of significand
-        tax                             ; Save it
-        bpl     @finish
-        jsr     fneg
-@finish:
-        txa                             ; Recover MSB before negation
-        asl     A                       ; Shift 
+truncate_fp_to_int32:
+        lda     #160                    ; Target exponent value is 31, but int_to_fp_common requires target+1
+
+; Performs the part of float to integer conversion common to 16- and 32-bit cases:
+; adjusts the significand right to reach a target exponent value.
+; A = the target exponent value *plus one* (with bias)
+
+truncate_fp_to_int_common:
+        eor     #$FF                    ; A = (-target) - 1
+        sec                             ; Set carry to ADC completes the two's complement operation
+        adc     FP0e                    ; A = exponent - target+1
+        tay                             ; A = -(number of shifts) - 1, so we pre-increment and check for 0
+        bcc     @decrement              ; If we borrowed to subtract target+1, then E < target+1 or E <= target; ok!
+        rts                             ; Otherwise return with carry set
+
+@shift:
+        jsr     shift_right             ; Shift right
+@decrement:
+        iny                             ; For example if E was 159 then A = (159-160) = -1, so INY gives 0 and we stop
+        bne     @shift                  ; If not 0 then continue
+        clc                             ; Signal success
         rts
 
-; Negates FPA if carry is set, otherwise does nothing
-; negates the significand if it was previously negative.
-
-restore_negative:
-        bcc     @skip
-        jsr     fneg
-@skip:
-        rts
-
-; Unconditionally negates FPA by subtracting the significand from zero.
-; X SAFE, BC SAFE, DE SAFE
-
-fneg:
-        sec
-        lda     #0
-        tay
-        sbc     FPA+1
-        sta     FPA+1
-        tya
-        sbc     FPA+2
-        sta     FPA+2
-        tya
-        sbc     FPA+3
-        sta     FPA+3
-        tya
-        sbc     FPA+4
-        sta     FPA+4
-        rts
-
-; Converts FP number in FPA into a string.
+; Converts FP number in FP0 into a string.
 ; Writes the string to buffer at the position specified by bp. Does not perform any error checking; there must 
 ; be enough space in the buffer for the write to succeed.
+; bp = the write position in buffer
+
+string_max: .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
+string_min: .byte $CC, $CC, $CC, $4C, 156       ; 2^31/10  (  429,496,729.6)
 
 fp_to_string:
-        ldx     bp                      ; Position in output buffer
+        lda     FP0s                    ; Check for negative value
+        bpl     @positive               ; Nope
+        ldx     bp                      ; Write index
+        lda     #'-'                    ; Minus sign
+        sta     buffer,x
+        inc     bp                      ; Update index
 
 ; Handle 0 as a special case.
 ; The number is 0 if the significand is zero regardless of exponent.
 
-        jsr     fpa_is_zero
-        bne     @not_zero
+@positive:
+        mva     #0, E                   ; E keeps track of how much we have scaled up or down
+        sta     FP0s                    ; Also set sign to positive since we already printed '-'
+        jsr     fp0_is_zero
+        bne     @maybe_scale_up
+        ldx     bp                      ; Write index
         lda     #'0'
-        sta     buffer,x
-        inx
-        jmp     @done
-
-; If significand is negaitve, output a '-' and then negate the significand.
-
-@not_zero:
-        lda     FPA+Float::s+3          ; MSB of significand
-        bpl     @generate_digits        ; Already positive, carry on with digits
-        lda     #'-'                    ; Store '-' as first character
-        sta     buffer,x
-        inx
-        jsr     fneg
-
-; Generate digits. Repeatedly divide FPA by 10, generate remainder in A.
-; Dividend in FPA shifts to the left, quotient shifts in from the right.
-; Will always generate at least one digit, which cannot be zero because we
-; handled zero above.
-
-@generate_digits:
-        ldy     #0                      ; Track number of generated digits in Y
-        stx     bp                      ; Divide routine will clobber X so save it back tp bp
-@next_digit:
-        jsr     significand_div_10      ; The remainder in A is the digit
-        clc                     
-        adc     #'0'                    ; Convert to ASCII
-        pha                             ; Use stack to store digits
-        iny                             ; Number of generated digits += 1
-        jsr     fpa_is_zero
-        bne     @next_digit             ; Continue if significand != 0
-
-; The number of digits we generated is in Y.
-; If exponent is 0, then output the number as an integer.
-;    Digits = Y
-; If >0, then add that many '0' digits after number.
-;    Digits = Y + E
-;    If digits > MAXDIGITS, output in scientific notation.
-; If <0, then the number will have a '.' with some digits before and after.
-;    E is negative. Calculate A = Y (number of digits) + E:
-;        If result is <0, print "0." then A '0' digits then generated digits.
-;        If result is 0, print "0." followed by the generated digits.
-;        If result is >0, print that many geneated digits, '.', remaining digits.
-;    Digits = Y - min(Y + E, 0) (remember E is negative)
-; If Digits>MAXDIGITS, output in scientific notation.
-
-        ldx     bp                      ; Reload the buffer position
-        lda     FPA+Float::e            ; Get exponent
-        bmi     @negative_exponent
-        tya                             ; Number of generated digits into A
-        clc  
-        adc     FPA+Float::e            ; A = Y + E digits
-        cmp     #MAXDIGITS+1            ; Add 1 to make carry set indicate >MAXDIGITS instead of >=MAXDIGITS
-        bcs     @scientific             ; It's over so print in scientific notation
-
-; Simple output case for <=MAXDIGITS digits and exponent >= 0.
-
-        jsr     output_y_digits
-        ldy     FPA+Float::e            ; Positive E is number of trailing zeros (possibly zero)
-        jsr     output_y_zeros
-@done:
-        stx     bp                      ; Update bp with new position
+        sta     buffer
+        inc     bp                      ; Update index
         rts
 
-; Coming into here we expect Y to still have the number of generated digits.
-; There are two cases we have to handle. The first case is when the decimal point is
-; somewhere within the generated digits. The second case (starting at @leading_zeros)
-; is when the decimal point comes before any of the generated digits.
+@scale_up:
+        lday    #ten
+        ldx     #FP1
+        jsr     load_fpx
+        jsr     fmul                    ; Multiply FP0 by 10
+        dec     E                       ; Have to divide by 10 to get back to original number
+@maybe_scale_up:
+        lday    #string_min             ; Load minimum value
+        ldx     #FP1                    ; Into FP1
+        jsr     load_fpx
+        jsr     fcmp                    ; Carry clear (borrow set) means FP0 < FP1 so we have to scale up
+        bcc     @scale_up
+        bcs     @maybe_scale_down       ; Unconditional skip past scale down code
+@scale_down:
+        lday    #ten
+        ldx     #FP1
+        jsr     load_fpx
+        jsr     fdiv                    ; Divide FP0 by 10
+        inc     E                       ; Have to multiply by 10 to get back to original number
+@maybe_scale_down:
+        lday    #string_max             ; Load maximum value
+        ldx     #FP1                    ; Into FP1
+        jsr     load_fpx
+        jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
+        bcs     @scale_down
+        jsr     truncate_fp_to_int32    ; Make into a 32-bit integer
+        mva     #0, D                   ; D is the number of generated digits
+        jsr     generate_digits
 
-@negative_exponent:
-        tya                             ; Exponent is negative so
-        clc                             ; digits to left of decimal is just 
-        adc     FPA+Float::e            ; Y + E
-        beq     @leading_zeros          ; Just need "0." and A is 0
-        bmi     @leading_zeros          ; Need "0." plus -A more leading zeros
-        sty     D                       ; Save number of digits in D
-        tay                             ; Number of digits left of decimal point in Y
-        eor     #$FF                    ; A is positive; negate A and add to D
+; There are D generated digits.
+; The adjustment factor is 10^E, that is, current number * 10^E = original number.
+;   * If E >= 0 then print D digits, E extra 0s at the end; length = D + E
+;   * If -E < D then print D - (-E) digits, '.', -E digits
+;   * If -E >= -D (i.e., D - (-E) <= 0) then print '0.', -(D - (-E)) 0s, then D digits
+
+@output:
+        clc                             ; It will be convenient for carry to be clear shortly
+        ldx     bp                      ; Load buffer position into X
+        lda     E
+        bpl     @whole                  ; Branch to @whole for the E >= 0 cases
+        eor     #$FF                    ; It's easier to deal with E if it's positive so negate it giving (-E - 1)
+        adc     #1                      ; Add 1 to complete negation
+        cmp     #11                     ; Check if more than 10 digits
+        bcs     @scientific             ; More than 10 digits; print in scientific notation
+        sta     E                       ; E = -E
+        lda     D                       ; Calculate D - E
         sec
-        adc     D                       ; A is now number of digits minus digits left of decimal
-        sta     D                       ; Save in D for later
-        jsr     output_y_digits         ; Output the digits to the left of decimal
-        lda     #'.'                    ; Output the decimal point
-        sta     buffer,x
-        inx
-        ldy     D                       ; Digits to the right of the decimal point
+        sbc     E
+        beq     @initial_zero           ; If 0 or negative then print initial '0.'
+        bmi     @initial_zero
+        tay
         jsr     output_y_digits
-        jsr     remove_trailing_zeros
-        jmp     @done
+        iny                             ; Output no 0s after the decimal; Y is -1 so INY will increase it to 0
+        mva     E, D                    ; Output E digits later
+@decimal:
+        lda     #'.'                    ; Output decimal point
+        sta     buffer,x
+        inx
+        jsr     output_y_zeros          ; Output (possibly zero) leading zeros
+        ldy     D
+        jsr     output_y_digits
+@done:
+        stx     bp
+        rts
 
-@leading_zeros:
-        eor     #$FF                    ; Negate A: A = ~A + 1
-        sta     D                       ; Output this many leading zeros (possibly 0)
-        inc     D                       ; Do the "+1" after saving since INC A requires a 65C02
-        tya                             ; Number of digits
-        sec
-        adc     D                       ; Plus the number leading zeros, with carry set to add one for "0."
-        cmp     #MAXDIGITS+1            ; Same trick with using MAXDIGITS+1
-        bcs     @scientific
-        lda     #'0'
+@initial_zero:
+        eor     #$FF                    ; A is E - D but we need D - E so negate
+        tay
+        iny                             ; +1 to complete negation; will output this many 0s after the decimal point
+        lda     #'0'                    ; Output '0' before decimal
         sta     buffer,x
         inx
-        lda     #'.'
-        sta     buffer,x
-        inx
-        sty     E                       ; Save number of digits
-        ldy     D                       ; Number of leading zeros we stashed earlier
+        jmp     @decimal
+
+@digits_before_decimal:
+        eor     #$FF                    ; A is E - D but we need D - E so negate
+        tay
+        iny                             ; +1 to complete negation
+        jsr     output_y_digits
+        mva     E, D                    ; E is the number of digits remaining after decimal point
+        ldy     #0                      ; Number of zeros after decimal point
+        jmp     @decimal
+
+@whole:
+        adc     D                       ; Add in D
+        cmp     #11                     ; Check if more than 10 digits
+        bcs     @scientific             ; More than 10 digits; print in scientific notation
+        ldy     D                       ; Output D digits
+        jsr     output_y_digits
+        ldy     E                       ; Followed by E zeros
         jsr     output_y_zeros
-        ldy     E                       ; Restore number of digits
-        jsr     output_y_digits
-        jsr     remove_trailing_zeros
         jmp     @done
-
-; Output in scientific notation.
-; First digit, '.', remaining digits, 'E', exponent
-; Y is still the number of generated digits.
 
 @scientific:
-        pla                             ; Write first digit
-        sta     buffer,x
-        inx
-        dey                             ; Decrement remaining digits
-        beq     @generate_e             ; Nothing after the decimal point
-        lda     #'.'                    ; Decimal point
-        sta     buffer,x
-        inx
-        tya                             ; Increase exponent by whatever's left to print
-        clc
-        adc     FPA+Float::e            ; A = E + X-1
-        sta     FPA+Float::e            ; Store back in FPA
+        ldy     #1                      ; Print 1 digit before the decimal point
         jsr     output_y_digits
-        jsr     remove_trailing_zeros
-        jmp     @generate_e
-
-; Output exponent in FPA.
-; Same logic as above, but only FPA is involved.
-
-@generate_e:
-        lda     #'E'
+        ldy     D                       ; Output the remaining digits
+        dey                             ; Minus one for the first digit
+        beq     @skip_decimal           ; If no digits after decimal, skip the decimal
+        lda     #'.'                    ; Output decimal point
         sta     buffer,x
         inx
-        lda     FPA+Float::e            ; Sets N if exponent < 0
-        bpl     @e_positive
-        eor     #$FF            
-        sta     FPA+Float::e            ; Exponent is now positive
-        inc     FPA+Float::e            ; Except not really, still have to do the +1
+@skip_decimal:
+        jsr     output_y_digits
+        lda     #'E'                    ; Exponent
+        sta     buffer,x
+        inx
+
+; Print the exponent value.
+; We could just suffix the number with "E" followed by the negated E value.
+; But we've shifted the decimal D-1 places to the left, so we need to add D-1 to the exponent.
+
+        dec     D                       ; Account for missing digit
+        lda     E                       ; Start with exponent
+        clc
+        adc     D                       ; Add D
+        bpl     @positive_e
+        tay                             ; Stash exponent value in Y
         lda     #'-'
         sta     buffer,x
         inx
-@e_positive:
-        stx     bp                      ; Save output index
-        ldy     #0                      ; Again use Y to track generated digits
-@e_next_digit:
-        lda     #0                      ; Zero remainder
-        ldx     #8                      ; 8 bits
-@e_next_bit:
-        asl     FPA+Float::e
-        rol     A
-        cmp     #10
-        bcc     @e_not_10
-        inc     FPA+Float::e
-        sbc     #10                     ; Carry must be set here
-@e_not_10:
-        dex
-        bne     @e_next_bit
-        clc
-        adc     #'0'
-        pha
-        iny                             ; Increment generated digits
-        lda     FPA+Float::e
-        bne     @e_next_digit
-        ldx     bp                      ; Reload output index
+        dey                             ; We're going to negate so decrement E while it's still stashed in Y
+        tya                             ; Get exponent value back from Y
+        eor     #$FF                    ; Complete negation
+@positive_e:
+        sta     FP0t                    ; Save in significand
+        mva     #0, FP0t+1
+        sta     FP0t+2
+        sta     FP0t+3
+        sta     D                       ; Reset number of digits and scaling factor
+        sta     E
+        stx     bp                      ; generate_digits will clobber X so save it
+        jsr     generate_digits
+        ldx     bp                      ; Recover X
+        ldy     D
         jsr     output_y_digits
-        jmp     @done
+        ldy     E
+        jsr     output_y_zeros
+        jmp     @done        
+
+; Generate digits. Repeatedly divide FP0 by 10, generate remainder in A.
+; Will always generate at least one digit, which cannot be zero because we
+; handled zero above.
+; Ignore any initial zeros and increment E instead.
+
+generate_digits:
+        plstaa  BC                      ; Save return address
+@next_digit:
+        jsr     fp0_is_zero             ; Check if FP0 significand zero; this will never be true the first time
+        beq     @no_more_digits         ; If zero then done generating digits; go to output
+        jsr     div10_significand       ; The remainder in A is the digit
+        tax                             ; Move remainder into X
+        ora     D                       ; Or with number of digits; tests if both are zero
+        beq     @skip_zero              ; If so then skip this zero
+        txa                             ; Otherwise get the digit back
+        clc                     
+        adc     #'0'                    ; Convert to ASCII
+        pha                             ; Use stack to store digits
+        inc     D                       ; Number of generated digits += 1
+        bne     @next_digit             ; Unconditional
+
+@skip_zero:
+        inc     E                       ; We divided significand by 10 without emitting a digit, so increase E
+        jmp     @next_digit             ; Keep generating digits
+
+@no_more_digits:
+        ldphaa  BC                      ; Restore return address
+        rts
 
 ; Output Y (possibly zero) digits from the stack.
-; The digits are on the stack, behind the JSR return address, so we pop
-; the return address off, stash it in BC, and then restore it before returning.
+; The digits are on the stack, behind the JSR return address, so we pop the return address off, stash it in BC, 
+; and then restore it before returning.
 ; X = the current buffer position (updated)
 ; BC SAFE
 
 output_y_digits:
-        plstaa  BC
+        plstaa  BC                      ; Save return address in BC
 @output_digit:
-        dey
-        bmi     @done
+        dey                             ; Pre-decrement digit count
+        bmi     @done                   ; If it's gone negative then return
         pla
         sta     buffer,x
         inx
         bne     @output_digit           ; Unconditional
 
 @done:
-        ldphaa  BC
+        ldphaa  BC                      ; Restore return addresss
         rts
 
 ; Output Y (possibly zero) zero digits.
 ; X = the current buffer position (updated)
-; BC SAFEM, DE SAFE
+; BC SAFE, DE SAFE
 
 output_y_zeros:
         lda     #'0'                    ; Prepare to output '0'
@@ -502,156 +620,103 @@ output_y_zeros:
         sta     buffer,x
         inx
         bne     @output_zero            ; Unconditional
-    
 @done:
         rts
 
-; Internal subroutine to eliminate trailing zeros after the decimal point by
-; backing up X. Remember that X always points to the next position.
-; X = the current buffer position
-
-remove_trailing_zeros:
-        dex                             ; Back up X by 1
-        lda     buffer,x                ; See what's there
-        cmp     #'0'                    ; Is it '0'?
-        beq     remove_trailing_zeros   ; If yes then keep backing up
-        cmp     #'.'                    ; If it's a '.' then we'll remove it too
-        beq     @done                   ; Do it by just not incrementing Y
-        inx                             ; Not a zero or '.''; write next charater after this one
-@done:
-        rts 
-
-; Converts a string in bufer into an FP number in FPA.
-; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
+; Converts a string in bufer into an FP number in FP0.
+; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
+; The caller should skip whitespace (if necessary) before calling this function.
 ; bp = the read position in buffer
-; Returns the number in FPA and carry clear if ok, carry set if error.
+; Returns the number in FP0 and carry clear if ok, carry set if error.
 
 string_to_fp:
-        jsr     clear_fpa               ; Clear FPA
-        ldx     bp                      ; X is the index into the string
+        jsr     clear_fp0               ; Reset to zero (including sign)
         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
-        lda     buffer,x                ; Check first character
-        cmp     #'-'                    ; Is the first character a minus?
-        php                             ; Remember result of this for later
-        bne     @bypass_increment
+        ldx     bp                      ; Read index
+        lda     buffer,x
+        cmp     #'-'                    ; Check if it's negative
+        bne     @not_negative
+        ror     FP0s                    ; If equal then carry will have been set; roll into sign
 @next_character:
-        inx                             ; Increment to the next character
-@bypass_increment:
+        inc     bp                      ; Skip past negative sign
+@not_negative:
+        ldx     bp
         lda     buffer,x                ; Get the next character
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
         tya                             ; Check if we've already seen a decimal
         bpl     @err_multiple_decimals
         ldy     #0                      ; Set Y to 0 to count digits after '.'
-        jmp     @next_character
+        beq     @next_character         ; Unconditional
 
 @not_decimal_point:
+        cmp     #'E'                    ; Is it 'E'?
+        bne     @not_e                  ; No
+        clc                             ; Signal success
+        rts
+
+@not_e:
         jsr     char_to_digit           ; Try to make it into a digit
-        bcs     @not_digit              ; Character was not a digit
-        sta     D                       ; Park digit
+        bcs     @not_digit              ; Character was not a digit, '.', or 'E'
+        
+; Multiply FP0 by 10 and add in new digit.
 
-; Multiply FPA by 10 and add in new digit.
-
-        jsr     significand_mul_10
+        pha                             ; Park digit on stack
+        jsr     mul10_significand
+        pla                             ; Recover digit from stack (does not affect carry)
         bcs     @err_overflow
         iny                             ; Increment digits after '.'
-        lda     D                       ; Recall the digit
-        clc     
-        adc     FPA+Float::s            ; Add digit to LSB
-        sta     FPA+Float::s
+        adc     FP0t                    ; Add digit to LSB (carry will be clear)
+        sta     FP0t
         bcc     @next_character         ; If no carry then next character
-        inc     FPA+Float::s+1          ; Otherwise increment next byte
+        inc     FP0t+1                  ; Otherwise increment next byte
         bne     @next_character         ; etc,
-        inc     FPA+Float::s+2
+        inc     FP0t+2
         bne     @next_character
-        inc     FPA+Float::s+3
-        beq     @err_overflow           ; If significand rolled over to 0 then overflow
-        jmp     @next_character
+        inc     FP0t+3
+        bne     @next_character         ; If the last byte wrapped to zero then overflow
+
+@err_multiple_decimals:
+@err_overflow:
+@err_not_digit:
+        sec                             ; Signal error
+        rts
 
 @not_digit:
         cpy     #$80                    ; Has Y changed at all?
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
-        lda     buffer,x                ; Load character again; -1 since we've incremented X
-        cmp     #'E'                    ; Is it 'E'?
-        beq     @handle_e               ; Yes
+        lda     buffer,x                ; Load character again
 
-; Update the exponent and finish.
+; There was at least one digit character followed by a non-digit character that isn't E, so treat this as
+; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
-@finish:
-        tya                             ; Exponent adjustment to A
-        bpl     @set_exponent           ; If adjustment is positive then use it
-        lda     #0                      ; Otherwise make it 0
-@set_exponent:
-        sta     D                       ; Use D to temporarily store adjustment
-        sec
-        lda     FPA+Float::e
-        sbc     D
-        bvs     @err_overflow           ; Adjusting E might cause signed overflow
-        sta     FPA+Float::e            ; Store exponent
-        plp                             ; Go get the '-' comparison from earlier
-        bne     @positive               ; There was no '-' at the start of the string
-        jsr     fneg
-        bpl     @err_overflow_2         ; Overflow if we were expecting negative but number is positive
-        bmi     @done
+        sty     D                       ; Use D to keep track of how many digits after decimal
+        jsr     int32_to_fp
+        lda     D                       ; Test number of digits
+        bmi     @whole                  ; If Y is negative or zero then no decimal point or no digits after it
+        beq     @whole
+        lday    #fp_temp
+        jsr     store_fp0               ; Hold FP0 result in fp_temp
+        lday    #ten
+        jsr     load_fpx                ; Set FP0 to 10 (X is still FP0 from before)
+@scale_divisor:
+        dec     D                       ; Decrement number of digits after decimal
+        beq     @scale
+        ldx     #FP1
+        lday    #ten
+        jsr     load_fpx                ; Set FP1 to 10
+        jsr     fmul                    ; Multiply FP0 by 10
+        jmp     @scale_divisor          ; Do it again until D is 0
 
-@positive:
-        lda     FPA+Float::s+3
-        bmi     @err_overflow_2         ; Overflow if we were expecting positive but number is negative
-@done:
-        stx     bp                      ; Update bp
+@scale:
+        jsr     copy_fp0_fp1            ; Move divisor into FP1
+        lday    #fp_temp
+        jsr     load_fp0                ; Reload result saved earlier
+        jmp     fdiv                    ; Divide
+
+@whole:
         clc                             ; Signal success
         rts
-
-@err_overflow_in_e:
-        pla                             ; Errors that require two pops
-@err_overflow:
-@err_not_digit:
-@err_multiple_decimals:
-        pla                             ; Errors that require one pop
-@err_overflow_2:
-        sec                             ; Signal failure
-        rts
-
-; There can be 1-3 exponent digits after 'E' optionally prefixed by '-'.
-; Parse the number and store in FPA exponent.
-; Checks for digits also handle the case of the string ending after 'E' or '-'.
-
-@handle_e:
-        inx                             ; Skip 'E'
-        lda     buffer,x                ; First character
-        cmp     #'-'                    ; Is it minus?
-        php                             ; Save the result for later
-        bne     @bypass_increment_e
-@next_character_e:
-        inx                             ; Skip the minus
-@bypass_increment_e:
-        lda     buffer,x                ; Next character
-        jsr     char_to_digit           ; Try to parse as digit
-        bcs     @finish_e               ; Was not digit
-        sta     D                       ; Park digit in D
-        lda     FPA+Float::e            ; Get exponent
-        asl     A                       ; Exponent *2
-        bcs     @err_overflow_in_e
-        asl     A                       ; *4
-        bcs     @err_overflow_in_e
-        adc     FPA+Float::e            ; *5, carry guaranteed to be clear
-        bcs     @err_overflow_in_e
-        asl     A                       ; *10
-        bcs     @err_overflow_in_e
-        adc     D                       ; Add in the new digit
-        bcs     @err_overflow_in_e
-        bmi     @err_overflow_in_e      ; If it goes negative then fail
-        sta     FPA+Float::e
-        jmp     @next_character_e
-
-@finish_e:
-        plp                             ; Get the '-' comparison from before
-        bne     @finish                 ; If it wasn't negative then all done
-        lda     FPA+Float::e            ; Negate exponent
-        eor     #$FF
-        sta     FPA+Float::e
-        inc     FPA+Float::e
-        jmp     @finish
 
 ; Converts the character in A into a digit.
 ; Returns the digit in A, carry clear if ok, carry set if error.
@@ -663,403 +728,440 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-; Converts a 16-bit signed integer value into floating point value in FPA.
-; A, X = 16-bit integer.
-; No return value.
+; Adjusts the 16-bit unsigned biased exponent of FP0 (zero-extended to C) by first adding the value in X
+; and then subtracting the value in Y.
 
-int_to_fp:
-        sta     FPA+Float::s            ; Store low byte
-        stx     FPA+Float::s+1          ; Store high byte
-        txa                             ; High byte to A
-        asl     A                       ; Shift sign bit into carry
-        lda     #0
-        sta     FPA                     ; Set exponent to 0
-        adc     #$FF                    ; Carry still has sign bit; A = $FF if positive, 0 if negative
-        eor     #$FF                    ; Invert bits; A is now $FF if number was negative
-        sta     FPA+Float::s+2          ; Sign extend the 16-bit integer to 32-bit significand
-        sta     FPA+Float::s+3
+adjust_exponent:
+        clc                             ; Clear carry to prepare for add
+        txa                             ; Get the value to add from X
+        ldx     #0                      ; X is now the high byte
+        adc     FP0e                    ; Add in FP0 exponent
+        sta     FP0e                    ; Update FP0 exponent
+        bcc     @no_carry               ; If carry clear then don't increment high byte
+        inx                             ; Increment high byte
+@no_carry:
+        sec                             ; Set carry to prepare for subtraction
+        tya                             ; Get value to subtract from Y
+        eor     #$FF                    ; Take one's complement; the +1 to get two's complement comes from carry
+        adc     FP0e                    ; Do the "subtraction" (adding one's complement plus sign)
+        sta     FP0e                    ; Save again
+        bcs     @no_borrow              ; If not borrowing then don't have to decrement high byte
+        dex                             ; Decrement high byte
+@no_borrow:
+        stx     C                       ; Store in C
         rts
 
-; Truncates FPA to an integer and store the result in the lower two bytes of FPA.
-; FPA must be in the range -32,768 to 32,767. FPA values aren't necessarily
-; normalized so we could encounter 10 as 10E+0, 1E+1, or 100E-1. First we
-; adjust the exponent to 0 by dividing or multiplying by 10. It's okay if, when dividing by 10,
-; we lose digits off the right since this is a truncation function. After adjusting we check
-; to see if the value is in range. 
-; Returns the integer value in AX.
+; Shifts the 40-bit FP0 extended significand one place to the right and re-attempts normalization.
+; Invoked from normalize when the significand doesn't fit into 32 bits.
 
-truncate_fp_to_int:
+shift_right_normalize:
+        lsr     FP2                     ; Shift FP2 right
+        jsr     shift_right_from_carry  ; Shift the remaining 32 bits; output in carry
+        ror     B                       ; Rotate carry into rounding register
+        inc     FP0e                    ; Increase exponent
+        bne     normalize               ; Skip increment of exponent high byte FP0e did not roll over
+        inc     C                       ; Increment high byte
 
-; Make the exponent 0, which will leave the integer value int the two least-significant bytes
-; of the significand.
+; Fall through
 
-@dec_e:
-        lda     FPA+Float::e            ; Test the exponent byte
-        beq     @to_int                 ; E was 0, go directly to getting int
-        bmi     @negative_e             ; E was negative
+; Normalizes the value in FP0. Normalization shifts the FP0 significand (adjusting the exponent each time)
+; until the most-significant bit is 1. The normalize function acts on the 40-bit FP0 extended significand and
+; normalizes to the 32-bit FP0 significand.
+; Normalization handles several different cases:
+;   * If FP2 (the high byte of the 40-bit significand) has a value (if the significand is >=2),
+;   then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
+;   addition or subtraction overflowed the 32-bit significand.
+;   * If the biased exponent is <-31, then return zero. This is an underflow condition; we cannot bring the exponent
+;   within range without shifting all the bits of the exponent away.
+;   * If the biased exponent is <1, then shift right (increase exponent) until it is 1.
+;   * If the 32-bit significand, and the round register B, are zero, then return zero. This avoids fruitlessly
+;   shifting left in search of a 1 to put in the most-significant bit.
+;   * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand, or the exponent
+;   reaches -127.
+;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
+;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
+;   (increase exponent) once again.
+;   * If the exponent is >127, fail with an overflow error.n (TODO: need to handle this)
+; Otherwise, return the final result.
+; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
+; int32_to_fp) also clobbers all registers.
 
-; E is positive.
-; Adjust exponent down by multiplying significand by 10.
+normalize:
 
-        jsr     significand_mul_10
-        bcs     @err_out_of_range
-        dec     FPA+Float::e
-        bne     @dec_e
-        jmp     @to_int
+; First check if there are any bits set in the low byte of FP2, indicating the significand is >= 2.
 
-; Adjust exponent up by dividing by 10.
-; If significand is negative then negate it first.
+        lda     FP2                     ; Check first extension byte
+        bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
-@negative_e:
-        jsr     negate_negative         ; Negate signifiand if it's negative
-        rol     E                       ; Roll the sign of the significand into E
-@inc_e:
-        jsr     significand_div_10
-        inc     FPA+Float::e
-        bne     @inc_e
-        lsr     E                       ; Get the flag back into carry
-        bcc     @to_int                 ; It was positive before, no change
-        jsr     fneg
+; Entry point if the significand fits within 32 bits.
+; Check if the biased exponent is <1.
 
-@to_int:
-        lda     FPA+2                   ; MSB of 16-bit int value
-        asl     A                       ; Sign bit into carry
-        lda     #$FF
-        adc     #0                      ; A is 0 if sign bit was negative, $FF if positive
-        eor     #$FF                    ; Invert bits
-        cmp     FPA+3                   ; 2 most significant bytes of significand must be this value
-        bne     @err_out_of_range
-        cmp     FPA+4  
-        bne     @err_out_of_range
-        lda     FPA+1                   ; Low byte
-        ldx     FPA+2                   ; High byte
+        lda     C                       ; High byte of exponent
+        bmi     shift_right_normalize   ; It's negative so definitely too low
+        lda     FP0e                    ; Not negative, but exponent might still be zero
+        beq     shift_right_normalize
+
+; Check if FP0 is zero. If so then set exponent to lowset possible value and return.
+; If FP0 is not zero then it means that left normalization is guaranteed to end: either the sign bit is 0, and one of
+; the other significand bits is 1 (since the significand overall is not zero); or the sign bit is 1, and eventually
+; we'll see a 0 bit, because we shift in 0s from the right.
+
+@check_zero:
+        jsr     fp0_is_zero             ; Check if FP0 is zero
+        bne     @coarse
+        ldx     B                       ; Check round
+        bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
+        lda     #1                      ; It's really zero; set lowest possible exponent and return
+        sta     FP0e
         clc                             ; Signal success
         rts
 
-@err_out_of_range:
-        sec                             ; Signal error
+@coarse:
+        ldy     FP0t+3                  ; Get high byte of significand
+        bne     @fine                   ; If not 0 then try fine shift
+
+; The high byte is 0, so shift left 8 bits using byte moves.
+
+@coarse_shift:
+        lda     FP0e                    ; Get exponent
+        sec
+        sbc     #8                      ; Trial subtraction of 8
+        bcc     @fine                   ; If subtracting required a borrow then try fine shift
+        beq     @fine                   ; If it went to 0 then can't apply coarse shift; do fine shift instead
+        sta     FP0e                    ; Otherwise update exponent
+        lda     FP0t+2
+        sta     FP0t+3                  ; Store new high byte
+        lda     FP0t+1                  ; Shift other bytes
+        sta     FP0t+2          
+        lda     FP0t
+        sta     FP0t+1
+        lda     B                       ; Rounding register goes into FP0t
+        sta     FP0t
+        mva     #0, B                   ; Clear rounding register
+        beq     @coarse                 ; Unconditional
+
+@fine_shift:
+        asl     B                       ; Shift left one bit starting from rounding register
+        jsr     shift_left_from_carry
+        dec     FP0e
+
+@fine:
+        lda     FP0t+3                  ; Get the high byte of significand
+        bmi     @round                  ; Significand is normalized
+        lda     FP0e                    ; Get exponent
+        cmp     #1                      ; Make sure not already minimum value (-127)
+        bne     @fine_shift             ; Okay to shift; otherwise leave as subnormal and fall through
+
+; Round the result, which will possibly require another right shift.
+
+@round:
+        asl     B                       ; Shift rounding register high bit into carry
+        bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
+        ldx     #FP1t
+        jsr     clear_significand
+        sta     B                       ; Also clear rounding register since it has been used to round up
+        jsr     add_significands_with_carry
+        beq     @done                   ; If the value written to FP2 was 0 then all done
+        sec                             ; Only 1 bit can possibly in FP2, so don't need to shift FP2
+        jsr     shift_right_from_carry  ; Otherwise have to shift right again
+        inc     FP0e                    ; Increase exponent
+
+@done:
+        clc                             ; Signal success
         rts
 
-; Adds a value to FPA, returning result in FPA.
-; The strategy is to get the number with the larger exponent into FPA.
-; AX = pointer to the float value to add to FPA
+swap_fadd:
+        jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
+
+; Fall through
+
+; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
 
 fadd:
-        stax    fp_ptr
-fadd_with_ptr:
-        ldy     #Float::e
-        lda     (fp_ptr),y              ; Argument exponent
+        mva     #0, B                   ; Initialize the rounding register to 0
+        sta     C                       ; Clear the extended exponent register
+        sta     FP2                     ; Also clear FP0 extended significand
+        lda     FP1e                    ; FP0 exponent
         sec
-        sbc     FPA+Float::e            ; If N eor V then ptr1 exponent < FPA exponent
+        sbc     FP0e                    ; Compare exponents: FP1e - FP0e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
-        bvc     @v_clear
-        eor     #$80                    ; V is 1 and A7 is N so this does N eor V
-@v_clear:
-        bmi     @fpa_eq_or_gt           ; If N eor V then ptr1 exponent < FPA exponent so don't swap
-        jsr     swap_fpa_with_ptr       ; Swap FPA with the value (clobbers X and Y)
-@fpa_eq_or_gt:
-        sec                     
-        lda     FPA+Float::e            ; FPA exponent is equal or greater
-        ldy     #Float::e               ; so when we subtract fp_ptr exponent,
-        sbc     (fp_ptr),y              ; we'll get the unsigned difference
-        sta     D                       ; Park exponent differerence in D
+        bcc     swap_fadd               ; If borrow then FP0e is larger, so swap and try again
+        bmi     @return_larger          ; Exponent difference >127 so addition has no effect
+        tax                             ; Exponent different is in X and is >=0
 
-; TODO: detect if we've reached limit of exponent range.
-; TODO: detect if exponent difference is too great and just return FPA in this case.
-; TODO: can probably eliminate one of these swaps, or just have a function to negate ptr1.
+; FP0 exponent is less than FP1 exponent, so shift FP0 significand right X places to align binary points.
 
-; Negate negative numbers before adjusting.
+@align:
+        jsr     shift_right
+        ror     B                       ; Rotate carry into rounding register
+        inc     FP0e
+        dex
+        bne     @align
 
-        jsr     negate_negative         ; Negate potentially negative FPA
-        rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     swap_fpa_with_ptr       ; Swap values
-        jsr     negate_negative         ; Negate potentially negative fp_ptr
-        rol     E                       ; Roll the flag into E
-        jsr     swap_fpa_with_ptr       ; Restore FPA and ptr1
-        ldx     D                       ; Use X to track the exponent difference
-
-; Try to make the greater exponent of FPA equal to the exponent of FPX by multiplying it by 10.
-; Stop either when the exponents are equal or when the multiplication overflows.
-
-@grow:
-        jsr     significand_mul_10      ; Trial multiplication by 10
-        bcs     @fpa_overflow           ; Can't do this anymore, FPA overflowed
-        bmi     @fpa_overflow           ; Or it went negative
-        dec     FPA+Float::e            ; It worked so decrement exponent and X and try again                     
-        dex                      
-        bne     @grow
-        beq     @restore_significands   ; Unconditional
-
-; We can't equalize exponents by multiplying FPA, so now we have to divide the other value, which will result in
-; some loss of precision. We have to swap the arguments temporarily here because we can only divide FPA.
-
-@fpa_overflow:
-        jsr     copy_fpb_significand_to_fpa ; Recover saved significand from FPX
-        jsr     swap_fpa_with_ptr
-@shrink:
-        jsr     significand_div_10      ; Divide FPA by 10
-        inc     FPA+Float::e            ; Increment exponent
-        dex                             ; Close the exponent gap
-        bne     @shrink                 ; Still more to do        
-        jsr     swap_fpa_with_ptr       ; Swap back before continuing
-
-@restore_significands:
-        jsr     swap_fpa_with_ptr       ; Move fp_ptr value back into FPA
-        lsr     E                       ; Shifts negative flag from E into carry
-        jsr     restore_negative
-        jsr     swap_fpa_with_ptr       ; Original value back to FPA; do the same thing
-        lsr     E
-        jsr     restore_negative
-
-; When both exponents are equal we can just add the significand of the value to that of FPA. 
+; If both arguments have the same sign, just add and use the sign of FP0.
+; If one is negative, put it in FP0 and negate it.
 
 @equal_exponents:
-        ldy     #Float::s
-        clc
-        lda     FPA+Float::s
-        adc     (fp_ptr),y              ; Add the significands
-        sta     FPA+Float::s
-        iny
-        lda     FPA+Float::s+1
-        adc     (fp_ptr),y       
-        sta     FPA+Float::s+1
-        iny
-        lda     FPA+Float::s+2
-        adc     (fp_ptr),y        
-        sta     FPA+Float::s+2
-        iny
-        lda     FPA+Float::s+3
-        adc     (fp_ptr),y        
-        sta     FPA+Float::s+3
+        lda     FP0s
+        eor     FP1s                    ; XOR signs together
+        bpl     @equal_signs            ; Signs are the same
+        lda     FP0s                    ; Check the FP0 sign
+        bmi     @fp0_negative           ; FP0 is already the negative one
+        jsr     swap_fp0_fp1            ; FP1 was negative, but swap them so now FP0 is negative
+@fp0_negative:
+        jsr     negate_significand      ; This makes the sign bit of FP0t match FP0s
+@equal_signs:
+        jsr     add_significands
+        tax                             ; Temporarily store in X
+        bpl     @positive               ; Result was positive
+        jsr     negate_significand      ; Result was negative so negate    
+@positive:
+        txa                             ; Recover high byte of result
+        and     #$80                    ; Isolate sign bit (which will be 1)
+        eor     FP1s                    ; Result is neg if FP1 was neg or result is now neg but not both
+        sta     FP0s
+@finish:
+        jmp     normalize               ; Normalize result and return
 
-; If the addition has caused signed overflow, divide the significand by 10
-; and increase the exponent.
+; The difference between exponents is >127, so just return the larger number (identified by N flag).
 
-; TODO: this doesn't work; I need to negate before dividing by 10
+@return_larger:
+        bmi     @finish                 ; A was larger so just return
+        jsr     swap_fp0_fp1            ; Otherwise swap
+        jmp     @finish
 
-        bvc     @done
-        jsr     significand_div_10_ext
-        inc     FPA+Float::e
-@done:
-        rts
-
-; Subtracts a value from FPA, returning result in FPA.
-; Simply negates the value and then delegates to fadd.
-; The operation is (FPA - value), but we make it -(value - FPA) in order to use the fneg function on FPA.
+; Subtract FP1 from FP0.
+; Simply negates the sign of FP1 and forward to fadd.
 
 fsub:
-        stax    fp_ptr
-fsub_with_ptr:
-        jsr     fneg
-        jsr     fadd_with_ptr
-        jmp     fneg
+        lda     FP1s
+        eor     #$80
+        sta     FP1s
+        jmp     fadd
 
-; Muliplies FPA by the a value, returning the result in FPA.
-; Scales FPA so product fits into signficand.
-
-; Logic that handles Y depends on exponent being 0 and significand being 1
-.assert Float::e = 0, error
-.assert Float::s = 1, error
+; Multiplies FP0 and FP1, leaving the normalized result in FP0.
 
 fmul:
-        stax    fp_ptr
-fmul_with_ptr:
-        jsr     negate_negative         ; Make both operands positive
-        rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     swap_fpa_with_ptr
-        jsr     negate_negative         ; Make both operands positive
-        rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
-        ldy     #Float::e
-        lda     (fp_ptr),y              ; Load value exponent
-        clc
-        adc     FPA+Float::e            ; Add FPA exponent
-        bvs     @err_overflow           ; If overflow then fail
-        sta     FPA+Float::e            ; Store result exponent back in FPA
-        jsr     mul_significands
-        jsr     shrink_significand
-        lda     E                       ; Bits 0-1 of E are negative flags
-        lsr     A                       ; Bit 0 of A is bit 1 from E
-        eor     E                       ; Effectively EORs the two bits together
-        lsr     A                       ; Shift it into carry
-        bcc     @positive               ; If both bits were 0 or 1 then product is positive
-        jsr     fneg                    ; Product is negative
-@positive:
+        jsr     fp0_is_zero             ; Is FP0 zero?
+        beq     @return_zero            ; Yes, just return
+        ldx     #FP1
+        jsr     fpx_is_zero             ; Test FP1
+        bne     @do_multiply
+@return_zero:
+        jsr     clear_fp0               ; Return zero
+        clc                             ; Signal success
         rts
 
-@err_overflow:
-        rts
+@do_multiply:
 
-; Multiplies the significands of FPA and fp_ptr, leaving a 64-bit result in FPA.
+; Do 32 bit multiplication of FP0 and FP1 significands.
 
-mul_significands:
-        jsr     copy_fpa_to_fpb         ; FPA -> FPB so we can use FPA for product
-        lda     #0                      ; Zero out the high 32 bits of the product
-        sta     FPA+Float::s+4          
-        sta     FPA+Float::s+5           
-        sta     FPA+Float::s+6
-        sta     FPA+Float::s+7
-        ldx     #32                     ; 32 multiplication cycles
+        ldx     #FP2                    ; Clear the extended significand of FP0
+        jsr     clear_significand
+        ldx     #FP3                    ; FP3 holds the original significand
+        jsr     copy_significand
+        ldy     #32                     ; 32 multiplication cycles
+
 @next_bit:
-        lsr     FPB+Float::s+3          ; Shift the multiplicand right
-        ror     FPB+Float::s+2
-        ror     FPB+Float::s+1
-        ror     FPB+Float::s
-        bcc     @skip                   ; Bit 0 of multiplicand was zero; don't add
-        ldy     #Float::s
-        clc
-        lda     FPA+Float::s+4          ; Add value to high 32 bits of FPA
-        adc     (fp_ptr),y
-        sta     FPA+Float::s+4
-        iny
-        lda     FPA+Float::s+5
-        adc     (fp_ptr),y
-        sta     FPA+Float::s+5
-        iny
-        lda     FPA+Float::s+6
-        adc     (fp_ptr),y
-        sta     FPA+Float::s+6
-        iny
-        lda     FPA+Float::s+7
-        adc     (fp_ptr),y
-        sta     FPA+Float::s+7
+        lsr     FP1t+3                  ; Shift FP1 significand right              
+        ror     FP1t+2
+        ror     FP1t+1
+        ror     FP1t
+        bcc     @skip                   ; FP1 LSB was 0 so don't need to add anything
+        clc                             ; Add significand in FP3 to FP2 (TODO: try to use add_significands)      
+        lda     FP2
+        adc     FP3
+        sta     FP2
+        lda     FP2+1
+        adc     FP3+1
+        sta     FP2+1
+        lda     FP2+2
+        adc     FP3+2
+        sta     FP2+2
+        lda     FP2+3
+        adc     FP3+3                   ; This will never overflow because high bit of FP2 will always be zero
+        sta     FP2+3
 @skip:
-        ror     FPA+Float::s+7          ; Shift carry and 64-bit FPA significand one place to right
-        ror     FPA+Float::s+6
-        ror     FPA+Float::s+5
-        ror     FPA+Float::s+4
-        ror     FPA+Float::s+3
-        ror     FPA+Float::s+2
-        ror     FPA+Float::s+1
-        ror     FPA+Float::s
-        dex                             ; Decrement bit counter
-        bne     @next_bit               ; Keep going
-        rts
+        ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit
+        ror     FP2+2
+        ror     FP2+1
+        ror     FP2
+        ror     FP0t+3
+        ror     FP0t+2
+        ror     FP0t+1
+        ror     FP0t
+        dey                             ; Done with one cycle
+        bne     @next_bit
 
-; Divides the 64-bit significand by 10 until it fits into 32 bits.
+; The 64-bit product in FP0t and FP2 is in the range 0 to almost 4, and the binary point is between
+; bits 61 and 62 (assuming MSB is 63). Use byte copy to shift it 32 places into FP0t with the next-lower byte in
+; the rounding register.
 
-shrink_significand:
-        lda     FPA+Float::s+4
-        ora     FPA+Float::s+5
-        ora     FPA+Float::s+6
-        ora     FPA+Float::s+7
-        beq     @done
-        jsr     significand_div_10_ext
-        inc     FPA                     ; Increase exponent to compensate for division
-        jmp     shrink_significand
+        lda     FP0t+3                  ; Bits 24-31 go into rounding register
+        sta     B
+        lda     FP2+3
+        sta     FP0t+3
+        lda     FP2+2
+        sta     FP0t+2
+        lda     FP2+1
+        sta     FP0t+1
+        lda     FP2
+        sta     FP0t
+        mva     #0, FP2                 ; Clear extended significand
 
-@done:
-        rts
+; Calculate exponent and sign.
 
-; Divides FPA by the a value, returning the quotient in FPA.
-; Shifts the dividend left into the FPA extended significand. After each shift, check if it's greater than the
-; dividend; if so then add one to the significand. After 32 operations, the quotient will be in the lower 32 bits
-; of FPA and the remainder will be in the upper 32 bits.
+        ldx     FP1e                    ; Add FP1e to FP0e
+        ldy     #BIAS                   ; Subtract bias
+        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+        inc     FP0e                    ; Account for the binary point being off by 1
+        lda     FP0s                    ; Get sign of FP0
+        eor     FP1s                    ; If both are pos or neg, then pos, else neg
+        sta     FP0s
+        jmp     normalize               ; Normalize and return
 
-; TODO: check divide by zero
+; Divides FP0 by the value in FP1, returning the quotient in FP0.
 
 fdiv:
-        stax    fp_ptr
-fdiv_with_ptr:
-        jsr     negate_negative         ; Make both operands positive
-        rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     swap_fpa_with_ptr
-        jsr     negate_negative         ; Make both operands positive
-        rol     E                       ; Roll the flag into E (don't care what was there before)
-        jsr     swap_fpa_with_ptr       ; Restore FPA and value to original positions
-@scale_up:
-        lda     FPA+Float::s+3          ; Get high byte of dividend
-        cmp     #6                      ; Compare to 6
-        bcs     @handle_e               ; High byte is >= 6, keep it
-        jsr     significand_mul_10      ; Otherwise multiply by 10
-        dec     FPA+Float::e            ; and decrement exponent to offset
-        jmp     @scale_up               ; Try again
-@handle_e:
-        jsr     swap_fpa_with_ptr       ; Swap
-        jsr     copy_fpa_to_fpb         ; Copy divisor into FPB
-        jsr     swap_fpa_with_ptr       ; Swap back
-        lda     FPA+Float::e            ; Subtract divisor exponent from dividend exponent
-        sec
-        sbc     FPB+Float::e
-        bvs     @err_overflow           ; If overflow then fail
-        sta     FPA+Float::e            ; Save back as FPA exponent
-        ldx     #32                     ; 32 bits
-@next_bit:
-        asl     FPA+Float::s
-        rol     FPA+Float::s+1
-        rol     FPA+Float::s+2
-        rol     FPA+Float::s+3
-        rol     FPA+Float::s+4
-        rol     FPA+Float::s+5
-        rol     FPA+Float::s+6
-        rol     FPA+Float::s+7
-        lda     FPA+Float::s+7          ; Compare FPA extended siginficand with FPB (divisor)
-        cmp     FPB+Float::s+3
-        bcc     @less_than_divisor
-        lda     FPA+Float::s+6
-        cmp     FPB+Float::s+2
-        bcc     @less_than_divisor
-        lda     FPA+Float::s+5
-        cmp     FPB+Float::s+1
-        bcc     @less_than_divisor
-        lda     FPA+Float::s+4
-        cmp     FPB+Float::s
-        bcc     @less_than_divisor
-        sec                             ; Subtract dividend in FPB from FPA extended significand
-        lda     FPA+Float::s+7
-        sbc     FPB+Float::s+3
-        sta     FPA+Float::s+7
-        lda     FPA+Float::s+6
-        sbc     FPB+Float::s+2
-        sta     FPA+Float::s+6
-        lda     FPA+Float::s+5
-        sbc     FPB+Float::s+1
-        sta     FPA+Float::s+5
-        lda     FPA+Float::s+4
-        sbc     FPB+Float::s
-        sta     FPA+Float::s+4
-        inc     FPA+Float::s            ; Increment quotient
-@less_than_divisor:
-        dex                             ; One bit done
-        bne     @next_bit               ; Continue if more
-        jsr     shrink_significand
-@try_make_e_positive:
-        jsr     copy_fpa_to_fpb         ; Back up value in FPB
-        lda     FPA+Float::e            ; Check the FPA exponent
-        bpl     @finish                 ; If positive than done
-        jsr     significand_div_10      ; Divide by 10
-        tax                             ; Remainder is in A; update flags
-        bne     @finish                 ; There is a remainder
-        inc     FPA+Float::e            ; Increment exponent
-        jmp     @try_make_e_positive    ; Try to get closer to 0
-
-@finish:
-        jsr     copy_fpb_to_fpa         ; Copy original value back from FPB
-        lda     E                       ; Bits 0-1 of E are negative flags
-        lsr     A                       ; Bit 0 of A is bit 1 from E
-        eor     E                       ; Effectively EORs the two bits together
-        lsr     A                       ; Shift it into carry
-        bcc     @positive               ; If both bits were 0 or 1 then product is positive
-        jsr     fneg                    ; Product is negative
-@positive:
+        jsr     fp0_is_zero             ; Is FP0 zero?
+        beq     @return_zero            ; Yes, just return
+        ldx     #FP1
+        jsr     fpx_is_zero             ; Test FP1
+        bne     @initalize
+        sec                             ; Error if FP1 is zero
         rts
 
-@err_overflow:
+@return_zero:
+        jsr     clear_fp0               ; Return zero
+        clc                             ; Signal success
         rts
 
-; Compare two floating-point values.
-; Returns result in N and C flags, in the same way that the CMP instruction works.
+@initalize:
+        ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
+        jsr     copy_significand
+        mva     #0, FP3                 ; Extended significand will be in FP3 instead of usual FP2
+        mva     #BIAS, C                ; C keeps track of how much bias to add
+
+; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
+; we'd have to shift the least-significant bit into some other location (presumably B). But the very first thing we
+; do in the @divide subfunction is shift the dividend left one place. So instead of shifting right into B and then
+; having to shift B left, we just don't shift anything and, the first time through, JSR to a point in @divide after the
+; shift left.
+
+        mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
+        jsr     @divide_skip_shift
+        ldx     #3                      ; Store this value FP0 position 3
+        bne     @store_quotient         ; Unconditional
+
+@next_quotient_byte:
+        mva     #1, B                   ; 8 more quotient bits
+        jsr     @divide                 ; Call divide function; next 8 bits of quotient bits now in B
+@store_quotient:
+        lda     B                       ; Get quotient byte
+        sta     FP0,x
+        dex
+        bpl     @next_quotient_byte     ; If X is still >= 0 then more bytes to do
+        mva     #32, B                  ; Set B to 32 to generate 3 more quotient bits and leave them in B
+        jsr     @divide
+        lsr     B                       ; Need to shift them left 5; easier to roll right 4 through carry
+        ror     B
+        ror     B
+        ror     B
+
+; Calculate exponent and sign.
+
+        ldy     FP1e                    ; Subtract FP1e from FP0e
+        ldx     C                       ; Add bias
+        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+        lda     FP0s                    ; Get sign of FP0
+        eor     FP1s                    ; If both are pos or neg, then pos, else neg
+        sta     FP0s
+        jmp     normalize               ; Normalize and return
+
+; Compare the dividend in FP2+FP3 to the divisor FP1.
+; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
+; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
+; initialized to 1, then it will loop 8 times.
+
+@divide:
+        asl     FP2                     ; Shift dividend left one bit
+        rol     FP2+1
+        rol     FP2+2
+        rol     FP2+3
+        rol     FP3
+@divide_skip_shift:
+        sec                             ; If FP2 is >0 then divisor FP1 <= dividend FP2 so we want carry to be set
+        lda     FP3                     ; Dividend extended significand
+        bne     @compare_done
+        lda     FP2+3
+        cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FP2
+        bne     @compare_done           ; If not equal then result is in carry; if equal then check next byte, etc.
+        lda     FP2+2
+        cmp     FP1t+2
+        bne     @compare_done
+        lda     FP2+1
+        cmp     FP1t+1
+        bne     @compare_done
+        lda     FP2
+        cmp     FP1t
+@compare_done:
+        bcc     @skip_subtract          ; If carry clear (borrow set) then divisor > dividend; don't subtract
+        lda     FP2
+        sbc     FP1t
+        sta     FP2
+        lda     FP2+1
+        sbc     FP1t+1
+        sta     FP2+1
+        lda     FP2+2
+        sbc     FP1t+2
+        sta     FP2+2
+        lda     FP2+3
+        sbc     FP1t+3
+        sta     FP2+3
+        lda     FP3                     ; Possibly have to borrow from extended significand
+        sbc     #0
+        sta     FP3
+        sec                             ; Set carry so we roll 1 bit into quotient
+@skip_subtract:
+        rol     B                       ; Roll the carry left into quotient
+        bcc     @divide                 ; Continue if 1 bit has not emerged from B
+        rts
+
+; Negates the sign of FP0.
+
+fneg:
+        lda     FP0s
+        eor     #$80
+        sta     FP0s
+        rts
+
+; Compares FP0 with FP1.
+; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
+; FP0 >= FP1.
 
 fcmp:
-        stax    fp_ptr
-fcmp_with_ptr:
-        jsr     fsub_with_ptr           ; Subtract the two
-        sec                             ; Set carry ("no borrow") in case they're equal
-        jsr     fpa_is_zero             ; Check for zero
-        beq     @done
-        lda     FPA+Float::s+3          ; Load high byte of significand to access sign bit
-        eor     #$80                    ; Flip sign bit; if (A-B) < 0 then A < B and we return carry clear
-        sec 
-        rol     A                       ; Roll set carry bit into A to ensure zero flag is not set
+        lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
+        cmp     FP0s                    ; Subtract sign of FP0
+        beq     @same_sign              ; If same sign then continue
+        rts                             ; Carry set if FP1s was negative and FP0s was positive -> FP0 is greater
+
+@same_sign:
+        lda     FP0e                    ; FP0 exponent
+        cmp     FP1e                    ; Subtract FP1 exponent 1
+        beq     @same_e                 ; If same exponent then continue
+        rts                             ; Carry set if FP0e was greater -> FP0 is greater
+
+@same_e:
+        lda     FP0t+3                  ; Compare significands (just 32 bits)
+        cmp     FP1t+3
+        bne     @done
+        lda     FP0t+2
+        sbc     FP1t+2
+        bne     @done
+        lda     FP0t+1
+        sbc     FP1t+1
+        bne     @done
+        lda     FP0t
+        sbc     FP1t
 @done:
-        rts
+        rts                             ; Flags will be set correctly here

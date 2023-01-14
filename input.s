@@ -15,7 +15,7 @@ exec_input:
         pha                             ; Save it
         jsr     string_to_fp            ; Parse the number
         bcs     @error                  ; Failed to read a number
-        jsr     push_fpa                ; Push FPA onto the value stack
+        jsr     push_fp0                ; Push FPA onto the value stack
         pla                             ; Recover variable
         jsr     pop_variable            ; Store the value
         ldy     lp                      ; Peek at the next byte

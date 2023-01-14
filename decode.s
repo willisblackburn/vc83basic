@@ -71,7 +71,7 @@ decode_number:
         ldx     #0                      ; FPA index
 @loop:
         lda     (line_ptr),y
-        sta     FPA,x
+        ; sta     FPA,x
         inx
         iny
         cpx     #.sizeof(Float)         ; Copied everything?

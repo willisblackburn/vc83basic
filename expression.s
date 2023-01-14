@@ -30,8 +30,8 @@ evaluate_variable:
         jmp     push_variable           ; Copy variable to stack
 
 evaluate_number:
-        jsr     decode_number           ; Returns number in AX
-        jmp     push_fpa                ; Push number directly
+        jsr     decode_number           ; Returns number in FP0
+        jmp     push_fp0                ; Push number
 
 evaluate_operator:
         jsr     decode_operator         ; Return the operator in A
@@ -118,24 +118,20 @@ operator_vectors:
         .word   unary_op_not
 
 op_sub:
-        jsr     unary_op_minus          ; Just treat A-B as A+(-B)
+        ldax    #fsub-1
+        jmp     call_binary_operator_push
+        
 op_add:
-        lda     #>(fadd_with_ptr-1)
-        ldx     #<(fadd_with_ptr-1)
-        jsr     call_binary_operator
-        jmp     push_fpa                ; Put result back onto stack
+        ldax    #fadd-1
+        jmp     call_binary_operator_push
 
 op_mul:
-        lda     #>(fmul_with_ptr-1)
-        ldx     #<(fmul_with_ptr-1)
-        jsr     call_binary_operator
-        jmp     push_fpa                ; Put result back onto stack
+        ldax    #fmul-1
+        jmp     call_binary_operator_push
 
 op_div:
-        lda     #>(fdiv_with_ptr-1)
-        ldx     #<(fdiv_with_ptr-1)
-        jsr     call_binary_operator
-        jmp     push_fpa                ; Put result back onto stack
+        ldax    #fdiv-1
+        jmp     call_binary_operator_push
 
 op_pow:
 op_concat:
@@ -181,35 +177,36 @@ op_gt:
 ; If carry is set, then Z will be also be set if the values are equal or clear if they are not.
 
 compare_values:
-        lda     #>(fcmp_with_ptr-1)
-        ldx     #<(fcmp_with_ptr-1)
+        ldax    #fcmp-1
 
 ; Fall through
 
 ; Take the two values from the top of the stack and invoke a binary operator.
 ; The operator handler address -1 is passed in XA (note least-significant byte is in X).
+; Given an expression like 3/2, we will push 3 onto the stack, then 2, so 2 is at top of stack, and therefore the
+; value we pop first goes into FP1, then the other info FP0.
 
 call_binary_operator:
         phax                            ; Push operator handler address -1 onto the stack so we can RTS to it
-        ldpha   psp                     ; Save current stack pointer
-        lda     #.sizeof(Float)         ; Free that operand
-        jsr     stack_free
-        jsr     pop_fpa                 ; Other operand into FPA
-        pla                             ; Get previous stack pointer back
-        ldx     #>primary_stack         ; Segment of stack
-        stax    fp_ptr
+        ldx     #FP1
+        jsr     pop_fpx                 ; Top value into FP1
+        jsr     pop_fp0                 ; Next value into FP0
         rts                             ; This does JMP to the operator handler
 
+; Invokes a binary operator and push the result back.
+
+call_binary_operator_push:
+        jsr     call_binary_operator
+        jmp     push_fp0
+
 unary_op_minus:
-        jsr     pop_fpa                 ; Get value at top of stack
+        jsr     pop_fp0                 ; Get value at top of stack
         jsr     fneg                    ; Negate it
-        jmp     push_fpa                ; Return to stack
+        jmp     push_fp0                ; Return to stack
 
 unary_op_not:
-        jsr     pop_fpa                 ; Get value
-        jsr     truncate_fp_to_int
-        lda     FPA+Float::s             
-        ora     FPA+Float::s+1          ; OR the low and high bytes of significand together
+        jsr     pop_fp0                 ; Get value
+        jsr     fp0_is_zero
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
 
@@ -219,36 +216,33 @@ unary_op_not:
 ; BC SAFE, DE SAFE
 
 push_value_0:
-        lda     #0
-        beq     push_value_a
+        jsr     clear_fp0
+        jmp     push_fp0
 
 push_value_1:
-        lda     #1
+        lday    #one
+        jsr     load_fp0
 
-push_value_a:
-        sta     FPA+Float::s
-        lda     #0
-        sta     FPA+Float::s+1
-        sta     FPA+Float::s+2
-        sta     FPA+Float::s+3
-        sta     FPA+Float::e
-
-push_fpa:
+push_fp0:
+        ldx     #FP0
+push_fpx:
         lda     #.sizeof(Float)         ; Allocate enough space for a float on the stack
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
-        ldx     #>primary_stack         ; Segment of stack
-        jsr     store_fpa               ; Store FPA in the AX address
+        ldy     #>primary_stack         ; Segment of stack
+        jsr     store_fpx               ; Store FPx in the AY address
 @done:
         rts
 
-pop_fpa: 
+pop_fp0:
+        ldx     #FP0
+pop_fpx: 
         ldy     psp                     ; Load stack pointer into Y to use as offset
         lda     #.sizeof(Float)         ; Free space for float
         jsr     stack_free
-        tya                             ; Previous position back in A to calculate pointer
-        ldx     #>primary_stack         ; Segment of stack
-        jsr     load_fpa                ; Load value into FPA
+        tya                             ; Previous position back in A to use as pointer
+        ldy     #>primary_stack         ; Segment of stack
+        jsr     load_fpx                ; Load value into FPx
         rts
 
 ; Pushes the variable value identified by A onto the stack.
@@ -292,8 +286,8 @@ pop_variable:
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
 ; A = the number of bytes to allocate
-; Returns carry clear on success and the new stack pointer in both A and X, or carry set on error.
-; Y SAFE, BC SAFE, DE SAFE
+; Returns carry clear on success and the new stack pointer in A, or carry set on error.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 stack_alloc:
         clc
@@ -301,7 +295,6 @@ stack_alloc:
         bcs     @done                   ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
         sta     psp                     ; Update the stack pointer
-        tax                             ; Transfer to X to use as pointer
 @done:
         rts
 
@@ -317,30 +310,31 @@ stack_free:
 
 op_and:
         jsr     set_up_logical_op
-        and     primary_stack-.sizeof(Float)*2+Float::s,y
-        sta     FPA+Float::s
-        iny
-        lda     FPA+Float::s+1          ; High byte
-        and     primary_stack-.sizeof(Float)*2+Float::s,y
-        sta     FPA+Float::s+1
-        jmp     push_fpa
+        and     D                       ; AND low bytes
+        pha
+        txa                             ; High byte into A
+        and     E                       ; AND high bytes
+
+; Fall through
+
+finish_logical_op:
+        tax
+        pla                             ; Recover low byte
+        jsr     int_to_fp               ; Convert back into FP value
+        jmp     push_fp0                ; Back onto stack
 
 op_or:
         jsr     set_up_logical_op
-        ora     primary_stack-.sizeof(Float)*2+Float::s,y
-        sta     FPA+Float::s
-        iny
-        lda     FPA+Float::s+1          ; High byte
-        ora     primary_stack-.sizeof(Float)*2+Float::s,y
-        sta     FPA+Float::s+1
-        jmp     push_fpa
+        ora     D                       ; OR low bytes
+        pha
+        txa                             ; High byte into A
+        ora     E                       ; OR low bytes
+        jmp     finish_logical_op
 
 set_up_logical_op:
-        jsr     pop_fpa                 ; Sets fp_ptr
+        jsr     pop_fp0
         jsr     truncate_fp_to_int
-        jsr     store_fpa_with_ptr      ; Copy it back to freed part of stack
-        jsr     pop_fpa                 ; Resets fp_ptr to point to second parameter
+        stax    DE                      ; Store returned value in DE
+        jsr     pop_fp0
         jsr     truncate_fp_to_int
-        ldy     psp
-        lda     FPA+Float::s            ; Low byte of FPA significand
-        rts
+        rts                             ; Return with value in BC

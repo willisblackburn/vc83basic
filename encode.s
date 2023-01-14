@@ -7,7 +7,7 @@
 ; All functions clobber X, so save it if you need it.
 
 ; Encodes a number.
-; FPA = the number to encode
+; FP0 = the number to encode
 ; BC SAFE, DE SAFE
 
 encode_number:
@@ -16,7 +16,7 @@ encode_number:
         jsr     encode
         ldy     #0
 @loop:
-        lda     FPA,y
+        ; lda     FPA,y
         jsr     encode
         iny
         cpy     #.sizeof(Float)         ; Copied everything?

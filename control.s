@@ -54,7 +54,7 @@ exec_on_gosub:
 exec_on:
         stax    on_handler              ; Store the handler address
         jsr     evaluate_expression     ; Evaluate the "ON" expression
-        jsr     pop_fpa
+        jsr     pop_fp0
         sta     on_value
         dec     on_value                ; Pre-decrement on_value so we can take the branch when it goes negative
 @loop:
@@ -88,17 +88,19 @@ exec_return:
         rts
 
 ; Add an entry onto the primary stack and set the next_line_ptr field.
-; Reflects carry return from stack_alloc. On success, X is still the stack pointer.
+; Reflects carry return from stack_alloc. On success, A is still the stack pointer.
 ; Y SAFE, BC SAFE, DE SAFE
 
 push_next_line_ptr:
         lda     #.sizeof(Control)       ; Allocate this much space for the control record
         jsr     stack_alloc
         bcs     @done                   ; Stack overflow
+        tax                             ; Stack pointer into X to use as index
         lda     next_line_ptr           ; Store next_line_ptr on stack
         sta     primary_stack+Control::next_line_ptr,x
         lda     next_line_ptr+1
         sta     primary_stack+Control::next_line_ptr+1,x
+        txa                             ; Move stack pointer back to A
 @done:
         rts
 
@@ -112,23 +114,23 @@ exec_for:
         pla                             ; Get variable back
         jsr     pop_variable            ; Pop value from stack into variable
         jsr     evaluate_expression     ; End value
-        jsr     pop_fpa                 ; Get the evaluated value
+        jsr     pop_fp0                 ; Get the evaluated value
         jsr     push_next_line_ptr      ; Push return address; X is now the stack pointer
         pla                             ; Get variable again
         sta     primary_stack+Control::variable,x   ; Store it in control record
         txa                             ; Stack pointer into A
+        pha                             ; Save it because we'll want it again soon
         clc
         adc     #Control::end_value     ; Add the offset of the end value
-        ldx     #>primary_stack         ; Segment of stack
-        jsr     store_fpa               ; Store FPA there
-        ldx     psp                     ; Get stack offset back into X
-        lda     #1                      ; Set step value to 1
-        sta     primary_stack+Control::step_value+Float::s,x
-        lda     #0                      ; High byte is 0
-        sta     primary_stack+Control::step_value+Float::s+1,x
-        sta     primary_stack+Control::step_value+Float::s+2,x
-        sta     primary_stack+Control::step_value+Float::s+3,x
-        sta     primary_stack+Control::step_value+Float::e,x
+        ldy     #>primary_stack         ; Segment of stack
+        jsr     store_fp0               ; Store FP0 there
+        lday    #one
+        jsr     load_fp0
+        pla                             ; Recover stack pointer
+        clc
+        adc     #Control::step_value    ; Add the offset of the step value
+        ldy     #>primary_stack
+        jsr     store_fp0               ; Store the step value
         clc
         rts
 
@@ -145,13 +147,13 @@ exec_next:
         cmp     primary_stack+Control::variable,x   ; Is it the right one?
         bne     @error2                 ; If not then fail
         jsr     push_variable           ; Otherwise get the value and push onto the stack
-        jsr     pop_fpa                 ; Move it to FPA to prepare for fadd
+        jsr     pop_fp0                 ; Move it to FPA to prepare for fadd
         lda     psp                     ; Get stack position again
         clc
         adc     #Control::step_value    ; Add offset of step value to stack pointer
         ldx     #>primary_stack         ; Segment of stack
         jsr     fadd                    ; Add the values
-        jsr     push_fpa                ; Push back onto stack
+        jsr     push_fp0                ; Push back onto stack
         pla                             ; Get the variable back
         jsr     pop_variable            ; Back into variable
         lda     psp                     ; Get stack position again
@@ -193,8 +195,8 @@ exec_pop:
 
 exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
-        jsr     pop_fpa
-        jsr     fpa_is_zero             ; Check if zero
+        jsr     pop_fp0
+        jsr     fp0_is_zero             ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
         jsr     dispatch_next_statement ; Otherwise execute the THEN
 @done:

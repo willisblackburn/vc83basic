@@ -18,14 +18,50 @@ typedef struct Line {
 } Line;
 
 typedef struct Float {
-    signed char e;
-    long s;
+    unsigned long t;
+    char e;
 } Float;
+
+typedef struct UnpackedFloat {
+    unsigned long t;
+    char e;
+    char s;
+} UnpackedFloat;
 
 // Zero Page
 
-extern Float reg_fpa;
-#pragma zpsym ("reg_fpa")
+extern int reg_bc;
+#pragma zpsym ("reg_bc")
+extern char reg_b;
+#pragma zpsym ("reg_b")
+extern char reg_c;
+#pragma zpsym ("reg_c")
+extern int reg_de;
+#pragma zpsym ("reg_de")
+extern char reg_d;
+#pragma zpsym ("reg_d")
+extern char reg_e;
+#pragma zpsym ("reg_e")
+extern UnpackedFloat FP0;
+#pragma zpsym ("FP0")
+extern unsigned long FP0t;
+#pragma zpsym ("FP0t")
+extern char FP0e;
+#pragma zpsym ("FP0e")
+extern char FP0s;
+#pragma zpsym ("FP0s")
+extern UnpackedFloat FP1;
+#pragma zpsym ("FP1")
+extern unsigned long FP1t;
+#pragma zpsym ("FP1t")
+extern char FP1e;
+#pragma zpsym ("FP1e")
+extern char FP1s;
+#pragma zpsym ("FP1s")
+extern unsigned long FP2;
+#pragma zpsym ("FP2")
+extern unsigned long FP3;
+#pragma zpsym ("FP3")
 extern char bp;
 #pragma zpsym ("bp")
 extern char lp;
@@ -77,6 +113,8 @@ extern char reg_a;
 extern char reg_x;
 extern char reg_y;
 
+extern char carry_flag;
+
 // Prototypes for C wrapper functions
 
 // decode.s
@@ -89,8 +127,8 @@ char decode_byte(void);
 
 // expression.h
 char evaluate_expression(void);
-char push_fpa(void);
-void pop_fpa(void);
+char push_fp0(void);
+void pop_fp0(void);
 char stack_alloc(char size);
 void stack_free(char size);
 
@@ -99,22 +137,24 @@ int encode_number(void);
 int encode_byte(char value);
 
 // fp.s
-void load_fpa(const Float* value);
-void store_fpa(Float* value);
-void clear_fpa(void);
-void swap_fpa(Float* value);
-int fpa_is_zero(void);
-void fneg(void);
-void fp_to_string(void);
-int string_to_fp(void);
-int char_to_digit(char c);
+void load_fpx(UnpackedFloat* fpx, const Float* value);
+void store_fpx(const UnpackedFloat* fpx, Float* value);
+void swap_fp0_fp1(void);
 void int_to_fp(int value);
-int truncate_fp_to_int(void);
-void fadd(Float* value);
-void fsub(Float* value);
-void fmul(Float* value);
-void fdiv(Float* value);
-int fcmp(Float* value);
+void int32_to_fp(void);
+char truncate_fp_to_int(void);
+int truncate_fp_to_int32(void);
+void fp_to_string(void);
+char string_to_fp(void);
+char char_to_digit(char c);
+void adjust_exponent(char add, char subtract);
+char normalize(void);
+char fadd(void);
+char fsub(void);
+char fmul(void);
+char fdiv(void);
+void fneg(void);
+int fcmp(void);
 
 // list.s
 int list_line(const void* line_ptr);
@@ -200,16 +240,31 @@ void hexdump(const char* name, const char* data, size_t length) {
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
 
-#define SET_FP(value, e_value, s_value) do { \
-    value.e = (e_value); \
-    value.s = (s_value); \
-} while (0)
-
-#define ASSERT_FP_EQ(value, e_value, s_value) do { \
-    ASSERT_EQ(value.e, e_value); \
-    ASSERT_EQ(value.s, s_value); \
-} while (0)
-
 #define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
+
+#define POSITIVE ((char)0x00)
+#define NEGATIVE ((char)0x80)
+
+#define SET_FPX(fpx, s_value, e_value, t_value) do { \
+    fpx.s = (s_value); \
+    fpx.e = (e_value); \
+    fpx.t = (t_value); \
+} while (0)
+
+#define ASSERT_FPX_EQ(fpx, s_value, e_value, t_value) do { \
+    ASSERT_EQ(fpx.s, s_value); \
+    ASSERT_EQ(fpx.e, e_value); \
+    ASSERT_EQ(fpx.t, t_value); \
+} while (0)
+
+#define SET_FLOAT(value, e_value, t_value) do { \
+    value.e = (e_value); \
+    value.t = (t_value); \
+} while (0)
+
+#define ASSERT_FLOAT_EQ(value, e_value, t_value) do { \
+    ASSERT_EQ(value.e, e_value); \
+    ASSERT_EQ(value.t, t_value); \
+} while (0)
 
 #endif

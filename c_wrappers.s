@@ -12,7 +12,22 @@
 
 ; Aliases for globals
 
-.export _reg_fpa = FPA
+.export _reg_bc = BC
+.export _reg_b = B
+.export _reg_c = C
+.export _reg_de = DE
+.export _reg_d = D
+.export _reg_e = E
+
+.export _FP0 = FP0
+.export _FP0t = FP0t
+.export _FP0e = FP0e
+.export _FP0s = FP0s
+.export _FP1 = FP1
+.export _FP1t = FP1t
+.export _FP1e = FP1e
+.export _FP1s = FP1s
+.export _FP2 = FP2
 
 .export _bp = bp
 .export _lp = lp
@@ -51,6 +66,9 @@ _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
 
+_carry_flag: .res 1
+.export _carry_flag
+
 .code
 
 ; Returns 0 or 1 depending on the carry state,
@@ -61,6 +79,15 @@ return_carry_flag:
         lda     #0
         tax
         rol     A
+        rts
+
+; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
+set_carry_flag:
+        pha                             ; Save return value
+        lda     #0                      ; Roll carry left into A and save in carry_flag
+        rol     A
+        sta     _carry_flag
+        pla                             ; Restore return value
         rts
 
 ; Returns 0 or 1 based on the zero flag state.
@@ -117,14 +144,14 @@ _evaluate_expression:
         jsr     evaluate_expression
         jmp     return_carry_flag
 
-_push_fpa:
-.export _push_fpa
-        jsr     push_fpa
+_push_fp0:
+.export _push_fp0
+        jsr     push_fp0
         jmp     return_carry_flag
 
-_pop_fpa:
-.export _pop_fpa
-        jmp     pop_fpa
+_pop_fp0:
+.export _pop_fp0
+        jmp     pop_fp0
 
 _stack_alloc:
 .export _stack_alloc
@@ -137,44 +164,57 @@ _stack_free:
 
 ; fp.s
 
-_load_fpa:
-.export _load_fpa
-        jmp     load_fpa
+_load_fpx:
+.export _load_fpx
+        stax    BC                      ; value pointer
+        jsr     popax                   ; fpx pointer
+        tax
+        lday    BC
+        jmp     load_fpx
 
-_store_fpa:
-.export _store_fpa
-        jmp     store_fpa
+_store_fpx:
+.export _store_fpx
+        stax    BC                      ; value pointer
+        jsr     popax                   ; fpx pointer
+        tax
+        lday    BC
+        jmp     store_fpx
 
-_clear_fpa:
-.export _clear_fpa
-        jmp     clear_fpa
+_swap_fp0_fp1:
+.export _swap_fp0_fp1
+        jmp     swap_fp0_fp1
 
-_swap_fpa:
-.export _swap_fpa
-        jmp     swap_fpa
+_int_to_fp:
+.export _int_to_fp
+        jmp     int_to_fp
 
-_fpa_is_zero:
-.export _fpa_is_zero
-        jsr     fpa_is_zero
-        jmp     return_zero_flag
+_int32_to_fp:
+.export _int32_to_fp
+        jmp     int32_to_fp
 
-_fneg:
-.export _fneg
-        jmp     fneg
+_truncate_fp_to_int:
+.export _truncate_fp_to_int
+        jsr     truncate_fp_to_int
+        jmp     set_carry_flag
+
+_truncate_fp_to_int32:
+.export _truncate_fp_to_int32
+        jsr     truncate_fp_to_int32
+        jmp     return_carry_flag
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
         jmp     return_carry_flag
 
-_int_to_fp:
-.export _int_to_fp
-        jmp     int_to_fp
-
-_truncate_fp_to_int:
-.export _truncate_fp_to_int
-        jsr     truncate_fp_to_int
-        jmp     return_carry_flag
+_adjust_exponent:
+.export _adjust_exponent
+        pha                             ; popa uses Y so can't move it immediately
+        jsr     popa
+        tax                             ; Add byte
+        pla
+        tay                             ; Subtract byte
+        jmp     adjust_exponent
 
 _fp_to_string:
 .export _fp_to_string
@@ -185,37 +225,56 @@ _string_to_fp:
         jsr     string_to_fp
         jmp     return_carry_flag
 
+_normalize:
+.export _normalize
+        jsr     normalize
+        jmp     return_carry_flag
+
 _fadd:
 .export _fadd
-        jmp     fadd
+        jsr     fadd
+        jmp     return_carry_flag
 
 _fsub:
 .export _fsub
-        jmp     fsub
+        jsr     fsub
+        jmp     return_carry_flag
 
 _fmul:
 .export _fmul
-        jmp     fmul
+        jsr     fmul
+        jmp     return_carry_flag
 
 _fdiv:
 .export _fdiv
-        jmp     fdiv
+        jsr     fdiv
+        jmp     return_carry_flag
+
+_fneg:
+.export _fneg
+        jmp     fneg
+
+; Possible returns from fcmp are:
+; C + Z         -> A = B
+; C + NOT Z     -> A > B
+; NOT C + Z     -> (not possible)
+; NOT C + NOT Z -> A < B
 
 _fcmp:
 .export _fcmp
         jsr     fcmp
-        bne     @not_equal
+        bcc     @less                   ; Carry cleawr means borrow so A < B
+        beq     @equal
+        lda     #$01
+        ldax    #1
+        rts
+
+@equal:
         ldax    #0
         rts
 
-@not_equal:
-        bcs     @greater                ; Carry set means no borrow so A >= B
+@less:
         ldax    #-1
-        rts
-
-@greater:
-        lda     #$01
-        ldax    #1
         rts
 
 ; list.s

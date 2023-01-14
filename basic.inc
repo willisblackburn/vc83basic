@@ -10,8 +10,14 @@
 .endstruct
 
 .struct Float
-    e .res 1    ; Exponent
-    s .res 4    ; Significand
+    t .res 4
+    e .res 1
+.endstruct
+
+.struct UnpackedFloat
+    t .res 4
+    e .res 1
+    s .res 1
 .endstruct
 
 .struct Control
@@ -24,8 +30,7 @@
 ; Zero Page
 
 .globalzp BC, B, C, DE, D, E
-.globalzp FPA
-.globalzp fp_ptr
+.globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2, FP3
 .globalzp bp
 .globalzp name_ptr
 .globalzp np
@@ -85,27 +90,31 @@
 
 ; expression.s
 .global evaluate_expression
-.global push_fpa, pop_fpa
+.global push_fpx, push_fp0, pop_fpx, pop_fp0
 .global push_variable, pop_variable
 .global stack_alloc, stack_free
 
 ; fp.s
-.global load_fpa, load_fpa_with_ptr
-.global store_fpa, store_fpa_with_ptr
-.global clear_fpa
-.global swap_fpa
-.global fpa_is_zero
-.global fneg
+.global one, ten
+.global load_fpx, load_fp0
+.global store_fpx, store_fp0
+.global swap_fp0_fp1
+.global copy_fp0_fp1
+.global fpx_is_zero, fp0_is_zero
+.global clear_fpx, clear_fp0
+.global int_to_fp, int32_to_fp
+.global truncate_fp_to_int, truncate_fp_to_int32
 .global fp_to_string
 .global string_to_fp
 .global char_to_digit
-.global int_to_fp
-.global truncate_fp_to_int
-.global fadd, fadd_with_ptr
-.global fsub, fsub_with_ptr
-.global fmul, fmul_with_ptr
-.global fdiv, fdiv_with_ptr
-.global fcmp, fcmp_with_ptr
+.global adjust_exponent
+.global normalize
+.global fadd
+.global fsub
+.global fmul
+.global fdiv
+.global fneg
+.global fcmp
 
 ; input.s
 .global exec_input

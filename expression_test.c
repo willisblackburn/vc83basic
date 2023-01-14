@@ -61,32 +61,32 @@ static void test_one_op(char op, long expected00, long expected01, long expected
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected00);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected00);
 
     line_data[2] = 0;
     line_data[9] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected01);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected01);
 
     line_data[2] = 1;
     line_data[9] = 0;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected10);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected10);
 
     line_data[2] = 1;
     line_data[9] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected11);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected11);
 }
 
 static void test_one_unary_op(char op, int expected0, int expected1) {
@@ -104,15 +104,15 @@ static void test_one_unary_op(char op, int expected0, int expected1) {
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected0);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected0);
 
     line_data[3] = 1;
     set_line(line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, expected1);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, expected1);
 }
 
 static void test_evaluate_expression(void) {
@@ -153,14 +153,14 @@ static void test_evaluate_expression_precedence(void) {
     set_line(line_data_1, sizeof line_data_1);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, 0);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, 0);
 
     set_line(line_data_2, sizeof line_data_2);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
-    pop_fpa();
-    ASSERT_FP_EQ(reg_fpa, 0, 1);
+    pop_fp0();
+    ASSERT_FLOAT_EQ(reg_fpa, 0, 1);
 }
 
 int main(void) {
