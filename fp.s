@@ -16,8 +16,9 @@
 ;
 ; In this module:
 ; Both B and C are used by the normalize function. B holds the rounding byte. C holds the high byte of the exponent.
-; E is used in fdiv to track the exponent adjustment introduced by normalizing a subnormal divisor.
-; D and E are also used by the string conversion functions.
+; B and C is also used in fdiv to accumulate quotient bits and to track the exponent adjustment introduced by
+; normalizing a subnormal divisor.
+; D and E are used by the string conversion functions.
 
 ; TODO: make sure B and C are handled correctly in each function.
 
@@ -1034,8 +1035,8 @@ fdiv:
 @initalize:
         ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
         jsr     copy_significand
-        mva     #0, FP3                 ; Extended significand will be in FP3
-        mva     #BIAS, D                ; E keeps track of how much bias to add
+        mva     #0, FP3                 ; Extended significand will be in FP3 instead of usual FP2
+        mva     #BIAS, C                ; C keeps track of how much bias to add
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
 ; we'd have to shift the least-significant bit into some other location (presumably B). But the very first thing we
@@ -1045,11 +1046,11 @@ fdiv:
 
         mva     #1, B                   ; Set B to 1 in order to generate 8 quotient bits
         jsr     @divide_skip_shift
-        ldx     #3                      ; Store this value FP3 position 3
-        bpl     @store_quotient         ; Unconditional
+        ldx     #3                      ; Store this value FP0 position 3
+        bne     @store_quotient         ; Unconditional
 
 @next_quotient_byte:
-        mva     #1, B                   ; 8 quotient bits
+        mva     #1, B                   ; 8 more quotient bits
         jsr     @divide                 ; Call divide function; next 8 bits of quotient bits now in B
 @store_quotient:
         lda     B                       ; Get quotient byte
@@ -1066,14 +1067,14 @@ fdiv:
 ; Calculate exponent and sign.
 
         ldy     FP1e                    ; Subtract FP1e from FP0e
-        ldx     D                       ; Add bias
+        ldx     C                       ; Add bias
         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
         sta     FP0s
         jmp     normalize               ; Normalize and return
 
-; Compare the dividend in FP0+FP2 to the divisor FP1.
+; Compare the dividend in FP2+FP3 to the divisor FP1.
 ; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
 ; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
 ; initialized to 1, then it will loop 8 times.
