@@ -124,7 +124,7 @@ exec_for:
         adc     #Control::end_value     ; Add the offset of the end value
         ldy     #>primary_stack         ; Segment of stack
         jsr     store_fp0               ; Store FP0 there
-        lday    #one
+        lday    #fp_one
         jsr     load_fp0
         pla                             ; Recover stack pointer
         clc

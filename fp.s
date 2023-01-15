@@ -19,8 +19,6 @@
 ; normalizing a subnormal divisor.
 ; D and E are used by the string conversion functions.
 
-; TODO: make sure B and C are handled correctly in each function.
-
 BIAS = 127
 MAXDIGITS = 10
 
@@ -48,8 +46,8 @@ fp_temp: .res .sizeof(Float)
 
 ; Floating-point constants
 
-one: .byte $00, $00, $00, $00, 127
-ten: .byte $00, $00, $00, $20, 130
+fp_one: .byte $00, $00, $00, $00, 127
+fp_ten: .byte $00, $00, $00, $20, 130
 
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
@@ -418,7 +416,7 @@ fp_to_string:
         rts
 
 @scale_up:
-        lday    #ten
+        lday    #fp_ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fmul                    ; Multiply FP0 by 10
@@ -431,7 +429,7 @@ fp_to_string:
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
-        lday    #ten
+        lday    #fp_ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fdiv                    ; Divide FP0 by 10
@@ -695,13 +693,13 @@ string_to_fp:
         beq     @whole
         lday    #fp_temp
         jsr     store_fp0               ; Hold FP0 result in fp_temp
-        lday    #ten
+        lday    #fp_ten
         jsr     load_fpx                ; Set FP0 to 10 (X is still FP0 from before)
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
         ldx     #FP1
-        lday    #ten
+        lday    #fp_ten
         jsr     load_fpx                ; Set FP1 to 10
         jsr     fmul                    ; Multiply FP0 by 10
         jmp     @scale_divisor          ; Do it again until D is 0

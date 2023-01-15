@@ -118,19 +118,23 @@ operator_vectors:
         .word   unary_op_not
 
 op_sub:
-        ldax    #fsub-1
+        lda     #>(fsub-1)
+        ldx     #<(fsub-1)
         jmp     call_binary_operator_push
         
 op_add:
-        ldax    #fadd-1
+        lda     #>(fadd-1)
+        ldx     #<(fadd-1)
         jmp     call_binary_operator_push
 
 op_mul:
-        ldax    #fmul-1
+        lda     #>(fmul-1)
+        ldx     #<(fmul-1)
         jmp     call_binary_operator_push
 
 op_div:
-        ldax    #fdiv-1
+        lda     #>(fdiv-1)
+        ldx     #<(fdiv-1)
         jmp     call_binary_operator_push
 
 op_pow:
@@ -177,7 +181,8 @@ op_gt:
 ; If carry is set, then Z will be also be set if the values are equal or clear if they are not.
 
 compare_values:
-        ldax    #fcmp-1
+        lda     #>(fcmp-1)
+        ldx     #<(fcmp-1)
 
 ; Fall through
 
@@ -220,7 +225,7 @@ push_value_0:
         jmp     push_fp0
 
 push_value_1:
-        lday    #one
+        lday    #fp_one
         jsr     load_fp0
 
 push_fp0:
