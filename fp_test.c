@@ -333,6 +333,8 @@ static void test_fdiv(void) {
     CALL_FP(fdiv, POSITIVE, 140, 0x9C400000, POSITIVE, 130, 0xA0000000, POSITIVE, 136, 0xFA000000);
     // 100000 / 1
     CALL_FP(fdiv, POSITIVE, 143, 0xC3500000, POSITIVE, 130, 0xA0000000, POSITIVE, 140, 0x9C400000);
+    // 1 / 1.025
+    CALL_FP(fdiv, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x83333333, POSITIVE, 126, 0xF9C18F9C);
     // 314159 / 100000
     CALL_FP(fdiv, POSITIVE, 145, 0x9965E000, POSITIVE, 143, 0xC3500000, POSITIVE, 128, 0xC90FCF81);
 }
@@ -435,6 +437,8 @@ static void test_fp_to_string(void) {
     call_fp_to_string(POSITIVE, 163, 0x80000000, "6.87194767E10", __LINE__);
     // 2^-120
     call_fp_to_string(POSITIVE, 7, 0x80000000, "7.52316385E-37", __LINE__);
+    // 1.025
+    call_fp_to_string(POSITIVE, 127, 0x83333333, "1.025", __LINE__);
 
     // Exponent edge cases
     // +/- 1E9 should print without E
@@ -490,6 +494,8 @@ static void test_string_to_fp(void) {
     call_string_to_fp("2147483647", POSITIVE, 157, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
     call_string_to_fp("-2147483648", NEGATIVE, 158, 0x80000000, __LINE__);
+    // 1.025
+    call_string_to_fp("1.025", POSITIVE, 127, 0x83333333, __LINE__);
 
     // Verify that string_to_fp stops on non-digit.
     call_string_to_fp("10X", POSITIVE, 130, 0xA0000000, __LINE__);

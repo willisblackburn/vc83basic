@@ -1072,9 +1072,10 @@ fdiv:
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
         sta     FP0s
+        mva     #0, FP2                 ; Clear FP2, which normalize will use as the extended significand
         jmp     normalize               ; Normalize and return
 
-; Compare the dividend in FP2+FP3 to the divisor FP1.
+; Compare the dividend in FP2 (plus the low byte of FP3) to the divisor FP1.
 ; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
 ; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
 ; initialized to 1, then it will loop 8 times.
