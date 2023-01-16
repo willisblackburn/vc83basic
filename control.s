@@ -56,18 +56,23 @@ exec_on:
         jsr     evaluate_expression     ; Evaluate the "ON" expression
         jsr     pop_value
         sta     on_value
-        dec     on_value                ; Pre-decrement on_value so we can take the branch when it goes negative
+        txa                             ; Check the high byte
+        bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
         ldy     lp
         lda     (line_ptr),y            ; Peek at next character
         beq     @not_found              ; If it's TOKEN_NO_VLAUE, nothing matched; continue
         jsr     decode_number           ; Get the next line number into AX
         dec     on_value                ; Decrement the "ON" value
-        bpl     @loop                   ; If still positive then keep looking
+        bne     @loop                   ; If not zero then keep looking
         jmp     (on_handler)            ; Jump to whatever handler was passed in
 
 @not_found:
         clc
+        rts
+
+@error:
+        sec
         rts
 
 ; RETURN statement:
