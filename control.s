@@ -55,6 +55,7 @@ exec_on:
         stax    on_handler              ; Store the handler address
         jsr     evaluate_expression     ; Evaluate the "ON" expression
         jsr     pop_fp0
+        jsr     truncate_fp_to_int      ; FP0 -> integer in AX
         sta     on_value
         dec     on_value                ; Pre-decrement on_value so we can take the branch when it goes negative
 @loop:
