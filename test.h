@@ -153,6 +153,7 @@ char fadd(void);
 char fsub(void);
 char fmul(void);
 char fdiv(void);
+void fneg(void);
 int fcmp(void);
 
 // list.s
@@ -244,5 +245,30 @@ void hexdump(const char* name, const char* data, size_t length) {
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
 
 #define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
+
+#define POSITIVE ((char)0x00)
+#define NEGATIVE ((char)0x80)
+
+#define SET_FPX(fpx, s_value, e_value, t_value) do { \
+    fpx.s = (s_value); \
+    fpx.e = (e_value); \
+    fpx.t = (t_value); \
+} while (0)
+
+#define ASSERT_FPX_EQ(fpx, s_value, e_value, t_value) do { \
+    ASSERT_EQ(fpx.s, s_value); \
+    ASSERT_EQ(fpx.e, e_value); \
+    ASSERT_EQ(fpx.t, t_value); \
+} while (0)
+
+#define SET_FLOAT(value, e_value, t_value) do { \
+    value.e = (e_value); \
+    value.t = (t_value); \
+} while (0)
+
+#define ASSERT_FLOAT_EQ(value, e_value, t_value) do { \
+    ASSERT_EQ(value.e, e_value); \
+    ASSERT_EQ(value.t, t_value); \
+} while (0)
 
 #endif

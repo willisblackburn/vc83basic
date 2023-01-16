@@ -94,6 +94,7 @@
 .global stack_alloc, stack_free
 
 ; fp.s
+.global fp_one, fp_ten
 .global load_fpx, load_fp0
 .global store_fpx, store_fp0
 .global swap_fp0_fp1
@@ -111,6 +112,7 @@
 .global fsub
 .global fmul
 .global fdiv
+.global fneg
 .global fcmp
 
 ; input.s

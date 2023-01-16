@@ -1,30 +1,5 @@
 #include "test.h"
 
-#define POSITIVE ((char)0x00)
-#define NEGATIVE ((char)0x80)
-
-#define SET_FLOAT(value, e_value, t_value) do { \
-    value.e = (e_value); \
-    value.t = (t_value); \
-} while (0)
-
-#define SET_FPX(fpx, s_value, e_value, t_value) do { \
-    fpx.s = (s_value); \
-    fpx.e = (e_value); \
-    fpx.t = (t_value); \
-} while (0)
-
-#define ASSERT_FLOAT_EQ(value, e_value, t_value) do { \
-    ASSERT_EQ(value.e, e_value); \
-    ASSERT_EQ(value.t, t_value); \
-} while (0)
-
-#define ASSERT_FPX_EQ(fpx, s_value, e_value, t_value) do { \
-    ASSERT_EQ(fpx.s, s_value); \
-    ASSERT_EQ(fpx.e, e_value); \
-    ASSERT_EQ(fpx.t, t_value); \
-} while (0)
-
 typedef struct LoadStoreTestCase {
     Float f;
     UnpackedFloat u;
@@ -55,13 +30,9 @@ static void test_load_fpx(void) {
                 test_case->f.t, test_case->f.e);
         SET_FLOAT(value, test_case->f.e, test_case->f.t);
         load_fpx(&FP0, &value);
-        ASSERT_EQ(FP0s, test_case->u.s);
-        ASSERT_EQ(FP0e, test_case->u.e);
-        ASSERT_EQ(FP0t, test_case->u.t);
+        ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         load_fpx(&FP1, &value);
-        ASSERT_EQ(FP1s, test_case->u.s);
-        ASSERT_EQ(FP1e, test_case->u.e);
-        ASSERT_EQ(FP1t, test_case->u.t);
+        ASSERT_FPX_EQ(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
@@ -76,14 +47,10 @@ static void test_store_fpx(void) {
         test_case = load_store_test_cases + i;
         fprintf(stderr, "  %s:%d: store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
-        FP0s = test_case->u.s;
-        FP0e = test_case->u.e;
-        FP0t = test_case->u.t;
+        SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fpx(&FP0, &value);
         ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
-        FP1s = test_case->u.s;
-        FP1e = test_case->u.e;
-        FP1t = test_case->u.t;
+        SET_FPX(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fpx(&FP1, &value);
         ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
     }
@@ -169,7 +136,7 @@ static IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 127, POSITIVE } },
     { 32767, { 0xFFFE0000, 141, POSITIVE } },
-    { -32768, { 0x80000000, 142, NEGATIVE } },
+    { (int)-32768L, { 0x80000000, 142, NEGATIVE } },
     { 4112, { 0x80800000, 139, POSITIVE } },
 };
 
@@ -311,11 +278,11 @@ static void test_fsub(void) {
     // 0 - 0
     CALL_FP(fsub, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
     // 1 - 1
-    CALL_FP(fsub, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // -1 - (-1)
-    CALL_FP(fsub, NEGATIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, POSITIVE, 1, 0);
+    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
     // 1 - (-1)
-    CALL_FP(fsub, POSITIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
+    CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
 }
 
 static void test_fmul(void) {
@@ -448,6 +415,8 @@ static void test_fp_to_string(void) {
     call_fp_to_string(POSITIVE, 127, 0x80000000, "1", __LINE__);
     // -1
     call_fp_to_string(NEGATIVE, 127, 0x80000000, "-1", __LINE__);
+    // 10
+    call_fp_to_string(POSITIVE, 130, 0xA0000000, "10", __LINE__);
     // 25
     call_fp_to_string(POSITIVE, 131, 0xC8000000, "25", __LINE__);
     // 100
@@ -486,6 +455,16 @@ static void call_string_to_fp(const char* string, char expect_s, char expect_e, 
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
+static void fail_string_to_fp(const char* string, int line) {
+    char err;
+    fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
+    strcpy(buffer, string);
+    bp = 0;
+    err = string_to_fp();
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(bp, 0);
+}
+
 static void test_string_to_fp(void) {
     PRINT_TEST_NAME();
 
@@ -495,6 +474,8 @@ static void test_string_to_fp(void) {
     call_string_to_fp("1", POSITIVE, 127, 0x80000000, __LINE__);
     // -1
     call_string_to_fp("-1", NEGATIVE, 127, 0x80000000, __LINE__);
+    // 10
+    call_string_to_fp("10", POSITIVE, 130, 0xA0000000, __LINE__);
     // 25
     call_string_to_fp("25", POSITIVE, 131, 0xC8000000, __LINE__);
     // 100
@@ -509,7 +490,17 @@ static void test_string_to_fp(void) {
     call_string_to_fp("2147483647", POSITIVE, 157, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
     call_string_to_fp("-2147483648", NEGATIVE, 158, 0x80000000, __LINE__);
+
+    // Verify that string_to_fp stops on non-digit.
+    call_string_to_fp("10X", POSITIVE, 130, 0xA0000000, __LINE__);
+    call_string_to_fp("-100-", NEGATIVE, 133, 0xC8000000, __LINE__);
+    call_string_to_fp("3.14159+", POSITIVE, 128, 0xC90FCF81, __LINE__);
     
+    // Verify that string_to_fp leaves bp alone when faced with non-numbers.
+    fail_string_to_fp("X10", __LINE__);
+    fail_string_to_fp("*3", __LINE__);
+    fail_string_to_fp("-X", __LINE__);
+
 //     err = call_string_to_fp("0.0");
 //     ASSERT_EQ(err, 0);
 //     ASSERT_FLOAT_EQ(reg_fpa, -1, 0);

@@ -19,8 +19,6 @@
 ; normalizing a subnormal divisor.
 ; D and E are used by the string conversion functions.
 
-; TODO: make sure B and C are handled correctly in each function.
-
 BIAS = 127
 MAXDIGITS = 10
 
@@ -45,6 +43,11 @@ FP3: .res .sizeof(UnpackedFloat::t)
 fp_temp: .res .sizeof(Float)
 
 .code
+
+; Floating-point constants
+
+fp_one: .byte $00, $00, $00, $00, 127
+fp_ten: .byte $00, $00, $00, $20, 130
 
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
@@ -387,7 +390,6 @@ truncate_fp_to_int_common:
 ; be enough space in the buffer for the write to succeed.
 ; bp = the write position in buffer
 
-ten: .byte $00, $00, $00, $20, 130
 string_max: .byte $00, $00, $00, $00, 159       ; 2^32     (4,294,967,296  )
 string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^31/10  (  429,496,729.6)
 
@@ -414,7 +416,7 @@ fp_to_string:
         rts
 
 @scale_up:
-        lday    #ten
+        lday    #fp_ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fmul                    ; Multiply FP0 by 10
@@ -427,7 +429,7 @@ fp_to_string:
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
-        lday    #ten
+        lday    #fp_ten
         ldx     #FP1
         jsr     load_fpx
         jsr     fdiv                    ; Divide FP0 by 10
@@ -617,7 +619,6 @@ output_y_zeros:
 @done:
         rts
 
-
 ; Converts a string in bufer into an FP number in FP0.
 ; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
 ; The caller should skip whitespace (if necessary) before calling this function.
@@ -627,15 +628,15 @@ output_y_zeros:
 string_to_fp:
         jsr     clear_fp0               ; Reset to zero (including sign)
         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
-        ldx     bp                      ; Read index
+        mvx     bp, B                   ; Temporarily keep read position in B
         lda     buffer,x
         cmp     #'-'                    ; Check if it's negative
         bne     @not_negative
         ror     FP0s                    ; If equal then carry will have been set; roll into sign
 @next_character:
-        inc     bp                      ; Skip past negative sign
+        inc     B                       ; Skip past negative sign
 @not_negative:
-        ldx     bp
+        ldx     B
         lda     buffer,x                ; Get the next character
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
@@ -680,11 +681,11 @@ string_to_fp:
 @not_digit:
         cpy     #$80                    ; Has Y changed at all?
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
-        lda     buffer,x                ; Load character again
 
 ; There was at least one digit character followed by a non-digit character that isn't E, so treat this as
 ; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
+        stx     bp                      ; X points to the first non-digit; update bp
         sty     D                       ; Use D to keep track of how many digits after decimal
         jsr     int32_to_fp
         lda     D                       ; Test number of digits
@@ -692,13 +693,13 @@ string_to_fp:
         beq     @whole
         lday    #fp_temp
         jsr     store_fp0               ; Hold FP0 result in fp_temp
-        lday    #ten
+        lday    #fp_ten
         jsr     load_fpx                ; Set FP0 to 10 (X is still FP0 from before)
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
         ldx     #FP1
-        lday    #ten
+        lday    #fp_ten
         jsr     load_fpx                ; Set FP1 to 10
         jsr     fmul                    ; Multiply FP0 by 10
         jmp     @scale_divisor          ; Do it again until D is 0
@@ -1120,6 +1121,14 @@ fdiv:
 @skip_subtract:
         rol     B                       ; Roll the carry left into quotient
         bcc     @divide                 ; Continue if 1 bit has not emerged from B
+        rts
+
+; Negates the sign of FP0.
+
+fneg:
+        lda     FP0s
+        eor     #$80
+        sta     FP0s
         rts
 
 ; Compares FP0 with FP1.

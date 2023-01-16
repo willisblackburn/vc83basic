@@ -250,6 +250,10 @@ _fdiv:
         jsr     fdiv
         jmp     return_carry_flag
 
+_fneg:
+.export _fneg
+        jmp     fneg
+
 ; Possible returns from fcmp are:
 ; C + Z         -> A = B
 ; C + NOT Z     -> A > B
