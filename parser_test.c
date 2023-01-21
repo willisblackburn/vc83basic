@@ -304,7 +304,7 @@ static void test_parse_line(void) {
 
     initialize_program();
 
-    // Happy path with line number.
+    // Happy path with line number
 
     strcpy(buffer, "10 LET X=100");
     err = parse_line();
@@ -313,7 +313,7 @@ static void test_parse_line(void) {
     ASSERT_EQ(line_buffer.number, 10);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
 
-    // Happy path immediate mode.
+    // Happy path immediate mode
 
     strcpy(buffer, "RUN");
     err = parse_line();
