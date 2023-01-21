@@ -118,7 +118,7 @@ static void test_decode_expression(void) {
 
     PRINT_TEST_NAME();
 
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
 
     decode_expression(decode_xh_vectors);
     ASSERT_EQ(num_count, 2);
