@@ -142,6 +142,14 @@ void hexdump(const char* name, const char* data, size_t length) {
     }
 }
 
+void set_line(const char* data, size_t length) {
+    line_buffer.number = 0;
+    line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
+    memcpy(line_buffer.data, data, length);
+    line_ptr = &line_buffer;
+    lp = (char)offsetof(Line, data);
+}
+
 #define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
 
 #define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
