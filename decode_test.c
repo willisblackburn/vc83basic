@@ -2,16 +2,13 @@
 
 static void test_decode_byte(void) {
     char byte_value;
-    Line line = {
-        6,
-        10,
-        { 0x00, 0x01, 0x03 }
+    const char line_data[] = {
+        0x00, 0x01, 0x03
     };
 
     PRINT_TEST_NAME();
 
-    line_ptr = &line;
-    lp = offsetof(Line, data);
+    set_line(line_data, sizeof line_data);
 
     byte_value = decode_byte();
     ASSERT_EQ(byte_value, 0x00);
@@ -24,22 +21,15 @@ static void test_decode_byte(void) {
 }
 
 static void test_decode_number(void) {
-    Line line = {
-        12,
-        10,
-        {
-            TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
-            TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
-            TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128
-        }
+    const char line_data[] = {
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
+        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
+        TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128
     };
 
     PRINT_TEST_NAME();
 
-    line_ptr = &line;
-    lp = offsetof(Line, data);
-
-    fprintf(stderr, "line_ptr=%p\n", line_ptr);
+    set_line(line_data, sizeof line_data);
 
     decode_number();
     ASSERT_FPX_EQ(FP0, POSITIVE, 133, 0xC8000000);
@@ -109,32 +99,26 @@ void* decode_xh_vectors[] = {
 };
 
 static void test_decode_expression(void) {
-
-    Line line = { // 4112+(X/3)*-X OR NOT X where X is variable 1
-        16,
-        10,
-        {
-            TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,  // 4,112
-            TOKEN_OP | OP_ADD,        
-            TOKEN_PAREN,
-            TOKEN_VAR | 1, // X
-            TOKEN_OP | OP_DIV,              
-            TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, // 3
-            TOKEN_NO_VALUE,
-            TOKEN_OP | OP_MUL, 
-            TOKEN_UNARY_OP | UNARY_OP_MINUS,             
-            TOKEN_VAR | 1, // X
-            TOKEN_OP | OP_OR,
-            TOKEN_UNARY_OP | UNARY_OP_NOT,
-            TOKEN_VAR | 1, // X
-            TOKEN_NO_VALUE
-        }
+    const char line_data[] = {
+        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,  // 4,112
+        TOKEN_OP | OP_ADD,
+        TOKEN_PAREN,
+        TOKEN_VAR | 1, // X
+        TOKEN_OP | OP_DIV,
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, // 3
+        TOKEN_NO_VALUE,
+        TOKEN_OP | OP_MUL,
+        TOKEN_UNARY_OP | UNARY_OP_MINUS,             
+        TOKEN_VAR | 1, // X
+        TOKEN_OP | OP_OR,
+        TOKEN_UNARY_OP | UNARY_OP_NOT,
+        TOKEN_VAR | 1, // X
+        TOKEN_NO_VALUE
     };
 
     PRINT_TEST_NAME();
 
-    line_ptr = &line;
-    lp = offsetof(Line, data);
+    set_line(line_data, sizeof line_data);
 
     decode_expression(decode_xh_vectors);
     ASSERT_EQ(num_count, 2);

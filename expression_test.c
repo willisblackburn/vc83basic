@@ -34,14 +34,6 @@ static void test_stack_alloc_free(void) {
     initialize_program();
 }
 
-static void set_line(const char* data, size_t length) {
-    line_buffer.number = 0;
-    line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
-    memcpy(line_buffer.data, data, length);
-    line_ptr = &line_buffer;
-    lp = (char)offsetof(Line, data);
-}
-
 static void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
                         const Float* expected11) {
     char err;
