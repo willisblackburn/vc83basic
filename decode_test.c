@@ -8,7 +8,7 @@ static void test_decode_byte(void) {
 
     PRINT_TEST_NAME();
 
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
 
     byte_value = decode_byte();
     ASSERT_EQ(byte_value, 0x00);
@@ -26,7 +26,7 @@ static void test_decode_number(void) {
 
     PRINT_TEST_NAME();
 
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
 
     value = decode_number();
     ASSERT_EQ(value, 0);

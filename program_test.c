@@ -102,12 +102,6 @@ static void test_find_line(void) {
     ASSERT_EQ(next_line_ptr->number, 10);
 }
 
-static void set_line_buffer(int number, const char* data, char data_length) {
-    line_buffer.next_line_offset = (line_buffer.data + data_length) - (const char*)&line_buffer;
-    line_buffer.number = number;
-    memcpy(line_buffer.data, data, data_length);
-}
-
 static void test_insert_or_update_line(void) {
     int err;
     const char line_5_data[] = { 'E', 'N', 'D' };
@@ -118,7 +112,7 @@ static void test_insert_or_update_line(void) {
 
     initialize_program();
 
-    set_line_buffer(10, line_10_data, sizeof line_10_data);
+    set_line(10, line_10_data, sizeof line_10_data);
     err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_next_line_ptr();
@@ -130,7 +124,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(next_line_ptr->next_line_offset, 4);    
     ASSERT_EQ(next_line_ptr->number, -1);    
 
-    set_line_buffer(200, line_200_data, sizeof line_200_data);
+    set_line(200, line_200_data, sizeof line_200_data);
     err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_next_line_ptr();
@@ -144,7 +138,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(next_line_ptr->number, -1);    
 
     // Test inserting a line before the other two.
-    set_line_buffer(5, line_5_data, sizeof line_5_data);
+    set_line(5, line_5_data, sizeof line_5_data);
     err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_next_line_ptr();
@@ -161,7 +155,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(next_line_ptr->number, -1);    
 
     // Test deleting a line.
-    set_line_buffer(200, line_200_data, 0);
+    set_line(200, line_200_data, 0);
     err = insert_or_update_line();
     ASSERT_EQ(err, 0);
     reset_next_line_ptr();
