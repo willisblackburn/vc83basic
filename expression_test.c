@@ -46,7 +46,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     line_data[3] = TOKEN_OP | op;
     line_data[1] = 0;
     line_data[5] = 0;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
@@ -54,7 +54,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
 
     line_data[1] = 0;
     line_data[5] = 1;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
@@ -62,7 +62,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
 
     line_data[1] = 1;
     line_data[5] = 0;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
@@ -70,7 +70,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
 
     line_data[1] = 1;
     line_data[5] = 1;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
@@ -86,14 +86,14 @@ static void test_one_unary_op(char op, int expected0, int expected1) {
 
     line_data[0] = TOKEN_UNARY_OP | op;
     line_data[2] = 0;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected0);
 
     line_data[2] = 1;
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
@@ -123,13 +123,13 @@ static void test_evaluate_expression_precedence(void) {
 
     PRINT_TEST_NAME();
 
-    set_line(line_data_1, sizeof line_data_1);
+    set_line(0, line_data_1, sizeof line_data_1);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, 0);
 
-    set_line(line_data_2, sizeof line_data_2);
+    set_line(0, line_data_2, sizeof line_data_2);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
