@@ -2,16 +2,13 @@
 
 static void test_decode_byte(void) {
     char byte_value;
-    Line line = {
-        6,
-        10,
-        { 0x00, 0x01, 0x03 }
+    const char line_data[] = {
+        0x00, 0x01, 0x03
     };
 
     PRINT_TEST_NAME();
 
-    line_ptr = &line;
-    lp = offsetof(Line, data);
+    set_line(line_data, sizeof line_data);
 
     byte_value = decode_byte();
     ASSERT_EQ(byte_value, 0x00);
@@ -25,16 +22,11 @@ static void test_decode_byte(void) {
 
 static void test_decode_number(void) {
     int value;
-    Line line = {
-        12,
-        10,
-        {  TOKEN_NUM, 0, 0, TOKEN_NUM, 0, 1, TOKEN_NUM, 1, 3 }
-    };
+    const char line_data[] = {  TOKEN_NUM, 0, 0, TOKEN_NUM, 0, 1, TOKEN_NUM, 1, 3 };
 
     PRINT_TEST_NAME();
 
-    line_ptr = &line;
-    lp = offsetof(Line, data);
+    set_line(line_data, sizeof line_data);
 
     value = decode_number();
     ASSERT_EQ(value, 0);
