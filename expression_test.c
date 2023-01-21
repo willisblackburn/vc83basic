@@ -55,7 +55,7 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
 
     memcpy(line_data + 1, &value_0, sizeof (Float));
     memcpy(line_data + 8, &value_0, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
@@ -64,7 +64,7 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
 
     memcpy(line_data + 1, &value_0, sizeof (Float));
     memcpy(line_data + 8, &value_1, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     store_fpx(&FP0, &value);
@@ -72,7 +72,7 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
 
     memcpy(line_data + 1, &value_1, sizeof (Float));
     memcpy(line_data + 8, &value_0, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
@@ -81,7 +81,7 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
 
     memcpy(line_data + 1, &value_1, sizeof (Float));
     memcpy(line_data + 8, &value_1, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
@@ -105,7 +105,7 @@ static void test_one_unary_op(char op, const Float* expected0, const Float* expe
     line_data[0] = TOKEN_UNARY_OP | op;
 
     memcpy(line_data + 2, &value_0, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
@@ -113,7 +113,7 @@ static void test_one_unary_op(char op, const Float* expected0, const Float* expe
     ASSERT_FLOAT_EQ(value, expected0->e, expected0->t);
 
     memcpy(line_data + 2, &value_1, sizeof (Float));
-    set_line(line_data, sizeof line_data);
+    set_line(0, line_data, sizeof line_data);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
@@ -166,14 +166,14 @@ static void test_evaluate_expression_precedence(void) {
 
     PRINT_TEST_NAME();
 
-    set_line(line_data_1, sizeof line_data_1);
+    set_line(0, line_data_1, sizeof line_data_1);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, 0, 0x00000000);
 
-    set_line(line_data_2, sizeof line_data_2);
+    set_line(0, line_data_2, sizeof line_data_2);
     err = evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
