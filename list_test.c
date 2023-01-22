@@ -158,10 +158,10 @@ static void test_list_element(void) {
 }
 
 static void test_list_line(void) {
-    int err;
+    char err;
 
-    const char line_data_1[] = { 7, 0x0A, 0x00, ST_PRINT, TOKEN_NUM, 0x01, 0x01, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 3, 0x90, 0x01, ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
+    const char line_data_1[] = { ST_PRINT, TOKEN_NUM, 0x01, 0x01, TOKEN_NO_VALUE };
+    const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
     const char line_data_end[] = { 3, 0xFF, 0xFF };
     
     const char list_1[] = "10 PRINT 257";
@@ -172,19 +172,22 @@ static void test_list_line(void) {
     initialize_program();
     create_varibles();
 
-    err = list_line(line_data_1);
+    set_line(10, line_data_1, sizeof line_data_1);
+    err = list_line();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 
-    err = list_line(line_data_2);
+    set_line(400, line_data_2, sizeof line_data_2);
+    err = list_line();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 
-    err = list_line(line_data_end);
+    set_line(-1, line_data_end, sizeof line_data_end);
+    err = list_line();
     ASSERT_NE(err, 0);
 }
 
