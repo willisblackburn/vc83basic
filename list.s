@@ -43,7 +43,7 @@ list_line:
         lda     (line_ptr),y
         jsr     int_to_fp
         jsr     fp_to_string            ; Format into buffer
-        jsr     putchar_space_buffer
+        jsr     append_buffer_space
         mva     #Line::data, lp         ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement token
         tay
@@ -88,7 +88,7 @@ list_element:
         jsr     add_whitespace          ; First character of sequence; add whitespace
 @no_whitespace:
         tya
-        jsr     putchar_buffer
+        jsr     append_buffer
         jmp     @loop_literal
 
 @directive:
@@ -147,7 +147,7 @@ list_argument_list:
         jsr     decode_byte             ; Check if next argument is TOKEN_NO_VALUE
         beq     @no_value               
         lda     #','                    ; Output argument separator
-        jsr     putchar_buffer
+        jsr     append_buffer
         bne     @next_argument          ; Will never write 0 so this is unconditional branch
 
 @done:
@@ -175,7 +175,7 @@ list_variable:
 
 loop_list_repeated_variable:
         lda     #','                    ; Write ',' to output
-        jsr     putchar_buffer
+        jsr     append_buffer
 list_repeated_variable:
         jsr     list_variable           ; List one variable
         ldy     lp                      ; Peek next byte
@@ -196,7 +196,7 @@ list_number:
 
 loop_list_repeated_number:
         lda     #','                    ; Write ',' to output
-        jsr     putchar_buffer
+        jsr     append_buffer
 list_repeated_number:
         jsr     list_number             ; List one number
         ldy     lp                      ; Peek next byte
@@ -220,11 +220,11 @@ list_unary_operator:
 list_paren:
         jsr     add_whitespace
         lda     #'('
-        jsr     putchar_buffer
+        jsr     append_buffer
         ldax    #list_vectors
         jsr     decode_expression
         lda     #')'
-        jmp     putchar_buffer
+        jmp     append_buffer
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')'.
@@ -235,9 +235,9 @@ add_whitespace:
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         cmp     #')'                    ; Is it ')'?
-        beq     putchar_space_buffer    ; Yes, add a space
+        beq     append_buffer_space     ; Yes, add a space
         jsr     is_name_character       ; Is it a name character?
-        bcc     putchar_space_buffer    ; Yes
+        bcc     append_buffer_space     ; Yes
 @done:
         rts
 
@@ -248,9 +248,9 @@ add_whitespace:
 ; bp = the buffer position (updated)
 ; Y SAFE, BC SAFE, DE SAFE
 
-putchar_space_buffer:
+append_buffer_space:
         lda     #' '
-putchar_buffer:
+append_buffer:
         ldx     bp                      ; Load position
         inc     bp                      ; Incrment position
         sta     buffer,x                ; Store A in buffer
