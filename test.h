@@ -157,7 +157,7 @@ void fneg(void);
 int fcmp(void);
 
 // list.s
-int list_line(const void* line_ptr);
+char list_line(void);
 void list_element(const char* name_ptr, char index, const void* line_ptr, char lp, char bp);
 void list_directive(char directive, const void* line_ptr, char lp, char bp);
 
