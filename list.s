@@ -41,7 +41,7 @@ list_line:
         dey                             ; Position of line number low byte
         lda     (line_ptr),y
         jsr     format_number           ; Format into buffer
-        jsr     putchar_space_buffer
+        jsr     append_buffer_space
         mva     #Line::data, lp         ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement token
         tay
@@ -77,7 +77,7 @@ list_element:
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
         tya                             ; Not a directive, must be a literal
-        jsr     putchar_buffer
+        jsr     append_buffer
         jmp     @loop
 
 @directive:
@@ -133,7 +133,7 @@ list_argument_list:
         jsr     decode_byte             ; Check if next argument is TOKEN_NO_VALUE
         beq     @no_value               
         lda     #','                    ; Output argument separator
-        jsr     putchar_buffer
+        jsr     append_buffer
         bne     @next_argument          ; Will never write 0 so this is unconditional branch
 
 @done:
@@ -158,7 +158,7 @@ list_variable:
 
 loop_list_repeated_variable:
         lda     #','                    ; Write ',' to output
-        jsr     putchar_buffer
+        jsr     append_buffer
 list_repeated_variable:
         jsr     list_variable           ; List one variable
         ldy     lp                      ; Peek next byte
@@ -175,7 +175,7 @@ add_whitespace:
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         jsr     is_name_character
-        bcc     putchar_space_buffer
+        bcc     append_buffer_space
 @done:
         rts
 
@@ -186,9 +186,9 @@ add_whitespace:
 ; bp = the buffer position (updated)
 ; Y SAFE, BC SAFE, DE SAFE
 
-putchar_space_buffer:
+append_buffer_space:
         lda     #' '
-putchar_buffer:
+append_buffer:
         ldx     bp                      ; Load position
         inc     bp                      ; Incrment position
         sta     buffer,x                ; Store A in buffer
