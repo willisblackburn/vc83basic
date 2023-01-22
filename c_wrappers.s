@@ -85,7 +85,6 @@ _encode_byte:
 
 _list_line:
 .export _list_line
-        stax    line_ptr
         jsr     list_line
         jmp     return_carry
 
