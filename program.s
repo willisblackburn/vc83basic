@@ -19,7 +19,7 @@ variable_name_table_ptr: .res 2
 ; The start of the variable value table; maintained as the end of the variable name table
 value_table_ptr: .res 2
 
-; The start of the free space beyond the heap
+; The start of free space
 free_ptr: .res 2
 
 ; The address of "high memory" that will not be touched by the interpreter
@@ -71,7 +71,7 @@ initialize_program:
         
 ; Fall through to reset_program_state
 
-; Clears the variable name table and intializes the heap.
+; Clears the runtime state of the program.
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
 
@@ -83,7 +83,7 @@ reset_program_state:
         clc
         lda     D                       ; Add size of variable value table to value_table_ptr
         adc     value_table_ptr
-        sta     free_ptr                ; And the free_ptr since the heap has no size yet
+        sta     free_ptr                ; Set into free_ptr (the start of free space)
         lda     E                       ; Same for high byte
         adc     value_table_ptr+1
         sta     free_ptr+1
