@@ -126,14 +126,14 @@ build_end_statement:
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
 ; GOSUB, RESTORE, or any other function that requires a line number.
 ; AX = the line number
-; Carry clear if ok (the was found), carry set if error (line not found).
-; Sets line_ptr if the line was found.
-; If not found, line_ptr is left set to where the line would have been, i.e., pointing
+; Carry clear if ok (the line was found), carry set if error (line not found).
+; Sets next_line_ptr if the line was found.
+; If not found, next_line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
 
 find_line:
         stax    DE
-        jsr     reset_next_line_ptr     ; Set line_ptr to beginning of program
+        jsr     reset_next_line_ptr     ; Set next_line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
         jsr     advance_next_line_ptr   ; Advance to the next line
@@ -153,7 +153,7 @@ find_line:
         rts     
 
 ; Advances next_line_ptr to the next line.
-; line_ptr = current line (updated)
+; next_line_ptr = current next line (updated)
 ; X SAFE, BC SAFE, DE SAFE
 
 advance_next_line_ptr:
@@ -181,14 +181,14 @@ insert_or_update_line:
         ldy     #Line::next_line_offset
         lda     (next_line_ptr),y       ; Get next line offset into A
         pha                             ; Save the next line offset on the stack; it will be the compact length
-        jsr     advance_next_line_ptr   ; Advance line_ptr to next line
+        jsr     advance_next_line_ptr   ; Advance next_line_ptr to next line
         pla                             ; Get the length of the line back off the stack
         ldy     #next_line_ptr          ; Select next_line_ptr as the pointer to move
         jsr     compact_a
 
 ; Insert the new line, if there is one.
 ; There is a line if next_line_offset is greater than the offset of the data field.
-; line_ptr points to where this new line should go.
+; next_line_ptr points to where this new line should go.
 
 @insert:
         lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
@@ -199,7 +199,7 @@ insert_or_update_line:
         txa                             ; Copy line length back into A as the amount to expand
         ldy     #next_line_ptr          ; Select next_line_ptr as the pointer to move
         jsr     expand_a                ; Create space for the new line
-        plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if expand failed)
+        plstaa  dst_ptr                 ; Restore the previous next_line_ptr into dst_ptr (even if expand failed)
         bcs     @done                   ; Don't copy if expand failed
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         lda     line_buffer+Line::next_line_offset  ; Length of the new line
