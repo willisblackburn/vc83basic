@@ -102,7 +102,7 @@ reset_line_ptr:
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
 ; GOSUB, RESTORE, or any other function that requires a line number.
 ; AX = the line number
-; Carry clear if ok (the was found), carry set if error (line not found).
+; Carry clear if ok (the line was found), carry set if error (line not found).
 ; Sets line_ptr if the line was found.
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
