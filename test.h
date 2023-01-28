@@ -254,6 +254,8 @@ void set_line(int line, const char* data, size_t length) {
 
 #define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
 
+#define HERE() fprintf(stderr, "%s:%d\n", __FILE__, __LINE__)
+
 #define POSITIVE ((char)0x00)
 #define NEGATIVE ((char)0x80)
 
