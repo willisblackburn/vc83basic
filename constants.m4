@@ -35,7 +35,12 @@ def(ST_GOSUB,           7)
 def(ST_RETURN,          8)
 def(ST_POP,             9)
 def(ST_ON_GOTO,        10)
-def(ST_ON_GOSUB,       11) 
+def(ST_ON_GOSUB,       11)
+def(ST_FOR,            12)
+def(ST_NEXT,           13)
+def(ST_STOP,           14)
+def(ST_CONT,           15)
+def(ST_IF_THEN,        16)
 
 comment Binary operator tokens: combine with TOKEN_OP
 
