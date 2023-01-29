@@ -203,7 +203,7 @@ exec_if:
         jsr     pop_fp0
         jsr     fp0_is_zero             ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
-        jsr     dispatch_next_statement ; Otherwise execute the THEN
+        jsr     dispatch_statement      ; Otherwise execute the THEN
 @done:
         clc
         rts
