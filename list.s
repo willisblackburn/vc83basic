@@ -180,6 +180,7 @@ list_repeated_variable:
         ldy     lp                      ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
+        inc     lp                      ; Skip over TOKEN_NO_VALUE
         rts
 
 list_number:
@@ -195,6 +196,7 @@ list_repeated_number:
         ldy     lp                      ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_number   ; Not TOKEN_NO_VALUE so keep going
+        inc     lp                      ; Skip over TOKEN_NO_VALUE
         rts
 
 list_operator:

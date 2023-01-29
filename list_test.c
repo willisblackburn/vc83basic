@@ -97,12 +97,17 @@ static void test_list_element(void) {
     const char line_data_3[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
     const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_5[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_7[] = { 0x80, TOKEN_NO_VALUE, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, 
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
     const char list_3[] = "LIST 10,20";
     const char list_4[] = "LIST 10";
     const char list_5[] = "LIST";
+    const char list_6[] = "INPUT X,Y";
+    const char list_7[] = "ON X GOTO 10,20";
 
     PRINT_TEST_NAME();
 
@@ -133,6 +138,16 @@ static void test_list_element(void) {
     ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
     ASSERT_EQ(bp, sizeof list_5 - 1);
     ASSERT_EQ(lp, sizeof line_data_5);
+
+    list_element(statement_name_table, ST_INPUT, line_data_6, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_6, sizeof list_6 - 1);
+    ASSERT_EQ(bp, sizeof list_6 - 1);
+    ASSERT_EQ(lp, sizeof line_data_6);
+
+    list_element(statement_name_table, ST_ON_GOTO, line_data_7, 0, 0);
+    ASSERT_MEMORY_EQ(buffer, list_7, sizeof list_7 - 1);
+    ASSERT_EQ(bp, sizeof list_7 - 1);
+    ASSERT_EQ(lp, sizeof line_data_7);
 }
 
 static void test_list_line(void) {
