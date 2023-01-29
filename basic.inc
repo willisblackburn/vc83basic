@@ -54,6 +54,7 @@
 .globalzp osp
 .globalzp psp
 .globalzp resume_line_ptr
+.globalzp resume_lp
 
 ; Data
 

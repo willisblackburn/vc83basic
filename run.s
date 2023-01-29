@@ -6,6 +6,9 @@
 ; Where to resume execution after STOP
 resume_line_ptr: .res 2
 
+; Position of resume statement
+resume_lp: .res 1
+
 .code
 
 ; RUN statement:
@@ -32,6 +35,7 @@ exec_end:
 
 exec_stop:
         mvaa    next_line_ptr, resume_line_ptr
+        mva     next_lp, resume_lp
         mva     #PS_STOPPED, program_state
         clc
         rts
@@ -42,6 +46,7 @@ exec_stop:
 exec_cont:
         sec                             ; Set in case we take this next branch
         mvaa    resume_line_ptr, next_line_ptr
+        mva     resume_lp, next_lp
         beq     @done                   ; Can't resume because high byte of resume_line_ptr is 0
         mva     #PS_RUNNING, program_state
         clc
