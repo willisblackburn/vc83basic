@@ -94,7 +94,7 @@
 
 ; main.s
 .global main
-.global dispatch_next_statement
+.global dispatch_statement
 
 ; name.s
 .global find_name
