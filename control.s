@@ -208,8 +208,12 @@ exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
         jsr     pop_fp0
         jsr     fp0_is_zero             ; Check if zero
-        beq     @done                   ; If zero then don't execute the THEN
+        beq     @next_line              ; If zero then don't execute the THEN or any other statements on this line
         jsr     dispatch_statement      ; Otherwise execute the THEN
-@done:
+        clc
+        rts
+
+@next_line:
+        jsr     advance_next_line_ptr   ; Unconditionally go to the next line
         clc
         rts
