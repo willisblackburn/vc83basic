@@ -8,7 +8,7 @@
 ;
 ; e = exponent, 8 bits, excess-128 (MSB is inverted)
 ;     If e = 0 and s = 0 then value = 0
-;     If e = 0 and s != 0 then number is subnormal and actual exponent is -127
+;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
 ;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
 ; s = sign
 ; t = fractional part of significand, 31 bits, lowest byte first
@@ -773,7 +773,7 @@ shift_right_normalize:
 ;   * If the 32-bit significand, and the round register B, are zero, then return zero. This avoids fruitlessly
 ;   shifting left in search of a 1 to put in the most-significant bit.
 ;   * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand, or the exponent
-;   reaches -127.
+;   reaches -126.
 ;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
 ;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
 ;   (increase exponent) once again.
@@ -845,7 +845,7 @@ normalize:
         lda     FP0t+3                  ; Get the high byte of significand
         bmi     @round                  ; Significand is normalized
         lda     FP0e                    ; Get exponent
-        cmp     #1                      ; Make sure not already minimum value (-127)
+        cmp     #1                      ; Make sure not already minimum value (-126)
         bne     @fine_shift             ; Okay to shift; otherwise leave as subnormal and fall through
 
 ; Round the result, which will possibly require another right shift.
