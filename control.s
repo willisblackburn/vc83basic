@@ -58,8 +58,8 @@ exec_on:
         jsr     truncate_fp_to_int      ; FP0 -> integer in AX
         sta     on_value
         sec                             ; Set carry in case this next check fails
-        txa                             ; Check if >=256 or negative
-        bne     @error                  ; Yes, go check the values
+        txa                             ; Check the high byte
+        bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
         ldy     lp
         lda     (line_ptr),y            ; Peek at next character
