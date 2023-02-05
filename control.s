@@ -57,18 +57,21 @@ exec_on:
         jsr     pop_fp0
         jsr     truncate_fp_to_int      ; FP0 -> integer in AX
         sta     on_value
-        dec     on_value                ; Pre-decrement on_value so we can take the branch when it goes negative
+        sec                             ; Set carry in case this next check fails
+        txa                             ; Check if >=256 or negative
+        bne     @error                  ; Yes, go check the values
 @loop:
         ldy     lp
         lda     (line_ptr),y            ; Peek at next character
-        beq     @not_found              ; If it's TOKEN_NO_VLAUE, nothing matched; continue
+        beq     @not_found              ; If it's TOKEN_NO_VALUE, nothing matched; continue
         jsr     decode_int              ; Get the next line number into AX
         dec     on_value                ; Decrement the "ON" value
-        bpl     @loop                   ; If still positive then keep looking
+        bne     @loop                   ; If not zero then keep looking
         jmp     (on_handler)            ; Jump to whatever handler was passed in
 
 @not_found:
         clc
+@error:
         rts
 
 ; RETURN statement:
