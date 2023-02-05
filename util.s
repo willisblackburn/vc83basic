@@ -58,7 +58,7 @@ copy_bytes_de:
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y               
         iny 
-        jmp     @remaining
+        bne     @remaining              ; Y will never increment to 0 so this is unconditional
 
 @done:
         rts
@@ -147,15 +147,15 @@ clear_memory_de:
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0
 @next_block:
-        cpx     E                       ; More blocks to copy?
-        beq     @remaining_byte         ; No more blocks; go copy remaining bytes
+        cpx     E                       ; More blocks to clear?
+        beq     @remaining_byte         ; No more blocks; go clear remaining bytes
 @block_byte:
         sta     (dst_ptr),y             ; Write one zero
         iny                             ; Y is the number of bytes written; when it wraps to 0 means 256 bytes
         bne     @block_byte             ; Not rolled over yet
         inc     dst_ptr+1               ; Advance write address in BC to next block
         inx                             ; Increment number of blocks written
-        jmp     @next_block
+        bne     @next_block             ; X will never be zero, so this is is unconditional
 
 @remaining_byte:
         cpy     D                       ; More?
