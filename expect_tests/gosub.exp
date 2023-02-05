@@ -102,6 +102,7 @@ NEW
 80 RETURN
 RUN
 } {
+1
 3
 4
 5
@@ -119,6 +120,7 @@ NEW
 80 RETURN
 RUN
 } {
+1
 4
 5
 }
@@ -135,6 +137,7 @@ NEW
 80 RETURN
 RUN
 } {
+1
 5
 }
 
