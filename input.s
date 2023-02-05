@@ -24,7 +24,7 @@ exec_input:
         beq     @done                   ; It was TOKEN_NO_VALUE, nothing more to read
         jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
         bcc     exec_input              ; Didn't find ',' so issue a new prompt
-        jmp     @next_var               ; Otherwise just read the next variable
+        bcs     @next_var               ; Otherwise just read the next variable
 
 @error:
         pla                             ; Remove variable from stack
