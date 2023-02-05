@@ -312,7 +312,7 @@ static void test_fmul(void) {
     CALL_FP(fmul, POSITIVE, 140, 0x9C400000, POSITIVE, 130, 0xA0000000, POSITIVE, 143, 0xC3500000);
     // 3.14159 * 100000
     CALL_FP(fmul, POSITIVE, 128, 0xC90FCF81, POSITIVE, 143, 0xC3500000, POSITIVE, 145, 0x9965E000);
-    // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -127)
+    // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -126)
     CALL_FP(fmul, POSITIVE, 56, 0x80000000, POSITIVE, 56, 0x80000000, POSITIVE, 1, 0x00008000);
 }
 
