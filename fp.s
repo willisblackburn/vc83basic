@@ -780,7 +780,7 @@ shift_right_normalize:
 ;   * If the exponent is >127, fail with an overflow error.n (TODO: need to handle this)
 ; Otherwise, return the final result.
 ; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
-; int32_to_fp) also clobbers all registers.
+; etc.) also clobbers all registers.
 
 normalize:
 
