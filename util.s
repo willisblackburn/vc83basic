@@ -55,7 +55,7 @@ copy_bytes_de:
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y               
         iny 
-        jmp     @remaining
+        bne     @remaining              ; Y will never increment to 0 so this is unconditional
 
 @done:
         rts
