@@ -211,7 +211,7 @@ parse_expression:
 @error:
         rts
 
-; Parses a unary expression, that is, an expression that does not contain any binary operators.
+; Parses a primary expression, that is, an expression that does not contain any binary operators.
 
 parse_primary_expression:
         jsr     parse_parentheses       ; Look for an expression in parentheses
