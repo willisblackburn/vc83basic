@@ -222,6 +222,7 @@ parse_parentheses:
 ; Parses a number from the buffer.
 
 parse_number:
+        jsr     skip_whitespace
         jsr     string_to_fp            ; Parse the number
         bcs     @done
         jmp     encode_number           ; Will set carry if fail
