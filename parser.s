@@ -245,6 +245,15 @@ parse_parentheses:
         sec                             ; Set carry to indicate error and return
         rts
 
+; Parses a number from the buffer.
+
+parse_number:
+        jsr     read_number
+        bcs     @done
+        jsr     encode_number           ; Will set carry if fail
+@done:
+        rts
+
 ; Parses the unary operators '-' (minus) and NOT.
 
 parse_unary_operator:
@@ -253,15 +262,6 @@ parse_unary_operator:
         bcs     @done                   ; Nope
         jsr     encode_unary_operator   ; Store the unary minus token
         jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
-@done:
-        rts
-
-; Parses a number from the buffer.
-
-parse_number:
-        jsr     read_number
-        bcs     @done
-        jsr     encode_number           ; Will set carry if fail
 @done:
         rts
 
