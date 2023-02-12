@@ -260,17 +260,6 @@ parse_parentheses:
         sec                             ; Set carry to indicate error and return
         rts
 
-; Parses the unary operators '-' (minus) and NOT.
-
-parse_unary_operator:
-        ldax    #unary_operator_name_table
-        jsr     find_name               ; See if it's one of the unary operators
-        bcs     @done                   ; Nope
-        jsr     encode_unary_operator   ; Store the unary minus token
-        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
-@done:
-        rts
-
 ; Parses a number from the buffer.
 
 parse_number:
@@ -286,6 +275,17 @@ parse_repeated_number:
         jsr     parse_argument_separator
         bcs     parse_repeated_number   ; Parse another number after the separator
         jsr     encode_no_value         ; Terminate the repeated list
+@done:
+        rts
+
+; Parses the unary operators '-' (minus) and NOT.
+
+parse_unary_operator:
+        ldax    #unary_operator_name_table
+        jsr     find_name               ; See if it's one of the unary operators
+        bcs     @done                   ; Nope
+        jsr     encode_unary_operator   ; Store the unary minus token
+        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
 @done:
         rts
 
