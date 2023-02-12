@@ -120,8 +120,7 @@ static void test_list_element(void) {
     const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_5[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
     const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
-    const char line_data_7[] = { 0x80, TOKEN_NO_VALUE, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, 
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
+    const char line_data_7[] = { 0x80, TOKEN_NO_VALUE, TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
