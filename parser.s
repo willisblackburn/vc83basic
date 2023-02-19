@@ -158,8 +158,7 @@ parse_argument_list:
 ; Fall through; argument_count must be >= 1 since we didn't go to @success.
 
 @parse_failed:
-        lda     #TOKEN_NO_VALUE         ; Store "no value" tokens for any remaining arguments
-        jsr     encode_byte             ; Encode the "no value" token
+        jsr     encode_no_value         ; Store "no value" tokens for any remaining arguments
         bcs     @error                  ; encode_byte error
         dec     argument_count          ; Done with one "no value"
         bne     @parse_failed           ; Loop if more
