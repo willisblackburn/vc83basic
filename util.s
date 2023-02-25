@@ -136,40 +136,7 @@ copy_bytes_higher_de:
 @skip_copy:
         rts
 
-; Clears memory to zero.
-; dst_ptr = pointer to the memory to clear
-; AX = the number of bytes to clear (_de entry point uses value in DE instead)
-; On return the byte count will remain in DE.
-; BC SAFE
-
-clear_memory:
-        stax    DE                      ; Number of bytes in DE
-clear_memory_de:
-        lda     #0                      ; Zero byte to write
-        tax                             ; X is the number of blocks written; initialize to 0
-        tay                             ; Y is the number of bytes written; initialize to 0
-@next_block:
-        cpx     E                       ; More blocks to clear?
-        beq     @remaining_byte         ; No more blocks; go clear remaining bytes
-@block_byte:
-        sta     (dst_ptr),y             ; Write one zero
-        iny                             ; Y is the number of bytes written; when it wraps to 0 means 256 bytes
-        bne     @block_byte             ; Not rolled over yet
-        inc     dst_ptr+1               ; Advance write address in BC to next block
-        inx                             ; Increment number of blocks written
-        bne     @next_block             ; X will never be zero, so this is is unconditional
-
-@remaining_byte:
-        cpy     D                       ; More?
-        beq     @done                   ; Nope
-        sta     (dst_ptr),y             ; Write remaining byte
-        iny                             ; Y is the number of bytes written so will not be zero, ...
-        bne     @remaining_byte         ; therefore this is an unconditional branch
-
-@done:
-        rts
-
-; Shifts the value in AX left by 1 bit, multiplying it by 2.
+; Shifts the value in AX left by 3 bits, multiplying it by 3.
 ; Y SAFE, BC SAFE
 
 mul2a:
