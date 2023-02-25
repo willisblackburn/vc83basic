@@ -372,7 +372,7 @@ truncate_fp_to_int32:
 truncate_fp_to_int_common:
         eor     #$FF                    ; A = (-target) - 1
         sec                             ; Set carry to ADC completes the two's complement operation
-        adc     FP0e                    ; A = exponent - target+1
+        adc     FP0e                    ; A = exponent - target
         tay                             ; A = -(number of shifts) - 1, so we pre-increment and check for 0
         bcc     @decrement              ; If we borrowed to subtract target+1, then E < target+1 or E <= target; ok!
         rts                             ; Otherwise return with carry set
