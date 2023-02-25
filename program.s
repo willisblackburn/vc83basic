@@ -357,3 +357,15 @@ set_variable_value_ptr:
         sta     variable_value_ptr+1
         ldax    variable_value_ptr
         rts
+
+; Clears the value of the variable referenced by variable_value_ptr.
+
+initialize_variable:
+        ldy     #0
+        tya                             ; Set following bytes to 0
+@next:
+        sta     (variable_value_ptr),y
+        iny
+        cpy     #VALUE_SIZE
+        bne     @next
+        rts
