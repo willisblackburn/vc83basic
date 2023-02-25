@@ -137,12 +137,14 @@ copy_bytes_higher_de:
 ; On return the byte count will remain in DE.
 ; BC SAFE
 
+clear_memory_y:
+        stax    dst_ptr
+        tya
 clear_memory_a:
         ldx     #0
 clear_memory:
         stax    DE                      ; Number of bytes in DE
 clear_memory_de:
-        ldax dst_ptr
         lda     #0                      ; Zero byte to write
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0
