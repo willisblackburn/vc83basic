@@ -411,7 +411,7 @@ fp_to_string:
         bne     @maybe_scale_up
         ldx     bp                      ; Write index
         lda     #'0'
-        sta     buffer
+        sta     buffer,x
         inc     bp                      ; Update index
         rts
 

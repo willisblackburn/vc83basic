@@ -92,3 +92,4 @@ comment Other constants
 
 def(PRIMARY_STACK_SIZE, 192)
 def(OP_STACK_SIZE, 16)
+def(VALUE_SIZE, 8)
