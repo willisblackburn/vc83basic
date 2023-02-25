@@ -458,14 +458,6 @@ _copy_bytes_higher:
         ldax    DE
         jmp     copy_bytes_higher
 
-_clear_memory:
-.export _clear_memory
-        stax    DE                      ; Size
-        jsr     popax
-        stax    dst_ptr                 ; Get the pointer into BC
-        ldax    DE                      ; Restore size into AX
-        jmp     clear_memory
-
 _mul8:
 .export _mul8
         jmp     mul8
