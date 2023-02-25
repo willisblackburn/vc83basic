@@ -6,7 +6,7 @@
 ; Format is single-precision with 40-bit extended significand (5 bytes):
 ; eeeeeeee stttttt tttttttt tttttttt tttttttt
 ;
-; e = exponent, 8 bits, excess-128 (MSB is inverted)
+; e = exponent, 8 bits, excess-127 (MSB is inverted)
 ;     If e = 0 and s = 0 then value = 0
 ;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
 ;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
