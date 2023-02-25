@@ -188,11 +188,8 @@
 .global unary_operator_name_table
 
 ; util.s
-.global copy_bytes, copy_bytes_de
-.global copy_bytes_y, copy_bytes_a
+.global copy_bytes, copy_bytes_de, copy_bytes_y, copy_bytes_a
 .global copy_bytes_higher, copy_bytes_higher_de
-.global clear_memory, clear_memory_de
-.global clear_memory_a, clear_memory_y
 .global mul8a, mul8
 .global invoke_indexed_vector
 .global advance_lp_sizeof_float, advance_lp
