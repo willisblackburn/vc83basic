@@ -137,6 +137,9 @@ copy_bytes_higher_de:
 ; On return the byte count will remain in DE.
 ; BC SAFE
 
+clear_memory_y:
+        stax    dst_ptr
+        tya
 clear_memory_a:
         ldx     #0
 clear_memory:
