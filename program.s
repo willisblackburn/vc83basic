@@ -88,7 +88,7 @@ reset_program_state:
 @reset_heap:
         lda     variable_count
         jsr     set_variable_value_ptr  ; Set variable_value_ptr to just past the last variable
-        stax    free_ptr                ; Set into free_ptr (the start of free space)
+        mvaa    variable_value_ptr, free_ptr    ; Set into free_ptr (the start of free space)
         mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, psp
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
