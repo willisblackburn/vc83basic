@@ -79,17 +79,19 @@ initialize_program:
 ; variable_count = the number of variables in the variable name table
 
 reset_program_state:
-        mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
-        lda     variable_count          ; Amount to clear is variable_count * 2
-        jsr     mul8a
-        jsr     clear_memory            ; Leaves the size of variable value table in DE
-        clc
-        lda     D                       ; Add size of variable value table to value_table_ptr
-        adc     value_table_ptr
-        sta     free_ptr                ; Set into free_ptr (the start of free space)
-        lda     E                       ; Same for high byte
-        adc     value_table_ptr+1
-        sta     free_ptr+1
+        mva     variable_count, D       ; Use D to track the variable index
+@reset_variable:
+        dec     D
+        bmi     @reset_heap
+        lda     D
+        jsr     set_variable_value_ptr
+        jsr     initialize_variable
+        jmp     @reset_variable
+
+@reset_heap:
+        lda     variable_count
+        jsr     set_variable_value_ptr  ; Set variable_value_ptr to just past the last variable
+        stax    free_ptr                ; Set into free_ptr (the start of free space)
         mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, psp
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
