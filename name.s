@@ -196,15 +196,13 @@ add_variable:
         ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
         jsr     expand_a                ; Do the expand
         bcs     @fail
-        ldy     #free_ptr               ; Grow value table by 8
-        lda     #8
+        ldy     #free_ptr               ; Grow value table by VALUE_SIZE
+        lda     #VALUE_SIZE
         jsr     expand_a
         bcs     @fail
         lda     variable_count
         jsr     set_variable_value_ptr  ; variable_value_ptr points to the space for the new value
-        mvaa    variable_value_ptr, dst_ptr ; Set as destination of clear operation
-        lda     #8                      ; Clear 8 bytes
-        jsr     clear_memory_a
+        jsr     initialize_variable
         ldx     bp                      ; Reload read position
         ldy     #$FF                    ; Write position relative to name_ptr; init to -1 since we pre-increment
 @copy:

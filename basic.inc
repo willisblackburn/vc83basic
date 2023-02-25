@@ -173,6 +173,7 @@
 .global calculate_bytes_to_move
 .global check_himem
 .global set_variable_value_ptr
+.global initialize_variable
 
 ; run.s
 .global exec_run
