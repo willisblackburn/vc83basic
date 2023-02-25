@@ -877,7 +877,7 @@ fadd:
         mva     #0, B                   ; Initialize the rounding register to 0
         sta     C                       ; Clear the extended exponent register
         sta     FP2                     ; Also clear FP0 extended significand
-        lda     FP1e                    ; FP0 exponent
+        lda     FP1e                    ; FP1 exponent
         sec
         sbc     FP0e                    ; Compare exponents: FP1e - FP0e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
