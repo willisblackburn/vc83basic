@@ -797,10 +797,8 @@ normalize:
         lda     FP0e                    ; Not negative, but exponent might still be zero
         beq     shift_right_normalize
 
-; Check if FP0 is zero. If so then set exponent to lowset possible value and return.
-; If FP0 is not zero then it means that left normalization is guaranteed to end: either the sign bit is 0, and one of
-; the other significand bits is 1 (since the significand overall is not zero); or the sign bit is 1, and eventually
-; we'll see a 0 bit, because we shift in 0s from the right.
+; Check if FP0 is zero. If so then set exponent to lowset possible value and return. If FP0 is not zero then it
+; means that left normalization is guaranteed to end, since one of the significand bits must be 1.
 
 @check_zero:
         jsr     fp0_is_zero             ; Check if FP0 is zero
