@@ -391,7 +391,7 @@ truncate_fp_to_int_common:
 ; bp = the write position in buffer
 
 string_max: .byte $00, $00, $00, $00, 159       ; 2^32     (4,294,967,296  )
-string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^31/10  (  429,496,729.6)
+string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^32/10  (  429,496,729.6)
 
 fp_to_string:
         lda     FP0s                    ; Check for negative value
