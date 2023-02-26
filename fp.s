@@ -248,7 +248,7 @@ add_significands_with_carry:
         sta     FP2
         rts
 
-; Utility function to shift the FP0 significand right by one bit and increment exponent.
+; Utility function to shift the FP0 significand right by one bit.
 
 shift_right:
         clc
