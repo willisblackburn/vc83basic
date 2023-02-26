@@ -186,11 +186,11 @@ int compact(void* ptr, size_t size);
 size_t calculate_bytes_to_move(void);
 int check_himem(size_t size);
 void set_variable_value_ptr(char variable);
+int mul_value_size(int value);
 
 // util.s
 void copy_bytes(char* to, const char* from, size_t size);
 void copy_bytes_higher(char* to, const char* from, size_t size);
-int mul8(int value);
 int invoke_indexed_vector(void* vectors, char index);
 
 // Common functions and definitions used in tests

@@ -173,6 +173,7 @@
 .global calculate_bytes_to_move
 .global check_himem
 .global set_variable_value_ptr
+.global mul_value_size, mul_value_size_a
 .global initialize_variable
 
 ; run.s
@@ -192,7 +193,6 @@
 ; util.s
 .global copy_bytes, copy_bytes_de, copy_bytes_y, copy_bytes_a
 .global copy_bytes_higher, copy_bytes_higher_de
-.global mul8a, mul8
 .global invoke_indexed_vector
 .global advance_lp_sizeof_float, advance_lp
 

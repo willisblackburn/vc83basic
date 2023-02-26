@@ -436,6 +436,10 @@ _set_variable_value_ptr:
 .export _set_variable_value_ptr
         jmp     set_variable_value_ptr
 
+_mul_value_size:
+.export _mul_value_size
+        jmp     mul_value_size
+
 ; util.s
 
 _copy_bytes:
@@ -458,14 +462,9 @@ _copy_bytes_higher:
         ldax    DE
         jmp     copy_bytes_higher
 
-_mul8:
-.export _mul8
-        jmp     mul8
-
 _invoke_indexed_vector:
 .export _invoke_indexed_vector
         sta     B                       ; Index arrives in A; we need it in Y
         jsr     popax                   ; Address of vector array
         ldy     B      
         jmp     invoke_indexed_vector
-
