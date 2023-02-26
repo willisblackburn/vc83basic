@@ -71,21 +71,6 @@ static void test_copy_bytes_higher(void) {
     test_copy_bytes_higher_case(4000, 256);
 }
 
-static void test_mul8(void) {
-    int result;
-
-    PRINT_TEST_NAME();
-
-    result = mul8(0);
-    ASSERT_EQ(result, 0);
-    result = mul8(1);
-    ASSERT_EQ(result, 8);
-    result = mul8(30);
-    ASSERT_EQ(result, 240);
-    result = mul8(1000);
-    ASSERT_EQ(result, 8000);
-}
-
 static int f1(void) {
     return 31415;
 }
@@ -114,7 +99,6 @@ int main(void) {
     initialize_target();
     test_copy_bytes();
     test_copy_bytes_higher();
-    test_mul8();
     test_invoke_indexed_vector();
     return 0;
 }

@@ -135,22 +135,6 @@ copy_bytes_higher_de:
 @skip_copy:
         rts
 
-; Shifts the value in AX left by 3 bits, multiplying it by 3.
-; Y SAFE, BC SAFE
-
-mul8a:
-        ldx     #0                      ; Only multiply A by initializing high byte to 0     
-mul8:
-        stx     E                       ; Park high byte in E so we can roll into it
-        asl     A                       ; Shift AE left 3 bits to multiply by 8
-        rol     E
-        asl     A
-        rol     E
-        asl     A
-        rol     E
-        ldx     E                       ; Reload X
-        rts
-
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
