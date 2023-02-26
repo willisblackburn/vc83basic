@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void create_varibles(void) {
+static void create_variables(void) {
     int err;
 
     // Create varibles which will get variable name table positions starting at 0.
@@ -47,7 +47,7 @@ static void test_list_directive(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
-    create_varibles();
+    create_variables();
 
     list_directive(1, line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
@@ -109,7 +109,7 @@ static void test_list_element(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
-    create_varibles();
+    create_variables();
 
     list_element(statement_name_table, ST_RUN, line_data_1, 0, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
@@ -155,7 +155,7 @@ static void test_list_line(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
-    create_varibles();
+    create_variables();
 
     set_line(10, line_data_1, sizeof line_data_1);
     err = list_line();
