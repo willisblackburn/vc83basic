@@ -7,7 +7,7 @@
 bp: .res 1
 
 ; Position of current statement
-tp: .res 1
+statement_lp: .res 1
 
 ; The number of arguments that parse_argument_list is parsing
 argument_count: .res 1
@@ -44,13 +44,13 @@ parse_line:
 ; statement or we just parsed a ':'.
 
 @next_statement:
-        mva     lp, tp                  ; Save start of statement position
+        mva     lp, statement_lp        ; Save start of statement position
         inc     lp                      ; Begin tokenizing statement at next position
         ldax    #statement_name_table
         jsr     parse_element           ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
         lda     lp                      ; Write position is next statement offset
-        ldx     tp                      ; Store at start of statement
+        ldx     statement_lp            ; Store at start of statement
         sta     line_buffer,x
         jsr     parse_statement_separator
         bcs     @next_statement
