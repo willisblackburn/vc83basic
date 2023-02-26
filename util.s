@@ -26,10 +26,16 @@ dst_ptr: .res 2
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
 ; AX = number of bytes to copy (_de entry point uses value in DE instead)
+; Alternate entry points for when there are fewer than 255 bytes to copy:
+; copy_bytes_y accepts the destination pointer in AX and the length in Y.
+; copy_bytes_a uses the existing dst_ptr and accepts the length in A.
 ; BC SAFE
 
+copy_bytes_y:
+        stax    dst_ptr
+        tya
 copy_bytes_a:
-        ldx     #0                      ; Default high byte to 0
+        ldx     #0
 copy_bytes:
         stax    DE                      ; Length into DE
 copy_bytes_de:
@@ -46,8 +52,8 @@ copy_bytes_de:
         dex                             ; Decrement number of blocks
         bne     @next_byte              ; Move to move
 
-; Copy the remaining bytes.
-; Y = 0 when we first reach this point
+; Copies the remaining bytes.
+; Y must be 0 when we first reach this point, and D must be set to the number of bytes remaining (0 means none).
 
 @remaining:
         cpy     D                       ; Compare Y with number of remaining bytes
@@ -68,8 +74,6 @@ copy_bytes_de:
 ; AX = number of bytes to copy (_de entry point uses value in DE instead)
 ; BC SAFE
 
-copy_bytes_higher_a:
-        ldx     #0                      ; Default high byte to 0
 copy_bytes_higher:
         stax    DE                      ; Length into DE
 copy_bytes_higher_de:

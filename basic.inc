@@ -54,7 +54,8 @@
 .global statement_name_table
 
 ; util.s
-.global copy_bytes, copy_bytes_a, copy_bytes_de, copy_bytes_higher, copy_bytes_higher_a, copy_bytes_higher_de
+.global copy_bytes, copy_bytes_de, copy_bytes_y, copy_bytes_a
+.global copy_bytes_higher, copy_bytes_higher_de
 .global mul10, div10
 
 ; init.s
