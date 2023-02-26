@@ -329,6 +329,21 @@ static void test_compact(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0xE00);
 }
 
+static void test_mul_value_size(void) {
+    int result;
+
+    PRINT_TEST_NAME();
+
+    result = mul_value_size(0);
+    ASSERT_EQ(result, 0);
+    result = mul_value_size(1);
+    ASSERT_EQ(result, VALUE_SIZE);
+    result = mul_value_size(30);
+    ASSERT_EQ(result, VALUE_SIZE * 30);
+    result = mul_value_size(1000);
+    ASSERT_EQ(result, VALUE_SIZE * 1000);
+}
+
 static void test_set_variable_value_ptr(void) {
     PRINT_TEST_NAME();
 
@@ -337,9 +352,9 @@ static void test_set_variable_value_ptr(void) {
     set_variable_value_ptr(0);
     ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr));
     set_variable_value_ptr(1);
-    ASSERT_EQ(variable_value_ptr, (void*)((char*)value_table_ptr + 8));
+    ASSERT_EQ(variable_value_ptr, (void*)((char*)value_table_ptr + VALUE_SIZE));
     set_variable_value_ptr(127);
-    ASSERT_EQ(variable_value_ptr, (void*)((char*)value_table_ptr + 1016));
+    ASSERT_EQ(variable_value_ptr, (void*)((char*)value_table_ptr + VALUE_SIZE * 127));
 }
 
 int main(void) {
@@ -353,6 +368,7 @@ int main(void) {
     test_calculate_bytes_to_move();
     test_expand();
     test_compact();
+    test_mul_value_size();
     test_set_variable_value_ptr();
     return 0;
 }

@@ -179,6 +179,7 @@ static void test_get_name_table_entry(void) {
 }
 
 static void test_add_variable(void) {
+    const char num_init_value[] = { 0, 0, 0, 0, 0, 0 };
     int err;
 
     PRINT_TEST_NAME();
@@ -200,11 +201,8 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[1], 0);
     ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 2);
-    ASSERT_EQ(*(int*)value_table_ptr, 0);
-    ASSERT_EQ(*((int*)value_table_ptr + 1), 0);
-    ASSERT_EQ(*((int*)value_table_ptr + 2), 0);
-    ASSERT_EQ(*((int*)value_table_ptr + 3), 0);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + 8);
+    ASSERT_MEMORY_EQ(value_table_ptr, num_init_value, sizeof num_init_value);
+    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE);
 
     strcpy(buffer, "Y,Z");
     err = find_name(variable_name_table_ptr, 0);
@@ -218,7 +216,7 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[2], 0);
     ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 3);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + 16);
+    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 2);
     err = find_name(variable_name_table_ptr, 2);
     ASSERT_NE(err, 0);
     err = add_variable();
@@ -231,7 +229,7 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[2], 'Z' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[3], 0);
     ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 4);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + 24);
+    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 3);
 }
 
 int main(void) {

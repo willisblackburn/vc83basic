@@ -336,12 +336,35 @@ check_himem:
 ; Y SAFE, BC SAFE
 
 set_variable_value_ptr:
-        jsr     mul8a                   ; Multiply by 2; since MSB was clear, this will clear carry
+        jsr     mul_value_size_a        ; Multiply by VALUE_SIZE; since MSB was clear, this will clear carry
         adc     value_table_ptr         ; Add to the value table offset
         sta     variable_value_ptr      ; Store low byte
         txa                             
         adc     value_table_ptr+1
         sta     variable_value_ptr+1
+        rts
+
+; Multiplies the value in AX by VALUE_SIZE (6).
+; Y SAFE, BC SAFE
+
+.assert VALUE_SIZE = 6, error
+
+mul_value_size_a:
+        ldx     #0                      ; Only multiply A by initializing high byte to 0     
+mul_value_size:
+        stax    DE                      ; Save into DE
+        asl     A
+        rol     E                       ; Shift one left to multiply by 2
+        clc
+        adc     D                       ; Add original low byte value to A
+        sta     D
+        txa                             ; Original high byte into A
+        adc     E                       ; Add shfited value, completing multiplication by 3
+        sta     E
+        lda     D                       ; Load low byte of value
+        asl     A                       ; Shift left to multiply by 2, completing multiplication by 6
+        rol     E
+        ldx     E                       ; Load high byte into X for return
         rts
 
 ; Clears the value of the variable referenced by variable_value_ptr.
