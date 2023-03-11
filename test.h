@@ -64,6 +64,8 @@ extern unsigned long FP3;
 #pragma zpsym ("FP3")
 extern char bp;
 #pragma zpsym ("bp")
+extern char name_bp;
+#pragma zpsym ("name_bp")
 extern char lp;
 #pragma zpsym ("lp")
 extern void* src_ptr;
@@ -162,17 +164,20 @@ void list_element(const char* name_ptr, char index, const void* line_ptr, char l
 void list_directive(char directive, const void* line_ptr, char lp, char bp);
 
 // name.s
-int find_name(const char* name_ptr, char bp);
-int is_name_character(char c);
+int find_name(const char* name_ptr);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
 
 // parser.s
 int parse_line(void);
-int parse_element(const char* name_ptr, char bp, char lp);
+char parse_element(const char* name_ptr);
 int parse_directive(char directive, char bp, char lp);
 int parse_expression(char bp, char lp);
 int parse_argument_separator(char bp);
+int parse_name(void);
+int is_name_character(char c);
+int parse_operator_name();
+int is_operator_name_character(char c, char index);
 
 // program.s
 void initialize_target(void);
