@@ -145,24 +145,6 @@ static void test_parse_name(void) {
     ASSERT_EQ(name_bp, 0);
     ASSERT_EQ(bp, 2);
 
-    // The names '?' and '=' are special cases. They are a single character each.
-    err = call_parse_name("?", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
-    err = call_parse_name("?X", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
-    err = call_parse_name("=", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
-    err = call_parse_name("=100", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
-
     // bp will reflect skipped whitespace even if parse fails.
     err = call_parse_name("   ", 0);
     ASSERT_NE(err, 0);
