@@ -111,28 +111,34 @@ parse_element:
         jsr     find_name               ; Start by finding name; sets np and returns index in A
         bcs     @no_match
         jsr     encode_byte             ; Encode index
-@loop:
-        jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
+@after_directive:
+        jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
+@next_character:
         jsr     read_name_table_byte    ; Read the next byte from the name table
         bcs     @success                ; If the high bit was set, then it was the last byte; success
         tay                             ; Store it in Y so we can use it again later
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        jsr     parse_name              ; Otherwise treat it like a name and match it
-        bcs     @no_match
-        jsr     match_name
-        bcc     @loop                   ; Continue after a character sequence match
-        bcs     @no_match
+        tya                             ; Get character back
+        ldx     bp                      ; Otherwise comapre it to the current character in the buffer
+        cmp     buffer,x
+        bne     @no_match
+        inc     np                      ; Go to next character
+        inc     bp
+        bne     @next_character
         
 @directive:
         inc     np                      ; Move position past directive
         tya
         jsr     parse_directive
-        bcc     @loop
+        bcc     @after_directive
 
 @success:
         clc                             ; Signal success
+        rts
+
 @no_match:
+        sec
         rts  
 
 parse_argument_type_vectors:
@@ -271,10 +277,6 @@ parse_argument_separator:
 parse_name:
         jsr     skip_whitespace
         stx     name_bp                 ; If there is a name, it starts here
-        cmp     #'?'                    ; Special cases for '?', '=', and '_'
-        beq     @special
-        cmp     #'='
-        beq     @special
         jsr     is_name_character       ; Check for initial name character
         bcs     @done
 @next_character:
@@ -287,12 +289,7 @@ parse_name:
 @done:
         rts
 
-@special:
-        inc     bp                      ; Handle '?' and '=' special cases
-        clc
-        rts
-
-; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '$'.
+; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '_'.
 ; Returns carry clear if it is, carry set if not.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
