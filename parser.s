@@ -94,22 +94,17 @@ parse_line:
         rts
 
 ; Parses a complete statement, either at the start of a line, or after THEN.
+; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
+; the buffer length.
+; AX = pointer to the first entry of the name table
+; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
         jsr     parse_name
+        bcs     @error
         ldax    #statement_name_table
-        bcc     parse_element
-        rts
-
-; Parses and tokenizes a syntax element starting with a name.
-; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
-; the buffer length.
-; AX = pointer to the first entry of the name table
-; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
-
-parse_element:
         jsr     find_name               ; Start by finding name; sets np and returns index in A
-        bcs     @no_match
+        bcs     @error
         jsr     encode_byte             ; Encode index
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
@@ -122,7 +117,7 @@ parse_element:
         tya                             ; Get character back
         ldx     bp                      ; Otherwise comapre it to the current character in the buffer
         cmp     buffer,x
-        bne     @no_match
+        bne     @error
         inc     np                      ; Go to next character
         inc     bp
         bne     @next_character
@@ -137,7 +132,7 @@ parse_element:
         clc                             ; Signal success
         rts
 
-@no_match:
+@error:
         sec
         rts  
 
