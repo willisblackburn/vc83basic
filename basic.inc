@@ -34,8 +34,10 @@
 .globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2, FP3
 .globalzp bp
 .globalzp statement_lp
+.globalzp name_bp
 .globalzp name_ptr
 .globalzp np
+.globalzp matched_name_index
 .globalzp src_ptr, dst_ptr
 .globalzp vector_table_ptr
 .globalzp program_ptr
@@ -141,9 +143,8 @@
 ; name.s
 .global find_name
 .global find_next_name
-.global match_character_sequence
+.global match_name
 .global read_name_table_byte
-.global is_name_character
 .global advance_name_ptr
 .global get_name_table_entry
 .global add_variable
@@ -155,6 +156,10 @@
 .global parse_directive
 .global parse_expression
 .global parse_argument_separator
+.global parse_name
+.global is_name_character
+.global parse_operator_name
+.global is_operator_name_character
 .global skip_whitespace
 
 ; print.s
@@ -187,6 +192,8 @@
 ; tables.s
 .global statement_name_table
 .global operator_name_table
+.global operator_chars
+.global operator_chars_end
 .global operator_precedence_table
 .global unary_operator_name_table
 
