@@ -33,14 +33,12 @@ find_next_name:
         bcc     @match                  ; It matched; return
         jsr     advance_name_ptr        ; Move np up to the next entry
         inc     matched_name_index      ; Increment name table index
-        debug $00
         bne     find_next_name          ; Handle the next entry (unconditional)
 
 @end:
         sec                             ; Signal error
 @match:
         lda     matched_name_index      ; Number of entries in the name table
-        debug $01
         rts
 
 ; Matches a name found in the input buffer with characters from the name table entry.
@@ -56,7 +54,6 @@ match_name:
         ldx     name_bp                 ; Load bp into x
 @loop:
         jsr     read_name_table_byte    ; Read the next byte from the name table
-        debug $10
         tay                             ; Save in Y
         bcs     @end_of_name            ; Carry set means last by had bit 7 set; end of word
         and     #$60                    ; Check if it's a literal
