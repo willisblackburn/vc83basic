@@ -216,6 +216,7 @@ insert_or_update_line:
 ; to the section *before* the pointer we moved.
 ; AX = the amount to add to the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
+; DE SAFE
 
 expand_a:
         ldx     #0                      ; Initialize high byte to 0
@@ -259,6 +260,7 @@ expand:
 ; This decreases the amount of memory available in the section *before* the pointer we moved.
 ; AX = the amount to subtract from the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
+; DE SAFE
 
 compact_a:
         ldx     #0
@@ -329,7 +331,8 @@ check_himem:
 @done:
         rts
 
-; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it.
+; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it. Since
+; the resulting variable_value_ptr is within the 64K address space, on return the carry will be clear.
 ; A = the variable index (0-127)
 ; Y SAFE, BC SAFE
 

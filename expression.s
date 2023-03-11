@@ -111,11 +111,11 @@ operator_vectors:
         .word   op_pow
         .word   op_concat
         .word   op_eq
+        .word   op_lt
+        .word   op_gt
         .word   op_ne
         .word   op_le
-        .word   op_lt
         .word   op_ge
-        .word   op_gt
         .word   op_and
         .word   op_or
         .word   0
