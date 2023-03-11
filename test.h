@@ -21,6 +21,8 @@ typedef struct Line {
 
 extern char bp;
 #pragma zpsym ("bp")
+extern char name_bp;
+#pragma zpsym ("name_bp")
 extern char lp;
 #pragma zpsym ("lp")
 extern void* src_ptr;
@@ -75,8 +77,7 @@ int encode_number(int number);
 int encode_byte(char byte_value);
 
 // name.s
-int find_name(const char* name_ptr, char bp);
-int is_name_character(char c);
+int find_name(const char* name_ptr);
 int get_name_table_entry(const char* name_ptr, char index);
 int add_variable(void);
 
@@ -84,9 +85,11 @@ int add_variable(void);
 int read_number(char bp);
 int char_to_digit(char c);
 int parse_line(void);
-int parse_element(const char* name_ptr, char bp, char lp);
+char parse_element(const char* name_ptr);
 int parse_directive(char directive, char bp, char lp);
 int parse_expression(char bp, char lp);
+int parse_name(void);
+int is_name_character(char c);
 
 // program.s
 void initialize_target(void);
