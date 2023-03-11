@@ -13,6 +13,7 @@
 ; Aliases for globals
 
 .export _bp = bp
+.export _name_bp = name_bp
 .export _lp = lp
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
@@ -157,15 +158,8 @@ _list_directive:
 
 ; name.s
 
-_is_name_character:
-.export _is_name_character
-        jsr     is_name_character
-        jmp     return_carry
-
 _find_name:
 .export _find_name
-        sta     bp                      ; Buffer index
-        jsr     popax                   ; Name table pointer
         jsr     find_name
         jmp     return_carry
 
@@ -202,11 +196,6 @@ _parse_line:
 
 _parse_element:
 .export _parse_element
-        sta     lp
-        jsr     popa
-        sta     bp
-        jsr     popax                   ; Name table pointer
-        stax    name_ptr
         jsr     parse_element
         jmp     return_carry
 
@@ -231,6 +220,29 @@ _parse_argument_separator:
 .export _parse_argument_separator
         sta     bp
         jsr     parse_argument_separator
+        jmp     return_carry
+
+_parse_name:
+.export _parse_name
+        jsr     parse_name
+        jmp     return_carry
+
+_is_name_character:
+.export _is_name_character
+        jsr     is_name_character
+        jmp     return_carry
+
+_parse_operator_name:
+.export _parse_operator_name
+        jsr     parse_operator_name
+        jmp     return_carry
+
+_is_operator_name_character:
+.export _is_operator_name_character
+        sta     B                       ; Index arrives in A; we need it in Y
+        jsr     popa                    ; Character to test
+        ldy     B                       ; Recover index from B
+        jsr     is_operator_name_character
         jmp     return_carry
 
 ; program.s
