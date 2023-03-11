@@ -145,8 +145,7 @@
 ; parser.s
 .global read_number
 .global parse_line
-.global parse_element
-.global parse_next_element
+.global parse_statement
 .global parse_directive
 .global parse_expression
 .global parse_argument_separator

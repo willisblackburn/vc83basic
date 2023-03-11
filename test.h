@@ -171,7 +171,7 @@ int add_variable(void);
 // parser.s
 int read_number(char bp);
 int parse_line(void);
-char parse_element(const char* name_ptr);
+char parse_statement(const char* name_ptr);
 int parse_directive(char directive, char bp, char lp);
 int parse_expression(char bp, char lp);
 int parse_argument_separator(char bp);
