@@ -382,21 +382,20 @@ static void test_parse_directive(void) {
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_5);
 }
 
-static void call_parse_element(const char* s, char set_name_bp, char set_bp, 
-    const char* expect_line_data, size_t expect_line_data_length, int line) {
+static void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length,
+    int line) {
     char err;
-    fprintf(stderr, "  %s:%d: parse_element(\"%s\", name_bp=%d, bp=%d)\n", __FILE__, line, s, set_name_bp, set_bp);
+    fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
-    name_bp = set_name_bp;
-    bp = set_bp;
+    bp = 0;
     lp = offsetof(Line, data);
-    err = parse_element(statement_name_table);
+    err = parse_statement(statement_name_table);
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
 }
 
-static void test_parse_element(void) {
+static void test_parse_statement(void) {
     int err;
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00, TOKEN_NO_VALUE };
@@ -411,26 +410,25 @@ static void test_parse_element(void) {
 
     initialize_program();
 
-    call_parse_element("RUN", 0, 3, line_data_1, sizeof line_data_1, __LINE__);
-    call_parse_element("PRINT 8", 0, 5, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_element("LET X=100", 0, 3, line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_element("INPUT X,Y", 0, 5, line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_element("LIST 10,20", 0, 4, line_data_5, sizeof line_data_5, __LINE__);
-    call_parse_element("PRINT (X+3)*Y", 0, 5, line_data_6, sizeof line_data_6, __LINE__);
+    call_parse_statement("RUN", line_data_1, sizeof line_data_1, __LINE__);
+    call_parse_statement("PRINT 8", line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_statement("LET X=100", line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_statement("INPUT X,Y", line_data_4, sizeof line_data_4, __LINE__);
+    call_parse_statement("LIST 10,20", line_data_5, sizeof line_data_5, __LINE__);
+    call_parse_statement("PRINT (X+3)*Y", line_data_6, sizeof line_data_6, __LINE__);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 
-    call_parse_element("PRINT    8", 0, 5, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_element("PRINT 8  ", 0, 5, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_element("LET   X  =  100  ", 0, 3, line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_statement("PRINT    8", line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_statement("PRINT 8  ", line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_statement("LET   X  =  100  ", line_data_3, sizeof line_data_3, __LINE__);
 
     // Make sure the parser doesn't match continued names.
 
     strcpy(buffer, "PRINTX");
-    name_bp = 0;
-    bp = 6;
+    bp = 0;
     lp = offsetof(Line, data);
-    err = parse_element(statement_name_table);
+    err = parse_statement(statement_name_table);
     ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 6);
     ASSERT_EQ(lp, 3);
@@ -491,7 +489,7 @@ int main(void) {
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_directive();
-    test_parse_element();
+    test_parse_statement();
     test_parse_line();
     return 0;
 }
