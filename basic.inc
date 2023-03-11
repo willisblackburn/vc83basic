@@ -12,8 +12,10 @@
 
 .globalzp BC, B, C, DE, D, E
 .globalzp bp
+.globalzp name_bp
 .globalzp name_ptr
 .globalzp np
+.globalzp matched_name_index
 .globalzp src_ptr, dst_ptr
 .globalzp vector_table_ptr
 .globalzp program_ptr
@@ -68,8 +70,8 @@
 
 ; name.s
 .global find_name
-.global match_character_sequence
-.global is_name_character
+.global match_name
+.global read_name_table_byte
 .global advance_name_ptr
 .global get_name_table_entry
 .global add_variable
@@ -81,6 +83,10 @@
 .global parse_directive
 .global parse_expression
 .global parse_argument_separator
+.global parse_name
+.global is_name_character
+.global parse_operator_name
+.global is_operator_name_character
 .global skip_whitespace
 
 ; print.s
@@ -108,6 +114,8 @@
 ; tables.s
 .global statement_name_table
 .global operator_name_table
+.global operator_chars
+.global operator_chars_end
 .global unary_operator_name_table
 
 ; util.s

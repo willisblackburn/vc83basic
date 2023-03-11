@@ -9,11 +9,13 @@ statement_name_table:
         .byte   0
 
 operator_name_table:
+operator_chars:
         .byte   '+' | NT_END
         .byte   '-' | NT_END
         .byte   '*' | NT_END
         .byte   '/' | NT_END
         .byte   '^' | NT_END
+operator_chars_end:
         .byte   0
 
 unary_operator_name_table:
