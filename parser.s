@@ -6,6 +6,9 @@
 ; Read/write position in buffer
 bp: .res 1
 
+; The starting position of the name
+name_bp: .res 1
+
 .code
 
 ; All "parse" functions use:
@@ -75,8 +78,7 @@ parse_line:
         jsr     skip_whitespace         ; Detect a blank line; returns non-blank character in A, may be zero
         tax                             ; Transfer into X to check if it's zero
         beq     @blank_line
-        ldax    #statement_name_table
-        jsr     parse_element           ; Leaves the parsed statement in line_buffer and sets/clears carry
+        jsr     parse_statement         ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
 @blank_line:
         mva     lp, line_buffer+Line::next_line_offset  ; Write position is next statement offset
@@ -88,6 +90,14 @@ parse_line:
 @done:
         rts
 
+; Parses a complete statement, either at the start of a line, or after THEN.
+
+parse_statement:
+        jsr     parse_name
+        ldax    #statement_name_table
+        bcc     parse_element
+        rts
+
 ; Parses and tokenizes a syntax element starting with a name.
 ; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
@@ -96,35 +106,31 @@ parse_line:
 
 parse_element:
         jsr     find_name               ; Start by finding name; sets np and returns index in A
-        bcs     @error
+        bcs     @no_match
         jsr     encode_byte             ; Encode index
 @loop:
         jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
-        ldy     np                      ; Get the character at np-1
-        dey
-        lda     (name_ptr),y
-        bmi     @success                ; If the high bit was set, then it was the last byte; success
-        iny                             ; Advance to current position
-        lda     (name_ptr),y            ; Get next charater from name table entry
-        tay                             ; Store it in Y so we can use it for several checks
+        jsr     read_name_table_byte    ; Read the next byte from the name table
+        bcs     @success                ; If the high bit was set, then it was the last byte; success
+        tay                             ; Store it in Y so we can use it again later
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        jsr     match_character_sequence    ; Otherwise it's a literal character sequence; match it
+        jsr     parse_name              ; Otherwise treat it like a name and match it
+        bcs     @no_match
+        jsr     match_name
         bcc     @loop                   ; Continue after a character sequence match
-@error:
-        rts                             ; Return with carry set to indicate error
-
-@success:
-        clc                             ; Signal success
-        rts  
-
+        bcs     @no_match
+        
 @directive:
         inc     np                      ; Move position past directive
         tya
-        and     #$7F                    ; Clear the high bit if it's set
         jsr     parse_directive
         bcc     @loop
-        bcs     @error
+
+@success:
+        clc                             ; Signal success
+@no_match:
+        rts  
 
 parse_argument_type_vectors:
         .word   parse_variable          ; NT_VAR
@@ -183,10 +189,7 @@ parse_number:
 ; If the name is not found, then extends the variable name table.
 
 parse_variable:
-        jsr     skip_whitespace         ; Leaves next character in A
-        sec
-        sbc     #'A'                    ; Check if first character is in range A-Z
-        cmp     #26
+        jsr     parse_name              ; Find a name
         bcs     @done
         ldax    variable_name_table_ptr
         jsr     find_name
@@ -222,6 +225,52 @@ parse_argument_separator:
 
 @error:
         clc                             ; Clear carry since we don't know its state following the CMP above
+        rts
+
+; Parses a name from buffer, starting at bp.
+; Sets name_bp.
+; Returns carry clear if there was a name at bp, or carry set if the character at bp doesn't start a name.
+; Y SAFE, BC SAFE, DE SAFE
+
+parse_name:
+        jsr     skip_whitespace
+        stx     name_bp                 ; If there is a name, it starts here
+        cmp     #'?'                    ; Special cases for '?', '=', and '_'
+        beq     @special
+        cmp     #'='
+        beq     @special
+        jsr     is_name_character       ; Check for initial name character
+        bcs     @done
+@next_character:
+        inx                             ; Next character
+        lda     buffer,x                ; Check next character
+        jsr     is_name_character       ; Is it a name character?
+        bcc     @next_character         ; Yes, keep going
+        stx     bp                      ; Update bp
+        clc                             ; Signal success
+@done:
+        rts
+
+@special:
+        inc     bp                      ; Handle '?' and '=' special cases
+        clc
+        rts
+
+; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '$'.
+; Returns carry clear if it is, carry set if not.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
+
+is_name_character:
+        cmp     #'_'                    ; Underbar is sepcial case
+        clc                             ; Clear carry for return in case it was '_'
+        beq     @done
+        sec                             ; Prepare for subtract
+        sbc     #'0'                    ; Check range 0-9
+        cmp     #10                     ; Sets carry if char was >'9'
+        bcc     @done                   ; It was in range 0-9
+        sbc     #'A'-'0'                ; Check range 'A'-'Z'
+        cmp     #26                     ; Sets carry if char was >'Z'
+@done:      
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.

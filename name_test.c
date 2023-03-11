@@ -1,46 +1,39 @@
 #include "test.h"
 
-void test_is_name_character() {
-    int err;
-
-    PRINT_TEST_NAME();
-
-    err = is_name_character('$');
+static void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
+    char expect_np, const char* expect_name_ptr, int line) {        
+    char err;
+    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_ptr=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_ptr,
+        set_name_bp, set_bp);
+    strcpy(buffer, s);
+    name_bp = set_name_bp;
+    bp = set_bp;
+    err = find_name(name_table);
     ASSERT_EQ(err, 0);
-    err = is_name_character('A');
-    ASSERT_EQ(err, 0);
-    err = is_name_character('Z');
-    ASSERT_EQ(err, 0);
-    err = is_name_character('0');
-    ASSERT_EQ(err, 0);
-    err = is_name_character('9');
-    ASSERT_EQ(err, 0);
-    err = is_name_character('#');
-    ASSERT_NE(err, 0);
-    err = is_name_character('%');
-    ASSERT_NE(err, 0);
-    err = is_name_character('@');
-    ASSERT_NE(err, 0);
-    err = is_name_character('[');
-    ASSERT_NE(err, 0);
-    err = is_name_character('/');
-    ASSERT_NE(err, 0);
-    err = is_name_character(':');
-    ASSERT_NE(err, 0);
-    err = is_name_character(' ');
-    ASSERT_NE(err, 0);
-    err = is_name_character(0);
-    ASSERT_NE(err, 0);
-    err = is_name_character(0x7F);
-    ASSERT_NE(err, 0);
-    err = is_name_character(0x80);
-    ASSERT_NE(err, 0);
-    err = is_name_character(0xFF);
-    ASSERT_NE(err, 0);
+    ASSERT_EQ(reg_a, expect_reg_a);
+    ASSERT_EQ(np, expect_np);
+    ASSERT_EQ(name_ptr, expect_name_ptr);
+    ASSERT_EQ(bp, set_bp);
 }
 
-void test_find_name(void) {
-    int err;
+static void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
+    int line) {
+    char err;
+    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_ptr=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_ptr,
+        set_name_bp, set_bp);
+    strcpy(buffer, s);
+    name_bp = set_name_bp;
+    bp = set_bp;
+    err = find_name(name_table);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(reg_a, expect_reg_a);
+    // On fail name_ptr should always point to 0 at the end of the name table (automatically added by C string).
+    ASSERT_EQ(name_ptr, name_ptr + strlen(name_ptr));
+    ASSERT_EQ(bp, set_bp);
+}
+
+static void test_find_name(void) {
+
     // C adds a trailing 0 to these strings which terminates the name table.
     const char* name_table_1 = "PRIN\xD4"; // \xD4 = 'T' with bit 7 set
     const char* name_table_2 = "PRIN\xD4LIS\xD4";
@@ -55,104 +48,29 @@ void test_find_name(void) {
 
     PRINT_TEST_NAME();
 
-    strcpy(buffer, "PRINT");
-    err = find_name(name_table_1, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(name_ptr, name_table_1);
-    err = find_name(name_table_2, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(name_ptr, name_table_2);
-    err = find_name(name_table_3, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(name_ptr, name_table_3 + 4);
+    call_find_name("PRINT", name_table_1, 0, 5, 0, 5, name_table_1, __LINE__);
+    call_find_name("PRINT", name_table_2, 0, 5, 0, 5, name_table_2, __LINE__);
+    call_find_name("PRINT", name_table_3, 0, 5, 1, 5, name_table_3 + 4, __LINE__);
 
-    // Make sure find_name matches and skips names that have some extra data.
-    err = find_name(name_table_4, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(name_ptr, name_table_4 + 4);
-    err = find_name(name_table_5, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(np, 5);
-    ASSERT_EQ(name_ptr, name_table_5 + 5);
+    call_find_name("PRINT", name_table_4, 0, 5, 1, 5, name_table_4 + 4, __LINE__);
+    call_find_name("PRINT", name_table_5, 0, 5, 1, 5, name_table_5 + 5, __LINE__);
 
     // Name not found
-    err = find_name(name_table_6, 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
-    ASSERT_EQ(name_ptr, name_table_6 + 4);
+    call_find_name_fail("PRINT", name_table_6, 0, 5, 1, __LINE__);
 
     // Name in name table is longer than input namne
-    err = find_name(name_table_7, 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(bp, 0);
-    ASSERT_EQ(name_ptr, name_table_7 + 7);
-    err = find_name(name_table_8, 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(reg_a, 2);
-    ASSERT_EQ(bp, 0);
-    ASSERT_EQ(name_ptr, name_table_8 + 11);
+    call_find_name_fail("PRINT", name_table_7, 0, 5, 1, __LINE__);
+    call_find_name_fail("PRINT", name_table_8, 0, 5, 2, __LINE__);
 
-    // Input name is longer than name in table
-    err = find_name(name_table_9, 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
-    ASSERT_EQ(name_ptr, name_table_9 + 4);
-    err = find_name(name_table_10, 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(name_ptr, name_table_10 + 8);
-    ASSERT_EQ(bp, 0);
+    // // Input name is longer than name in table
+    call_find_name_fail("PRINT", name_table_9, 0, 5, 1, __LINE__);
+    call_find_name_fail("PRINT", name_table_10, 0, 5, 2, __LINE__);
 
-    // Read position is not zero
-    err = find_name(name_table_1, 2);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 2);
-    ASSERT_EQ(name_ptr, name_table_1 + 5);
-}
+    // Name does not start at position 0
+    call_find_name_fail("PRINT", name_table_1, 1, 5, 1, __LINE__);
 
-static void test_find_name_operators(void) {
-    int err;
-    // C adds a trailing 0 to these strings which terminates the name table.
-    const char* name_table_1 = ">\xBD"; // \xBD = '=' with bit 7 set
-    const char* name_table_2 = "\xBE>\xBD"; // \xBE = '>' with bit 7 set
-    const char* name_table_3 = "\xBD>\xBD\xBE";
-
-    PRINT_TEST_NAME();
-
-    strcpy(buffer, ">=");
-    err = find_name(name_table_1, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(np, 2);
-    ASSERT_EQ(bp, 2);
-    ASSERT_EQ(name_ptr, name_table_1);
-    // We expect operators to prefix match; that is, the ">" in ">=" should match first ">"
-    err = find_name(name_table_2, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
-    ASSERT_EQ(np, 1);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(name_ptr, name_table_2);
-    err = find_name(name_table_3, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 1);
-    ASSERT_EQ(np, 2);
-    ASSERT_EQ(bp, 2);
-    ASSERT_EQ(name_ptr, name_table_3 + 1);
+    // Make sure find_name ignores name after bp
+    call_find_name_fail("PRINT", name_table_1, 0, 4, 1, __LINE__);
 }
 
 static void test_get_name_table_entry(void) {
@@ -190,7 +108,9 @@ static void test_add_variable(void) {
 
     // add_variable is used after find_name, which sets up name_ptr.
     strcpy(buffer, "X");
-    err = find_name(variable_name_table_ptr, 0);
+    name_bp = 0;
+    bp = 1;
+    err = find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     err = add_variable();
     ASSERT_EQ(err, 0);
@@ -204,7 +124,9 @@ static void test_add_variable(void) {
     ASSERT_EQ(free_ptr, (char*)value_table_ptr + 2);
 
     strcpy(buffer, "Y,Z");
-    err = find_name(variable_name_table_ptr, 0);
+    name_bp = 0;
+    bp = 1;
+    err = find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     err = add_variable();
     ASSERT_EQ(err, 0);
@@ -216,7 +138,9 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[2], 0);
     ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 3);
     ASSERT_EQ(free_ptr, (char*)value_table_ptr + 4);
-    err = find_name(variable_name_table_ptr, 2);
+    name_bp = 2;
+    bp = 3;
+    err = find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     err = add_variable();
     ASSERT_EQ(err, 0);
@@ -233,9 +157,7 @@ static void test_add_variable(void) {
 
 int main(void) {
     initialize_target();
-    test_is_name_character();
     test_find_name();
-    test_find_name_operators();
     test_get_name_table_entry();
     test_add_variable();
     return 0;
