@@ -21,6 +21,7 @@ statement_name_table:
         .byte   0
 
 operator_name_table:
+operator_chars:
         .byte   '+' | NT_END
         .byte   '-' | NT_END
         .byte   '*' | NT_END
@@ -28,11 +29,12 @@ operator_name_table:
         .byte   '^' | NT_END
         .byte   '&' | NT_END
         .byte   '=' | NT_END
+        .byte   '<' | NT_END
+        .byte   '>' | NT_END
+operator_chars_end:
         .byte   '<', '>' | NT_END
         .byte   '<', '=' | NT_END
-        .byte   '<' | NT_END
         .byte   '>', '=' | NT_END
-        .byte   '>' | NT_END
         .byte   'A', 'N', 'D' | NT_END
         .byte   'O', 'R' | NT_END
         .byte   0
