@@ -3,7 +3,7 @@
 static void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
     char expect_np, const char* expect_name_ptr, int line) {        
     char err;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_ptr=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_ptr,
+    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
         set_name_bp, set_bp);
     strcpy(buffer, s);
     name_bp = set_name_bp;
@@ -19,7 +19,7 @@ static void call_find_name(const char* s, const char* name_table, char set_name_
 static void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
     int line) {
     char err;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_ptr=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_ptr,
+    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
         set_name_bp, set_bp);
     strcpy(buffer, s);
     name_bp = set_name_bp;
