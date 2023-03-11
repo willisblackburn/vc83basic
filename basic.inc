@@ -62,7 +62,7 @@
 ; parser.s
 .global read_number, char_to_digit
 .global parse_line
-.global parse_element
+.global parse_statement
 .global parse_directive
 .global parse_expression
 .global parse_name
