@@ -1,21 +1,22 @@
 #include "test.h"
 
+static void call_add_variable(const char* name) {
+    char err;
+    strcpy(buffer, name);
+    name_bp = 0;
+    bp = strlen(buffer);
+    err = find_name(variable_name_table_ptr);
+    ASSERT_NE(err, 0);
+    err = add_variable();
+    ASSERT_EQ(err, 0);
+}
+
 static void create_variables(void) {
-    int err;
 
     // Create varibles which will get variable name table positions starting at 0.
 
-    strcpy(buffer, "X");
-    err = find_name(variable_name_table_ptr, 0);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
-
-    strcpy(buffer, "Y");
-    err = find_name(variable_name_table_ptr, 0);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
+    call_add_variable("X");
+    call_add_variable("Y");
 }
 
 static void test_list_directive(void) {
