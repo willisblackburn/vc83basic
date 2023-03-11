@@ -98,7 +98,7 @@ static void test_find_line(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10000);
     err = find_line(10);
-    ASSERT_NE(err, 1);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10);
 }
 
