@@ -150,9 +150,9 @@ _parse_line:
         jsr     parse_line
         jmp     return_carry
 
-_parse_element:
-.export _parse_element
-        jsr     parse_element
+_parse_statement:
+.export _parse_statement
+        jsr     parse_statement
         jmp     return_carry
 
 _parse_directive:
