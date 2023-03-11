@@ -86,33 +86,36 @@ parse_element:
         stax    name_ptr                ; Store initial name_ptr
         mva     #0, matched_name_index  ; Initialize name table index to 0
 parse_next_element:
-        ldpha   name_bp                 ; Save name_bp and bp values in case we have to backtrack
+        ldpha   name_bp                 ; Save state in case we have to backtrack
         ldpha   bp
         ldpha   lp                      ; Same for lp value
         jsr     find_next_name          ; Start by finding name; sets np and returns index in A
         bcs     @no_match
         jsr     encode_byte             ; Encode index
-@loop:
-        jsr     skip_whitespace         ; Skip whitespace after a character sequence or a directive
+@after_directive:
+        jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
+@next_character:
         jsr     read_name_table_byte    ; Read the next byte from the name table
         bcs     @success                ; If the high bit was set, then it was the last byte; success
         tay                             ; Store it in Y so we can use it again later
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        jsr     parse_name              ; Otherwise treat it like a name and match it
-        bcs     @backtrack_try_again
-        jsr     match_name
-        bcc     @loop                   ; Continue after a character sequence match
-        bcs     @backtrack_try_again
+        tya                             ; Get character back
+        ldx     bp                      ; Otherwise comapre it to the current character in the buffer
+        cmp     buffer,x
+        bne     @backtrack_try_again
+        inc     np                      ; Go to next character
+        inc     bp
+        bne     @next_character
         
 @directive:
         inc     np                      ; Move position past directive
         tya
         jsr     parse_directive
-        bcc     @loop
+        bcc     @after_directive
 
 @backtrack_try_again:
-        plsta   lp                      ; Restore lp and bp
+        plsta   lp                      ; Restore state
         plsta   bp
         plsta   name_bp
         jsr     advance_name_ptr        ; Advance past the failed name table entry (will preserve X)
@@ -351,10 +354,6 @@ parse_separator:
 parse_name:
         jsr     skip_whitespace
         stx     name_bp                 ; If there is a name, it starts here
-        cmp     #'?'                    ; Special cases for '?', '=', and '_'
-        beq     @special
-        cmp     #'='
-        beq     @special
         jsr     is_name_character       ; Check for initial name character
         bcs     @done
 @next_character:
@@ -367,12 +366,7 @@ parse_name:
 @done:
         rts
 
-@special:
-        inc     bp                      ; Handle '?' and '=' special cases
-        clc
-        rts
-
-; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '$'.
+; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '_'.
 ; Returns carry clear if it is, carry set if not.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
