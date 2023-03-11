@@ -52,30 +52,23 @@ parse_line:
         rts
 
 ; Parses a complete statement, either at the start of a line, or after THEN.
+; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
+; the buffer length.
+; AX = pointer to the first entry of the name table
+; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
         jsr     parse_name
+        bcs     @error
         ldax    #statement_name_table
-        bcc     parse_element
-        rts
-
-; Parses and tokenizes a syntax element starting with a name.
-; The last byte of buffer should be 0, which won't match anything. This avoids the need to keep checking
-; the buffer length.
-; AX = pointer to the first entry of the name table
-; Returns carry clear if the input matched a rule, or carry set if it didn't match any syntax rule.
-; The parse_next_element entry point parses a syntax element using the value already in name_ptr, not the one
-; passed in AX.
-
-parse_element:
         stax    name_ptr                ; Store initial name_ptr
         mva     #0, matched_name_index  ; Initialize name table index to 0
-parse_next_element:
+@next:
         ldpha   name_bp                 ; Save state in case we have to backtrack
         ldpha   bp
         ldpha   lp                      ; Same for lp value
         jsr     find_next_name          ; Start by finding name; sets np and returns index in A
-        bcs     @no_match
+        bcs     @error
         jsr     encode_byte             ; Encode index
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
@@ -105,11 +98,11 @@ parse_next_element:
         plsta   name_bp
         jsr     advance_name_ptr        ; Advance past the failed name table entry (will preserve X)
         inc     matched_name_index      ; Increment matched_name_index since we advanced name_ptr
-        bne     parse_next_element      ; Unconditional
+        bne     @next                   ; Unconditional
 
 @success:
         clc                             ; Signal success
-@no_match:
+@error:
         pla                             ; Discard saved values
         pla
         pla
