@@ -195,7 +195,6 @@ insert_or_update_line:
 ; to the section *before* the pointer we moved.
 ; AX = the amount to add to the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
-; DE SAFE
 
 expand_a:
         ldx     #0                      ; Initialize high byte to 0
@@ -239,7 +238,6 @@ expand:
 ; This decreases the amount of memory available in the section *before* the pointer we moved.
 ; AX = the amount to subtract from the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
-; DE SAFE
 
 compact_a:
         ldx     #0
