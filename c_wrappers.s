@@ -50,7 +50,7 @@ _reg_y: .res 1
 
 ; Returns 0 or 1 depending on the carry state,
 ; and sets _ax to whatever the function returned in AX.
-return_carry:
+return_carry_flag:
         stax    _reg_ax
         sty     _reg_y
         lda     #0
@@ -75,19 +75,19 @@ _decode_byte:
 _encode_number:
 .export _encode_number
         jsr     encode_number
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; name.s
 
 _find_name:
 .export _find_name
         jsr     find_name
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _get_name_table_entry:
 .export _get_name_table_entry
@@ -95,12 +95,12 @@ _get_name_table_entry:
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
         jsr     get_name_table_entry
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _add_variable:
 .export _add_variable
         jsr     add_variable
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; parser.s
 
@@ -108,22 +108,22 @@ _read_number:
 .export _read_number
         sta     bp                      ; Buffer index
         jsr     read_number
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_line:
 .export _parse_line
         jsr     parse_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_statement:
 .export _parse_statement
         jsr     parse_statement
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_directive:
 .export _parse_directive
@@ -132,7 +132,7 @@ _parse_directive:
         sta     bp
         jsr     popa
         jsr     parse_directive
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_expression:
 .export _parse_expression
@@ -140,17 +140,17 @@ _parse_expression:
         jsr     popa
         sta     bp
         jsr     parse_expression
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _parse_name:
 .export _parse_name
         jsr     parse_name
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _is_name_character:
 .export _is_name_character
         jsr     is_name_character
-        jmp     return_carry
+        jmp     return_carry_flag
 
 ; program.s
 
@@ -169,7 +169,7 @@ _reset_line_ptr:
 _find_line:
 .export _find_line
         jsr     find_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _advance_line_ptr:
 .export _advance_line_ptr
@@ -178,7 +178,7 @@ _advance_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _expand:
 .export _expand
@@ -187,7 +187,7 @@ _expand:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     expand
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _compact:
 .export _compact
@@ -196,7 +196,7 @@ _compact:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     compact
-        jmp     return_carry
+        jmp     return_carry_flag
         rts
 
 _calculate_bytes_to_move:
@@ -208,7 +208,7 @@ _calculate_bytes_to_move:
 _check_himem:
 .export _check_himem
         jsr     check_himem
-        jmp     return_carry
+        jmp     return_carry_flag
 
 _set_variable_value_ptr:
 .export _set_variable_value_ptr
