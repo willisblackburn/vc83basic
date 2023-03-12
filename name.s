@@ -155,16 +155,18 @@ add_variable:
         bmi     @fail                   ; variable_count >= 128
         lda     bp                      ; Read position in buffer
         sbc     name_bp                 ; Subtract name_bp to find length of name
-        pha                             ; Store the length
         ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
         jsr     expand_a                ; Do the expand
-        pla                             ; Recover the length and store in Y before checking carry
-        tay
         bcs     @fail
-        mva     name_bp, src_ptr        ; Copy from buffer starting at position name_bp
-        mva     #>buffer, src_ptr+1
-        ldax    name_ptr                ; Copy to the end of the name table
-        jsr     copy_bytes_y            ; Copy the name into the name table; leaves Y pointing one byte past name
+        ldx     name_bp                 ; Copy from name_bp
+        ldy     #0                      ; Copy to name_ptr offset 0
+@next_character:
+        lda     buffer,x                ; Load one character
+        sta     (name_ptr),y
+        inx
+        iny
+        cpx     bp                      ; Reached end?
+        bne     @next_character
         lda     #0
         sta     (name_ptr),y            ; Store 0 to terminate the name table
         dey                             ; Back up 1
