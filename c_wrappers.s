@@ -134,27 +134,12 @@ _list_line:
         jsr     list_line
         jmp     return_carry_flag
 
-_list_element:
-.export _list_element
-        sta     bp
-        jsr     popa
-        sta     lp
-        jsr     popax
-        stax    line_ptr
-        jsr     popa
-        sta     B                       ; Store index temporarily in B
-        jsr     popax
-        ldy     B                       ; Move index back into B
-        jmp     list_element
+_list_statement:
+.export _list_statement
+        jmp     list_statement
 
 _list_directive:
 .export _list_directive
-        sta     bp
-        jsr     popa
-        sta     lp
-        jsr     popax
-        stax    line_ptr
-        jsr     popa
         jmp     list_directive
 
 ; name.s
