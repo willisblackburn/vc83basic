@@ -93,8 +93,8 @@ int encode_byte(char value);
 
 // list.s
 char list_line(void);
-void list_element(const char* name_ptr, char index, const void* line_ptr, char lp, char bp);
-void list_directive(char directive, const void* line_ptr, char lp, char bp);
+void list_statement(void);
+void list_directive(char directive);
 
 // name.s
 int find_name(const char* name_ptr);

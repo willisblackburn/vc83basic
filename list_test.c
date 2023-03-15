@@ -19,6 +19,16 @@ static void create_variables(void) {
     call_add_variable("Y");
 }
 
+static void call_list_directive(char directive, const char* line_data, size_t line_data_length,
+    const char* expect_buffer, int line) {
+    fprintf(stderr, "  %s:%d: list_directive(%d)\n", __FILE__, line, directive);
+    set_line(0, line_data, line_data_length);
+    bp = 0;
+    list_directive(directive);
+    ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
+    ASSERT_EQ(bp, strlen(expect_buffer));
+}
+
 static void test_list_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE };
@@ -50,55 +60,35 @@ static void test_list_directive(void) {
     initialize_program();
     create_variables();
 
-    list_directive(1, line_data_1, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
-    ASSERT_EQ(bp, sizeof list_1 - 1);
-
-    list_directive(1, line_data_2, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
-    ASSERT_EQ(bp, sizeof list_2 - 1);
-
-    list_directive(2, line_data_3, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
-    ASSERT_EQ(bp, sizeof list_3 - 1);
-
-    list_directive(NT_VAR, line_data_4, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
-    ASSERT_EQ(bp, sizeof list_4 - 1);
-
-    list_directive(NT_RPT_VAR, line_data_5, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
-    ASSERT_EQ(bp, sizeof list_5 - 1);
-
-    list_directive(NT_RPT_VAR, line_data_6, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_6, sizeof list_6 - 1);
-    ASSERT_EQ(bp, sizeof list_6 - 1);
-
-    list_directive(1, line_data_7, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_7, sizeof list_7 - 1);
-    ASSERT_EQ(bp, sizeof list_7 - 1);
-
-    list_directive(1, line_data_8, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_8, sizeof list_8 - 1);
-    ASSERT_EQ(bp, sizeof list_8 - 1);
-
-    list_directive(1, line_data_9, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_9, sizeof list_9 - 1);
-    ASSERT_EQ(bp, sizeof list_9 - 1);
-
-    list_directive(2, line_data_10, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_10, sizeof list_10 - 1);
-    ASSERT_EQ(bp, sizeof list_10 - 1);
+    call_list_directive(1, line_data_1, sizeof line_data_1, list_1, __LINE__);
+    call_list_directive(1, line_data_2, sizeof line_data_2, list_2, __LINE__);
+    call_list_directive(2, line_data_3, sizeof line_data_3, list_3, __LINE__);
+    call_list_directive(NT_VAR, line_data_4, sizeof line_data_4, list_4, __LINE__);
+    call_list_directive(NT_RPT_VAR, line_data_5, sizeof line_data_5, list_5, __LINE__);
+    call_list_directive(NT_RPT_VAR, line_data_6, sizeof line_data_6, list_6, __LINE__);
+    call_list_directive(1, line_data_7, sizeof line_data_7, list_7, __LINE__);
+    call_list_directive(1, line_data_8, sizeof line_data_8, list_8, __LINE__);
+    call_list_directive(1, line_data_9, sizeof line_data_9, list_9, __LINE__);
+    call_list_directive(2, line_data_10, sizeof line_data_10, list_10, __LINE__);
 }
 
-static void test_list_element(void) {
+static void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
+    fprintf(stderr, "  %s:%d: list_statement()\n", __FILE__, line);
+    set_line(0, line_data, line_data_length);
+    bp = 0;
+    list_statement();
+    ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
+    ASSERT_EQ(bp, strlen(expect_buffer));
+}
 
-    const char line_data_1[] = { 0x00 };
-    const char line_data_2[] = { 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
-    const char line_data_3[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_5[] = { TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+static void test_list_statment(void) {
+
+    const char line_data_1[] = { ST_RUN, 0x00 };
+    const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
+    const char line_data_3[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
+    const char line_data_4[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_5[] = { ST_LIST, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_6[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
@@ -112,35 +102,12 @@ static void test_list_element(void) {
     initialize_program();
     create_variables();
 
-    list_element(statement_name_table, ST_RUN, line_data_1, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
-    ASSERT_EQ(bp, sizeof list_1 - 1);
-    ASSERT_EQ(lp, 0);
-
-    list_element(statement_name_table, ST_LET, line_data_2, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
-    ASSERT_EQ(bp, sizeof list_2 - 1);
-    ASSERT_EQ(lp, sizeof line_data_2);
-
-    list_element(statement_name_table, ST_LIST, line_data_3, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
-    ASSERT_EQ(bp, sizeof list_3 - 1);
-    ASSERT_EQ(lp, sizeof line_data_3);
-
-    list_element(statement_name_table, ST_LIST, line_data_4, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_4, sizeof list_4 - 1);
-    ASSERT_EQ(bp, sizeof list_4 - 1);
-    ASSERT_EQ(lp, sizeof line_data_4);
-
-    list_element(statement_name_table, ST_LIST, line_data_5, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_5, sizeof list_5 - 1);
-    ASSERT_EQ(bp, sizeof list_5 - 1);
-    ASSERT_EQ(lp, sizeof line_data_5);
-
-    list_element(statement_name_table, ST_INPUT, line_data_6, 0, 0);
-    ASSERT_MEMORY_EQ(buffer, list_6, sizeof list_6 - 1);
-    ASSERT_EQ(bp, sizeof list_6 - 1);
-    ASSERT_EQ(lp, sizeof line_data_6);
+    call_list_statement(line_data_1, sizeof line_data_1, list_1, __LINE__);
+    call_list_statement(line_data_2, sizeof line_data_2, list_2, __LINE__);
+    call_list_statement(line_data_3, sizeof line_data_3, list_3, __LINE__);
+    call_list_statement(line_data_4, sizeof line_data_4, list_4, __LINE__);
+    call_list_statement(line_data_5, sizeof line_data_5, list_5, __LINE__);
+    call_list_statement(line_data_6, sizeof line_data_6, list_6, __LINE__);
 }
 
 static void test_list_line(void) {
@@ -181,7 +148,7 @@ int main(void) {
 
     initialize_target();
     test_list_directive();
-    test_list_element();
+    test_list_statment();
     test_list_line();
 
     return 0;
