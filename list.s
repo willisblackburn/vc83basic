@@ -44,10 +44,7 @@ list_line:
         jsr     format_number           ; Format into buffer
         jsr     append_buffer_space
         mva     #Line::data, lp         ; Initialize read position to start of data
-        jsr     decode_byte             ; Get statement token
-        tay
-        ldax    #statement_name_table
-        jsr     list_element
+        jsr     list_statement
         clc
         rts
 
@@ -55,39 +52,58 @@ list_line:
         sec
         rts
 
-; Outputs a syntax element.
-; This function is called recursively, so it pushes the current state of all the variables used by it and the
-; functions it calls on the stack. name_ptr and Y keep track of the element being listed.
-; AX = pointer to the first entry in the name table
-; Y = the index of the syntax element
+; Outputs a statement.
 
-list_element:
+list_statement:
+        jsr     decode_byte             ; Get statement token
+        tay
+        ldax    #statement_name_table
         jsr     get_name_table_entry    ; Sets name_ptr and resets np; should never fail
-@loop:
-        ldy     np                      ; Get the character at np-1
-        beq     @skip                   ; Skip this test if np=0
-        dey
-        lda     (name_ptr),y
-        bmi     @done                   ; If the high byte is set then we're done
-        iny                             ; Advance to current position
-@skip:
-        lda     (name_ptr),y            ; Load the next byte from the name table
-        inc     np                      ; Next position
-        and     #$7F                    ; Remove the high bit since we don't care about it anymore
-        tay                             ; Temporarily store in Y
-        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @directive              ; It is
-        tya                             ; Not a directive, must be a literal
-        jsr     append_buffer
-        jmp     @loop
-
-@directive:
-        tya
+@next_name:
+        jsr     append_from_name_table_entry    ; Outputs (possibly zero) characters from the name table
+        bcs     @done                   ; If there is nothing after then exit
+        tya                             ; Otherwise there is a directive in Y
         jsr     list_directive
-        jmp     @loop
+        inc     np                      ; Next byte
+        jmp     @next_name
 
 @done:
-        rts                            
+        rts
+
+; Outputs a name from a name table.
+; AX = pointer to the first entry in the name table
+; Y = the index of the entry
+
+list_name:
+        jsr     get_name_table_entry
+
+; Outputs characters from the name table entry starting at np, until reaching the last character or a
+; directive.
+; name_ptr = pointer to the table entry
+; np = the name table entry position
+; Returns carry set if the last character of the name was also the last byte of the name table entry, or carry clear
+; if the next character is a directive, which will be in Y.
+
+append_from_name_table_entry:
+        jsr     read_name_table_byte    ; Get the first byte
+        bcs     @done                   ; No first byte
+        jsr     is_name_character       ; Is it a name character?
+        bcs     @next_character         ; It's not; don't add whitespace
+        jsr     add_whitespace
+
+@next_character:
+        jsr     read_name_table_byte    ; Get the next byte
+        bcs     @done                   ; If last byte then return
+        tay                             ; Store temporarily in Y
+        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
+        beq     @done                   ; It is, return with carry still clear
+        tya                             ; Get character back from Y
+        jsr     append_buffer
+        inc     np                      ; Next character
+        jmp     @next_character
+
+@done:
+        rts
 
 list_argument_type_vectors:
         .word   list_variable           ; NT_VAR
@@ -153,7 +169,7 @@ list_variable:
         tay                             ; The variable index into Y
         jsr     add_whitespace
         ldax    variable_name_table_ptr ; Look up name in the variable name table
-        jmp     list_element            ; Recursively call list_element to display the name        
+        jmp     list_name
 
 .assert TOKEN_NO_VALUE = 0, error
 
