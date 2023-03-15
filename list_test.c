@@ -97,7 +97,7 @@ static void call_list_statement(const char* line_data, size_t line_data_length, 
 
 static void test_list_statment(void) {
 
-    const char line_data_1[] = { ST_RUN, 0x00 };
+    const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0x00, 0x00, 0xFE, 0x7F, 141, TOKEN_NO_VALUE };
     const char line_data_3[] = { ST_LIST, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NO_VALUE, 
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
