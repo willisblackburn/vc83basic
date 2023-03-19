@@ -19,11 +19,11 @@ evaluate_expression:
         jmp     process_operators
 
 evaluate_vectors:
-        .word   evaluate_variable           ; XH_VAR
-        .word   evaluate_number             ; XH_NUM
-        .word   evaluate_operator           ; XH_OP
-        .word   evaluate_unary_operator     ; XH_UNARY_OP
-        .word   evaluate_paren              ; XH_PAREN
+        .word   evaluate_variable-1         ; XH_VAR
+        .word   evaluate_number-1           ; XH_NUM
+        .word   evaluate_operator-1         ; XH_OP
+        .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
         jsr     decode_variable         ; Returns variable index in A
@@ -104,11 +104,11 @@ process_operators:
         rts
 
 operator_vectors:
-        .word   op_add
-        .word   op_sub
-        .word   op_mul
-        .word   op_div
-        .word   op_pow
+        .word   op_add-1
+        .word   op_sub-1
+        .word   op_mul-1
+        .word   op_div-1
+        .word   op_pow-1
         .word   0
         .word   0
         .word   0
@@ -120,7 +120,7 @@ operator_vectors:
         .word   0
         .word   0
         .word   0
-        .word   unary_op_minus
+        .word   unary_op_minus-1
 
 op_add:
         jsr     pop_value               ; Get first value
