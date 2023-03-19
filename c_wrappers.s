@@ -259,22 +259,22 @@ _insert_or_update_line:
         jsr     insert_or_update_line
         jmp     return_carry_flag
 
-_expand:
-.export _expand
+_grow:
+.export _grow
         stax    BC                      ; Save size temporarily
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
-        jsr     expand
+        jsr     grow
         jmp     return_carry_flag
 
-_compact:
-.export _compact
+_shrink:
+.export _shrink
         stax    BC                      ; Save size temporarily
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
-        jsr     compact
+        jsr     shrink
         jmp     return_carry_flag
         rts
 
