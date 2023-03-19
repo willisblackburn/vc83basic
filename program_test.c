@@ -204,7 +204,7 @@ static void test_calculate_bytes_to_move(void) {
     ASSERT_EQ(size, 0x1C00);
 }
 
-static void test_expand(void) {
+static void test_grow(void) {
 
     char err;
 
@@ -218,7 +218,7 @@ static void test_expand(void) {
     ASSERT_EQ(next_line_ptr, program_ptr);
 
     // Add 3 bytes.
-    err = expand(&next_line_ptr, 3);
+    err = grow(&next_line_ptr, 3);
     ASSERT_EQ(err, 0);
 
     // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
@@ -227,7 +227,7 @@ static void test_expand(void) {
     next_line_ptr->number = 20;
 
     // Now move it up 3 again.
-    err = expand(&next_line_ptr, 3);
+    err = grow(&next_line_ptr, 3);
     ASSERT_EQ(err, 0);
     next_line_ptr = program_ptr;
     next_line_ptr->next_line_offset = 3;
@@ -251,11 +251,11 @@ static void test_expand(void) {
     ASSERT_EQ(next_line_ptr->next_line_offset, 5);
     ASSERT_EQ(next_line_ptr->number, -1);
 
-    // Now expand free_ptr by 1K.
+    // Now grow free_ptr by 1K.
     // Nothing should change except free_ptr.
 
     next_line_ptr = program_ptr;
-    err = expand(&free_ptr, 0x400);
+    err = grow(&free_ptr, 0x400);
     ASSERT_EQ(err, 0);
 
     ASSERT_EQ(next_line_ptr, program_ptr);
@@ -265,14 +265,14 @@ static void test_expand(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + 0x400);
 }
 
-static void test_compact(void) {
+static void test_shrink(void) {
     char err;
 
     const char variable_name_data[] = { 'A' | NT_END, 'B' | NT_END, 'X', 'Y' | NT_END, 0 };
     const char value_data[] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17 };
 
-    // To test compact, we first expand some sections, write some data to them, then make sure that data is
-    // preserved when we compact. We know that expand works because it's been separately tested.
+    // To test shrink, we first grow some sections, write some data to them, then make sure that data is
+    // preserved when we shrink. We know that grow works because it's been separately tested.
 
     PRINT_TEST_NAME();
 
@@ -280,18 +280,18 @@ static void test_compact(void) {
     reset_next_line_ptr();
 
     // Create some program space.
-    err = expand(&variable_name_table_ptr, 0x400);
+    err = grow(&variable_name_table_ptr, 0x400);
     ASSERT_EQ(err, 0);
 
     // Expand the variable name table by moving the value table pointer.
     // The variable name table already contains 1 byte, so subtract 1 from the size of the data we want to write.
-    err = expand(&value_table_ptr, sizeof variable_name_data - 1);
+    err = grow(&value_table_ptr, sizeof variable_name_data - 1);
     ASSERT_EQ(err, 0);
     // Fill in some variable names.
     memcpy(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
 
     // Add some space for some variable values.
-    err = expand(&free_ptr, sizeof value_data + 0x1000);
+    err = grow(&free_ptr, sizeof value_data + 0x1000);
     ASSERT_EQ(err, 0);
     memcpy(value_table_ptr, value_data, sizeof value_data);
 
@@ -302,9 +302,9 @@ static void test_compact(void) {
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
 
-    // Now compact each section, each time checking that no data is corrupted.
+    // Now shrink each section, each time checking that no data is corrupted.
 
-    err = compact(&variable_name_table_ptr, 0x10);
+    err = shrink(&variable_name_table_ptr, 0x10);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
@@ -312,7 +312,7 @@ static void test_compact(void) {
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
 
-    err = compact(&value_table_ptr, 4);
+    err = shrink(&value_table_ptr, 4);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
@@ -320,7 +320,7 @@ static void test_compact(void) {
     ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
 
-    err = compact(&free_ptr, 0x200);
+    err = shrink(&free_ptr, 0x200);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
@@ -366,8 +366,8 @@ int main(void) {
     test_insert_or_update_line();
     test_check_himem();
     test_calculate_bytes_to_move();
-    test_expand();
-    test_compact();
+    test_grow();
+    test_shrink();
     test_mul_value_size();
     test_set_variable_value_ptr();
     return 0;
