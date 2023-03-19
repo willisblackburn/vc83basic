@@ -106,8 +106,8 @@ append_from_name_table_entry:
         rts
 
 list_argument_type_vectors:
-        .word   list_variable           ; NT_VAR
-        .word   list_repeated_variable  ; NT_RPT_VAR
+        .word   list_variable-1             ; NT_VAR
+        .word   list_repeated_variable-1    ; NT_RPT_VAR
 
 ; Lists a single directive from the token stream.
 ; A = the directive
