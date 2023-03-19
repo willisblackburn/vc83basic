@@ -200,7 +200,7 @@ static void test_calculate_bytes_to_move(void) {
     ASSERT_EQ(size, 0x1C00);
 }
 
-static void test_expand(void) {
+static void test_grow(void) {
 
     char err;
 
@@ -213,7 +213,7 @@ static void test_expand(void) {
     ASSERT_EQ(line_ptr, program_ptr);
 
     // Add 3 bytes.
-    err = expand(&line_ptr, 3);
+    err = grow(&line_ptr, 3);
     ASSERT_EQ(err, 0);
 
     // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
@@ -222,7 +222,7 @@ static void test_expand(void) {
     line_ptr->number = 20;
 
     // Now move it up 3 again.
-    err = expand(&line_ptr, 3);
+    err = grow(&line_ptr, 3);
     ASSERT_EQ(err, 0);
     line_ptr = program_ptr;
     line_ptr->next_line_offset = 3;
@@ -243,35 +243,35 @@ static void test_expand(void) {
     ASSERT_EQ(line_ptr->next_line_offset, 3);
     ASSERT_EQ(line_ptr->number, -1);
 
-    // Now expand free_ptr by 1K.
+    // Now grow free_ptr by 1K.
     // Nothing should change except free_ptr.
 
     line_ptr = program_ptr;
-    err = expand(&free_ptr, 0x400);
+    err = grow(&free_ptr, 0x400);
     ASSERT_EQ(err, 0);
 
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
 }
 
-static void test_compact(void) {
+static void test_shrink(void) {
     char err;
 
-    // To test compact, we first expand some sections, write some data to them, then make sure that data is
-    // preserved when we compact. We know that expand works because it's been separately tested.
+    // To test shrink, we first grow some sections, write some data to them, then make sure that data is
+    // preserved when we shrink. We know that grow works because it's been separately tested.
 
     PRINT_TEST_NAME();
 
     initialize_program();
 
     // Create some program space.
-    err = expand(&line_ptr, 3);
+    err = grow(&line_ptr, 3);
     ASSERT_EQ(err, 0);
     program_ptr->next_line_offset = 3;
     program_ptr->number = 10;
 
     // Move free pointer up by 3 bytes.
-    err = expand(&free_ptr, 3);
+    err = grow(&free_ptr, 3);
     line_ptr->next_line_offset = 3;
     line_ptr->number = 20;
     ASSERT_EQ(err, 0);
@@ -280,15 +280,15 @@ static void test_compact(void) {
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 3);
     ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
 
-    // Now compact each section, each time checking that no data is corrupted.
+    // Now shrink each section, each time checking that no data is corrupted.
 
-    err = compact(&line_ptr, 3);
+    err = shrink(&line_ptr, 3);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->number, 20);
     ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
 
-    err = compact(&free_ptr, 3);
+    err = shrink(&free_ptr, 3);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ((char *)free_ptr, (char*)line_ptr + 3);
@@ -303,7 +303,7 @@ int main(void) {
     test_insert_or_update_line();
     test_check_himem();
     test_calculate_bytes_to_move();
-    test_expand();
-    test_compact();
+    test_grow();
+    test_shrink();
     return 0;
 }
