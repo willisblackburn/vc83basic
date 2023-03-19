@@ -232,24 +232,25 @@ div10:
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
-; Callers can use BC to pass parameters to the target function.
+; Callers can use BC and DE to pass parameters to the target function.
 ; Since Y, the vector index, can never exceed 127, the ASL will clear the carry flag, and it will still be clear
 ; when control reaches the target routine.
 ; AX = address of the vector table
 ; Y = the index of the vector
-; BC SAFE
+; BC SAFE, DE SAFE
 
 invoke_indexed_vector:
         stax    vector_table_ptr
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
-        lda     (vector_table_ptr),y    ; Load low byte of vector
-        sta     D                       ; Set up DE as the jump vector                
-        iny     
+        iny                             ; Increment by 1 to get the high byte first
+        lda     (vector_table_ptr),y
+        pha
+        dey                             ; Move to low byte
         lda     (vector_table_ptr),y    
-        sta     E
-        jmp     (DE)                    ; Handler function RTS will return from *this* function
+        pha
+        rts                             ; RTS jumps to vector pushed on the stack
 
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
 ; in buffer (i.e., it is equal to bp).
