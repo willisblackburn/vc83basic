@@ -81,7 +81,7 @@ static int f2(void) {
 
 static void test_invoke_indexed_vector(void) {
     int result;
-    void* table[] = { f1, f2, f2, f1 };
+    void* table[] = { (const char*)f1 - 1, (const char*)f2 - 1, (const char*)f2 - 1, (const char*)f1 - 1 };
 
     PRINT_TEST_NAME();
 
