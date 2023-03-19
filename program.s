@@ -142,9 +142,11 @@ build_end_statement:
 ; Sets next_line_ptr if the line was found.
 ; If not found, next_line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
+; BC SAFE
 
 find_line:
         stax    DE
+find_line_de:
         jsr     reset_next_line_ptr     ; Set next_line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
@@ -230,38 +232,39 @@ insert_or_update_line:
 ; to the section *before* the pointer we moved.
 ; AX = the amount to add to the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
+; BC SAFE
 
 expand_a:
         ldx     #0                      ; Initialize high byte to 0
 expand:
-        stax    BC                      ; Store length in BC
+        stax    DE                      ; Store length in DE
         jsr     check_himem             ; Check if expansion will push BASIC memory past himem_ptr
         bcs     @done                   ; If check_himem failed then we fail
         clc                             ; Clear carry to prepare for addition
         lda     0,y                     ; Load the low byte of the pointer to increase
         sta     src_ptr                 ; Store it as source for copy
-        adc     B                       ; Increase low byte
+        adc     D                       ; Increase low byte
         sta     dst_ptr                 ; It's also the destination pointer
         iny                             ; Do the same thing for the high byte
         lda     0,y
         sta     src_ptr+1
-        adc     C
+        adc     E
         sta     dst_ptr+1
         jsr     calculate_bytes_to_move ; Knowing src_ptr we can calculate number of bytes to move
         dey                             ; Move Y back to low by of source pointer
 @next_ptr:
         clc
         lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
-        adc     B
+        adc     D
         sta     0,y
         iny
         lda     0,y
-        adc     C
+        adc     E
         sta     0,y
         iny
         cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_bytes_higher_de    ; Copy data up to the higher address
+        jsr     copy_bytes_higher_size  ; Copy data up to the higher address
         clc                             ; Success
 @done:
         rts
@@ -273,69 +276,70 @@ expand:
 ; This decreases the amount of memory available in the section *before* the pointer we moved.
 ; AX = the amount to subtract from the pointer (the expand_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
+; BC SAFE
 
 compact_a:
         ldx     #0
 compact:
-        stax    BC                      ; Follow a similar pattern to expand, only we're subtracting
+        stax    DE                      ; Follow a similar pattern to expand, only we're subtracting
         sec
         lda     0,y
         sta     src_ptr
-        sbc     B
+        sbc     D
         sta     dst_ptr
         iny
         lda     0,y
         sta     src_ptr+1
-        sbc     C
+        sbc     E
         sta     dst_ptr+1
         jsr     calculate_bytes_to_move ; Calculate the number of byte to move
         dey                             ; Move Y back to low by of source pointer
 @next_ptr:
         sec
         lda     0,y                     ; Otherwise subtract BC from this pointer
-        sbc     B
+        sbc     D
         sta     0,y
         iny
         lda     0,y
-        sbc     C
+        sbc     E
         sta     0,y
         iny
         cpy     #himem_ptr              ; Have we reached himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_bytes_de
+        jsr     copy_bytes_size
         clc
         rts
 
 ; Calculates the bytes to move for both compact and expand as (free_ptr - src_ptr).
-; Returns the number of bytes in DE.
-; X SAFE, Y SAFE, BC SAFE
+; Returns the number of bytes in size.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 calculate_bytes_to_move:
         sec                       
         lda     free_ptr
         sbc     src_ptr
-        sta     D                       ; Store low byte of length in D
+        sta     size                    ; Store low byte of size
         lda     free_ptr+1      
         sbc     src_ptr+1      
-        sta     E                       ; High byte of length in E
+        sta     size+1                  ; High byte of length in size+1
         rts
 
 ; Checks if adding an amount to free_ptr will cause it to exceed himem_ptr.
 ; Returns carry set if this would happen, otherwise carry clear.
 ; AX = the amount to add to free_ptr
-; Y SAFE, BC SAFE
+; Y SAFE, BC SAFE, DE SAFE
 
 check_himem:
         clc                             ; Do 16-bit add of size in AX to free_ptr
         adc     free_ptr                ; Add low byte
-        sta     D                       ; Park the low byte of result in D
+        sta     size                    ; Park the low byte of result in size, which I know is available here
         txa                             ; High byte of size into A
         adc     free_ptr+1              ; Add high byte of free_ptr
         bcs     @done                   ; If carry is set after high byte add then address has overflowed
         cmp     himem_ptr+1             ; Compare high byte
         bcc     @done                   ; argument high byte < himem_ptr high byte
         bne     @done                   ; argument high byte > himem_ptr high byte (carry is set)
-        lda     D                       ; High bytes are equal; compare low bytes
+        lda     size                    ; High bytes are equal; compare low bytes
         cmp     himem_ptr
         bcc     @done                   ; argument low byte < himem_ptr low byte
         bne     @done                   ; argument low byte > himem_ptr low byte (carry is set)
