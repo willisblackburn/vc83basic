@@ -284,7 +284,7 @@ shrink:
         dey                             ; Move Y back to low by of source pointer
 @next_ptr:
         sec
-        lda     0,y                     ; Otherwise subtract BC from this pointer
+        lda     0,y                     ; Otherwise subtract DE from this pointer
         sbc     D
         sta     0,y
         iny
@@ -320,19 +320,23 @@ calculate_bytes_to_move:
 check_himem:
         clc                             ; Do 16-bit add of size in AX to free_ptr
         adc     free_ptr                ; Add low byte
-        sta     size                    ; Park the low byte of result in size, which I know is available here
+        pha                             ; Save the low byte on the stack
         txa                             ; High byte of size into A
         adc     free_ptr+1              ; Add high byte of free_ptr
-        bcs     @done                   ; If carry is set after high byte add then address has overflowed
+        bcs     @error                  ; If carry is set after high byte add then address has overflowed
         cmp     himem_ptr+1             ; Compare high byte
-        bcc     @done                   ; argument high byte < himem_ptr high byte
-        bne     @done                   ; argument high byte > himem_ptr high byte (carry is set)
-        lda     size                    ; High bytes are equal; compare low bytes
+        bcc     @error                  ; argument high byte < himem_ptr high byte
+        bne     @error                  ; argument high byte > himem_ptr high byte (carry is set)
+        pla                             ; High bytes are equal; compare low bytes
         cmp     himem_ptr
         bcc     @done                   ; argument low byte < himem_ptr low byte
         bne     @done                   ; argument low byte > himem_ptr low byte (carry is set)
         clc                             ; Pointers are equal; clear carry since this is success
 @done:
+        rts
+
+@error:
+        pla                             ; Discard size from stack
         rts
 
 ; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it. Since
