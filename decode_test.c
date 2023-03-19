@@ -91,11 +91,11 @@ static void xh_paren(void) {
 }
 
 void* decode_xh_vectors[] = {
-    xh_variable,
-    xh_number,
-    xh_operator,
-    xh_unary_operator,
-    xh_paren,
+    (const char*)xh_variable - 1,
+    (const char*)xh_number - 1,
+    (const char*)xh_operator - 1,
+    (const char*)xh_unary_operator - 1,
+    (const char*)xh_paren - 1,
 };
 
 static void test_decode_expression(void) {
