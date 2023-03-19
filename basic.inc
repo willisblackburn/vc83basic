@@ -41,7 +41,7 @@
 .global insert_or_update_line
 .global set_variable_value_ptr
 .global set_variable_value
-.global expand, expand_a, compact, compact_a
+.global grow, grow_a, shrink, shrink_a
 .global calculate_bytes_to_move
 .global check_himem
 
