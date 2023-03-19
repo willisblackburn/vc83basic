@@ -33,13 +33,12 @@ exec_on_goto:
 exec_gosub:
         jsr     decode_number           ; GOSUB line number
 exec_gosub_ax:
-        stax    BC                      ; Temporarily store the line number in BC
+        stax    DE                      ; Temporarily store the line number in DE
         jsr     push_next_line_ptr      ; Save return address
         bcs     @done                   ; Stack overflow
         lda     #TOKEN_VAR              ; Set variable field to an invalid variable
         sta     primary_stack+Control::variable,x
-        ldax    BC                      ; Reload line number
-        jsr     find_line               ; Find the line
+        jsr     find_line_de            ; Find the line (already in DE)
         bcs     @done
 @done:
         rts
