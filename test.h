@@ -23,6 +23,8 @@ extern void* src_ptr;
 #pragma zpsym ("src_ptr")
 extern void* dst_ptr;
 #pragma zpsym ("dst_ptr")
+extern size_t size;
+#pragma zpsym ("size")
 extern Line* program_ptr;
 #pragma zpsym ("program_ptr")
 extern Line* line_ptr;

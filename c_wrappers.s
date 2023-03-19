@@ -15,6 +15,7 @@
 .export _bp = bp
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
+.export _size = size
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
@@ -117,9 +118,7 @@ _compact:
 
 _calculate_bytes_to_move:
 .export _calculate_bytes_to_move
-        jsr     calculate_bytes_to_move
-        ldax    DE                      ; Function returns in DE; copy to AX for convenience
-        rts
+        jmp     calculate_bytes_to_move
 
 _check_himem:
 .export _check_himem
