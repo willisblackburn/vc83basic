@@ -11,6 +11,7 @@
 .globalzp BC, B, C, DE, D, E
 .globalzp bp
 .globalzp src_ptr, dst_ptr
+.globalzp size
 .globalzp program_ptr
 .globalzp line_ptr
 .globalzp free_ptr
@@ -35,7 +36,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line
+.global find_line, find_line_de
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global set_variable_value_ptr
@@ -54,8 +55,8 @@
 .global statement_name_table
 
 ; util.s
-.global copy_bytes, copy_bytes_de, copy_bytes_y, copy_bytes_a
-.global copy_bytes_higher, copy_bytes_higher_de
+.global copy_bytes, copy_bytes_size, copy_bytes_y, copy_bytes_a
+.global copy_bytes_higher, copy_bytes_higher_size
 .global mul10, div10
 
 ; target/*
