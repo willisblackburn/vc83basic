@@ -107,10 +107,10 @@ append_from_name_table_entry:
         rts
 
 list_argument_type_vectors:
-        .word   list_variable           ; NT_VAR
-        .word   list_repeated_variable  ; NT_RPT_VAR
-        .word   list_number             ; NT_NUM
-        .word   list_repeated_number    ; NT_RPT_NUM
+        .word   list_variable-1             ; NT_VAR
+        .word   list_repeated_variable-1    ; NT_RPT_VAR
+        .word   list_number-1               ; NT_NUM
+        .word   list_repeated_number-1      ; NT_RPT_NUM
 
 ; Lists a single directive from the token stream.
 ; A = the directive
@@ -163,11 +163,11 @@ list_argument_list:
 .assert TOKEN_NO_VALUE = 0, error
 
 list_vectors:
-        .word   list_variable           ; XH_VAR
-        .word   list_number             ; XH_NUM
-        .word   list_operator           ; XH_OP
-        .word   list_unary_operator     ; XH_UNARY_OP
-        .word   list_paren              ; XH_PAREN
+        .word   list_variable-1         ; XH_VAR
+        .word   list_number-1           ; XH_NUM
+        .word   list_operator-1         ; XH_OP
+        .word   list_unary_operator-1   ; XH_UNARY_OP
+        .word   list_paren-1            ; XH_PAREN
 
 list_expression:
         ldax    #list_vectors
