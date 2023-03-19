@@ -267,7 +267,6 @@ _fcmp:
         jsr     fcmp
         bcc     @less                   ; Carry cleawr means borrow so A < B
         beq     @equal
-        lda     #$01
         ldax    #1
         rts
 
