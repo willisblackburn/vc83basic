@@ -155,7 +155,7 @@ add_variable:
         lda     bp                      ; Read position in buffer
         sbc     name_bp                 ; Subtract name_bp to find length of name
         ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
-        jsr     expand_a                ; Do the expand
+        jsr     grow_a                ; Do the grow
         bcs     @fail
         ldx     name_bp                 ; Copy from name_bp
         ldy     #0                      ; Copy to name_ptr offset 0
@@ -174,7 +174,7 @@ add_variable:
         sta     (name_ptr),y            ; Save it again
         ldy     #free_ptr               ; Grow value table by 2
         lda     #2
-        jsr     expand_a
+        jsr     grow_a
         bcs     @fail
         lda     variable_count
         jsr     set_variable_value_ptr  ; variable_value_ptr points to the space for the new value
