@@ -94,7 +94,7 @@
 .global find_line, find_line_de
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
-.global expand, expand_a, compact, compact_a
+.global grow, grow_a, shrink, shrink_a
 .global calculate_bytes_to_move
 .global check_himem
 .global set_variable_value_ptr

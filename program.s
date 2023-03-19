@@ -165,11 +165,11 @@ insert_or_update_line:
 
         ldy     #Line::next_line_offset
         lda     (line_ptr),y            ; Get next line offset into A
-        pha                             ; Save the next line offset on the stack; it will be the compact length
+        pha                             ; Save the next line offset on the stack; it will be the shrink length
         jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
         pla                             ; Get the length of the line back off the stack
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
-        jsr     compact_a
+        jsr     shrink_a
 
 ; Insert the new line, if there is one.
 ; There is a line if next_line_offset is greater than the offset of the data field.
@@ -181,11 +181,11 @@ insert_or_update_line:
         cmp     #Line::data             ; Compare next line offset with the offset of the data field
         beq     @finish                 ; If they're the same, line is blank, nothing to insert
         ldphaa  line_ptr                ; Push line_ptr onto stack so we can get it back later
-        txa                             ; Copy line length back into A as the amount to expand
+        txa                             ; Copy line length back into A as the amount to grow
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
-        jsr     expand_a                ; Create space for the new line
-        plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if expand failed)
-        bcs     @done                   ; Don't copy if expand failed
+        jsr     grow_a                  ; Create space for the new line
+        plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if grow failed)
+        bcs     @done                   ; Don't copy if grow failed
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         lda     line_buffer+Line::next_line_offset  ; Length of the new line
         jsr     copy_bytes_a            ; Copy the line into the program
@@ -195,17 +195,17 @@ insert_or_update_line:
 @done:
         rts
 
-; Expands a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
+; Grows a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
 ; not including) himem_ptr, by some amount.
 ; This creates a new area of uninitialized memory at the pointer's original address, increasing the memory available
 ; to the section *before* the pointer we moved.
-; AX = the amount to add to the pointer (the expand_a entry point sets X to 0)
+; AX = the amount to add to the pointer (the grow_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
 ; BC SAFE
 
-expand_a:
+grow_a:
         ldx     #0                      ; Initialize high byte to 0
-expand:
+grow:
         stax    DE                      ; Store length in DE
         jsr     check_himem             ; Check if expansion will push BASIC memory past himem_ptr
         bcs     @done                   ; If check_himem failed then we fail
@@ -238,19 +238,19 @@ expand:
 @done:
         rts
 
-; Compacts memory by decreasing one of the zero-page pointers, and all subsequent pointers up to (but not including)
+; Shrinks memory by decreasing one of the zero-page pointers, and all subsequent pointers up to (but not including)
 ; himem_ptr, by some amount.
 ; We don't check if the amount to subtract would cause the pointer to crash into next-lower pointer in memory;
 ; this is assumed to never happen.
 ; This decreases the amount of memory available in the section *before* the pointer we moved.
-; AX = the amount to subtract from the pointer (the expand_a entry point sets X to 0)
+; AX = the amount to subtract from the pointer (the grow_a entry point sets X to 0)
 ; Y = the zero-page address of the pointer to increase
 ; BC SAFE
 
-compact_a:
+shrink_a:
         ldx     #0
-compact:
-        stax    DE                      ; Follow a similar pattern to expand, only we're subtracting
+shrink:
+        stax    DE                      ; Follow a similar pattern to grow, only we're subtracting
         sec
         lda     0,y
         sta     src_ptr
@@ -279,7 +279,7 @@ compact:
         clc
         rts
 
-; Calculates the bytes to move for both compact and expand as (free_ptr - src_ptr).
+; Calculates the bytes to move for both shrink and grow as (free_ptr - src_ptr).
 ; Returns the number of bytes in size.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
