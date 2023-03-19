@@ -134,7 +134,7 @@ parse_statement:
         rts  
 
 parse_argument_type_vectors:
-        .word   parse_variable          ; NT_VAR
+        .word   parse_variable-1            ; NT_VAR
 
 ; Parses a single directive.
 ; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
