@@ -192,7 +192,6 @@ static void test_check_himem(void) {
 }
 
 static void test_calculate_bytes_to_move(void) {
-    size_t bytes;
 
     PRINT_TEST_NAME();
 
@@ -201,8 +200,8 @@ static void test_calculate_bytes_to_move(void) {
     src_ptr = (void*)0x0400;
     free_ptr = (void*)0x2000;
 
-    bytes = calculate_bytes_to_move();
-    ASSERT_EQ(bytes, 0x1C00);
+    calculate_bytes_to_move();
+    ASSERT_EQ(size, 0x1C00);
 }
 
 static void test_expand(void) {
