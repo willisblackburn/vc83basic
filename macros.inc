@@ -67,44 +67,60 @@
 
 ; Pushes a memory value onto the stack via A.
 
-.macro  ldpha   value
+.macro ldpha value
         lda     value
         pha 
 .endmacro
 
 ; Pushes a 16-bit memory value onto the stack via A. Note the value is pushed in reverse byte order (big-endian).
 
-.macro  ldphaa  value
+.macro ldphaa value
         ldpha   value
         ldpha   value+1
 .endmacro
 
 ; Pushes a 16-bit value from AX onto the stack. Note the value is pushed in reverse byte order (big-endian).
 
-.macro  phax 
+.macro phax 
         pha
         txa
         pha
 .endmacro
 
+; Pushes a 16-bit value from AY onto the stack. Note the value is pushed in reverse byte order (big-endian).
+
+.macro phay
+        pha
+        tya
+        pha
+.endmacro
+
 ; Pulls a value from the stack to memory via A.
 
-.macro  plsta   value
+.macro plsta value
         pla
         sta     value
 .endmacro
 
 ; Pulls a 16-bit big-endian value from the stack to memory via A.
 
-.macro  plstaa  value
+.macro plstaa value
         plsta   value+1
         plsta   value
 .endmacro
 
 ; Pulls a 16-bit big-endian value from the stack into AX.
 
-.macro  plax
+.macro plax
         pla
         tax
+        pla
+.endmacro
+
+; Pulls a 16-bit big-endian value from the stack into AY.
+
+.macro play
+        pla
+        tay
         pla
 .endmacro
