@@ -16,6 +16,7 @@
 .globalzp line_ptr
 .globalzp free_ptr
 .globalzp himem_ptr
+.globalzp line_number
 
 ; Data
 
@@ -36,7 +37,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line, find_line_de
+.global find_line, find_line_ax
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global set_variable_value_ptr
