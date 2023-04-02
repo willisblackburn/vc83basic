@@ -76,27 +76,27 @@ static void test_find_line(void) {
     value_table_ptr = line_ptr;
 
     // Test if we can find each line separately.
-    err = find_line(10);
+    err = find_line_ax(10);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10);
-    err = find_line(256);
+    err = find_line_ax(256);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 256);
-    err = find_line(10000);
+    err = find_line_ax(10000);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10000);
 
     // Test not finding a line at all.
     // In this case line_ptr should point to where the line would have been, i.e., line 256.
-    err = find_line(15);
+    err = find_line_ax(15);
     ASSERT_NE(err, 0);
     ASSERT_EQ(next_line_ptr->number, 256);
 
     // Test finding a line that occurs earlier in the program.
-    err = find_line(10000);
+    err = find_line_ax(10000);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10000);
-    err = find_line(10);
+    err = find_line_ax(10);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10);
 }

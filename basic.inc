@@ -53,6 +53,7 @@
 .globalzp lp
 .globalzp next_lp
 .globalzp program_state
+.globalzp line_number
 .globalzp argument_count
 .globalzp osp
 .globalzp psp
@@ -172,7 +173,7 @@
 .global reset_program_state
 .global reset_next_line_ptr, reset_next_line_ptr_ax
 .global build_end_statement
-.global find_line, find_line_de
+.global find_line, find_line_ax
 .global advance_next_line_ptr, advance_next_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
