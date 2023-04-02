@@ -199,8 +199,8 @@
 .global unary_operator_name_table
 
 ; util.s
-.global copy_bytes, copy_bytes_size, copy_bytes_y, copy_bytes_a
-.global copy_bytes_higher, copy_bytes_higher_size
+.global copy_down, copy_down_ax, copy_down_a
+.global copy_up, copy_up_ax
 .global invoke_indexed_vector
 .global advance_lp_sizeof_float, advance_lp
 
