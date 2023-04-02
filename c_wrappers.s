@@ -391,9 +391,9 @@ _reset_next_line_ptr:
 .export _reset_next_line_ptr
         jmp     reset_next_line_ptr
 
-_find_line:
-.export _find_line
-        jsr     find_line
+_find_line_ax:
+.export _find_line_ax
+        jsr     find_line_ax
         jmp     return_carry_flag
 
 _advance_next_line_ptr:
