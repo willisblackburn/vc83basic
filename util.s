@@ -33,18 +33,14 @@ vector_table_ptr: .res 2
 ; dst_ptr = destination (must be <=src_ptr)
 ; AX = number of bytes to copy (_size entry point uses value in size instead)
 ; Alternate entry points for when there are fewer than 255 bytes to copy:
-; copy_bytes_y accepts the destination pointer in AX and the size in Y.
-; copy_bytes_a uses the existing dst_ptr and accepts the size in A.
+; copy_down_a uses the existing dst_ptr and accepts the size in A.
 ; BC SAFE, DE SAFE
 
-copy_bytes_y:
-        stax    dst_ptr
-        tya
-copy_bytes_a:
+copy_down_a:
         ldx     #0
-copy_bytes:
+copy_down_ax:
         stax    size                    ; Length into size
-copy_bytes_size:
+copy_down:
         ldy     #0                      ; Y = 0 meaning 256 bytes per block
         ldx     size+1                  ; Number of 256-byte blocks
         beq     @remaining              ; If no blocks, just do remaining bytes
@@ -56,19 +52,21 @@ copy_bytes_size:
         inc     src_ptr+1               ; Add 256
         inc     dst_ptr+1               ; to both src_ptr and dst_ptr
         dex                             ; Decrement number of blocks
-        bne     @next_byte              ; Move to move
+        bne     @next_byte              ; More to move
+        beq     @remaining              ; Bypass entry points for 8-bit size
 
 ; Copies the remaining bytes.
 ; Y must be 0 when we first reach this point, and size must be set to the number of bytes remaining (0 means none).
 
 @remaining:
-        cpy     size                    ; Compare Y with number of remaining bytes
+        ldx     size
         beq     @done                   ; If equal then we're done
+@next_remaining_byte:
         lda     (src_ptr),y             ; Otherwise move one more byte
-        sta     (dst_ptr),y               
-        iny 
-        bne     @remaining              ; Y will never increment to 0 so this is unconditional
-
+        sta     (dst_ptr),y    
+        iny
+        dex
+        bne     @next_remaining_byte
 @done:
         rts
 
@@ -80,62 +78,35 @@ copy_bytes_size:
 ; AX = number of bytes to copy (_size entry point uses value in size instead)
 ; BC SAFE, DE SAFE
 
-copy_bytes_higher:
+copy_up_ax:
         stax    size                    ; Length into size
-copy_bytes_higher_size:
+copy_up:
+        ldx     size+1                  ; Number of 256-byte blocks we will move
+        txa                             ; Move src_ptr and dst_ptr up the remainder block
         clc
-        ldpha   src_ptr                 ; Add size to src_ptr and dst_ptr; save originals on stack
-        adc     size
-        sta     src_ptr
-        ldpha   src_ptr+1
-        adc     size+1
+        adc     src_ptr+1
         sta     src_ptr+1
+        txa
         clc
-        ldpha   dst_ptr              
-        adc     size
-        sta     dst_ptr
-        ldpha   dst_ptr+1
-        adc     size+1
+        adc     dst_ptr+1
         sta     dst_ptr+1
-
-; The stack contains the original src_ptr and dst_ptr; we'll use these to move the last bytes.
-; The current values of src_ptr and dst_ptr are one past the end of the move ranges.
-; The number of bytes to move is in size.
-
-        ldy     #0                      ; Y = 0 meaning 256 bytes per block
-        ldx     size+1                  ; Number of 256-byte blocks
-        beq     @remaining              ; If no blocks, just do remaining bytes
-@next_block:    
-        beq     @remaining              ; No more blocks, copy remaining bytes
-        dec     src_ptr+1               ; Subtract 256 from src_ptr
-        dec     dst_ptr+1               ; and dst_ptr
-        jsr     @copy   
-        dex                             ; Done with this block
-        bne     @next_block             ; More to copy
-
-; Upon reaching this point, both X and Y will be zero.
-
-@remaining:
-        plsta   dst_ptr+1               ; Recover original src_ptr and dst_ptr from stack
-        plsta   dst_ptr
-        plsta   src_ptr+1
-        plsta   src_ptr
-        ldy     size                    ; Number of bytes left to copy (may be 0)
-        beq     @skip_copy              ; No bytes to copy, otherwise fall through to @copy
-
-; Copies bytes from offsets Y-1 to 0. Will copy 256 bytes if Y = 0.
-; Y will be 0 on exit.
-
-@copy:
-        dey                             ; Decrement Y
-        beq     @copy_last_byte         ; Y is 0 but we still have to copy one last byte
+        inx                             ; X is number of blocks including partial block
+        ldy     size                    ; The size of the partial block
+        beq     @next_block
+        bne     @decrement
+@next_byte:
         lda     (src_ptr),y             ; Copy one byte
-        sta     (dst_ptr),y     
-        jmp     @copy                   
-@copy_last_byte:    
-        lda     (src_ptr),y             ; Copy last byte (Y will be 0)
         sta     (dst_ptr),y
-@skip_copy:
+@decrement:
+        dey
+        bne     @next_byte
+        lda     (src_ptr),y             ; Handle Y=0
+        sta     (dst_ptr),y
+@next_block:
+        dec     src_ptr+1               ; Back up address 256 bytes
+        dec     dst_ptr+1
+        dex                             ; One block down
+        bne     @decrement              ; More blocks to copy
         rts
 
 ; Clears memory to zero.
