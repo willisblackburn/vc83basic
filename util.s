@@ -53,7 +53,6 @@ copy_down:
         inc     dst_ptr+1               ; to both src_ptr and dst_ptr
         dex                             ; Decrement number of blocks
         bne     @next_byte              ; More to move
-        beq     @remaining              ; Bypass entry points for 8-bit size
 
 ; Copies the remaining bytes.
 ; Y must be 0 when we first reach this point, and size must be set to the number of bytes remaining (0 means none).
