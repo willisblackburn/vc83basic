@@ -4,8 +4,9 @@
 ; sim65 vectors
 .import _read, _write, exit
 
-.include "../macros.inc"
-.include "../basic.inc"
+.include "macros.inc"
+.include "basic.inc"
+
 .bss
 
 ; 256-byte buffer for I/O functions
