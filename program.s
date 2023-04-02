@@ -37,6 +37,9 @@ lp: .res 1
 ; Whether the program is not running, running, stopped, or awaiting reset.
 program_state: .res 1
 
+; The line number sought by find_line
+line_number: .res 2
+
 .code
 
 ; Initializes a new program.
@@ -112,11 +115,11 @@ reset_line_ptr:
 ; Sets line_ptr if the line was found.
 ; If not found, line_ptr is left set to where the line would have been, i.e., pointing
 ; to the next-higher line.
-; BC SAFE
+; BC SAFE, DE SAFE
 
+find_line_ax:
+        stax    line_number
 find_line:
-        stax    DE
-find_line_de:
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
@@ -124,12 +127,12 @@ find_line_de:
 @test_line:
         ldy     #Line::number+1         ; Index of high byte of line number
         lda     (line_ptr),y        
-        cmp     E       
+        cmp     line_number+1      
         bcc     @next_line              ; Line number high byte is <target; go to next line
         bne     @done                   ; Return with carry set
         dey                             ; High byte is equal; decrement Y to get low byte of line number
         lda     (line_ptr),y            ; Check the low byte of line number
-        cmp     D                       ; Same logic for low byte
+        cmp     line_number             ; Same logic for low byte
         bcc     @next_line     
         bne     @done                   ; If not the line then return with carry bit set
         clc                             ; If it was the line then return with carry clear
@@ -160,7 +163,7 @@ advance_line_ptr_a:
 
 insert_or_update_line:
         ldax    line_buffer+Line::number    ; Load line number into AX
-        jsr     find_line               ; Go find it
+        jsr     find_line_ax            ; Go find it
         bcs     @insert                 ; Not found, just insert the new line
 
 ; line_ptr points to a line that we have to remove.
