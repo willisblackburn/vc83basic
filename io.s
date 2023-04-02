@@ -4,16 +4,12 @@
 ; sim65 vectors
 .import _read, _write, exit
 
-.include "macros.inc"
-.include "basic.inc"
-
+.include "../macros.inc"
+.include "../basic.inc"
 .bss
 
 ; 256-byte buffer for I/O functions
 buffer: .res 256
-
-; A single-byte buffer for the char operations
-io_char: .res 1
 
 .code
 
@@ -21,11 +17,11 @@ io_char: .res 1
 ; Returns the length in A.
 
 readline:
-        mva     #0, B                   ; Use B to track write position in buffer
+        mva     #0, C                   ; Use C for buffer index (getchar does not use it)
 @next:      
         jsr     getchar                 ; Read one character
-        ldy     B                       ; Use B for buffer index (getchar does not use it)
-        inc     B
+        ldy     C
+        inc     C
         cmp     #$0A                    ; EOL?
         beq     @done                   ; Yes
         sta     buffer,y                ; Otherwise store character in buffer
@@ -42,11 +38,11 @@ readline:
 
 getchar:
         jsr     push0                   ; File descriptor 0 (stdin)
-        ldax    #io_char                ; Load the character into B
+        ldax    #B                      ; Load the character into B
         jsr     pushax                  ; Push onto C stack
         ldax    #1                      ; Length
         jsr     _read       
-        lda     io_char                 ; Get the character into A
+        lda     B                       ; Get the character into A
         rts
 
 ; Writes a line to the console.
@@ -72,7 +68,7 @@ newline:
 ; A = the character to output
 
 putchar:
-        sta     io_char                 ; Store character in io_char
-        ldax    #io_char                ; Pointer to buffer
+        sta     B                       ; Save character into single-byte buffer
+        ldax    #B                      ; Pointer to buffer
         ldy     #1
         jmp     write
