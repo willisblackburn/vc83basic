@@ -28,6 +28,7 @@
 .globalzp variable_count
 .globalzp variable_value_ptr
 .globalzp lp
+.globalzp line_number
 
 ; Data
 
@@ -82,7 +83,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line, find_line_de
+.global find_line, find_line_ax
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
