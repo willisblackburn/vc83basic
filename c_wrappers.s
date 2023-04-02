@@ -293,25 +293,25 @@ _set_variable_value_ptr:
 
 ; util.s
 
-_copy_bytes:
-.export _copy_bytes
+_copy_down_ax:
+.export _copy_down_ax
         stax    DE                      ; Size
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_bytes
+        jmp     copy_down_ax
 
-_copy_bytes_higher:
-.export _copy_bytes_higher
+_copy_up_ax:
+.export _copy_up_ax
         stax    DE
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_bytes_higher
+        jmp     copy_up_ax
 
 _clear_memory:
 .export _clear_memory

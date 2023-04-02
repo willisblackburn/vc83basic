@@ -190,7 +190,7 @@ insert_or_update_line:
         bcs     @done                   ; Don't copy if grow failed
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         lda     line_buffer+Line::next_line_offset  ; Length of the new line
-        jsr     copy_bytes_a            ; Copy the line into the program
+        jsr     copy_down_a             ; Copy the line into the program
 
 @finish:
         clc
@@ -235,7 +235,7 @@ grow:
         iny
         cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_bytes_higher_size  ; Copy data up to the higher address
+        jsr     copy_up                 ; Copy data up to the higher address
         clc                             ; Success
 @done:
         rts
@@ -277,7 +277,7 @@ shrink:
         iny
         cpy     #himem_ptr              ; Have we reached himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_bytes_size
+        jsr     copy_down
         clc
         rts
 
