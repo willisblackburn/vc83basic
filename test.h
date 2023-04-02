@@ -57,7 +57,7 @@ int parse_keyword(const char* keyword, char bp);
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
-int find_line(int line_number);
+int find_line_ax(int line_number);
 void advance_line_ptr(void);
 int insert_or_update_line(void);
 int grow(void* ptr, size_t size);
