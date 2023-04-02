@@ -119,8 +119,8 @@ int check_himem(size_t size);
 void set_variable_value_ptr(char variable);
 
 // util.s
-void copy_bytes(char* to, const char* from, size_t size);
-void copy_bytes_higher(char* to, const char* from, size_t size);
+void copy_down_ax(char* to, const char* from, size_t size);
+void copy_up_ax(char* to, const char* from, size_t size);
 void clear_memory(char* p, size_t size);
 int mul2(int value);
 int mul10(int value);
