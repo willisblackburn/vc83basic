@@ -28,7 +28,7 @@ size: .res 2
 ; Alters src_ptr and dst_ptr.
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
-; AX = number of bytes to copy (_size entry point uses value in size instead)
+; size = number of bytes to copy
 ; Alternate entry points for when there are fewer than 255 bytes to copy:
 ; copy_down_a uses the existing dst_ptr and accepts the size in A.
 ; BC SAFE, DE SAFE
@@ -71,7 +71,7 @@ copy_down:
 ; Alters src_ptr and dst_ptr.
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
-; AX = number of bytes to copy (_size entry point uses value in size instead)
+; size = number of bytes to copy
 ; BC SAFE, DE SAFE
 
 copy_up_ax:
