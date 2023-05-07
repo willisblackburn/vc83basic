@@ -84,19 +84,20 @@ initialize_program:
 ; while the program is running.
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
+; BC SAFE
 
 reset_program_state:
-        mva     variable_count, D       ; Use D to track the variable index
+        ldpha   variable_count          ; Save original variable_count value
 @reset_variable:
-        dec     D
+        dec     variable_count
         bmi     @reset_heap
-        lda     D
+        lda     variable_count
         jsr     set_variable_value_ptr
         jsr     initialize_variable
         jmp     @reset_variable
 
 @reset_heap:
-        lda     variable_count
+        plsta   variable_count          ; Restore variable_count
         jsr     set_variable_value_ptr  ; Set variable_value_ptr to just past the last variable
         mvaa    variable_value_ptr, free_ptr    ; Set into free_ptr (the start of free space)
         mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
