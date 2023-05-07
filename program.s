@@ -77,6 +77,7 @@ initialize_program:
 ; Clears the runtime state of the program.
 ; value_table_ptr = the address of the variable value table, the next byte following the variable name table
 ; variable_count = the number of variables in the variable name table
+; BC SAFE
 
 reset_program_state:
         mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
