@@ -105,13 +105,13 @@ void is_name_character(char c);
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
-int find_line_ax(int line_number);
+void find_line_ax(int line_number);
 void advance_line_ptr(void);
-int insert_or_update_line(void);
-int grow(void* ptr, size_t size);
-int shrink(void* ptr, size_t size);
-size_t calculate_bytes_to_move(void);
-int check_himem(size_t size);
+void insert_or_update_line(void);
+void grow(void* ptr, size_t size);
+void shrink(void* ptr, size_t size);
+void calculate_bytes_to_move(void);
+void check_himem(size_t size);
 void set_variable_value_ptr(char variable);
 
 // util.s
