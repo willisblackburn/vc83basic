@@ -122,7 +122,7 @@ _pop_value:
 _stack_alloc:
 .export _stack_alloc
         jsr     stack_alloc
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _stack_free:
 .export _stack_free
