@@ -144,12 +144,12 @@ _encode_byte:
 _evaluate_expression:
 .export _evaluate_expression
         jsr     evaluate_expression
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _push_fp0:
 .export _push_fp0
         jsr     push_fp0
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _pop_fp0:
 .export _pop_fp0
