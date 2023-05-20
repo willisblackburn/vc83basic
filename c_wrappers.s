@@ -88,7 +88,7 @@ _encode_byte:
 _find_name:
 .export _find_name
         jsr     find_name
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _get_name_table_entry:
 .export _get_name_table_entry
@@ -96,12 +96,12 @@ _get_name_table_entry:
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
         jsr     get_name_table_entry
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _add_variable:
 .export _add_variable
         jsr     add_variable
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 ; parser.s
 
