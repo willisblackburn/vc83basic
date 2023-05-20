@@ -46,12 +46,14 @@ extern char reg_a;
 extern char reg_x;
 extern char reg_y;
 
+extern char carry_flag;
+
 // Prototypes for C wrapper functions
 
 // parser.s
 int read_number(char bp);
-int char_to_digit(char c);
-int parse_keyword(const char* keyword, char bp);
+char char_to_digit(char c);
+void parse_keyword(const char* keyword, char bp);
 
 // program.s
 void initialize_target(void);
