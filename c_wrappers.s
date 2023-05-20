@@ -67,19 +67,19 @@ _read_number:
 .export _read_number
         sta     bp               
         jsr     read_number
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_keyword:
 .export _parse_keyword
         sta     bp              
         jsr     popax                   ; Keyword pointer
         jsr     parse_keyword
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 ; program.s
 
