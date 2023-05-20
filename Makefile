@@ -36,4 +36,4 @@ ifneq ($(MAKECMDGOALS), clean)
 endif
 
 clean:
-	rm -f basic $(TESTS) *.o *.d *.map
+	rm -f basic $(TESTS) *.o *.d *.map x
