@@ -81,4 +81,4 @@ $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f *.o *.d *.map x x
+	rm -f *.o *.d *.map
