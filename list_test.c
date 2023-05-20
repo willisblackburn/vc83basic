@@ -97,7 +97,6 @@ static void test_list_statment(void) {
 }
 
 static void test_list_line(void) {
-    char err;
 
     const char line_data_1[] = { ST_PRINT, TOKEN_NUM, 0x01, 0x01 };
     const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F };
@@ -112,22 +111,22 @@ static void test_list_line(void) {
     create_variables();
 
     set_line(10, line_data_1, sizeof line_data_1);
-    err = list_line();
-    ASSERT_EQ(err, 0);
+    list_line();
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 
     set_line(400, line_data_2, sizeof line_data_2);
-    err = list_line();
-    ASSERT_EQ(err, 0);
+    list_line();
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 
     set_line(-1, line_data_end, sizeof line_data_end);
-    err = list_line();
-    ASSERT_NE(err, 0);
+    list_line();
+    ASSERT_NE(carry_flag, 0);
 }
 
 int main(void) {
