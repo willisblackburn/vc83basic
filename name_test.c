@@ -1,32 +1,32 @@
 #include "test.h"
 
-static void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
+static void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
     char expect_np, const char* expect_name_ptr, int line) {        
-    char err;
+    char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
         set_name_bp, set_bp);
     strcpy(buffer, s);
     name_bp = set_name_bp;
     bp = set_bp;
-    err = find_name(name_table);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, expect_reg_a);
+    index = find_name(name_table);
+    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(index, expect_index);
     ASSERT_EQ(np, expect_np);
     ASSERT_EQ(name_ptr, expect_name_ptr);
     ASSERT_EQ(bp, set_bp);
 }
 
-static void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_reg_a,
+static void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
     int line) {
-    char err;
+    char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
         set_name_bp, set_bp);
     strcpy(buffer, s);
     name_bp = set_name_bp;
     bp = set_bp;
-    err = find_name(name_table);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(reg_a, expect_reg_a);
+    index = find_name(name_table);
+    ASSERT_NE(carry_flag, 0);
+    ASSERT_EQ(index, expect_index);
     // On fail name_ptr should always point to 0 at the end of the name table (automatically added by C string).
     ASSERT_EQ(name_ptr, name_ptr + strlen(name_ptr));
     ASSERT_EQ(bp, set_bp);
@@ -90,31 +90,31 @@ static void test_find_name_operators(void) {
 }
 
 static void test_get_name_table_entry(void) {
-    int err;
+
     const char* name_table = "LIST\x92" "PRIN\xD4" "FOR\x11=\x11TO\x91" "RU\xCE";
 
     PRINT_TEST_NAME();
 
-    err = get_name_table_entry(name_table, 0);
-    ASSERT_EQ(err, 0);
+    get_name_table_entry(name_table, 0);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(name_ptr, name_table);
 
-    err = get_name_table_entry(name_table, 1);
-    ASSERT_EQ(err, 0);
+    get_name_table_entry(name_table, 1);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(name_ptr, name_table + 5);
 
-    err = get_name_table_entry(name_table, 2);
-    ASSERT_EQ(err, 0);
+    get_name_table_entry(name_table, 2);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(name_ptr, name_table + 5 + 5);
 
-    err = get_name_table_entry(name_table, 3);
-    ASSERT_EQ(err, 0);
+    get_name_table_entry(name_table, 3);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(name_ptr, name_table + 5 + 5 + 9);
 }
 
 static void test_add_variable(void) {
     const char num_init_value[] = { 0, 0, 0, 0, 0, 0 };
-    int err;
+    char index;
 
     PRINT_TEST_NAME();
 
@@ -127,11 +127,11 @@ static void test_add_variable(void) {
     strcpy(buffer, "X");
     name_bp = 0;
     bp = 1;
-    err = find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 0);
+    find_name(variable_name_table_ptr);
+    ASSERT_NE(carry_flag, 0);
+    index = add_variable();
+    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(index, 0);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 1);
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
@@ -143,11 +143,11 @@ static void test_add_variable(void) {
     strcpy(buffer, "Y,Z");
     name_bp = 0;
     bp = 1;
-    err = find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 1);
+    find_name(variable_name_table_ptr);
+    ASSERT_NE(carry_flag, 0);
+    index = add_variable();
+    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(index, 1);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 2);
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
@@ -157,11 +157,11 @@ static void test_add_variable(void) {
     ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 2);
     name_bp = 2;
     bp = 3;
-    err = find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(reg_a, 2);
+    find_name(variable_name_table_ptr);
+    ASSERT_NE(carry_flag, 0);
+    index = add_variable();
+    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(index, 2);
     ASSERT_EQ(bp, 3);
     ASSERT_EQ(variable_count, 3);
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);

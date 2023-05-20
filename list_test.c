@@ -1,14 +1,13 @@
 #include "test.h"
 
 static void add_variable_with_name(const char* name) {
-    char err;
     strcpy(buffer, name);
     name_bp = 0;
     bp = strlen(buffer);
-    err = find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    err = add_variable();
-    ASSERT_EQ(err, 0);
+    find_name(variable_name_table_ptr);
+    ASSERT_NE(carry_flag, 0);
+    add_variable();
+    ASSERT_EQ(carry_flag, 0);
 }
 
 static void create_variables(void) {
