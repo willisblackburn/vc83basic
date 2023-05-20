@@ -112,4 +112,4 @@ $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f constants.inc constants.h *.o *.d *.map
+	rm -f constants.inc constants.h *.o *.d *.map x
