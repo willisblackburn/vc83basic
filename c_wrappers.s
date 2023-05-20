@@ -35,17 +35,17 @@ _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
 
-_carry_flag: .res 1
-.export _carry_flag
+_err: .res 1
+.export _err
 
 .code
 
-; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
-set_carry_flag:
+; Sets the err variable to 1 if carry is set, 0 otherwise.
+set_err:
         pha                             ; Save return value
-        lda     #0                      ; Roll carry left into A and save in carry_flag
+        lda     #0                      ; Roll carry left into A and save in err
         rol     A
-        sta     _carry_flag
+        sta     _err
         pla                             ; Restore return value
         rts
 
@@ -57,12 +57,12 @@ _read_number:
 .export _read_number
         sta     bp               
         jsr     read_number
-        jmp     set_carry_flag
+        jmp     set_err
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_keyword:
 .export _parse_keyword
@@ -88,7 +88,7 @@ _reset_line_ptr:
 _find_line_ax:
 .export _find_line_ax
         jsr     find_line_ax
-        jmp     set_carry_flag
+        jmp     set_err
 
 _advance_line_ptr:
 .export _advance_line_ptr
@@ -97,7 +97,7 @@ _advance_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
-        jmp     set_carry_flag
+        jmp     set_err
 
 _grow:
 .export _grow
@@ -106,7 +106,7 @@ _grow:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     grow
-        jmp     set_carry_flag
+        jmp     set_err
 
 _shrink:
 .export _shrink
@@ -115,7 +115,7 @@ _shrink:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     shrink
-        jmp     set_carry_flag
+        jmp     set_err
 
 _calculate_bytes_to_move:
 .export _calculate_bytes_to_move

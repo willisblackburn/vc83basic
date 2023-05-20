@@ -32,26 +32,26 @@ static void test_read_number(void) {
 
     strcpy(buffer, "10 PRINT X");
     number = read_number(0);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 10);
     ASSERT_EQ(bp, 2);
 
     // The function should honor the current read position.
     strcpy(buffer, "1020 PRINT X");
     number = read_number(2);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 20);
     ASSERT_EQ(bp, 4);
 
     // The function should return carry set if an invalid number.
     strcpy(buffer, "invalid");
     read_number(0);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 0);
 
     strcpy(buffer, "");
     read_number(0);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 0);
 }
 
