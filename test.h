@@ -46,7 +46,7 @@ extern char reg_a;
 extern char reg_x;
 extern char reg_y;
 
-extern char carry_flag;
+extern char err;
 
 // Prototypes for C wrapper functions
 
