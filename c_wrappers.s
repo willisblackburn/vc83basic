@@ -68,17 +68,17 @@ _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
 
-_carry_flag: .res 1
-.export _carry_flag
+_err: .res 1
+.export _err
 
 .code
 
-; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
-set_carry_flag:
+; Sets the err variable to 1 if carry is set, 0 otherwise.
+set_err:
         pha                             ; Save return value
-        lda     #0                      ; Roll carry left into A and save in carry_flag
+        lda     #0                      ; Roll carry left into A and save in err
         rol     A
-        sta     _carry_flag
+        sta     _err
         pla                             ; Restore return value
         rts
 
@@ -115,24 +115,24 @@ _decode_byte:
 _encode_number:
 .export _encode_number
         jsr     encode_number
-        jmp     set_carry_flag
+        jmp     set_err
 
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
-        jmp     set_carry_flag
+        jmp     set_err
 
 ; expression.s
 
 _evaluate_expression:
 .export _evaluate_expression
         jsr     evaluate_expression
-        jmp     set_carry_flag
+        jmp     set_err
 
 _push_value:
 .export _push_value
         jsr     push_value
-        jmp     set_carry_flag
+        jmp     set_err
 
 _pop_value:
 .export _pop_value
@@ -141,7 +141,7 @@ _pop_value:
 _stack_alloc:
 .export _stack_alloc
         jsr     stack_alloc
-        jmp     set_carry_flag
+        jmp     set_err
 
 _stack_free:
 .export _stack_free
@@ -180,17 +180,17 @@ _int32_to_fp:
 _truncate_fp_to_int:
 .export _truncate_fp_to_int
         jsr     truncate_fp_to_int
-        jmp     set_carry_flag
+        jmp     set_err
 
 _truncate_fp_to_int32:
 .export _truncate_fp_to_int32
         jsr     truncate_fp_to_int32
-        jmp     set_carry_flag
+        jmp     set_err
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     set_carry_flag
+        jmp     set_err
 
 _adjust_exponent:
 .export _adjust_exponent
@@ -208,32 +208,32 @@ _fp_to_string:
 _string_to_fp:
 .export _string_to_fp
         jsr     string_to_fp
-        jmp     set_carry_flag
+        jmp     set_err
 
 _normalize:
 .export _normalize
         jsr     normalize
-        jmp     set_carry_flag
+        jmp     set_err
 
 _fadd:
 .export _fadd
         jsr     fadd
-        jmp     set_carry_flag
+        jmp     set_err
 
 _fsub:
 .export _fsub
         jsr     fsub
-        jmp     set_carry_flag
+        jmp     set_err
 
 _fmul:
 .export _fmul
         jsr     fmul
-        jmp     set_carry_flag
+        jmp     set_err
 
 _fdiv:
 .export _fdiv
         jsr     fdiv
-        jmp     set_carry_flag
+        jmp     set_err
 
 _fneg:
 .export _fneg
@@ -266,7 +266,7 @@ _fcmp:
 _list_line:
 .export _list_line
         jsr     list_line
-        jmp     set_carry_flag
+        jmp     set_err
 
 _list_statement:
 .export _list_statement
@@ -281,7 +281,7 @@ _list_directive:
 _find_name:
 .export _find_name
         jsr     find_name
-        jmp     set_carry_flag
+        jmp     set_err
 
 _get_name_table_entry:
 .export _get_name_table_entry
@@ -289,12 +289,12 @@ _get_name_table_entry:
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
         jsr     get_name_table_entry
-        jmp     set_carry_flag
+        jmp     set_err
 
 _add_variable:
 .export _add_variable
         jsr     add_variable
-        jmp     set_carry_flag
+        jmp     set_err
 
 ; parser.s
 
@@ -302,17 +302,17 @@ _read_number:
 .export _read_number
         sta     bp                      ; Buffer index
         jsr     read_number
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_line:
 .export _parse_line
         jsr     parse_line
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_statement:
 .export _parse_statement
         jsr     parse_statement
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_directive:
 .export _parse_directive
@@ -321,7 +321,7 @@ _parse_directive:
         sta     bp
         jsr     popa
         jsr     parse_directive
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_expression:
 .export _parse_expression
@@ -329,28 +329,28 @@ _parse_expression:
         jsr     popa
         sta     bp
         jsr     parse_expression
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_argument_separator:
 .export _parse_argument_separator
         sta     bp
         jsr     parse_argument_separator
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_name:
 .export _parse_name
         jsr     parse_name
-        jmp     set_carry_flag
+        jmp     set_err
 
 _is_name_character:
 .export _is_name_character
         jsr     is_name_character
-        jmp     set_carry_flag
+        jmp     set_err
 
 _parse_operator_name:
 .export _parse_operator_name
         jsr     parse_operator_name
-        jmp     set_carry_flag
+        jmp     set_err
 
 _is_operator_name_character:
 .export _is_operator_name_character
@@ -358,7 +358,7 @@ _is_operator_name_character:
         jsr     popa                    ; Character to test
         ldy     B                       ; Recover index from B
         jsr     is_operator_name_character
-        jmp     set_carry_flag
+        jmp     set_err
 
 ; program.s
 
@@ -377,7 +377,7 @@ _reset_next_line_ptr:
 _find_line_ax:
 .export _find_line_ax
         jsr     find_line_ax
-        jmp     set_carry_flag
+        jmp     set_err
 
 _advance_next_line_ptr:
 .export _advance_next_line_ptr
@@ -386,7 +386,7 @@ _advance_next_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
-        jmp     set_carry_flag
+        jmp     set_err
 
 _grow:
 .export _grow
@@ -395,7 +395,7 @@ _grow:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     grow
-        jmp     set_carry_flag
+        jmp     set_err
 
 _shrink:
 .export _shrink
@@ -404,7 +404,7 @@ _shrink:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     shrink
-        jmp     set_carry_flag
+        jmp     set_err
 
 _calculate_bytes_to_move:
 .export _calculate_bytes_to_move
@@ -413,7 +413,7 @@ _calculate_bytes_to_move:
 _check_himem:
 .export _check_himem
         jsr     check_himem
-        jmp     set_carry_flag
+        jmp     set_err
 
 _set_variable_value_ptr:
 .export _set_variable_value_ptr

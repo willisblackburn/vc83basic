@@ -96,7 +96,7 @@ static void call_normalize(char s, char e, unsigned long x, unsigned long t, cha
     reg_b = b;
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
 
@@ -166,7 +166,7 @@ static void test_truncate_fp_to_int(void) {
             test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         value = truncate_fp_to_int();
-        ASSERT_EQ(carry_flag, 0);
+        ASSERT_EQ(err, 0);
         ASSERT_EQ(value, test_case->value);
     }
 }
@@ -212,7 +212,7 @@ static void test_truncate_fp_to_int32(void) {
             test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         truncate_fp_to_int32();
-        ASSERT_EQ(carry_flag, 0);
+        ASSERT_EQ(err, 0);
         ASSERT_EQ(FP0t, test_case->value);
     }
 }
@@ -228,7 +228,7 @@ static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, uns
     fprintf(stderr, "  %s:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line, f_name,
             t_0, e_0, s_0, t_1, e_1, s_1);
     f();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
@@ -377,23 +377,23 @@ static void test_char_to_digit(void) {
     PRINT_TEST_NAME();
 
     d = char_to_digit('0');
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(d, 0);
     d = char_to_digit('9');
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(d, 9);
     char_to_digit('0'-1);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     char_to_digit('9'+1);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     char_to_digit(' ');
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     char_to_digit('A');
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     char_to_digit(0);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     char_to_digit(255);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 static void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
@@ -451,7 +451,7 @@ static void call_string_to_fp(const char* string, char expect_s, char expect_e, 
     strcpy(buffer, string);
     bp = 0;
     string_to_fp();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
@@ -460,7 +460,7 @@ static void fail_string_to_fp(const char* string, int line) {
     strcpy(buffer, string);
     bp = 0;
     string_to_fp();
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 0);
 }
 
