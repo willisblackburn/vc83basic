@@ -10,25 +10,25 @@ static void test_encode_byte(void) {
 
     lp = offsetof(Line, data);
     encode_byte(2);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
     encode_byte(3);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     lp = offsetof(Line, data);
     encode_byte(255);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_3);
 
     // Encode at end of buffer should fail
     lp = 255;
     encode_byte(100);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 static void test_encode_number(void) {
@@ -43,7 +43,7 @@ static void test_encode_number(void) {
     SET_FPX(FP0, POSITIVE, 1, 0);
     lp = offsetof(Line, data);
     encode_number();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
 
@@ -51,24 +51,24 @@ static void test_encode_number(void) {
     SET_FPX(FP0, POSITIVE, 133, 0xC8000000);
     lp = offsetof(Line, data);
     encode_number();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     // 4112
     SET_FPX(FP0, POSITIVE, 139, 0x80800000);
     encode_number();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     // 3.14159
     SET_FPX(FP0, POSITIVE, 128, 0xC90FCF81);
     encode_number();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
 
     // Encode at end of buffer should fail (doesn't matter what FP0 is)
     lp = 252;
     encode_number();
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 int main(void) {

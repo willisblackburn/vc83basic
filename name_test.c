@@ -9,7 +9,7 @@ static void call_find_name(const char* s, const char* name_table, char set_name_
     name_bp = set_name_bp;
     bp = set_bp;
     index = find_name(name_table);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(index, expect_index);
     ASSERT_EQ(np, expect_np);
     ASSERT_EQ(name_ptr, expect_name_ptr);
@@ -25,7 +25,7 @@ static void call_find_name_fail(const char* s, const char* name_table, char set_
     name_bp = set_name_bp;
     bp = set_bp;
     index = find_name(name_table);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     ASSERT_EQ(index, expect_index);
     // On fail name_ptr should always point to 0 at the end of the name table (automatically added by C string).
     ASSERT_EQ(name_ptr, name_ptr + strlen(name_ptr));
@@ -96,19 +96,19 @@ static void test_get_name_table_entry(void) {
     PRINT_TEST_NAME();
 
     get_name_table_entry(name_table, 0);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(name_ptr, name_table);
 
     get_name_table_entry(name_table, 1);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(name_ptr, name_table + 5);
 
     get_name_table_entry(name_table, 2);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(name_ptr, name_table + 5 + 5);
 
     get_name_table_entry(name_table, 3);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(name_ptr, name_table + 5 + 5 + 9);
 }
 
@@ -128,9 +128,9 @@ static void test_add_variable(void) {
     name_bp = 0;
     bp = 1;
     find_name(variable_name_table_ptr);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     index = add_variable();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(index, 0);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 1);
@@ -144,9 +144,9 @@ static void test_add_variable(void) {
     name_bp = 0;
     bp = 1;
     find_name(variable_name_table_ptr);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     index = add_variable();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(index, 1);
     ASSERT_EQ(bp, 1);
     ASSERT_EQ(variable_count, 2);
@@ -158,9 +158,9 @@ static void test_add_variable(void) {
     name_bp = 2;
     bp = 3;
     find_name(variable_name_table_ptr);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     index = add_variable();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(index, 2);
     ASSERT_EQ(bp, 3);
     ASSERT_EQ(variable_count, 3);

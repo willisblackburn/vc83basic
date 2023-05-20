@@ -5,9 +5,9 @@ static void add_variable_with_name(const char* name) {
     name_bp = 0;
     bp = strlen(buffer);
     find_name(variable_name_table_ptr);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     add_variable();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 }
 
 static void create_variables(void) {
@@ -147,19 +147,19 @@ static void test_list_line(void) {
 
     set_line(10, line_data_1, sizeof line_data_1);
     list_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
     ASSERT_EQ(bp, sizeof list_1 - 1);
 
     set_line(400, line_data_2, sizeof line_data_2);
     list_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(bp, sizeof list_2 - 1);
 
     set_line(400, line_data_3, sizeof line_data_3);
     list_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_3, sizeof list_3 - 1);
     ASSERT_EQ(bp, sizeof list_3 - 1);
 
@@ -167,7 +167,7 @@ static void test_list_line(void) {
 
     set_line(-1, line_data_end, sizeof line_data_end);
     list_line();
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 int main(void) {

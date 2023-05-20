@@ -77,27 +77,27 @@ static void test_find_line(void) {
 
     // Test if we can find each line separately.
     find_line_ax(10);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10);
     find_line_ax(256);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 256);
     find_line_ax(10000);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10000);
 
     // Test not finding a line at all.
     // In this case line_ptr should point to where the line would have been, i.e., line 256.
     find_line_ax(15);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     ASSERT_EQ(next_line_ptr->number, 256);
 
     // Test finding a line that occurs earlier in the program.
     find_line_ax(10000);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10000);
     find_line_ax(10);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(next_line_ptr->number, 10);
 }
 
@@ -113,7 +113,7 @@ static void test_insert_or_update_line(void) {
 
     set_line(10, line_10_data, sizeof line_10_data);
     insert_or_update_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     reset_next_line_ptr();
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);  
     ASSERT_EQ(next_line_ptr->number, 10);    
@@ -125,7 +125,7 @@ static void test_insert_or_update_line(void) {
 
     set_line(200, line_200_data, sizeof line_200_data);
     insert_or_update_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     reset_next_line_ptr();
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);    
     ASSERT_EQ(next_line_ptr->number, 10);    
@@ -139,7 +139,7 @@ static void test_insert_or_update_line(void) {
     // Test inserting a line before the other two.
     set_line(5, line_5_data, sizeof line_5_data);
     insert_or_update_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     reset_next_line_ptr();
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(next_line_ptr->number, 5);    
@@ -156,7 +156,7 @@ static void test_insert_or_update_line(void) {
     // Test deleting a line.
     set_line(200, line_200_data, 0);
     insert_or_update_line();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     reset_next_line_ptr();
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(next_line_ptr->number, 5);    
@@ -176,18 +176,18 @@ static void test_check_himem(void) {
     himem_ptr = (void*)0x2000;
 
     check_himem(0x0F00);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     check_himem(0x1F00);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 
     himem_ptr = (void*)0xFF00;
 
     check_himem(0xEF00);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     check_himem(0xFF00);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 static void test_calculate_bytes_to_move(void) {
@@ -215,7 +215,7 @@ static void test_grow(void) {
 
     // Add 3 bytes.
     grow(&next_line_ptr, 3);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
     next_line_ptr = program_ptr;
@@ -224,7 +224,7 @@ static void test_grow(void) {
 
     // Now move it up 3 again.
     grow(&next_line_ptr, 3);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     next_line_ptr = program_ptr;
     next_line_ptr->next_line_offset = 3;
     next_line_ptr->number = 10;
@@ -252,7 +252,7 @@ static void test_grow(void) {
 
     next_line_ptr = program_ptr;
     grow(&free_ptr, 0x400);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     ASSERT_EQ(next_line_ptr, program_ptr);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 11);
@@ -275,18 +275,18 @@ static void test_shrink(void) {
 
     // Create some program space.
     grow(&variable_name_table_ptr, 0x400);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     // Expand the variable name table by moving the value table pointer.
     // The variable name table already contains 1 byte, so subtract 1 from the size of the data we want to write.
     grow(&value_table_ptr, sizeof variable_name_data - 1);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     // Fill in some variable names.
     memcpy(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
 
     // Add some space for some variable values.
     grow(&free_ptr, sizeof value_data + 0x1000);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     memcpy(value_table_ptr, value_data, sizeof value_data);
 
     // Make sure all the pointers are where they should be.
@@ -299,7 +299,7 @@ static void test_shrink(void) {
     // Now shrink each section, each time checking that no data is corrupted.
 
     shrink(&variable_name_table_ptr, 0x10);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
@@ -307,7 +307,7 @@ static void test_shrink(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
 
     shrink(&value_table_ptr, 4);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
@@ -315,7 +315,7 @@ static void test_shrink(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
 
     shrink(&free_ptr, 0x200);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
     ASSERT_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
