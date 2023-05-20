@@ -161,7 +161,7 @@ void fneg(void);
 int fcmp(void);
 
 // list.s
-char list_line(void);
+void list_line(void);
 void list_statement(void);
 void list_directive(char directive);
 
