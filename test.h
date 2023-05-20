@@ -81,8 +81,8 @@ char decode_unary_operator(void);
 char decode_byte(void);
 
 // encode.s
-int encode_number(int number);
-int encode_byte(char value);
+void encode_number(int number);
+void encode_byte(char value);
 
 // list.s
 void list_line(void);
