@@ -72,6 +72,8 @@ extern char reg_a;
 extern char reg_x;
 extern char reg_y;
 
+extern char carry_flag;
+
 // Prototypes for C wrapper functions
 
 // decode.s
@@ -105,16 +107,16 @@ char add_variable(void);
 
 // parser.s
 int read_number(char bp);
-int char_to_digit(char c);
-int parse_line(void);
-char parse_statement(const char* name_ptr);
-int parse_directive(char directive, char bp, char lp);
-int parse_expression(char bp, char lp);
-int parse_argument_separator(char bp);
-int parse_name(void);
-int is_name_character(char c);
-int parse_operator_name();
-int is_operator_name_character(char c, char index);
+char char_to_digit(char c);
+void parse_line(void);
+void parse_statement(const char* name_ptr);
+void parse_directive(char directive, char bp, char lp);
+void parse_expression(char bp, char lp);
+void parse_argument_separator(char bp);
+void parse_name(void);
+void is_name_character(char c);
+void parse_operator_name();
+void is_operator_name_character(char c, char index);
 
 // program.s
 void initialize_target(void);
