@@ -84,9 +84,9 @@ void list_statement(void);
 void list_directive(char directive);
 
 // name.s
-int find_name(const char* name_ptr);
-int get_name_table_entry(const char* name_ptr, char index);
-int add_variable(void);
+char find_name(const char* name_ptr);
+void get_name_table_entry(const char* name_ptr, char index);
+char add_variable(void);
 
 // parser.s
 int read_number(char bp);
