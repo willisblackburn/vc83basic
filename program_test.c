@@ -45,7 +45,6 @@ static void test_advance_line_ptr(void) {
 }
 
 static void test_find_line(void) {
-    int err;
 
     PRINT_TEST_NAME();
 
@@ -72,33 +71,33 @@ static void test_find_line(void) {
     advance_line_ptr();
 
     // Test if we can find each line separately.
-    err = find_line_ax(10);
-    ASSERT_EQ(err, 0);
+    find_line_ax(10);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(line_ptr->number, 10);
-    err = find_line_ax(256);
-    ASSERT_EQ(err, 0);
+    find_line_ax(256);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(line_ptr->number, 256);
-    err = find_line_ax(10000);
-    ASSERT_EQ(err, 0);
+    find_line_ax(10000);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(line_ptr->number, 10000);
 
     // Test not finding a line at all.
     // In this case line_ptr should point to where the line would have been, i.e., line 256.
-    err = find_line_ax(15);
-    ASSERT_NE(err, 0);
+    find_line_ax(15);
+    ASSERT_NE(carry_flag, 0);
     ASSERT_EQ(line_ptr->number, 256);
 
     // Test finding a line that occurs earlier in the program.
-    err = find_line_ax(10000);
-    ASSERT_EQ(err, 0);
+    find_line_ax(10000);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(line_ptr->number, 10000);
-    err = find_line_ax(10);
-    ASSERT_NE(err, 1);
+    find_line_ax(10);
+    ASSERT_NE(carry_flag, 1);
     ASSERT_EQ(line_ptr->number, 10);
 }
 
 static void test_insert_or_update_line(void) {
-    int err;
+
     const char line_5_data[] = { 'E', 'N', 'D' };
     const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
     const char line_200_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '3', '.', '1', '4', '1', '5', '9' };
@@ -108,8 +107,8 @@ static void test_insert_or_update_line(void) {
     initialize_program();
 
     set_line(10, line_10_data, sizeof line_10_data);
-    err = insert_or_update_line();
-    ASSERT_EQ(err, 0);
+    insert_or_update_line();
+    ASSERT_EQ(carry_flag, 0);
     reset_line_ptr();
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);  
     ASSERT_EQ(line_ptr->number, 10);    
@@ -120,8 +119,8 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 
     set_line(200, line_200_data, sizeof line_200_data);
-    err = insert_or_update_line();
-    ASSERT_EQ(err, 0);
+    insert_or_update_line();
+    ASSERT_EQ(carry_flag, 0);
     reset_line_ptr();
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);    
     ASSERT_EQ(line_ptr->number, 10);    
@@ -134,8 +133,8 @@ static void test_insert_or_update_line(void) {
 
     // Test inserting a line before the other two.
     set_line(5, line_5_data, sizeof line_5_data);
-    err = insert_or_update_line();
-    ASSERT_EQ(err, 0);
+    insert_or_update_line();
+    ASSERT_EQ(carry_flag, 0);
     reset_line_ptr();
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(line_ptr->number, 5);    
@@ -151,8 +150,8 @@ static void test_insert_or_update_line(void) {
 
     // Test deleting a line.
     set_line(200, line_200_data, 0);
-    err = insert_or_update_line();
-    ASSERT_EQ(err, 0);
+    insert_or_update_line();
+    ASSERT_EQ(carry_flag, 0);
     reset_line_ptr();
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_5_data);    
     ASSERT_EQ(line_ptr->number, 5);    
@@ -165,26 +164,25 @@ static void test_insert_or_update_line(void) {
 }
 
 static void test_check_himem(void) {
-    char err;
 
     PRINT_TEST_NAME();
 
     free_ptr = (void*)0x1000;
     himem_ptr = (void*)0x2000;
 
-    err = check_himem(0x0F00);
-    ASSERT_EQ(err, 0);
+    check_himem(0x0F00);
+    ASSERT_EQ(carry_flag, 0);
 
-    err = check_himem(0x1F00);
-    ASSERT_NE(err, 0);
+    check_himem(0x1F00);
+    ASSERT_NE(carry_flag, 0);
 
     himem_ptr = (void*)0xFF00;
 
-    err = check_himem(0xEF00);
-    ASSERT_EQ(err, 0);
+    check_himem(0xEF00);
+    ASSERT_EQ(carry_flag, 0);
 
-    err = check_himem(0xFF00);
-    ASSERT_NE(err, 0);
+    check_himem(0xFF00);
+    ASSERT_NE(carry_flag, 0);
 }
 
 static void test_calculate_bytes_to_move(void) {
@@ -202,8 +200,6 @@ static void test_calculate_bytes_to_move(void) {
 
 static void test_grow(void) {
 
-    char err;
-
     PRINT_TEST_NAME();
 
     initialize_program();
@@ -213,8 +209,8 @@ static void test_grow(void) {
     ASSERT_EQ(line_ptr, program_ptr);
 
     // Add 3 bytes.
-    err = grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
+    grow(&line_ptr, 3);
+    ASSERT_EQ(carry_flag, 0);
 
     // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
     line_ptr = program_ptr;
@@ -222,8 +218,8 @@ static void test_grow(void) {
     line_ptr->number = 20;
 
     // Now move it up 3 again.
-    err = grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
+    grow(&line_ptr, 3);
+    ASSERT_EQ(carry_flag, 0);
     line_ptr = program_ptr;
     line_ptr->next_line_offset = 3;
     line_ptr->number = 10;
@@ -247,15 +243,14 @@ static void test_grow(void) {
     // Nothing should change except free_ptr.
 
     line_ptr = program_ptr;
-    err = grow(&free_ptr, 0x400);
-    ASSERT_EQ(err, 0);
+    grow(&free_ptr, 0x400);
+    ASSERT_EQ(carry_flag, 0);
 
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
 }
 
 static void test_shrink(void) {
-    char err;
 
     // To test shrink, we first grow some sections, write some data to them, then make sure that data is
     // preserved when we shrink. We know that grow works because it's been separately tested.
@@ -265,8 +260,8 @@ static void test_shrink(void) {
     initialize_program();
 
     // Create some program space.
-    err = grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
+    grow(&line_ptr, 3);
+    ASSERT_EQ(carry_flag, 0);
     program_ptr->next_line_offset = 3;
     program_ptr->number = 10;
 
@@ -282,8 +277,8 @@ static void test_shrink(void) {
 
     // Now shrink each section, each time checking that no data is corrupted.
 
-    err = shrink(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
+    shrink(&line_ptr, 3);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->number, 20);
     ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);

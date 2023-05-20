@@ -88,7 +88,7 @@ _reset_line_ptr:
 _find_line_ax:
 .export _find_line_ax
         jsr     find_line_ax
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _advance_line_ptr:
 .export _advance_line_ptr
@@ -97,7 +97,7 @@ _advance_line_ptr:
 _insert_or_update_line:
 .export _insert_or_update_line
         jsr     insert_or_update_line
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _grow:
 .export _grow
@@ -106,7 +106,7 @@ _grow:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     grow
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _shrink:
 .export _shrink
@@ -115,8 +115,7 @@ _shrink:
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     shrink
-        jmp     return_carry_flag
-        rts
+        jmp     set_carry_flag
 
 _calculate_bytes_to_move:
 .export _calculate_bytes_to_move
@@ -125,7 +124,7 @@ _calculate_bytes_to_move:
 _check_himem:
 .export _check_himem
         jsr     check_himem
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 ; util.s
 
