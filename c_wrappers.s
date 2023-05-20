@@ -202,12 +202,12 @@ _truncate_fp_to_int:
 _truncate_fp_to_int32:
 .export _truncate_fp_to_int32
         jsr     truncate_fp_to_int32
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _char_to_digit:
 .export _char_to_digit
         jsr     char_to_digit
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _adjust_exponent:
 .export _adjust_exponent
@@ -225,32 +225,32 @@ _fp_to_string:
 _string_to_fp:
 .export _string_to_fp
         jsr     string_to_fp
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _normalize:
 .export _normalize
         jsr     normalize
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _fadd:
 .export _fadd
         jsr     fadd
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _fsub:
 .export _fsub
         jsr     fsub
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _fmul:
 .export _fmul
         jsr     fmul
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _fdiv:
 .export _fdiv
         jsr     fdiv
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _fneg:
 .export _fneg
