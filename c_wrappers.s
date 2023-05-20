@@ -319,17 +319,17 @@ _read_number:
 .export _read_number
         sta     bp                      ; Buffer index
         jsr     read_number
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_line:
 .export _parse_line
         jsr     parse_line
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_statement:
 .export _parse_statement
         jsr     parse_statement
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_directive:
 .export _parse_directive
@@ -338,7 +338,7 @@ _parse_directive:
         sta     bp
         jsr     popa
         jsr     parse_directive
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_expression:
 .export _parse_expression
@@ -346,28 +346,28 @@ _parse_expression:
         jsr     popa
         sta     bp
         jsr     parse_expression
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_argument_separator:
 .export _parse_argument_separator
         sta     bp
         jsr     parse_argument_separator
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_name:
 .export _parse_name
         jsr     parse_name
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _is_name_character:
 .export _is_name_character
         jsr     is_name_character
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _parse_operator_name:
 .export _parse_operator_name
         jsr     parse_operator_name
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _is_operator_name_character:
 .export _is_operator_name_character
@@ -375,7 +375,7 @@ _is_operator_name_character:
         jsr     popa                    ; Character to test
         ldy     B                       ; Recover index from B
         jsr     is_operator_name_character
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 ; program.s
 
