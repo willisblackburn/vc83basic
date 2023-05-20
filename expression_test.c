@@ -9,12 +9,12 @@ static void test_stack_alloc_free(void) {
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
 
     p = stack_alloc(2);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
     ASSERT_EQ(p, psp);
 
     p = stack_alloc(64);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2 - 64);
     ASSERT_EQ(p, psp);
 
@@ -28,7 +28,7 @@ static void test_stack_alloc_free(void) {
     stack_alloc(96);
     stack_alloc(96);
     stack_alloc(96);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 
     // Re-initialize program since this test leaves it in a bad state.
     initialize_program();
@@ -46,7 +46,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     line_data[5] = 0;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected00);
 
@@ -54,7 +54,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     line_data[5] = 1;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected01);
 
@@ -62,7 +62,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     line_data[5] = 0;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected10);
 
@@ -70,7 +70,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     line_data[5] = 1;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected11);
 }
@@ -86,14 +86,14 @@ static void test_one_unary_op(char op, int expected0, int expected1) {
     line_data[2] = 0;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected0);
 
     line_data[2] = 1;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected1);
 }
@@ -123,13 +123,13 @@ static void test_evaluate_expression_precedence(void) {
 
     set_line(0, line_data_1, sizeof line_data_1);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, 0);
 
     set_line(0, line_data_2, sizeof line_data_2);
     evaluate_expression();
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, 2);
 }
