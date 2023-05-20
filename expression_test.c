@@ -1,24 +1,22 @@
 #include "test.h"
 
 static void test_stack_alloc_free(void) {
-    char err;
+    char p;
 
     PRINT_TEST_NAME();
 
     ASSERT_EQ(osp, OP_STACK_SIZE);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
 
-    err = stack_alloc(2);
-    ASSERT_EQ(err, 0);
+    p = stack_alloc(2);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
-    ASSERT_EQ(reg_a, psp);
-    ASSERT_EQ(reg_x, psp);
+    ASSERT_EQ(p, psp);
 
-    err = stack_alloc(64);
-    ASSERT_EQ(err, 0);
+    p = stack_alloc(64);
+    ASSERT_EQ(carry_flag, 0);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2 - 64);
-    ASSERT_EQ(reg_a, psp);
-    ASSERT_EQ(reg_x, psp);
+    ASSERT_EQ(p, psp);
 
     stack_free(64);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
@@ -29,8 +27,8 @@ static void test_stack_alloc_free(void) {
     // Test overflow; no matter what PRIMARY_STACK_SIZE is, allocating 96 three times should overflow
     stack_alloc(96);
     stack_alloc(96);
-    err = stack_alloc(96);
-    ASSERT_NE(err, 0);
+    stack_alloc(96);
+    ASSERT_NE(carry_flag, 0);
 
     // Re-initialize program since this test leaves it in a bad state.
     initialize_program();
