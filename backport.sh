@@ -10,4 +10,4 @@ PREVIOUS_BRANCH=e6
 LATEST_COMMIT=$(git rev-parse HEAD)
 echo Backporting $LATEST_COMMIT to $PREVIOUS_BRANCH
 
-/bin/bash -c "git checkout $PREVIOUS_BRANCH; git cherry-pick $LATEST_COMMIT; git push; $0"
+/bin/bash -c "git checkout $PREVIOUS_BRANCH && git cherry-pick $LATEST_COMMIT && git push && $0"
