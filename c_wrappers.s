@@ -133,7 +133,7 @@ _stack_free:
 _list_line:
 .export _list_line
         jsr     list_line
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _list_statement:
 .export _list_statement
