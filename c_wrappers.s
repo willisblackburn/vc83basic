@@ -35,6 +35,9 @@ _reg_x: .res 1
 _reg_y: .res 1
 .export _reg_ax, _reg_a, _reg_x, _reg_y
 
+_carry_flag: .res 1
+.export _carry_flag
+
 .code
 
 ; Returns 0 or 1 depending on the carry state,
@@ -45,6 +48,15 @@ return_carry_flag:
         lda     #0
         tax
         rol     A
+        rts
+
+; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
+set_carry_flag:
+        pha                             ; Save return value
+        lda     #0                      ; Roll carry left into A and save in carry_flag
+        rol     A
+        sta     _carry_flag
+        pla                             ; Restore return value
         rts
 
 ; Function wrappers
