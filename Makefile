@@ -14,4 +14,4 @@ ifneq ($(MAKECMDGOALS), clean)
 endif
 
 clean:
-	rm -f basic *.o *.d *.map
+	rm -f basic *.o *.d *.map x
