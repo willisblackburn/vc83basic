@@ -77,8 +77,8 @@ int decode_number(void);
 char decode_byte(void);
 
 // encode.s
-int encode_number(int number);
-int encode_byte(char byte_value);
+void encode_number(int number);
+void encode_byte(char value);
 
 // name.s
 char find_name(const char* name_ptr);
