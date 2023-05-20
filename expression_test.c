@@ -36,7 +36,7 @@ static void test_stack_alloc_free(void) {
 
 static void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
                         const Float* expected11) {
-    char err;
+
     char line_data[] = {
             TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0,   // 0-5
             0,                                      // 6  
@@ -56,8 +56,8 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
     memcpy(line_data + 1, &value_0, sizeof (Float));
     memcpy(line_data + 8, &value_0, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected00->e, expected00->t);
@@ -65,16 +65,16 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
     memcpy(line_data + 1, &value_0, sizeof (Float));
     memcpy(line_data + 8, &value_1, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected01->e, expected01->t);
 
     memcpy(line_data + 1, &value_1, sizeof (Float));
     memcpy(line_data + 8, &value_0, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected10->e, expected10->t);
@@ -82,15 +82,15 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
     memcpy(line_data + 1, &value_1, sizeof (Float));
     memcpy(line_data + 8, &value_1, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected11->e, expected11->t);
 }
 
 static void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
-    char err;
+
     char line_data[] = {
             0,                                          // 0        
             TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00,    // 1-7
@@ -106,16 +106,16 @@ static void test_one_unary_op(char op, const Float* expected0, const Float* expe
 
     memcpy(line_data + 2, &value_0, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected0->e, expected0->t);
 
     memcpy(line_data + 2, &value_1, sizeof (Float));
     set_line(0, line_data, sizeof line_data);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected1->e, expected1->t);
@@ -148,7 +148,7 @@ static void test_evaluate_expression(void) {
 }
 
 static void test_evaluate_expression_precedence(void) {
-    char err;
+
     const Float value_0 = { 0x00000000, 0 };
     const Float value_1 = { 0x00000000, 127 };
     Float value;
@@ -167,15 +167,15 @@ static void test_evaluate_expression_precedence(void) {
     PRINT_TEST_NAME();
 
     set_line(0, line_data_1, sizeof line_data_1);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, 0, 0x00000000);
 
     set_line(0, line_data_2, sizeof line_data_2);
-    err = evaluate_expression();
-    ASSERT_EQ(err, 0);
+    evaluate_expression();
+    ASSERT_EQ(carry_flag, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, 127, 0x00000000);

@@ -130,8 +130,8 @@ char decode_unary_operator(void);
 char decode_byte(void);
 
 // expression.h
-char evaluate_expression(void);
-char push_fp0(void);
+void evaluate_expression(void);
+void push_fp0(void);
 void pop_fp0(void);
 char stack_alloc(char size);
 void stack_free(char size);
