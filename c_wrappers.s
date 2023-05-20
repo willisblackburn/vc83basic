@@ -88,12 +88,12 @@ _decode_byte:
 _encode_number:
 .export _encode_number
         jsr     encode_number
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
-        jmp     return_carry_flag
+        jmp     set_carry_flag
 
 ; name.s
 
