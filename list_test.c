@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void call_add_variable(const char* name) {
+static void add_variable_with_name(const char* name) {
     char err;
     strcpy(buffer, name);
     name_bp = 0;
@@ -15,8 +15,8 @@ static void create_variables(void) {
 
     // Create varibles which will get variable name table positions starting at 0.
 
-    call_add_variable("X");
-    call_add_variable("Y");
+    add_variable_with_name("X");
+    add_variable_with_name("Y");
 }
 
 static void call_list_directive(char directive, const char* line_data, size_t line_data_length,
