@@ -83,7 +83,7 @@ int encode_number(int number);
 int encode_byte(char value);
 
 // list.s
-char list_line(void);
+void list_line(void);
 void list_statement(void);
 void list_directive(char directive);
 
