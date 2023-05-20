@@ -73,16 +73,6 @@ _carry_flag: .res 1
 
 .code
 
-; Returns 0 or 1 depending on the carry state,
-; and sets _ax to whatever the function returned in AX.
-return_carry_flag:
-        stax    _reg_ax
-        sty     _reg_y
-        lda     #0
-        tax
-        rol     A
-        rts
-
 ; Sets the carry_flag variable to 1 if carry is set, 0 otherwise.
 set_carry_flag:
         pha                             ; Save return value
@@ -91,13 +81,6 @@ set_carry_flag:
         sta     _carry_flag
         pla                             ; Restore return value
         rts
-
-; Returns 0 or 1 based on the zero flag state.
-return_zero_flag:
-        beq     @zero
-        jmp     return0
-@zero:
-        jmp     return1
 
 ; Function wrappers
 
