@@ -62,13 +62,13 @@ static void test_parse_keyword(void) {
 
     strcpy(buffer, "PRINT");
     parse_keyword("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     parse_keyword("LIS\xD4", 0);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     parse_keyword("PRINTE\xD2", 0);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
     parse_keyword("PRIN\xD4", 2);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 }
 
 int main(void) {
