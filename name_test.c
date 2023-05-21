@@ -121,7 +121,7 @@ static void test_add_variable(void) {
     // Call initialize_program to set up variable_name_table_ptr.
     initialize_program();
     ASSERT_EQ(variable_name_table_ptr[0], 0);
-    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 1);
+    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 1);
 
     // add_variable is used after find_name, which sets up name_ptr.
     strcpy(buffer, "X");
@@ -136,9 +136,9 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_count, 1);
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[1], 0);
-    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 2);
+    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 2);
     ASSERT_MEMORY_EQ(value_table_ptr, num_init_value, sizeof num_init_value);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE);
+    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE);
 
     strcpy(buffer, "Y,Z");
     name_bp = 0;
@@ -153,8 +153,8 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[2], 0);
-    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 3);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 2);
+    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 3);
+    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 2);
     name_bp = 2;
     bp = 3;
     find_name(variable_name_table_ptr);
@@ -168,8 +168,8 @@ static void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[2], 'Z' | NT_END);
     ASSERT_EQ(variable_name_table_ptr[3], 0);
-    ASSERT_EQ(value_table_ptr, variable_name_table_ptr + 4);
-    ASSERT_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 3);
+    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 4);
+    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + VALUE_SIZE * 3);
 }
 
 int main(void) {
