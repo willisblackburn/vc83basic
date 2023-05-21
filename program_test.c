@@ -269,7 +269,7 @@ static void test_shrink(void) {
     grow(&free_ptr, 3);
     line_ptr->next_line_offset = 3;
     line_ptr->number = 20;
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     // Make sure all the pointers are where they should be.
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 3);
@@ -284,7 +284,7 @@ static void test_shrink(void) {
     ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
 
     shrink(&free_ptr, 3);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ((char *)free_ptr, (char*)line_ptr + 3);
 }

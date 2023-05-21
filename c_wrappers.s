@@ -69,7 +69,7 @@ _parse_keyword:
         sta     bp              
         jsr     popax                   ; Keyword pointer
         jsr     parse_keyword
-        jmp     set_carry_flag
+        jmp     set_err
 
 ; program.s
 
@@ -124,7 +124,7 @@ _calculate_bytes_to_move:
 _check_himem:
 .export _check_himem
         jsr     check_himem
-        jmp     set_carry_flag
+        jmp     set_err
 
 ; util.s
 
