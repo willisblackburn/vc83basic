@@ -56,12 +56,12 @@
     is_operator_name_character('/', 0);
     ASSERT_EQ(err, 0);
     is_operator_name_character('^', 0);
-    ASSERT_EQ(carry_flag, 0);
+    ASSERT_EQ(err, 0);
 
     is_operator_name_character('+', 2);
     ASSERT_NE(err, 0);
     is_operator_name_character('-', 2);
-    ASSERT_NE(carry_flag, 0);
+    ASSERT_NE(err, 0);
 
     is_operator_name_character('A', 0);
     ASSERT_NE(err, 0);
