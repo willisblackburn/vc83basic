@@ -43,17 +43,17 @@ line_buffer: .res 256
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
-        stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
-        ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
-        lda     #$FF                        ; Line number = -1
-        sta     (line_ptr),y                ; Save line number high byte
+        stax    line_ptr                ; Set program_ptr and line_ptr to end of BSS
+        ldy     #Line::number+1         ; Offset of line number high byte (should be 2)
+        lda     #$FF                    ; Line number = -1
+        sta     (line_ptr),y            ; Save line number high byte
         dey
-        sta     (line_ptr),y                ; Line number low byte
+        sta     (line_ptr),y            ; Line number low byte
         dey     
-        lda     #Line::data                 ; This is the offset of the next line if this line has no data
-        sta     (line_ptr),y                ; Save as next line offset
-        jsr     advance_line_ptr_a          ; Add it to line_ptr; line_ptr is now invalid but that's okay
-        mvax    line_ptr, free_ptr          ; Invalid line_ptr is the start of free space
+        lda     #Line::data             ; This is the offset of the next line if this line has no data
+        sta     (line_ptr),y            ; Save as next line offset
+        jsr     advance_line_ptr_a      ; Add it to line_ptr; line_ptr is now invalid but that's okay
+        mvax    line_ptr, free_ptr      ; Invalid line_ptr is the start of free space
 
 ; Fall through
 
