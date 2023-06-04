@@ -50,27 +50,27 @@ line_number: .res 2
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
-        stax    line_ptr                    ; Set program_ptr and line_ptr to end of BSS
-        ldy     #Line::number+1             ; Offset of line number high byte (should be 2)
-        lda     #$FF                        ; Line number = -1
-        sta     (line_ptr),y                ; Save line number high byte
+        stax    line_ptr                ; Set program_ptr and line_ptr to end of BSS
+        ldy     #Line::number+1         ; Offset of line number high byte (should be 2)
+        lda     #$FF                    ; Line number = -1
+        sta     (line_ptr),y            ; Save line number high byte
         dey
-        sta     (line_ptr),y                ; Line number low byte
+        sta     (line_ptr),y            ; Line number low byte
         dey     
-        lda     #Line::data                 ; This is the offset of the next line if this line has no data
-        sta     (line_ptr),y                ; Save as next line offset
-        jsr     advance_line_ptr_a          ; Add it to line_ptr; line_ptr is now invalid but that's okay
+        lda     #Line::data             ; This is the offset of the next line if this line has no data
+        sta     (line_ptr),y            ; Save as next line offset
+        jsr     advance_line_ptr_a      ; Add it to line_ptr; line_ptr is now invalid but that's okay
         mvax    line_ptr, variable_name_table_ptr   ; Invalid line_ptr is the start of variable name table
-        clc                                 ; Add 1 to variable_name_table_ptr to get value_table_ptr
+        clc                             ; Add 1 to variable_name_table_ptr to get value_table_ptr
         adc     #1
         sta     value_table_ptr
         txa
         adc     #0
         sta     value_table_ptr+1
-        lda     #0                          ; Load zero into A
-        tay                                 ; Write index is also zero
+        lda     #0                      ; Load zero into A
+        tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        sta     variable_count              ; Initialize number of variables to 0
+        sta     variable_count          ; Initialize number of variables to 0
         
 ; Fall through to reset_program_state
 
