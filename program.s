@@ -58,22 +58,22 @@ line_number: .res 2
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
-        stax    next_line_ptr               ; Also set next_line_ptr
-        ldy     #0                          ; Populate END statement starting at offset 0
+        stax    next_line_ptr           ; Also set next_line_ptr
+        ldy     #0                      ; Populate END statement starting at offset 0
         jsr     build_end_statement
-        jsr     advance_next_line_ptr       ; Advance next_line_ptr to the next line
+        jsr     advance_next_line_ptr   ; Advance next_line_ptr to the next line
         mvax    next_line_ptr, variable_name_table_ptr  ; New value is the start of variable name table
-        clc                                 ; Add 1 to variable_name_table_ptr to get value_table_ptr
+        clc                             ; Add 1 to variable_name_table_ptr to get value_table_ptr
         adc     #1
         sta     value_table_ptr
         txa
         adc     #0
         sta     value_table_ptr+1
-        lda     #0                          ; Load zero into A
-        tay                                 ; Write index is also zero
+        lda     #0                      ; Load zero into A
+        tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        sta     variable_count              ; Initialize number of variables to 0
-        sta     program_state               ; Set program state to stopped
+        sta     variable_count          ; Initialize number of variables to 0
+        sta     program_state           ; Set program state to stopped
         
 ; Fall through to reset_program_state
 
@@ -122,20 +122,20 @@ reset_next_line_ptr_ax:
 .assert Line::data = 3, error
 
 build_end_statement:
-        ldy     #0                          ; Start at offset 0 to next_line_ptr
-        lda     #Line::data+2               ; Next line offset is data offset +1 for next statement offset +1 for END
-        sta     (next_line_ptr),y           ; Save as next line offset
+        ldy     #0                      ; Start at offset 0 to next_line_ptr
+        lda     #Line::data+2           ; Next line offset is data offset +1 for next statement offset +1 for END
+        sta     (next_line_ptr),y       ; Save as next line offset
         iny
-        lda     #$FF                        ; Line number = -1
-        sta     (next_line_ptr),y           ; Save line number low byte
+        lda     #$FF                    ; Line number = -1
+        sta     (next_line_ptr),y       ; Save line number low byte
         iny
-        sta     (next_line_ptr),y           ; Line number high byte
+        sta     (next_line_ptr),y       ; Line number high byte
         iny
-        lda     #Line::data+2               ; Next line offset is also next statement offset
-        sta     (next_line_ptr),y           ; Line number high byte
+        lda     #Line::data+2           ; Next line offset is also next statement offset
+        sta     (next_line_ptr),y       ; Line number high byte
         iny
-        lda     #ST_END                     ; END
-        sta     (next_line_ptr),y           ; Save as next line offset
+        lda     #ST_END                 ; END
+        sta     (next_line_ptr),y       ; Save as next line offset
         rts
 
 ; Searches for a line in the program.
