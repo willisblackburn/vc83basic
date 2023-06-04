@@ -46,7 +46,7 @@ exec_gosub_ax:
 ; ON...GOSUB statement:
 
 exec_on_gosub:
-        ldax    #exec_gosub_ax           ; Handler address
+        ldax    #exec_gosub_ax          ; Handler address
 
 ; Fall through
 
