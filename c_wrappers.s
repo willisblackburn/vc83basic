@@ -368,9 +368,9 @@ _reset_next_line_ptr:
 .export _reset_next_line_ptr
         jmp     reset_next_line_ptr
 
-_find_line_ax:
-.export _find_line_ax
-        jsr     find_line_ax
+_find_line:
+.export _find_line
+        jsr     find_line
         jmp     set_err
 
 _advance_next_line_ptr:
@@ -419,25 +419,25 @@ _mul_value_size:
 
 ; util.s
 
-_copy_down_ax:
-.export _copy_down_ax
+_copy_down:
+.export _copy_down
         stax    DE                      ; Size
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_down_ax
+        jmp     copy_down
 
-_copy_up_ax:
-.export _copy_up_ax
+_copy_up:
+.export _copy_up
         stax    DE
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_up_ax
+        jmp     copy_up
 
 _invoke_indexed_vector:
 .export _invoke_indexed_vector
