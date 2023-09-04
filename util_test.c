@@ -60,7 +60,8 @@ static void verify_test_data(const char* p, size_t size) {
     ASSERT_EQ(p[size - 1], (char)(size - 1));
 }
 
-static void test_copy_case(size_t size, size_t offset) {
+static void test_copy_case(size_t size, size_t offset, int line) {
+    fprintf(stderr, "  %s:%d: test_copy_case(size=%u, offset=%u)\n", __FILE__, line, size, offset);
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data + offset and try to copy it to the lower position.
     fill_test_data(offset, size);
@@ -73,18 +74,19 @@ static void test_copy_case(size_t size, size_t offset) {
 static void test_copy(void) {
     PRINT_TEST_NAME();
 
-    test_copy_case(10, 1);
-    test_copy_case(10, 100);
-    test_copy_case(10, 256);
-    test_copy_case(256, 1);
-    test_copy_case(256, 100);
-    test_copy_case(256, 256);
-    test_copy_case(4000, 1);
-    test_copy_case(4000, 100);
-    test_copy_case(4000, 256);
+    test_copy_case(10, 1, __LINE__);
+    test_copy_case(10, 100, __LINE__);
+    test_copy_case(10, 256, __LINE__);
+    test_copy_case(256, 1, __LINE__);
+    test_copy_case(256, 100, __LINE__);
+    test_copy_case(256, 256, __LINE__);
+    test_copy_case(4000, 1, __LINE__);
+    test_copy_case(4000, 100, __LINE__);
+    test_copy_case(4000, 256, __LINE__);
 }
 
-static void test_reverse_copy_case(size_t size, size_t offset) {
+static void test_reverse_copy_case(size_t size, size_t offset, int line) {
+    fprintf(stderr, "  %s:%d: test_reverse_copy_case(size=%u, offset=%u)\n", __FILE__, line, size, offset);
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
@@ -97,15 +99,15 @@ static void test_reverse_copy_case(size_t size, size_t offset) {
 static void test_reverse_copy(void) {
     PRINT_TEST_NAME();
 
-    test_reverse_copy_case(10, 1);
-    test_reverse_copy_case(10, 100);
-    test_reverse_copy_case(10, 256);
-    test_reverse_copy_case(256, 1);
-    test_reverse_copy_case(256, 100);
-    test_reverse_copy_case(256, 256);
-    test_reverse_copy_case(4000, 1);
-    test_reverse_copy_case(4000, 100);
-    test_reverse_copy_case(4000, 256);
+    test_reverse_copy_case(10, 1, __LINE__);
+    test_reverse_copy_case(10, 100, __LINE__);
+    test_reverse_copy_case(10, 256, __LINE__);
+    test_reverse_copy_case(256, 1, __LINE__);
+    test_reverse_copy_case(256, 100, __LINE__);
+    test_reverse_copy_case(256, 256, __LINE__);
+    test_reverse_copy_case(4000, 1, __LINE__);
+    test_reverse_copy_case(4000, 100, __LINE__);
+    test_reverse_copy_case(4000, 256, __LINE__);
 }
 
 static void test_mul2(void) {
