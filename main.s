@@ -29,7 +29,7 @@ main:
 
 ; Program is running; set line_ptr and lp to next statement and execute it.
 ; If the next statement is the end of the line, then go to the next statement. This is the *only* place where we
-; move to the next line; during normal execution we can assume that next_line_ptr == line_ptr unless it has been
+; move to the next line; during normal execution we can assume that next_line_ptr = line_ptr unless it has been
 ; modified by a control statement.
 
 @next_line:
