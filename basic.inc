@@ -154,8 +154,8 @@
 .global unary_operator_name_table
 
 ; util.s
-.global copy_down, copy_down_a, copy_down_size
-.global copy_up, copy_up_size
+.global copy, copy_a, copy_size
+.global reverse_copy, reverse_copy_size
 .global clear_memory
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
