@@ -28,7 +28,7 @@ static void test_copy_down_case(size_t size, size_t offset) {
     // Set up test data in test_data + offset and try to copy it to the lower position.
     fill_test_data(offset, size);
     HEXDUMP(test_data + offset, 16);
-    copy_down_ax(test_data, test_data + offset, size);
+    copy_down(test_data, test_data + offset, size);
     HEXDUMP(test_data, 16);
     verify_test_data(test_data, size);
 }
@@ -52,7 +52,7 @@ static void test_copy_up_case(size_t size, size_t offset) {
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
     HEXDUMP(test_data, 16);
-    copy_up_ax(test_data + offset, test_data, size);
+    copy_up(test_data + offset, test_data, size);
     HEXDUMP(test_data + offset, 16);
     verify_test_data(test_data + offset, size);
 }

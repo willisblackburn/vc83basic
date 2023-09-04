@@ -171,9 +171,9 @@
 ; program.s
 .global initialize_program
 .global reset_program_state
-.global reset_next_line_ptr, reset_next_line_ptr_ax
+.global reset_next_line_ptr, reset_next_line_ptr_to
 .global build_end_statement
-.global find_line, find_line_ax
+.global find_line, find_line_continue
 .global advance_next_line_ptr, advance_next_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
@@ -198,8 +198,8 @@
 .global unary_operator_name_table
 
 ; util.s
-.global copy_down, copy_down_ax, copy_down_a
-.global copy_up, copy_up_ax
+.global copy_down, copy_down_a, copy_down_size
+.global copy_up, copy_up_size
 .global invoke_indexed_vector
 .global advance_lp_sizeof_float, advance_lp
 
