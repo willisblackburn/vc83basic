@@ -167,7 +167,7 @@
 .global reset_program_state
 .global reset_next_line_ptr
 .global build_end_statement
-.global find_line, find_line_ax
+.global find_line, find_line_continue
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
@@ -191,8 +191,8 @@
 .global unary_operator_name_table
 
 ; util.s
-.global copy_down, copy_down_ax, copy_down_a
-.global copy_up, copy_up_ax
+.global copy_down, copy_down_a, copy_down_size
+.global copy_up, copy_up_size
 .global clear_memory
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
