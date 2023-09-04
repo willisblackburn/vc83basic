@@ -75,9 +75,9 @@ reset_line_ptr:
 ; to the next-higher line.
 ; BC SAFE, DE SAFE
 
-find_line_ax:
-        stax    line_number
 find_line:
+        stax    line_number
+find_line_continue:
         jsr     reset_line_ptr          ; Set line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
@@ -121,7 +121,7 @@ advance_line_ptr_a:
 
 insert_or_update_line:
         ldax    line_buffer+Line::number    ; Load line number into AX
-        jsr     find_line_ax            ; Go find it
+        jsr     find_line               ; Go find it
         bcs     @insert                 ; Not found, just insert the new line
 
 ; line_ptr points to a line that we have to remove.
@@ -196,7 +196,7 @@ grow:
         iny
         cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_up                 ; Copy data up to the higher address
+        jsr     copy_up_size            ; Copy data up to the higher address
         clc                             ; Success
 @done:
         rts
@@ -238,7 +238,7 @@ shrink:
         iny
         cpy     #himem_ptr              ; Have we reached himem_ptr?
         bne     @next_ptr               ; Nope, keep going
-        jsr     copy_down
+        jsr     copy_down_size
         clc
         rts
 

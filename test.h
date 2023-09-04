@@ -59,7 +59,7 @@ void parse_keyword(const char* keyword, char bp);
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
-void find_line_ax(int line_number);
+void find_line(int line_number);
 void advance_line_ptr(void);
 void insert_or_update_line(void);
 void grow(void* ptr, size_t size);
@@ -68,8 +68,8 @@ void calculate_bytes_to_move(void);
 void check_himem(size_t size);
 
 // util.s
-void copy_down_ax(char* to, const char* from, size_t size);
-void copy_up_ax(char* to, const char* from, size_t size);
+void copy_down(char* to, const char* from, size_t size);
+void copy_up(char* to, const char* from, size_t size);
 int mul10(int value);
 int div10(int value);
 

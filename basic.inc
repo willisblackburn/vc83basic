@@ -37,7 +37,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line, find_line_ax
+.global find_line, find_line_continue
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global set_variable_value_ptr
@@ -56,8 +56,8 @@
 .global statement_name_table
 
 ; util.s
-.global copy_down, copy_down_ax, copy_down_a
-.global copy_up, copy_up_ax
+.global copy_down, copy_down_a, copy_down_size
+.global copy_up, copy_up_size
 .global mul10, div10
 
 ; init.s
