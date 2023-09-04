@@ -128,25 +128,25 @@ _check_himem:
 
 ; util.s
 
-_copy_down:
-.export _copy_down
+_copy:
+.export _copy
         stax    DE                      ; Size
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_down
+        jmp     copy
 
-_copy_up:
-.export _copy_up
+_reverse_copy:
+.export _reverse_copy
         stax    DE
         jsr     popax
         stax    src_ptr
         jsr     popax
         stax    dst_ptr
         ldax    DE
-        jmp     copy_up
+        jmp     reverse_copy
 
 _mul10:
 .export _mul10
