@@ -185,7 +185,7 @@ void is_operator_name_character(char c, char index);
 void initialize_target(void);
 void initialize_program(void);
 void reset_next_line_ptr(void);
-void find_line_ax(int line_number);
+void find_line(int line_number);
 void advance_next_line_ptr(void);
 void insert_or_update_line(void);
 void grow(void* ptr, size_t size);
@@ -196,8 +196,8 @@ void set_variable_value_ptr(char variable);
 int mul_value_size(int value);
 
 // util.s
-void copy_down_ax(char* to, const char* from, size_t size);
-void copy_up_ax(char* to, const char* from, size_t size);
+void copy_down(char* to, const char* from, size_t size);
+void copy_up(char* to, const char* from, size_t size);
 int invoke_indexed_vector(void* vectors, char index);
 
 // Common functions and definitions used in tests

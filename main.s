@@ -71,7 +71,7 @@ main:
         jsr     build_end_statement     ; Populate END statement after the immediate mode statement
         mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
         ldax    #line_buffer            ; Reset next_line_ptr to line_buffer
-        jsr     reset_next_line_ptr_ax
+        jsr     reset_next_line_ptr_to
         bne     @dispatch               ; Unconditional
 
 ; Decodes and executes one statement from the token stream.

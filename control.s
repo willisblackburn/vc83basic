@@ -18,27 +18,27 @@ on_handler: .res 2
 
 exec_goto:
         jsr     decode_int              ; Go get the line number
-exec_goto_ax:
-        jsr     find_line_ax            ; Find the program line
+exec_goto_line_number:
+        jsr     find_line               ; Find the program line
         rts                             ; Either next_line_ptr is set or carry (error) is set
 
 ; ON...GOTO statement:
 
 exec_on_goto:
-        ldax    #exec_goto_ax           ; Handler address
+        ldax    #exec_goto_line_number  ; Handler address
         jmp     exec_on
 
 ; GOSUB statement:
 
 exec_gosub:
         jsr     decode_int              ; GOSUB line number
-exec_gosub_ax:
+exec_gosub_line_number:
         stax    line_number             ; Store the line number before calling find_line
         jsr     push_next_line_ptr      ; Save return address
         bcs     @done                   ; Stack overflow
         lda     #TOKEN_VAR              ; Set variable field to an invalid variable
         sta     primary_stack+Control::variable,x
-        jsr     find_line               ; Find the line (already in line_number)
+        jsr     find_line_continue      ; Find the line (already in line_number)
         bcs     @done
 @done:
         rts
@@ -46,7 +46,7 @@ exec_gosub_ax:
 ; ON...GOSUB statement:
 
 exec_on_gosub:
-        ldax    #exec_gosub_ax          ; Handler address
+        ldax    #exec_gosub_line_number ; Handler address
 
 ; Fall through
 
