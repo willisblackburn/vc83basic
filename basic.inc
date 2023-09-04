@@ -92,7 +92,7 @@
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line, find_line_ax
+.global find_line, find_line_continue
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
@@ -111,8 +111,8 @@
 .global statement_name_table
 
 ; util.s
-.global copy_down, copy_down_ax, copy_down_a
-.global copy_up, copy_up_ax
+.global copy_down, copy_down_a, copy_down_size
+.global copy_up, copy_up_size
 .global clear_memory
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
