@@ -29,15 +29,16 @@ size: .res 2
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
 ; size = number of bytes to copy
-; Alternate entry points for when there are fewer than 255 bytes to copy:
-; copy_down_a uses the existing dst_ptr and accepts the size in A.
+; Alternate entry points:
+; copy_down_a accepts a size < 256 bytes in A.
+; copy_down_size uses the size already stored in size.
 ; BC SAFE, DE SAFE
 
 copy_down_a:
         ldx     #0
-copy_down_ax:
-        stax    size                    ; Length into size
 copy_down:
+        stax    size                    ; Length into size
+copy_down_size:
         ldy     #0                      ; Y = 0 meaning 256 bytes per block
         ldx     size+1                  ; Number of 256-byte blocks
         beq     @remaining              ; If no blocks, just do remaining bytes
@@ -72,11 +73,13 @@ copy_down:
 ; src_ptr = source
 ; dst_ptr = destination (must be <=src_ptr)
 ; size = number of bytes to copy
+; Alternate entry points:
+; copy_up_size uses the size already stored in size.
 ; BC SAFE, DE SAFE
 
-copy_up_ax:
-        stax    size                    ; Length into size
 copy_up:
+        stax    size                    ; Length into size
+copy_up_size:
         ldx     size+1                  ; Number of 256-byte blocks we will move
         txa                             ; Move src_ptr and dst_ptr up the remainder block
         clc
