@@ -196,8 +196,8 @@ void set_variable_value_ptr(char variable);
 int mul_value_size(int value);
 
 // util.s
-void copy_down(char* to, const char* from, size_t size);
-void copy_up(char* to, const char* from, size_t size);
+void copy(char* to, const char* from, size_t size);
+void reverse_copy(char* to, const char* from, size_t size);
 int invoke_indexed_vector(void* vectors, char index);
 
 // Common functions and definitions used in tests
