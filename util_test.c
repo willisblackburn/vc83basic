@@ -23,41 +23,41 @@ static void verify_test_data(const char* p, size_t size) {
     ASSERT_EQ(p[size - 1], (char)(size - 1));
 }
 
-static void test_copy_down_case(size_t size, size_t offset) {
+static void test_copy_case(size_t size, size_t offset) {
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data + offset and try to copy it to the lower position.
     fill_test_data(offset, size);
     HEXDUMP(test_data + offset, 16);
-    copy_down(test_data, test_data + offset, size);
+    copy(test_data, test_data + offset, size);
     HEXDUMP(test_data, 16);
     verify_test_data(test_data, size);
 }
 
-static void test_copy_down(void) {
+static void test_copy(void) {
     PRINT_TEST_NAME();
 
-    test_copy_down_case(10, 1);
-    test_copy_down_case(10, 100);
-    test_copy_down_case(10, 256);
-    test_copy_down_case(256, 1);
-    test_copy_down_case(256, 100);
-    test_copy_down_case(256, 256);
-    test_copy_down_case(4000, 1);
-    test_copy_down_case(4000, 100);
-    test_copy_down_case(4000, 256);
+    test_copy_case(10, 1);
+    test_copy_case(10, 100);
+    test_copy_case(10, 256);
+    test_copy_case(256, 1);
+    test_copy_case(256, 100);
+    test_copy_case(256, 256);
+    test_copy_case(4000, 1);
+    test_copy_case(4000, 100);
+    test_copy_case(4000, 256);
 }
 
-static void test_copy_up_case(size_t size, size_t offset) {
+static void test_reverse_copy_case(size_t size, size_t offset) {
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
     HEXDUMP(test_data, 16);
-    copy_up(test_data + offset, test_data, size);
+    reverse_copy(test_data + offset, test_data, size);
     HEXDUMP(test_data + offset, 16);
     verify_test_data(test_data + offset, size);
 }
 
-static void test_copy_up(void) {
+static void test_reverse_copy(void) {
     PRINT_TEST_NAME();
 
     test_copy_up_case(10, 1);
@@ -110,8 +110,8 @@ static void test_div10(void) {
 
 int main(void) {
     initialize_target();
-    test_copy_down();
-    test_copy_up();
+    test_copy();
+    test_reverse_copy();
     test_mul10();
     test_div10();
     return 0;

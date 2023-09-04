@@ -56,8 +56,8 @@
 .global statement_name_table
 
 ; util.s
-.global copy_down, copy_down_a, copy_down_size
-.global copy_up, copy_up_size
+.global copy, copy_a, copy_size
+.global reverse_copy, reverse_copy_size
 .global mul10, div10
 
 ; target/*

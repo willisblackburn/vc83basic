@@ -68,8 +68,8 @@ void calculate_bytes_to_move(void);
 void check_himem(size_t size);
 
 // util.s
-void copy_down(char* to, const char* from, size_t size);
-void copy_up(char* to, const char* from, size_t size);
+void copy(char* to, const char* from, size_t size);
+void reverse_copy(char* to, const char* from, size_t size);
 int mul10(int value);
 int div10(int value);
 
