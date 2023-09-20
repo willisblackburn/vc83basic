@@ -40,7 +40,7 @@ decode_expression:
         tay                             ; Transfer into Y for dispatch
 @dispatch:
         ldax    decode_expression_vector_table_ptr  ; Remember what vector table we're using
-        jsr     invoke_indexed_vector   ; Invoke the vector using the existng vector_table_ptr; value is in X
+        jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
 @start:
         ldy     lp                      ; Peek at next byte in token stream
         lda     (line_ptr),y
