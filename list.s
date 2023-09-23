@@ -93,6 +93,9 @@ list_statement:
 
 list_name:
         jsr     get_name_table_entry
+        jsr     append_from_name_table_entry
+        clc                             ; Signal success
+        rts
 
 ; Outputs characters from the name table entry starting at np, until reaching the last character or a
 ; directive.
@@ -205,12 +208,15 @@ list_repeated_variable:
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
         inc     lp                      ; Skip over TOKEN_NO_VALUE
+        clc                             ; Signal success
         rts
 
 list_number:
         jsr     add_whitespace
         jsr     decode_number           ; Decode the number
-        jmp     fp_to_string            ; Format into buffer
+        jsr     fp_to_string            ; Format into buffer
+        clc                             ; Signal success
+        rts
 
 loop_list_repeated_number:
         lda     #','                    ; Write ',' to output
@@ -221,6 +227,7 @@ list_repeated_number:
         lda     (line_ptr),y
         bne     loop_list_repeated_number   ; Not TOKEN_NO_VALUE so keep going
         inc     lp                      ; Skip over TOKEN_NO_VALUE
+        clc                             ; Signal success
         rts
 
 list_operator:
@@ -243,7 +250,9 @@ list_paren:
         ldax    #list_vectors
         jsr     decode_expression
         lda     #')'
-        jmp     append_buffer
+        jsr     append_buffer
+        clc                             ; Signal success
+        rts
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')'.

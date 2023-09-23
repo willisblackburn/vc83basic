@@ -41,6 +41,7 @@ decode_expression:
 @dispatch:
         ldax    decode_expression_vector_table_ptr  ; Remember what vector table we're using
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
+        bcs     @done                   ; The handler failed
 @start:
         ldy     lp                      ; Peek at next byte in token stream
         lda     (line_ptr),y
@@ -60,6 +61,7 @@ decode_expression:
         inc     lp                      ; Each handler is unique from this point so advance past the byte
         txa                             ; It's in the range 0-7; see if it's zero (TOKEN_NO_VALUE)
         bne     @loop                   ; If not zero then keep doing stuff; carry is clear here due to shifts
+@done:
         rts
 
 ; Decodes a number and returns it in FP0.
