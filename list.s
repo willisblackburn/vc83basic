@@ -82,7 +82,7 @@ list_statement:
         tya                             ; Otherwise there is a directive in Y
         jsr     list_directive
         inc     np                      ; Next byte
-        jmp     @next_name
+        bne     @next_name              ; np is always >0 so unconditional
 
 @done:
         rts
@@ -110,7 +110,6 @@ append_from_name_table_entry:
         jsr     is_name_character       ; Is it a name character?
         bcs     @next_character         ; It's not; don't add whitespace
         jsr     add_whitespace
-
 @next_character:
         jsr     read_name_table_byte    ; Get the next byte
         bcs     @done                   ; If last byte then return
@@ -120,7 +119,7 @@ append_from_name_table_entry:
         tya                             ; Get character back from Y
         jsr     append_buffer
         inc     np                      ; Next character
-        jmp     @next_character
+        bne     @next_character         ; np is always >0 so unconditional
 
 @done:
         rts
@@ -146,7 +145,7 @@ list_directive:
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        and     #$0F                    ; Mask out top 4 bits
+        tya
         jsr     list_argument_list
         jmp     @pop
 
