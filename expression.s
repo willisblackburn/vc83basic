@@ -15,8 +15,11 @@ min_precedence: .res 1
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
+        bcs     @done                   ; Expression evaluation failed
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
-        jmp     process_operators
+        jsr     process_operators       ; May fail with carry set
+@done:
+        rts
 
 evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
@@ -62,8 +65,8 @@ evaluate_unary_operator:
 evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
-        jsr     evaluate_expression     ; Evaluate the subexpression
-        dec     osp                     ; Pop the open paren
+        jsr     evaluate_expression     ; Evaluate the subexpression; may fail
+        dec     osp                     ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
@@ -88,6 +91,7 @@ process_operators:
 @next:
         ldx     osp                     ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
+        clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
@@ -97,10 +101,8 @@ process_operators:
         tay                             ; Index in jump table
         ldax    #operator_vectors
         jsr     invoke_indexed_vector   ; Invoke the vector
-        jmp     @next
-
+        bcc     @next                   ; If operator success then continue, else fail
 @done:
-        clc                             ; Signal success
         rts
 
 operator_vectors:
@@ -239,6 +241,7 @@ push_value:
         sta     primary_stack,x
         lda     C                       ; Store high byte
         sta     primary_stack+1,x
+        clc                             ; Signal success
 @done:
         rts
 
