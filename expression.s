@@ -200,7 +200,7 @@ call_binary_operator:
         jsr     pop_fp0                 ; Next value into FP0
         rts                             ; This does JMP to the operator handler
 
-; Invokes a binary operator and push the result back.
+; Invokes a binary operator and pushes the result back.
 
 call_binary_operator_push:
         jsr     call_binary_operator
@@ -349,4 +349,4 @@ set_up_logical_op:
         stax    DE                      ; Store returned value in DE
         jsr     pop_fp0
         jsr     truncate_fp_to_int
-        rts                             ; Return with value in BC
+        rts                             ; Return with value in DE
