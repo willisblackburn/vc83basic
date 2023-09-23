@@ -76,6 +76,9 @@ list_statement:
 
 list_name:
         jsr     get_name_table_entry
+        jsr     append_from_name_table_entry
+        clc                             ; Signal success
+        rts
 
 ; Outputs characters from the name table entry starting at np, until reaching the last character or a
 ; directive.
@@ -182,6 +185,7 @@ list_repeated_variable:
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
         inc     lp                      ; Skip over TOKEN_NO_VALUE
+        clc                             ; Signal success
         rts
 
 ; Adds whitespace to the output if necessary.
