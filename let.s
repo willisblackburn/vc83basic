@@ -8,8 +8,10 @@ exec_let:
         pha                             ; Remember it while we figure out the value to assign to it
         jsr     evaluate_expression     ; Leaves the result on the stack
         pla                             ; Get the variable back
+        bcs     @done                   ; If evaluate_expression failed then fail
         jsr     set_variable_value_ptr  ; Calculate address of variable
         jsr     pop_value               ; Get the evaluated value
         jsr     set_variable_value      ; And save it
         clc                             ; Signal success
+@done:
         rts
