@@ -15,8 +15,11 @@ min_precedence: .res 1
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
+        bcs     @done                   ; Expression evaluation failed
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
-        jmp     process_operators
+        jsr     process_operators       ; May fail with carry set
+@done:
+        rts
 
 evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
@@ -56,8 +59,8 @@ evaluate_unary_operator:
 evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
-        jsr     evaluate_expression     ; Evaluate the subexpression
-        inc     osp                     ; Pop the open paren
+        jsr     evaluate_expression     ; Evaluate the subexpression; may fail
+        inc     osp                     ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
@@ -82,6 +85,7 @@ process_operators:
 @next:
         ldx     osp                     ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
+        clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
@@ -91,10 +95,8 @@ process_operators:
         tay                             ; Index in jump table
         ldax    #operator_vectors
         jsr     invoke_indexed_vector   ; Invoke the vector
-        jmp     @next
-
+        bcc     @next                   ; If operator success then continue, else fail
 @done:
-        clc                             ; Signal success
         rts
 
 operator_vectors:
@@ -237,10 +239,12 @@ push_fpx:
         bcs     @done                   ; Fail if overflow
         ldy     #>primary_stack         ; Segment of stack
         jsr     store_fpx               ; Store FPx in the AY address
+        clc                             ; Signal success
 @done:
         rts
 
-; Pops a value from the stack into an FP register.
+; Pops a value from the stack into an FP register. Never fails, since we can trust the parser to only tokenize
+; well-formed expressions.
 ; FP0/1 = the value to push
 
 pop_fp0:
@@ -290,7 +294,6 @@ pop_variable:
         iny
         cpy     #.sizeof(Float)
         bne     @next                   ; More bytes to copy
-        clc                             ; Signal success
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
