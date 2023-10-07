@@ -22,27 +22,10 @@
 BIAS = 127
 MAXDIGITS = 10
 
-.zeropage
-
 ; We make a lot of assumptions about the size of Float in this module.
 .assert .sizeof(Float) = 5, error
 .assert .sizeof(Float::t) = 4, error
 .assert .sizeof(Float::e) = 1, error
-
-FP0: .res .sizeof(UnpackedFloat)
-FP0t = FP0+UnpackedFloat::t
-FP0e = FP0+UnpackedFloat::e
-FP0s = FP0+UnpackedFloat::s
-FP1: .res .sizeof(UnpackedFloat)
-FP1t = FP1+UnpackedFloat::t
-FP1e = FP1+UnpackedFloat::e
-FP1s = FP1+UnpackedFloat::s
-FP2: .res .sizeof(UnpackedFloat::t)
-FP3: .res .sizeof(UnpackedFloat::t)
-
-fp_temp: .res .sizeof(Float)
-
-.code
 
 ; Floating-point constants
 

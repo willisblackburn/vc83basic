@@ -1,17 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Pointer to current name table entry
-name_ptr: .res 2
-; Read position in the name table entry
-np: .res 1
-; Index of matched name
-matched_name_index: .res 1
-
-.code
-
 ; Matches the input against names from a table.
 ; Each name table entry consists of a name, which is a sequence of character bytes in the range $20-$5F,
 ; followed by any number of extra data bytes. The last byte of the name table entry must have bit 7 set.
