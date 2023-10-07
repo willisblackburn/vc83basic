@@ -97,8 +97,10 @@ decode_expression_vector_table_ptr: .res 2
 
 ; Op stack position; points to last-used position and initialized to OP_STACK_SIZE
 osp: .res 1
+
 ; Primary stack position; same behavior as osp but initialized to PRIMARY_STACK_SIZE
 psp: .res 1
+
 ; Minimum operator precedence used in process_operators
 min_precedence: .res 1
 
