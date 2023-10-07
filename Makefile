@@ -2,7 +2,7 @@ TARGETS = sim6502 apple2
 
 TEST_TARGET = sim6502
 
-COMMON_SOURCES = main.s parser.s program.s util.s
+COMMON_SOURCES = data.s main.s parser.s program.s util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
 TESTS = parser_test program_test util_test
