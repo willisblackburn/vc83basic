@@ -10,26 +10,31 @@
 
 ; Zero Page
 
-.globalzp BC, B, C, DE, D, E
+.globalzp B
+.globalzp BC
+.globalzp C
+.globalzp D
+.globalzp DE
+.globalzp E
 .globalzp bp
+.globalzp dst_ptr
+.globalzp free_ptr
+.globalzp himem_ptr
+.globalzp line_number
+.globalzp line_ptr
+.globalzp lp
+.globalzp matched_name_index
 .globalzp name_bp
 .globalzp name_ptr
 .globalzp np
-.globalzp matched_name_index
-.globalzp src_ptr, dst_ptr
-.globalzp size
-.globalzp vector_table_ptr
 .globalzp program_ptr
-.globalzp line_ptr
-.globalzp variable_name_table_ptr
+.globalzp size
+.globalzp src_ptr
 .globalzp value_table_ptr
-.globalzp free_ptr
-.globalzp himem_ptr
 .globalzp variable_count
+.globalzp variable_name_table_ptr
 .globalzp variable_value_ptr
-.globalzp lp
-.globalzp line_number
-
+.globalzp vector_table_ptr
 ; Data
 
 .global buffer
