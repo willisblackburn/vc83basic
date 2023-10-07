@@ -29,45 +29,59 @@
 
 ; Zero Page
 
-.globalzp BC, B, C, DE, D, E
-.globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2, FP3
-.globalzp fp_temp
+.globalzp B
+.globalzp BC
+.globalzp C
+.globalzp D
+.globalzp DE
+.globalzp E
+.globalzp FP0
+.globalzp FP0e
+.globalzp FP0s
+.globalzp FP0t
+.globalzp FP1
+.globalzp FP1e
+.globalzp FP1s
+.globalzp FP1t
+.globalzp FP2
+.globalzp FP3
+.globalzp argument_count
 .globalzp bp
-.globalzp name_bp
-.globalzp name_ptr
-.globalzp np
-.globalzp matched_name_index
-.globalzp src_ptr, dst_ptr
-.globalzp size
-.globalzp vector_table_ptr
-.globalzp program_ptr
-.globalzp line_ptr
-.globalzp next_line_ptr
-.globalzp variable_name_table_ptr
-.globalzp value_table_ptr
+.globalzp decode_expression_vector_table_ptr
+.globalzp dst_ptr
+.globalzp fp_temp
 .globalzp free_ptr
 .globalzp himem_ptr
-.globalzp variable_count
-.globalzp variable_value_ptr
-.globalzp lp
-.globalzp program_state
 .globalzp line_number
-.globalzp argument_count
+.globalzp line_ptr
+.globalzp lp
+.globalzp matched_name_index
+.globalzp min_precedence
+.globalzp name_bp
+.globalzp name_ptr
+.globalzp next_line_ptr
+.globalzp np
+.globalzp on_handler
+.globalzp on_value
 .globalzp osp
+.globalzp program_ptr
+.globalzp program_state
 .globalzp psp
 .globalzp resume_line_ptr
-.globalzp min_precedence
-.globalzp decode_expression_vector_table_ptr
-.globalzp on_value
-.globalzp on_handler
-.globalzp resume_line_handler
+.globalzp size
+.globalzp src_ptr
+.globalzp value_table_ptr
+.globalzp variable_count
+.globalzp variable_name_table_ptr
+.globalzp variable_value_ptr
+.globalzp vector_table_ptr
 
 ; Data
 
 .global buffer
 .global line_buffer
-.global primary_stack
 .global op_stack
+.global primary_stack
 
 ; Functions
 
