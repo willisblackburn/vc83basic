@@ -1,30 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Additional general-purpose "registers." Register rules apply; don't expect them to be preserved unless a
-; function declares B SAFE etc. Can be used as the 16-bit pairs BC and DE. Don't alias these.
-
-BC:
-B: .res 1
-C: .res 1
-DE:
-D: .res 1
-E: .res 1
-
-; Source and destination pointers for memory opreations
-src_ptr: .res 2
-dst_ptr: .res 2
-
-; Size for memory operations
-size: .res 2
-
-; Pointer to the table of vectors used by invoke_indexed_vector
-vector_table_ptr: .res 2
-
-.code
-
 ; Copies bytes from a source address to a destination address.
 ; The source and destination byte ranges must not overlap unless the destination address is lower than the
 ; source address.

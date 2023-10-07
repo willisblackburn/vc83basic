@@ -31,6 +31,7 @@
 .globalzp program_state
 .globalzp line_number
 .globalzp argument_count
+.globalzp decode_expression_vector_table_ptr
 
 ; Data
 
