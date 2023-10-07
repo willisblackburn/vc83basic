@@ -1,13 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Read/write position in buffer
-bp: .res 1
-
-.code
-
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
 ; bp = the read position in buffer

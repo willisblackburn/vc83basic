@@ -5,33 +5,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; A pointer to the start of the program
-program_ptr: .res 2
-
-; A pointer to the current program line
-line_ptr: .res 2
-
-; The start of the free space beyond the heap
-free_ptr: .res 2
-
-; The address of "high memory" that will not be touched by the interpreter
-himem_ptr: .res 2
-
-; Read/write position in line
-lp: .res 1
-
-; The line number sought by find_line
-line_number: .res 2
-
-.bss
-
-; The program line produced by the parser
-line_buffer: .res 256
-
-.code
-
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 
