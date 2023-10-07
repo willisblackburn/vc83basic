@@ -8,15 +8,22 @@
 
 ; Zero Page
 
-.globalzp BC, B, C, DE, D, E
+.globalzp B
+.globalzp BC
 .globalzp bp
-.globalzp src_ptr, dst_ptr
-.globalzp size
-.globalzp program_ptr
-.globalzp line_ptr
+.globalzp C
+.globalzp D
+.globalzp DE
+.globalzp dst_ptr
+.globalzp E
 .globalzp free_ptr
 .globalzp himem_ptr
 .globalzp line_number
+.globalzp line_ptr
+.globalzp lp
+.globalzp program_ptr
+.globalzp size
+.globalzp src_ptr
 
 ; Data
 
