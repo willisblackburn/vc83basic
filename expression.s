@@ -1,17 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Op stack position; points to last-used position and initialized to OP_STACK_SIZE
-osp: .res 1
-; Primary stack position; same behavior as osp but initialized to PRIMARY_STACK_SIZE
-psp: .res 1
-; Minimum operator precedence used in process_operators
-min_precedence: .res 1
-
-.code
-
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression

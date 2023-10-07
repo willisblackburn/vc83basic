@@ -31,6 +31,7 @@
 
 .globalzp BC, B, C, DE, D, E
 .globalzp FP0, FP0t, FP0e, FP0s, FP1, FP1t, FP1e, FP1s, FP2, FP3
+.globalzp fp_temp
 .globalzp bp
 .globalzp name_bp
 .globalzp name_ptr
@@ -55,6 +56,11 @@
 .globalzp osp
 .globalzp psp
 .globalzp resume_line_ptr
+.globalzp min_precedence
+.globalzp decode_expression_vector_table_ptr
+.globalzp on_value
+.globalzp on_handler
+.globalzp resume_line_handler
 
 ; Data
 

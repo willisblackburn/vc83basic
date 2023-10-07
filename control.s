@@ -1,16 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; The number we're dispatching in an ON...GOTO/GOSUB statement
-on_value: .res 1
-
-; The handler vector for ON...GOTO/GOSUB
-on_handler: .res 2
-
-.code
-
 ; Logic depends on TOKEN_NO_VALUE being zero
 .assert TOKEN_NO_VALUE = 0, error
 
