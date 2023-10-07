@@ -1,13 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Where to resume execution after STOP
-resume_line_ptr: .res 2
-
-.code
-
 ; RUN statement:
 ; Executes the program.
 

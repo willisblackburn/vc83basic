@@ -1,13 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; The vector table pointer that was passed into decode_expression
-decode_expression_vector_table_ptr: .res 2
-
-.code
-
 ; Functions to decode values from the token stream.
 ; We don't have to worry about errors since we're decoding what we previously encoded.
 ; For all functions, lp is the read position in line_ptr.

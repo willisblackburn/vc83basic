@@ -4,6 +4,7 @@ TEST_TARGET = sim6502
 
 COMMON_SOURCES = \
 	control.s \
+	data.s \
 	decode.s \
 	encode.s \
 	expression.s \

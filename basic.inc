@@ -42,6 +42,11 @@
 .globalzp osp
 .globalzp psp
 .globalzp resume_line_ptr
+.globalzp min_precedence
+.globalzp decode_expression_vector_table_ptr
+.globalzp on_value
+.globalzp on_handler
+.globalzp resume_line_handler
 
 ; Data
 
