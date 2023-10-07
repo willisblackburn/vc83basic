@@ -33,6 +33,8 @@
 .globalzp argument_count
 .globalzp osp
 .globalzp psp
+.globalzp min_precedence
+.globalzp decode_expression_vector_table_ptr
 
 ; Data
 

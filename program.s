@@ -5,43 +5,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; A pointer to the start of the program
-program_ptr: .res 2
-
-; A pointer to the current program line
-line_ptr: .res 2
-
-; The start of the variable name table
-variable_name_table_ptr: .res 2
-
-; The start of the variable value table; maintained as the end of the variable name table
-value_table_ptr: .res 2
-
-; The start of free space
-free_ptr: .res 2
-
-; The address of "high memory" that will not be touched by the interpreter
-himem_ptr: .res 2
-
-; The number of variables in the program
-variable_count: .res 1
-
-; Pointer to the variable value set by a statement like LET, INPUT, and READ
-variable_value_ptr: .res 2
-
-; Read/write position in line
-lp: .res 1
-
-; Whether the program is not running, running, stopped, or awaiting reset.
-program_state: .res 1
-
-; The line number sought by find_line
-line_number: .res 2
-
-.code
-
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.
 

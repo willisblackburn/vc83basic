@@ -3,6 +3,7 @@ TARGETS = sim6502 apple2
 TEST_TARGET = sim6502
 
 COMMON_SOURCES = \
+	data.s \
 	decode.s \
 	encode.s \
 	expression.s \
