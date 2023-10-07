@@ -1,19 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Read/write position in buffer
-bp: .res 1
-
-; The starting position of the name
-name_bp: .res 1
-
-; The number of arguments that parse_argument_list is parsing
-argument_count: .res 1
-
-.code
-
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; bp = the read position in buffer (modified on success)
