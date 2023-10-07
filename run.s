@@ -1,16 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.zeropage
-
-; Where to resume execution after STOP
-resume_line_ptr: .res 2
-
-; Position of resume statement
-resume_lp: .res 1
-
-.code
-
 ; RUN statement:
 ; Executes the program.
 ; Perhaps surprisingly, this function does not actally set the run state. It doesn't need to, because in order for
