@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
+void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
     char expect_np, const char* expect_name_ptr, int line) {        
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
@@ -16,7 +16,7 @@ static void call_find_name(const char* s, const char* name_table, char set_name_
     ASSERT_EQ(bp, set_bp);
 }
 
-static void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
+void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_bp, char expect_index,
     int line) {
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_bp=%d, bp=%d)\n", __FILE__, line, s, name_table,
@@ -32,7 +32,7 @@ static void call_find_name_fail(const char* s, const char* name_table, char set_
     ASSERT_EQ(bp, set_bp);
 }
 
-static void test_find_name(void) {
+void test_find_name(void) {
 
     // C adds a trailing 0 to these strings which terminates the name table.
     const char* name_table_1 = "PRIN\xD4"; // \xD4 = 'T' with bit 7 set
@@ -73,7 +73,7 @@ static void test_find_name(void) {
     call_find_name_fail("PRINT", name_table_1, 0, 4, 1, __LINE__);
 }
 
-static void test_get_name_table_entry(void) {
+void test_get_name_table_entry(void) {
 
     const char* name_table = "LIST\x92" "PRIN\xD4" "FOR\x11=\x11TO\x91" "RU\xCE";
 
@@ -96,7 +96,7 @@ static void test_get_name_table_entry(void) {
     ASSERT_EQ(name_ptr, name_table + 5 + 5 + 9);
 }
 
-static void test_add_variable(void) {
+void test_add_variable(void) {
     char index;
 
     PRINT_TEST_NAME();
