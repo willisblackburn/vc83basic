@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_decode_byte(void) {
+void test_decode_byte(void) {
     char byte_value;
     const char line_data[] = {
         0x00, 0x01, 0x03
@@ -20,7 +20,7 @@ static void test_decode_byte(void) {
     ASSERT_EQ(byte_value, 0x03);
 }
 
-static void test_decode_number(void) {
+void test_decode_number(void) {
     int value;
     const char line_data[] = {  TOKEN_NUM, 0, 0, TOKEN_NUM, 0, 1, TOKEN_NUM, 1, 3 };
 
