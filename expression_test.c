@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_stack_alloc_free(void) {
+void test_stack_alloc_free(void) {
     char p;
 
     PRINT_TEST_NAME();
@@ -34,7 +34,7 @@ static void test_stack_alloc_free(void) {
     initialize_program();
 }
 
-static void test_one_op(char op, int expected00, int expected01, int expected10, int expected11) {
+void test_one_op(char op, int expected00, int expected01, int expected10, int expected11) {
 
     int result;
     char line_data[] = { TOKEN_NUM, 0x00, 0x00, 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
@@ -75,7 +75,7 @@ static void test_one_op(char op, int expected00, int expected01, int expected10,
     ASSERT_EQ(result, expected11);
 }
 
-static void test_one_unary_op(char op, int expected0, int expected1) {
+void test_one_unary_op(char op, int expected0, int expected1) {
 
     int result;
     char line_data[] = { 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
@@ -98,7 +98,7 @@ static void test_one_unary_op(char op, int expected0, int expected1) {
     ASSERT_EQ(result, expected1);
 }
 
-static void test_evaluate_expression(void) {
+void test_evaluate_expression(void) {
 
     PRINT_TEST_NAME();
 
@@ -108,7 +108,7 @@ static void test_evaluate_expression(void) {
     test_one_unary_op(UNARY_OP_MINUS, 0, -1);
 }
 
-static void test_evaluate_expression_precedence(void) {
+void test_evaluate_expression_precedence(void) {
 
     int result;
 
