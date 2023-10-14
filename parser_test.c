@@ -1,6 +1,6 @@
 #include "test.h"
 
- static void test_is_name_character(void) {
+ void test_is_name_character(void) {
 
     PRINT_TEST_NAME();
 
@@ -43,7 +43,7 @@
     ASSERT_NE(err, 0);
 }
 
- static void test_is_operator_name_character(void) {
+ void test_is_operator_name_character(void) {
 
     PRINT_TEST_NAME();
 
@@ -85,13 +85,13 @@
     ASSERT_NE(err, 0);
 }
 
-static void call_parse_name(const char* s, char set_bp) {
+void call_parse_name(const char* s, char set_bp) {
     strcpy(buffer, s);
     bp = set_bp;
     parse_name();
 }
 
-static void test_parse_name(void) {
+void test_parse_name(void) {
 
     PRINT_TEST_NAME();
 
@@ -152,13 +152,13 @@ static void test_parse_name(void) {
     ASSERT_EQ(bp, 0);
 }
 
-static void call_parse_operator_name(const char* s, char set_bp) {
+void call_parse_operator_name(const char* s, char set_bp) {
     strcpy(buffer, s);
     bp = set_bp;
     parse_operator_name();
 }
 
-static void test_parse_operator_name(void) {
+void test_parse_operator_name(void) {
 
     PRINT_TEST_NAME();
 
@@ -196,7 +196,7 @@ static void test_parse_operator_name(void) {
     ASSERT_EQ(bp, 0);
 }
 
-static void test_char_to_digit(void) {
+void test_char_to_digit(void) {
     char d;
 
     PRINT_TEST_NAME();
@@ -221,7 +221,7 @@ static void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_read_number(void) {
+void test_read_number(void) {
     int number;
 
     PRINT_TEST_NAME();
@@ -251,7 +251,7 @@ static void test_read_number(void) {
     ASSERT_EQ(bp, 0);
 }
 
-static void test_parse_expression(void) {
+void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
     const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
@@ -302,7 +302,7 @@ static void test_parse_expression(void) {
     // TODO: add more tests
 }
 
-static void test_parse_argument_separator(void) {
+void test_parse_argument_separator(void) {
 
     PRINT_TEST_NAME();
 
@@ -327,7 +327,7 @@ static void test_parse_argument_separator(void) {
     ASSERT_EQ(bp, 1);
 }
 
-static void test_parse_directive(void) {
+void test_parse_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
     const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
@@ -375,7 +375,7 @@ static void test_parse_directive(void) {
     ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_5);
 }
 
-static void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length,
+void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length,
     int line) {
     fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
@@ -387,7 +387,7 @@ static void call_parse_statement(const char* s, const char* expect_line_data, si
     ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
 }
 
-static void test_parse_statement(void) {
+void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00, TOKEN_NO_VALUE };
@@ -426,7 +426,7 @@ static void test_parse_statement(void) {
     ASSERT_EQ(lp, 3);
 }
 
-static void test_parse_line(void) {
+void test_parse_line(void) {
 
     const char line_data_1[] = { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00, TOKEN_NO_VALUE };
     const char line_data_2[] = { ST_RUN };
