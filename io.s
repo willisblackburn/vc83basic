@@ -35,7 +35,6 @@ readline:
 
 ; Reads a single character from the console.
 ; Returns the character in A.
-; BC SAFE
 
 getchar:
         jsr     push0                   ; File descriptor 0 (stdin)
