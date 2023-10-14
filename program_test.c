@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_initalize_program(void) {
+void test_initalize_program(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
@@ -15,7 +15,7 @@ static void test_initalize_program(void) {
     ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
 }
 
-static void test_reset_next_line_ptr(void) {
+void test_reset_next_line_ptr(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
@@ -27,7 +27,7 @@ static void test_reset_next_line_ptr(void) {
     ASSERT_EQ(next_line_ptr, program_ptr);
 }
 
-static void test_advance_next_line_ptr(void) {
+void test_advance_next_line_ptr(void) {
     PRINT_TEST_NAME();
 
     // Calling advance_next_line_ptr on the empty program should advance next_line_ptr to variable_name_table_ptr.
@@ -47,7 +47,7 @@ static void test_advance_next_line_ptr(void) {
     ASSERT_EQ((char*)next_line_ptr, (char*)program_ptr + 10 + 250);
 }
 
-static void test_find_line(void) {
+void test_find_line(void) {
 
     PRINT_TEST_NAME();
 
@@ -101,7 +101,7 @@ static void test_find_line(void) {
     ASSERT_EQ(next_line_ptr->number, 10);
 }
 
-static void test_insert_or_update_line(void) {
+void test_insert_or_update_line(void) {
 
     const char line_5_data[] = { 'E', 'N', 'D' };
     const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
@@ -168,7 +168,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + 1);    
 }
 
-static void test_check_himem(void) {
+void test_check_himem(void) {
 
     PRINT_TEST_NAME();
 
@@ -190,7 +190,7 @@ static void test_check_himem(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_calculate_bytes_to_move(void) {
+void test_calculate_bytes_to_move(void) {
 
     PRINT_TEST_NAME();
 
@@ -203,7 +203,7 @@ static void test_calculate_bytes_to_move(void) {
     ASSERT_EQ(size, 0x1C00);
 }
 
-static void test_grow(void) {
+void test_grow(void) {
 
     PRINT_TEST_NAME();
 
@@ -261,7 +261,7 @@ static void test_grow(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + 0x400);
 }
 
-static void test_shrink(void) {
+void test_shrink(void) {
 
     const char variable_name_data[] = { 'A' | NT_END, 'B' | NT_END, 'X', 'Y' | NT_END, 0 };
     const char value_data[] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17 };
@@ -323,7 +323,7 @@ static void test_shrink(void) {
     ASSERT_EQ((char*)free_ptr, (char*)value_table_ptr + sizeof value_data + 0xE00);
 }
 
-static void test_mul_value_size(void) {
+void test_mul_value_size(void) {
     int result;
 
     PRINT_TEST_NAME();
@@ -338,7 +338,7 @@ static void test_mul_value_size(void) {
     ASSERT_EQ(result, VALUE_SIZE * 1000);
 }
 
-static void test_set_variable_value_ptr(void) {
+void test_set_variable_value_ptr(void) {
     PRINT_TEST_NAME();
 
     initialize_program();

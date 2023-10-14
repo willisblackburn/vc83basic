@@ -3,7 +3,7 @@
 // test_data to use in tests
 static char test_data[10000];
 
-static void fill_test_data(size_t offset, size_t size) {
+void fill_test_data(size_t offset, size_t size) {
     size_t i;
     char* p = test_data + offset;
     for (i = 0; i < size; ++i) {
@@ -11,7 +11,7 @@ static void fill_test_data(size_t offset, size_t size) {
     }
 }
 
-static void verify_test_data(const char* p, size_t size) {
+void verify_test_data(const char* p, size_t size) {
     // Check first 4 and last 4 bytes.
     ASSERT_EQ(p[0], 0);
     ASSERT_EQ(p[1], 1);
@@ -23,7 +23,7 @@ static void verify_test_data(const char* p, size_t size) {
     ASSERT_EQ(p[size - 1], (char)(size - 1));
 }
 
-static void test_copy_case(size_t size, size_t offset, int line) {
+void test_copy_case(size_t size, size_t offset, int line) {
     fprintf(stderr, "  %s:%d: test_copy_case(size=%u, offset=%u)\n", __FILE__, line, size, offset);
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data + offset and try to copy it to the lower position.
@@ -34,7 +34,7 @@ static void test_copy_case(size_t size, size_t offset, int line) {
     verify_test_data(test_data, size);
 }
 
-static void test_copy(void) {
+void test_copy(void) {
     PRINT_TEST_NAME();
 
     test_copy_case(10, 1, __LINE__);
@@ -48,7 +48,7 @@ static void test_copy(void) {
     test_copy_case(4000, 256, __LINE__);
 }
 
-static void test_reverse_copy_case(size_t size, size_t offset, int line) {
+void test_reverse_copy_case(size_t size, size_t offset, int line) {
     fprintf(stderr, "  %s:%d: test_reverse_copy_case(size=%u, offset=%u)\n", __FILE__, line, size, offset);
     memset(test_data, 0, sizeof test_data);
     // Set up test data in test_data and try to copy it to the higher position.
@@ -59,7 +59,7 @@ static void test_reverse_copy_case(size_t size, size_t offset, int line) {
     verify_test_data(test_data + offset, size);
 }
 
-static void test_reverse_copy(void) {
+void test_reverse_copy(void) {
     PRINT_TEST_NAME();
 
     test_reverse_copy_case(10, 1, __LINE__);
@@ -81,7 +81,7 @@ static int f2(void) {
     return 7771;
 }
 
-static void test_invoke_indexed_vector(void) {
+void test_invoke_indexed_vector(void) {
     int result;
     void* table[] = { (char*)f1 - 1, (char*)f2 - 1, (char*)f2 - 1, (char*)f1 - 1 };
 

@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_stack_alloc_free(void) {
+void test_stack_alloc_free(void) {
     char p;
 
     PRINT_TEST_NAME();
@@ -34,7 +34,7 @@ static void test_stack_alloc_free(void) {
     initialize_program();
 }
 
-static void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
+void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
                         const Float* expected11) {
 
     char line_data[] = {
@@ -89,7 +89,7 @@ static void test_one_op(char op, const Float* expected00, const Float* expected0
     ASSERT_FLOAT_EQ(value, expected11->e, expected11->t);
 }
 
-static void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
+void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
 
     char line_data[] = {
             0,                                          // 0        
@@ -121,7 +121,7 @@ static void test_one_unary_op(char op, const Float* expected0, const Float* expe
     ASSERT_FLOAT_EQ(value, expected1->e, expected1->t);
 }
 
-static void test_evaluate_expression(void) {
+void test_evaluate_expression(void) {
     const Float value_0 = { 0x00000000, 0 };
     const Float value_negative_0 = { 0x80000000, 0 };
     const Float value_1 = { 0x00000000, 127 };
@@ -147,7 +147,7 @@ static void test_evaluate_expression(void) {
     test_one_unary_op(UNARY_OP_NOT, &value_1, &value_0);
 }
 
-static void test_evaluate_expression_precedence(void) {
+void test_evaluate_expression_precedence(void) {
 
     const Float value_0 = { 0x00000000, 0 };
     const Float value_1 = { 0x00000000, 127 };
