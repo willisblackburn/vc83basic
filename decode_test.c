@@ -1,6 +1,6 @@
  #include "test.h"
 
-static void test_decode_byte(void) {
+void test_decode_byte(void) {
     char byte_value;
     const char line_data[] = {
         0x00, 0x01, 0x03
@@ -20,7 +20,7 @@ static void test_decode_byte(void) {
     ASSERT_EQ(byte_value, 0x03);
 }
 
-static void test_decode_number(void) {
+void test_decode_number(void) {
     int value;
     const char line_data[] = {  TOKEN_NUM, 0, 0, TOKEN_NUM, 0, 1, TOKEN_NUM, 1, 3 };
 
@@ -42,7 +42,7 @@ extern void* decode_xh_vectors[];
 
 static int num_count;
 
-static void xh_number(void) {
+void xh_number(void) {
     int value = decode_number();
     switch (++num_count) {
         case 1: ASSERT_EQ(value, 4112); break;
@@ -52,7 +52,7 @@ static void xh_number(void) {
 
 static int var_count;
 
-static void xh_variable(void) {
+void xh_variable(void) {
     char var = decode_variable();
     ++var_count;
     ASSERT_EQ(var, 1);
@@ -60,7 +60,7 @@ static void xh_variable(void) {
 
 static int op_count;
 
-static void xh_operator(void) {
+void xh_operator(void) {
     char op = decode_operator();
     switch (++op_count) {
         case 1: ASSERT_EQ(op, OP_ADD); break;
@@ -72,7 +72,7 @@ static void xh_operator(void) {
 
 static int unary_op_count;
 
-static void xh_unary_operator(void) {
+void xh_unary_operator(void) {
     char op = decode_unary_operator();
     switch (++unary_op_count) {
         case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
@@ -82,7 +82,7 @@ static void xh_unary_operator(void) {
 
 static int paren_count;
 
-static void xh_paren(void) {
+void xh_paren(void) {
     ++paren_count;
     decode_expression(decode_xh_vectors);
 }
@@ -95,7 +95,7 @@ void* decode_xh_vectors[] = {
     (char*)xh_paren - 1,
 };
 
-static void test_decode_expression(void) {
+void test_decode_expression(void) {
 
     const char line_data[] = {
         TOKEN_NUM, 0x10, 0x10,          // 4,112

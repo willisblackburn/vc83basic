@@ -17,7 +17,7 @@ static LoadStoreTestCase load_store_test_cases[] = {
     { { 0x00000400, 0 }, { 0x00000400, 1, POSITIVE } },
 };
 
-static void test_load_fpx(void) {
+void test_load_fpx(void) {
     Float value;
     LoadStoreTestCase* test_case;
     int i;
@@ -36,7 +36,7 @@ static void test_load_fpx(void) {
     }
 }
 
-static void test_store_fpx(void) {
+void test_store_fpx(void) {
     Float value;
     LoadStoreTestCase* test_case;
     int i;
@@ -56,7 +56,7 @@ static void test_store_fpx(void) {
     }
 }
 
-static void test_swap_fp0_fp1(void) {
+void test_swap_fp0_fp1(void) {
     PRINT_TEST_NAME();
     SET_FPX(FP0, POSITIVE, 2, 12345678L);
     SET_FPX(FP1, NEGATIVE, 1, 1418858818L);
@@ -65,7 +65,7 @@ static void test_swap_fp0_fp1(void) {
     ASSERT_FPX_EQ(FP1, POSITIVE, 2, 12345678L);
 }
 
-static void test_adjust_exponent(void) {
+void test_adjust_exponent(void) {
     PRINT_TEST_NAME();
     SET_FPX(FP0, POSITIVE, 0, 0);
     adjust_exponent(0, 0);
@@ -87,7 +87,7 @@ static void test_adjust_exponent(void) {
     ASSERT_EQ(reg_c, 255);
 }
 
-static void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
+void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
                            char expect_e, unsigned long expect_t, int line) {
     FP0s = s;
     FP0e = e;
@@ -100,7 +100,7 @@ static void call_normalize(char s, char e, unsigned long x, unsigned long t, cha
     ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
 }
 
-static void test_normalize(void) {
+void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
@@ -139,7 +139,7 @@ static IntConversionTestCase int_conversion_test_cases[] = {
     { 4112, { 0x80800000, 139, POSITIVE } },
 };
 
-static void test_int_to_fp(void) {
+void test_int_to_fp(void) {
     IntConversionTestCase* test_case;
     int i;
 
@@ -153,7 +153,7 @@ static void test_int_to_fp(void) {
     }
 }
 
-static void test_truncate_fp_to_int(void) {
+void test_truncate_fp_to_int(void) {
     IntConversionTestCase* test_case;
     int i;
     int value;
@@ -185,7 +185,7 @@ static Int32ConversionTestCase int32_conversion_test_cases[] = {
     { 4112, { 0x80800000, 139, POSITIVE } },
 };
 
-static void test_int32_to_fp(void) {
+void test_int32_to_fp(void) {
     Int32ConversionTestCase* test_case;
     int i;
 
@@ -200,7 +200,7 @@ static void test_int32_to_fp(void) {
     }
 }
 
-static void test_truncate_fp_to_int32(void) {
+void test_truncate_fp_to_int32(void) {
     Int32ConversionTestCase* test_case;
     int i;
 
@@ -220,7 +220,7 @@ static void test_truncate_fp_to_int32(void) {
 #define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
             call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
 
-static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, unsigned long t_0,
+void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, unsigned long t_0,
                     char s_1, char e_1, unsigned long t_1,
                     char expect_s, char expect_e, unsigned long expect_t, int line) {
     SET_FPX(FP0, s_0, e_0, t_0);
@@ -232,7 +232,7 @@ static void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, uns
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
-static void test_fadd(void) {
+void test_fadd(void) {
     PRINT_TEST_NAME();
 
     // 0 + 0
@@ -267,7 +267,7 @@ static void test_fadd(void) {
     CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 95, 0xC0000000, POSITIVE, 127, 0x80000001);
 }
 
-static void test_fsub(void) {
+void test_fsub(void) {
     PRINT_TEST_NAME();
 
     // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
@@ -282,7 +282,7 @@ static void test_fsub(void) {
     CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
 }
 
-static void test_fmul(void) {
+void test_fmul(void) {
     PRINT_TEST_NAME();
 
     // 0 * 0
@@ -313,7 +313,7 @@ static void test_fmul(void) {
     CALL_FP(fmul, POSITIVE, 56, 0x80000000, POSITIVE, 56, 0x80000000, POSITIVE, 1, 0x00008000);
 }
 
-static void test_fdiv(void) {
+void test_fdiv(void) {
     PRINT_TEST_NAME();
 
     // 1 / 1
@@ -336,7 +336,7 @@ static void test_fdiv(void) {
     CALL_FP(fdiv, POSITIVE, 145, 0x9965E000, POSITIVE, 143, 0xC3500000, POSITIVE, 128, 0xC90FCF81);
 }
 
-static void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
+void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
                        int expect_result, int line) {
     int result;
     SET_FPX(FP0, s_0, e_0, t_0);
@@ -347,7 +347,7 @@ static void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1,
     ASSERT_EQ(result, expect_result);
 }
 
-static void test_fcmp(void) {
+void test_fcmp(void) {
     PRINT_TEST_NAME();
 
     // TODO: fix! Exponent for subnormal cases should be 1.
@@ -371,7 +371,7 @@ static void test_fcmp(void) {
     call_fcmp(POSITIVE, 128, 0x80000001, POSITIVE, 254, 0x80000000, -1, __LINE__);
 }
 
-static void test_char_to_digit(void) {
+void test_char_to_digit(void) {
     char d;
 
     PRINT_TEST_NAME();
@@ -396,7 +396,7 @@ static void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
-static void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
+void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
     fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X s=%02X)\n", __FILE__, line, t, e, s);
     SET_FPX(FP0, s, e, t);
     bp = 0;
@@ -405,7 +405,7 @@ static void call_fp_to_string(char s, char e, unsigned long t, const char* expec
     ASSERT_STRING_EQ(buffer, expect_string);
 }
 
-static void test_fp_to_string(void) {
+void test_fp_to_string(void) {
     PRINT_TEST_NAME();
 
     // 0
@@ -446,7 +446,7 @@ static void test_fp_to_string(void) {
     call_fp_to_string(NEGATIVE, 160, 0x9502F900, "-1E10", __LINE__);
 }
 
-static void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
+void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
     bp = 0;
@@ -455,7 +455,7 @@ static void call_string_to_fp(const char* string, char expect_s, char expect_e, 
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
-static void fail_string_to_fp(const char* string, int line) {
+void fail_string_to_fp(const char* string, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
     bp = 0;
@@ -464,7 +464,7 @@ static void fail_string_to_fp(const char* string, int line) {
     ASSERT_EQ(bp, 0);
 }
 
-static void test_string_to_fp(void) {
+void test_string_to_fp(void) {
     PRINT_TEST_NAME();
 
     // 0
