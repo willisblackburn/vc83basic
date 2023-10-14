@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_initalize_program(void) {
+void test_initalize_program(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
@@ -12,7 +12,7 @@ static void test_initalize_program(void) {
     ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
 }
 
-static void test_reset_line_ptr(void) {
+void test_reset_line_ptr(void) {
     PRINT_TEST_NAME();
 
     initialize_program();
@@ -24,7 +24,7 @@ static void test_reset_line_ptr(void) {
     ASSERT_EQ(line_ptr, program_ptr);
 }
 
-static void test_advance_line_ptr(void) {
+void test_advance_line_ptr(void) {
     PRINT_TEST_NAME();
 
     // Calling advance_line_ptr on the empty program should advance line_ptr to free_ptr.
@@ -44,7 +44,7 @@ static void test_advance_line_ptr(void) {
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
 
-static void test_find_line(void) {
+void test_find_line(void) {
 
     PRINT_TEST_NAME();
 
@@ -96,7 +96,7 @@ static void test_find_line(void) {
     ASSERT_EQ(line_ptr->number, 10);
 }
 
-static void test_insert_or_update_line(void) {
+void test_insert_or_update_line(void) {
 
     const char line_5_data[] = { 'E', 'N', 'D' };
     const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
@@ -163,7 +163,7 @@ static void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
-static void test_check_himem(void) {
+void test_check_himem(void) {
 
     PRINT_TEST_NAME();
 
@@ -185,7 +185,7 @@ static void test_check_himem(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_calculate_bytes_to_move(void) {
+void test_calculate_bytes_to_move(void) {
 
     PRINT_TEST_NAME();
 
@@ -198,7 +198,7 @@ static void test_calculate_bytes_to_move(void) {
     ASSERT_EQ(size, 0x1C00);
 }
 
-static void test_grow(void) {
+void test_grow(void) {
 
     PRINT_TEST_NAME();
 
@@ -250,7 +250,7 @@ static void test_grow(void) {
     ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
 }
 
-static void test_shrink(void) {
+void test_shrink(void) {
 
     // To test shrink, we first grow some sections, write some data to them, then make sure that data is
     // preserved when we shrink. We know that grow works because it's been separately tested.

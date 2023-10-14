@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_char_to_digit(void) {
+void test_char_to_digit(void) {
     char d;
 
     PRINT_TEST_NAME();
@@ -25,7 +25,7 @@ static void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_read_number(void) {
+void test_read_number(void) {
     int number;
 
     PRINT_TEST_NAME();
@@ -55,7 +55,7 @@ static void test_read_number(void) {
     ASSERT_EQ(bp, 0);
 }
 
-static void test_parse_keyword(void) {
+void test_parse_keyword(void) {
     const char* print = "PRIN\xD4";
 
     PRINT_TEST_NAME();
