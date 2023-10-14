@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void add_variable_with_name(const char* name) {
+void add_variable_with_name(const char* name) {
     strcpy(buffer, name);
     name_bp = 0;
     bp = strlen(buffer);
@@ -10,7 +10,7 @@ static void add_variable_with_name(const char* name) {
     ASSERT_EQ(err, 0);
 }
 
-static void create_variables(void) {
+void create_variables(void) {
 
     // Create varibles which will get variable name table positions starting at 0.
 
@@ -18,7 +18,7 @@ static void create_variables(void) {
     add_variable_with_name("Y");
 }
 
-static void call_list_directive(char directive, const char* line_data, size_t line_data_length,
+void call_list_directive(char directive, const char* line_data, size_t line_data_length,
     const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_directive(%d)\n", __FILE__, line, directive);
     set_line(0, line_data, line_data_length);
@@ -28,7 +28,7 @@ static void call_list_directive(char directive, const char* line_data, size_t li
     ASSERT_EQ(bp, strlen(expect_buffer));
 }
 
-static void test_list_directive(void) {
+void test_list_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10, TOKEN_NO_VALUE };
     const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
@@ -84,7 +84,7 @@ static void test_list_directive(void) {
     call_list_directive(1, line_data_13, sizeof line_data_13, list_13, __LINE__);
 }
 
-static void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
+void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_statement()\n", __FILE__, line);
     set_line(0, line_data, line_data_length);
     bp = 0;
@@ -93,7 +93,7 @@ static void call_list_statement(const char* line_data, size_t line_data_length, 
     ASSERT_EQ(bp, strlen(expect_buffer));
 }
 
-static void test_list_statment(void) {
+void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };
@@ -125,7 +125,7 @@ static void test_list_statment(void) {
     call_list_statement(line_data_7, sizeof line_data_7, list_7, __LINE__);
 }
 
-static void test_list_line(void) {
+void test_list_line(void) {
 
     const char line_data_1[] = { ST_PRINT, TOKEN_NUM, 0x01, 0x01, TOKEN_NO_VALUE };
     const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F, TOKEN_NO_VALUE };

@@ -1,6 +1,6 @@
 #include "test.h"
 
-static void test_encode_byte(void) {
+void test_encode_byte(void) {
 
     const char line_data_1[] = { 0x02 };
     const char line_data_2[] = { 0x02, 0x03 };
@@ -31,7 +31,7 @@ static void test_encode_byte(void) {
     ASSERT_NE(err, 0);
 }
 
-static void test_encode_number(void) {
+void test_encode_number(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00 };
     const char line_data_2[] = { TOKEN_NUM, 0x00, 0x01, TOKEN_NUM, 0xE8, 0x03 };
