@@ -88,18 +88,7 @@ clean::
 
 endef
 
-# create-expect-test defines rules to run a Expect test.
-
-define create-expect-test
-
-.PHONY: run_expect_test_$1
-
-run_expect_test_$1:
-	expect expect_tests/$1.exp
-
-endef
-
-.PHONY: all test expect_test clean
+.PHONY: all test clean
 
 all: $(addprefix basic_,$(TARGETS))
 
