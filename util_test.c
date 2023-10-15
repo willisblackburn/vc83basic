@@ -1,7 +1,7 @@
 #include "test.h"
 
 // test_data to use in tests
-static char test_data[10000];
+char test_data[10000];
 
 void fill_test_data(size_t offset, size_t size) {
     size_t i;
@@ -162,11 +162,11 @@ void test_div10(void) {
     ASSERT_EQ(reg_y, 0);
 }
 
-static int f1(void) {
+int f1(void) {
     return 31415;
 }
 
-static int f2(void) {
+int f2(void) {
     return 7771;
 }
 
