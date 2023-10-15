@@ -30,6 +30,7 @@ TESTS = \
 	parser_test \
 	program_test \
 	util_test
+
 TEST_COMMON_SOURCES = \
 	tests/c_wrappers.s \
 	$(filter-out $(TEST_TARGET)/$(TEST_TARGET)_startup.s,$(wildcard $(TEST_TARGET)/*.s))
