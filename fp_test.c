@@ -5,7 +5,7 @@ typedef struct LoadStoreTestCase {
     UnpackedFloat u;
 } LoadStoreTestCase;
 
-static LoadStoreTestCase load_store_test_cases[] = {
+LoadStoreTestCase load_store_test_cases[] = {
     { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
     { { 0x00000000, 127 }, { 0x80000000, 127, POSITIVE } },
     { { 0x7FFFFFFE, 157 }, { 0xFFFFFFFE, 157, POSITIVE } },
@@ -131,7 +131,7 @@ typedef struct IntConversionTestCase {
     UnpackedFloat u;
 } IntConversionTestCase;
 
-static IntConversionTestCase int_conversion_test_cases[] = {
+IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 127, POSITIVE } },
     { 32767, { 0xFFFE0000, 141, POSITIVE } },
@@ -176,7 +176,7 @@ typedef struct Int32ConversionTestCase {
     UnpackedFloat u;
 } Int32ConversionTestCase;
 
-static Int32ConversionTestCase int32_conversion_test_cases[] = {
+Int32ConversionTestCase int32_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 127, POSITIVE } },
     { 2147483647UL, { 0xFFFFFFFE, 157, POSITIVE } },
