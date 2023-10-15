@@ -32,7 +32,9 @@ TESTS = \
 	parser_test \
 	program_test \
 	util_test
-TEST_COMMON_SOURCES = c_wrappers.s $(filter-out $(TEST_TARGET)/$(TEST_TARGET)_startup.s,$(wildcard $(TEST_TARGET)/*.s))
+TEST_COMMON_SOURCES = \
+	tests/c_wrappers.s \
+	$(filter-out $(TEST_TARGET)/$(TEST_TARGET)_startup.s,$(wildcard $(TEST_TARGET)/*.s))
 TEST_COMMON_OBJECTS = $(TEST_COMMON_SOURCES:.s=.o)
 
 EXPECT_TESTS = $(notdir $(basename $(wildcard expect_tests/*.exp)))
@@ -76,16 +78,16 @@ endef
 
 define create-test
 
-run_$1: $1
-	sim65 $1
+run_$1: tests/$1
+	sim65 tests/$1
 
-$1: $1.o $$(TEST_COMMON_OBJECTS) $$(COMMON_OBJECTS)
+tests/$1: tests/$1.o $$(TEST_COMMON_OBJECTS) $$(COMMON_OBJECTS)
 	cl65 -t $$(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(TEST_LDFLAGS) -o $$@ $$^
 
 -include $1.d
 
 clean::
-	rm -f $1
+	rm -f tests/$1
 
 endef
 
@@ -102,7 +104,7 @@ endef
 
 .PHONY: all test expect_test clean
 
-all: $(addprefix basic_,$(TARGETS)) $(TESTS)
+all: $(addprefix basic_,$(TARGETS))
 
 test: $(addprefix run_,$(TESTS))
 
@@ -132,4 +134,4 @@ $(foreach TEST,$(EXPECT_TESTS),$(eval $(call create-expect-test,$(TEST))))
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f constants.inc constants.h *.o *.d *.map
+	rm -f constants.inc constants.h *.o *.d *.map tests/*.o tests/*.d tests/*.map
