@@ -21,15 +21,7 @@ COMMON_SOURCES = \
 	util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
-TESTS = \
-	decode_test \
-	encode_test \
-	expression_test \
-	list_test \
-	name_test \
-	parser_test \
-	program_test \
-	util_test
+TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
 
 TEST_COMMON_SOURCES = \
 	tests/c_wrappers.s \
