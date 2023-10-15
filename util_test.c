@@ -1,7 +1,7 @@
 #include "test.h"
 
 // test_data to use in tests
-static char test_data[10000];
+char test_data[10000];
 
 void fill_test_data(size_t offset, size_t size) {
     size_t i;
