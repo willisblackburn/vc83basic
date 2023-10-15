@@ -43,7 +43,7 @@ void test_decode_number(void) {
 
 extern void* decode_xh_vectors[];
 
-static int num_count;
+int num_count;
 
 void xh_number(void) {
     decode_number();
@@ -53,7 +53,7 @@ void xh_number(void) {
     }
 }
 
-static int var_count;
+int var_count;
 
 void xh_variable(void) {
     char var = decode_variable();
@@ -61,7 +61,7 @@ void xh_variable(void) {
     ASSERT_EQ(var, 1);
 }
 
-static int op_count;
+int op_count;
 
 void xh_operator(void) {
     char op = decode_operator();
@@ -73,7 +73,7 @@ void xh_operator(void) {
     }
 }
 
-static int unary_op_count;
+int unary_op_count;
 
 void xh_unary_operator(void) {
     char op = decode_unary_operator();
@@ -83,7 +83,7 @@ void xh_unary_operator(void) {
     }
 }
 
-static int paren_count;
+int paren_count;
 
 void xh_paren(void) {
     ++paren_count;
