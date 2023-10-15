@@ -5,7 +5,7 @@ TEST_TARGET = sim6502
 COMMON_SOURCES = data.s main.s parser.s program.s util.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
-TESTS = parser_test program_test util_test
+TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
 
 TEST_COMMON_SOURCES = \
 	tests/c_wrappers.s \
