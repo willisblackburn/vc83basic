@@ -28,7 +28,6 @@ main:
         beq     @wait_for_input         ; Yes, just ignore input
         mvax    #line_buffer, line_ptr  ; Set line_ptr to point to line_buffer
         jsr     run_line
-        bcs     @error
         bcc     @ready
 
 @error:

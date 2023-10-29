@@ -36,11 +36,11 @@ run_line:
         rts
 
 statement_exec_vectors:
-        .word   exec_run
-        .word   exec_print
-        .word   exec_let
-        .word   exec_input
-        .word   exec_list
+        .word   exec_run-1
+        .word   exec_print-1
+        .word   exec_let-1
+        .word   exec_input-1
+        .word   exec_list-1
 
 ; Invokes a statement handler from a table.
 ; This function does not return; it jumps to the handler, which will eventually return.
