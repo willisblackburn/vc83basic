@@ -65,8 +65,7 @@ putch:
         sta     C                       ; Store character to output
         jsr     push1                   ; File descriptor 1 (stdout)
         lda     #C                      ; Use C as the output buffer
-        ldx     #0
-        jsr     pushax                  ; Push onto C stack
+        jsr     pusha0                  ; Push onto C stack
         lda     #1                      ; Length
         ldx     #0
         jsr     _write
