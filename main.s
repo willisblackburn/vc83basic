@@ -2,10 +2,9 @@
 .include "basic.inc"
 
 ready_message: .byte "READY"
-ready_length = * - ready_message
-
+ready_message_length = * - ready_message
 error_message: .byte "ERROR"
-error_length = * - error_message
+error_message_length = * - error_message
 
 keyword_run: .byte 'R', 'U', 'N'+$80
 keyword_print: .byte 'P', 'R', 'I', 'N', 'T'+$80
@@ -105,7 +104,7 @@ print_number:
 @print_digit:
         pla                             ; Get a digit
         beq     @done                   ; If it's 0 then we're done
-        jsr     putchar                 ; Print it
+        jsr     putch                   ; Print it
         jmp     @print_digit
 
 @done:
@@ -114,7 +113,7 @@ print_number:
 print_ready:
         jsr     newline
         ldax    #ready_message          ; Pass address of message in AX
-        ldy     #ready_length
+        ldy     #ready_message_length   ; Message length
         jsr     write
         jmp     newline
 
@@ -122,6 +121,6 @@ print_ready:
 
 print_error:
         ldax    #error_message          ; Pass address of message in AX
-        ldy     #error_length
+        ldy     #error_message_length   ; Message length
         jsr     write
         jmp     newline

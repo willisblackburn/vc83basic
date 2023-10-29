@@ -71,7 +71,7 @@
 .global initialize_target
 
 ; io.s
-.global readline, getchar, write, putchar, newline
+.global readline, write, putch, newline
 
 ; startup.s
 .global startup
