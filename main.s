@@ -19,7 +19,7 @@ main:
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
-        jmp     @wait_for_input
+        bcc     @wait_for_input
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer
