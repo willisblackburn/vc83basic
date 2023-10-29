@@ -174,4 +174,4 @@
 .global format_number
 
 ; target/*
-.global startup, initialize_target, readline, getchar, write, putchar, newline
+.global startup, initialize_target, readline, write, putch, newline
