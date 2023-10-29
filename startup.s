@@ -9,13 +9,13 @@
 .import __STACKSIZE__
 
 .import buffer, buffer_length
-.import readline, write, newline
+.import readline, write, newline, putch
 
 .segment "STARTUP"
 
 message: .byte "Enter your name: "
 message_length = * - message
-hello: .byte "Hello, "
+hello: .byte "Hello, ", 0
 hello_length = * - hello
 
 startup:
@@ -27,22 +27,22 @@ startup:
         ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         sta     sp
         stx     sp+1                    ; Set up C stack
-        
         lda     #<message               ; Print message
         ldx     #>message       
-        ldy     #message_length     
+        ldy     #message_length
         jsr     write                   ; Write the message
-        
         jsr     readline                ; Get the user's input
+        pha                             ; Store the length
         lda     #<hello                 ; Load AX with the hello pointer
         ldx     #>hello     
-        ldy     #hello_length       
+        ldy     #hello_length
         jsr     write                   ; Write "hello"
+        pla                             ; Recover length of name
+        tay                             ; Into Y to pass as length
         lda     #<buffer
         ldx     #>buffer
-        ldy     buffer_length
         jsr     write                   ; Output name (still in buffer)
         jsr     newline                 ; Write linefeed
-        ldx     #$00        
-        lda     #$00        
+        lda     #$00
+        tax
         jmp     exit                    ; Return 0 from sim65

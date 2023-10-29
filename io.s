@@ -6,7 +6,11 @@
 
 .zeropage
 
-hold_ptr: .res 2
+; Holds pointer for use by write
+write_ptr: .res 2
+
+; A single-byte buffer for the char operations
+char_buffer: .res 1
 
 .bss
 
@@ -14,80 +18,61 @@ hold_ptr: .res 2
 buffer: .res 256
 .export buffer
 
-; Length of data in buffer
-buffer_length: .res 1
-.export buffer_length
+.code
 
-; A single-byte buffer for the char operations
-io_char: .res 1
-
-.code 
-
-; Reads a line from the console into the buffer.
-; Returns the length in A and also sets buffer_length.
+; Reads a string from the console into the buffer and adds a terminating NUL.
+; Returns the length of the line in A.
 
 readline:
 .export readline
-        lda     #0                      ; Initialize buffer_length to 0
-        sta     buffer_length
-@next:      
-        jsr     getchar                 ; Read one character
-        ldy     buffer_length           ; Use buffer_length as index
-        cmp     #$0A                    ; EOL?
-        beq     @done                   ; Yes
-        sta     buffer,y                ; Otherwise store character in buffer
-        inc     buffer_length           ; Increment buffer_length
-        jmp     @next       
-@done:      
-        tya                             ; Return buffer_length in A
-        rts
-
-; Reads a single character from the console.
-; Returns the character in A.
-
-getchar:
-.export getchar
         jsr     push0                   ; File descriptor 0 (stdin)
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char       
+        lda     #<buffer                ; Load buffer address into AX
+        ldx     #>buffer
         jsr     pushax                  ; Push onto C stack
-        lda     #1                      ; Length
-        ldx     #0      
-        jsr     _read       
-        lda     io_char                 ; Get the character into A
+        lda     #.sizeof(buffer)-1      ; Max length = buffer size - 1 byte for NUL
+        ldx     #0
+        jsr     _read                   ; Returns length in AX (will be <= 254)
+        tax                             ; Length into X
+        lda     #0
+        sta     buffer-1,x              ; Add terminator (subtract 1 because last character is LF)
+        txa                             ; Line length back to A for return
         rts
 
-; Writes a line to the console.
+; Writes bytes to the console.
 ; AX = a pointer to the buffer to write
-; Y = the number of bytes to write
+; Y = the length of the buffer
 
 write:
 .export write
-        sta     hold_ptr
-        stx     hold_ptr+1
-        tya
-        pha                             ; Save the length on the stack
+        sta     write_ptr
+        stx     write_ptr+1
+        tya                             ; Save length on the stack
+        pha
         jsr     push1                   ; File descriptor 1 (stdout)
-        lda     hold_ptr       
-        ldx     hold_ptr+1     
-        jsr     pushax                  ; Push buffer pointer onto C stack
-        pla                             ; Length back into A
-        ldx     #0                      ; High byte of length
-        jmp     _write      
+        lda     write_ptr               ; Buffer address
+        ldx     write_ptr+1
+        jsr     pushax
+        pla                             ; Length
+        ldx     #0
+        jmp     _write
 
 ; Starts a new line on the console.
 
 newline:
 .export newline
-        lda     #$0A                    ; Load LF into A then fall through to putchar
+        lda     #$0A                    ; Load LF into A then fall through to putch
 
 ; Writes a single character to the console.
 ; A = the character to output
 
-putchar:
-.export putchar
-        sta     io_char                 ; Store character in io_char
-        lda     #<io_char               ; Load io_char address into AX
-        ldx     #>io_char
-        ldy     #1
-        jmp     write
+putch:
+.export putch
+        sta     char_buffer             ; Store character in char_buffer
+        jsr     push1                   ; File descriptor 1 (stdout)
+        lda     #<char_buffer           ; Load char_buffer address into AX
+        ldx     #>char_buffer
+        jsr     pushax                  ; Push onto C stack
+        lda     #1                      ; Length
+        ldx     #0
+        jsr     _write
+        rts
