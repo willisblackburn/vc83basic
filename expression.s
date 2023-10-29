@@ -55,7 +55,7 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        dec     osp                     ; Pop the open paren (even if evaluate_expression failed)
+        inc     osp                     ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
