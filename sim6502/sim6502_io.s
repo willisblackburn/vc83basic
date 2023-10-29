@@ -2,68 +2,66 @@
 .import push0, push1, pusha0, pushax
 
 ; sim65 vectors
-.import _read, _write, exit
+.import _read, _write
 
 .include "../macros.inc"
 .include "../basic.inc"
 
+; Buffers
+
+.segment "BUFFERS"
+
+buffer: .res 256
+
 .code
 
-; Reads a line from the console into the buffer.
-; Returns the length in A.
+; Reads a string from the console into the buffer and adds a terminating NUL.
+; Returns the length of the line in A.
 
 readline:
-        mva     #0, C                   ; Use C for buffer index (getchar does not use it)
-@next:      
-        jsr     getchar                 ; Read one character
-        ldy     C
-        inc     C
-        cmp     #$0A                    ; EOL?
-        beq     @done                   ; Yes
-        sta     buffer,y                ; Otherwise store character in buffer
-        jmp     @next       
-@done:      
-        lda     #0      
-        sta     buffer,y                ; Store 0 at end of buffer
-        tya                             ; Return buffer length in A
-        rts
-
-; Reads a single character from the console.
-; Returns the character in A.
-
-getchar:
         jsr     push0                   ; File descriptor 0 (stdin)
-        ldax    #B                      ; Load the character into B
+        lda     #<buffer                ; Load buffer address into AX
+        ldx     #>buffer
         jsr     pushax                  ; Push onto C stack
-        ldax    #1                      ; Length
-        jsr     _read       
-        lda     B                       ; Get the character into A
+        lda     #.sizeof(buffer)-1      ; Max length = buffer size - 1 byte for NUL
+        ldx     #0
+        jsr     _read                   ; Returns length in AX (will be <= 254)
+        tax                             ; Length into X
+        lda     #0
+        sta     buffer-1,x              ; Add terminator (subtract 1 because last character is LF)
+        txa                             ; Line length back to A for return
         rts
 
-; Writes a line to the console.
+; Writes bytes to the console.
 ; AX = a pointer to the buffer to write
-; Y = the number of bytes to write
+; Y = the length of the buffer
 
 write:
-        stax    DE                      ; Save buffer pointer
-        sty     C                       ; Save length
+        stax    BC                      ; Temporarily save buffer address in BC
+        tya                             ; Save length on the stack
+        pha
         jsr     push1                   ; File descriptor 1 (stdout)
-        ldax    DE
-        jsr     pushax                  ; Push buffer pointer onto C stack
-        lda     C                       ; Low byte of length
-        ldx     #0                      ; High byte of length
-        jmp     _write      
+        ldax    BC                      ; Buffer address
+        jsr     pushax
+        pla                             ; Length
+        ldx     #0
+        jmp     _write
 
 ; Starts a new line on the console.
 
 newline:
-        lda     #$0A                    ; Load LF into A then fall through to putchar
+        lda     #$0A                    ; Load LF into A then fall through to putch
 
 ; Writes a single character to the console.
 ; A = the character to output
 
-putchar:
-        sta     B                       ; Save character into single-byte buffer
-        ldax    #B                      ; Pointer to buffer
-        ldy     #1
-        jmp     write
+putch:
+        sta     C                       ; Store character to output
+        jsr     push1                   ; File descriptor 1 (stdout)
+        lda     #C                      ; Use C as the output buffer
+        ldx     #0
+        jsr     pushax                  ; Push onto C stack
+        lda     #1                      ; Length
+        ldx     #0
+        jsr     _write
+        rts

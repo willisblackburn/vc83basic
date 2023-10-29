@@ -17,12 +17,6 @@ initialize_target:
         sta     $FFFF                   ; BRK vector high byte
         rts
 
-; Buffers
-
-.segment "BUFFERS"
-
-buffer: .res 256
-
 ; Debugging helpers
 
 .zeropage
