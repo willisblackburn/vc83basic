@@ -17,12 +17,6 @@ initialize_target:
         sta     $FFFF                   ; BRK vector high byte
         rts
 
-; Buffers
-
-.segment "BUFFERS"
-
-buffer: .res 256
-line_buffer: .res 256
 
 ; Primary stack
 primary_stack: .res PRIMARY_STACK_SIZE

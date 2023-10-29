@@ -2,7 +2,6 @@
 .include "../macros.inc"
 .include "../basic.inc"
 
-getchar = KEYIN
 newline = CROUT
 
 readline:
@@ -22,21 +21,21 @@ readline:
         rts
 
 write:
-        stax    DE
-        sty     B
+        stax    BC
+        sty     D
         ldy     #0
 @next:
-        cpy     B
+        cpy     D
         beq     @done
-        lda     (DE),y
-        jsr     putchar
+        lda     (BC),y
+        jsr     putch
         iny
         jmp     @next
 
 @done:
         rts
 
-putchar:
+putch:
         ora     #$80
         jmp     COUT
         
