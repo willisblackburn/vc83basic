@@ -17,12 +17,6 @@ initialize_target:
         sta     $FFFF                   ; BRK vector high byte
         rts
 
-
-; Primary stack
-primary_stack: .res PRIMARY_STACK_SIZE
-; Operator stack
-op_stack: .res OP_STACK_SIZE
-
 ; Debugging helpers
 
 .zeropage
