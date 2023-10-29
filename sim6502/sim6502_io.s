@@ -14,6 +14,11 @@
 buffer: .res 256
 line_buffer: .res 256
 
+; Primary stack
+primary_stack: .res PRIMARY_STACK_SIZE
+; Operator stack
+op_stack: .res OP_STACK_SIZE
+
 .code
 
 ; Reads a string from the console into the buffer and adds a terminating NUL.
