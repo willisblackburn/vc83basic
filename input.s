@@ -7,7 +7,7 @@
 
 exec_input:
         lda     #'?'                    ; Prepare to print '?' prompt
-        jsr     putchar
+        jsr     putch
         jsr     readline
         mva     #0, bp                  ; Reset the read position
 @next_var:

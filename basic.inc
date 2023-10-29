@@ -220,4 +220,4 @@
 .global advance_lp_sizeof_float, advance_lp
 
 ; target/*
-.global startup, initialize_target, readline, getchar, write, putchar, newline
+.global startup, initialize_target, readline, write, putch, newline

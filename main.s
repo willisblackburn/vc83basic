@@ -8,10 +8,9 @@ free_message: .byte " BYTES FREE"
 free_length = * - free_message
 
 ready_message: .byte "READY"
-ready_length = * - ready_message
-
+ready_message_length = * - ready_message
 error_message: .byte "ERROR"
-error_length = * - error_message
+error_message_length = * - error_message
 
 ; Verify that the program states are the affected values so we can use flags.
 
@@ -115,7 +114,7 @@ print_start:
 print_ready:
         jsr     newline
         ldax    #ready_message          ; Pass address of message in AX
-        ldy     #ready_length
+        ldy     #ready_message_length   ; Message length
         jsr     write
         jmp     newline
 
@@ -123,6 +122,6 @@ print_ready:
 
 print_error:
         ldax    #error_message          ; Pass address of message in AX
-        ldy     #error_length
+        ldy     #error_message_length   ; Message length
         jsr     write
         jmp     newline
