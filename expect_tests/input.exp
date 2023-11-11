@@ -3,9 +3,14 @@ spawn_basic
 
 # INPUT
 
-test {
+send_echo {
 INPUT X
+}
+expect -ex "?"
+send_echo {
 4
+}
+test {
 PRINT X
 } {
 4

@@ -12,11 +12,18 @@ proc spawn_basic {} {
     }
 }
 
+# send_echo
+# Sends a line to BASIC and expects the same line echoed back.
+
+proc send_echo { input } {
+    send [string trimleft "$input" ]
+    expect -ex [string trimleft "$input"] { puts "**** Accepted" }
+}
+
 # test
 # Sends a program or command BASIC and looks for a response.
 
 proc test { input output } {
-    send [string trimleft "$input" ]
-    expect -ex [string trimleft "$input"] { puts "**** Accepted" }
+    send_echo "$input"
     expect -ex [string trimleft "$output"] { puts "**** Passed" }
 }
