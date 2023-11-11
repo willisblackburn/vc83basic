@@ -1,6 +1,6 @@
 #include "test.h"
 
- void test_is_name_character(void) {
+void test_is_name_character(void) {
 
     PRINT_TEST_NAME();
 
