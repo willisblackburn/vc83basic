@@ -1,6 +1,6 @@
 #include "test.h"
 
- void test_is_name_character(void) {
+void test_is_name_character(void) {
 
     PRINT_TEST_NAME();
 
@@ -43,7 +43,7 @@
     ASSERT_NE(err, 0);
 }
 
- void test_is_operator_name_character(void) {
+void test_is_operator_name_character(void) {
 
     PRINT_TEST_NAME();
 

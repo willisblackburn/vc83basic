@@ -1,4 +1,4 @@
- #include "test.h"
+#include "test.h"
 
 void test_decode_byte(void) {
     char byte_value;
