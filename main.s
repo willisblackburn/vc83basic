@@ -67,7 +67,9 @@ exec_run:
         iny
         cpy     B                       ; End of line?
         bne     @copy_byte              ; No, keep copying
-        mva     #0, bp                  ; Start reading from offset 0
+        lda     #0
+        sta     buffer,x                ; Store 0 at end of line
+        sta     bp                      ; Start reading from offset 0
         ldax    #keyword_print          ; Check if the keyword is print
         jsr     parse_keyword           ; Was it "PRINT"?
         bcs     @error                  ; Nope
