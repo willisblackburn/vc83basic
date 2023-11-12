@@ -50,7 +50,6 @@
 .global set_variable_value_ptr
 .global set_variable_value
 .global grow, grow_a, shrink, shrink_a
-.global calculate_bytes_to_move
 .global check_himem
 
 ; run.s

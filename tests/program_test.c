@@ -185,19 +185,6 @@ void test_check_himem(void) {
     ASSERT_NE(err, 0);
 }
 
-void test_calculate_bytes_to_move(void) {
-
-    PRINT_TEST_NAME();
-
-    // The function just calculates the difference between src_ptr and free_ptr.
-
-    src_ptr = (void*)0x0400;
-    free_ptr = (void*)0x2000;
-
-    calculate_bytes_to_move();
-    ASSERT_EQ(size, 0x1C00);
-}
-
 void test_grow(void) {
 
     PRINT_TEST_NAME();
@@ -297,7 +284,6 @@ int main(void) {
     test_find_line();
     test_insert_or_update_line();
     test_check_himem();
-    test_calculate_bytes_to_move();
     test_grow();
     test_shrink();
     return 0;
