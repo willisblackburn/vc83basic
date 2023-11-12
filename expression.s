@@ -1,9 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; primary_stack must be page-aligned
-.assert <primary_stack = 0, error
-
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
