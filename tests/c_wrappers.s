@@ -398,10 +398,6 @@ _shrink:
         jsr     shrink
         jmp     set_err
 
-_calculate_bytes_to_move:
-.export _calculate_bytes_to_move
-        jmp     calculate_bytes_to_move
-
 _check_himem:
 .export _check_himem
         jsr     check_himem
