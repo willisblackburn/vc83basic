@@ -70,7 +70,6 @@ push_operator:
         rts
 
 ; Process operators with a precedence >= the precedence passed in A.
-; For each such operator, first check if it's a unary operator, then use a jump table to handle other operators.
 ; The open and close parens will never be handled through the jump table: close paren is never actually put on the
 ; operator stack, and open parens have such a low precedence that they will never be evaluated.
 ; A = minimum precedence
