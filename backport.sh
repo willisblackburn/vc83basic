@@ -5,7 +5,7 @@
 # Since the script itself will be replaced when running "git checkout," we do that in a subshell and then have the
 # subshell re-run this script after the checkout.
 
-PREVIOUS_BRANCH=e12
+PREVIOUS_BRANCH=e13
 
 LATEST_COMMIT=$(git rev-parse HEAD)
 echo Backporting $LATEST_COMMIT to $PREVIOUS_BRANCH
