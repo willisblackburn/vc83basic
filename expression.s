@@ -174,12 +174,12 @@ op_le:
 op_lt:
         jsr     compare_values
         bcc     push_value_1            ; A < B
-        bcs     push_value_0            ; A <> B or A = B
+        bcs     push_value_0            ; A >= B
 
 op_ge:
         jsr     compare_values
         bcc     push_value_0            ; A < B
-        bcs     push_value_1            ; A <> B or A = B
+        bcs     push_value_1            ; A >= B
 
 op_gt:
         jsr     compare_values
