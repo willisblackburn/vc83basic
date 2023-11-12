@@ -90,8 +90,8 @@ int read_number(char bp);
 char char_to_digit(char c);
 void parse_line(void);
 void parse_statement(const char* name_ptr);
-void parse_directive(char directive, char bp, char lp);
-void parse_expression(char bp, char lp);
+void parse_directive(char directive);
+void parse_expression(void);
 void parse_name(void);
 void is_name_character(char c);
 
