@@ -178,30 +178,7 @@ grow:
         stax    DE                      ; Store length in DE
         jsr     check_himem             ; Check if expansion will push BASIC memory past himem_ptr
         bcs     @done                   ; If check_himem failed then we fail
-        clc                             ; Clear carry to prepare for addition
-        lda     0,y                     ; Load the low byte of the pointer to increase
-        sta     src_ptr                 ; Store it as source for copy
-        adc     D                       ; Increase low byte
-        sta     dst_ptr                 ; It's also the destination pointer
-        iny                             ; Do the same thing for the high byte
-        lda     0,y
-        sta     src_ptr+1
-        adc     E
-        sta     dst_ptr+1
-        jsr     calculate_bytes_to_move ; Knowing src_ptr we can calculate number of bytes to move
-        dey                             ; Move Y back to low by of source pointer
-@next_ptr:
-        clc
-        lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
-        adc     D
-        sta     0,y
-        iny
-        lda     0,y
-        adc     E
-        sta     0,y
-        iny
-        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
-        bne     @next_ptr               ; Nope, keep going
+        jsr     grow_shrink_common
         jsr     reverse_copy_size       ; Copy data up to the higher address
         clc                             ; Success
 @done:
@@ -219,47 +196,53 @@ grow:
 shrink_a:
         ldx     #0
 shrink:
-        stax    DE                      ; Follow a similar pattern to grow, only we're subtracting
-        sec
-        lda     0,y
-        sta     src_ptr
-        sbc     D
-        sta     dst_ptr
-        iny
-        lda     0,y
-        sta     src_ptr+1
-        sbc     E
-        sta     dst_ptr+1
-        jsr     calculate_bytes_to_move ; Calculate the number of byte to move
-        dey                             ; Move Y back to low by of source pointer
-@next_ptr:
-        sec
-        lda     0,y                     ; Otherwise subtract DE from this pointer
-        sbc     D
-        sta     0,y
-        iny
-        lda     0,y
-        sbc     E
-        sta     0,y
-        iny
-        cpy     #himem_ptr              ; Have we reached himem_ptr?
-        bne     @next_ptr               ; Nope, keep going
+        eor     #$FF                    ; Negate AX and store in DE
+        sta     D
+        txa
+        eor     #$FF
+        sta     E                       ; DE is now -AX-1; we still have to add 1
+        inc     D
+        bne     @skip_increment         ; Increment of D didn't roll over, so don't increment E
+        inc     E
+@skip_increment:
+        jsr     grow_shrink_common
         jsr     copy_size
         clc
         rts
 
-; Calculates the bytes to move for both shrink and grow as (free_ptr - src_ptr).
-; Returns the number of bytes in size.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+; Adds the value in DE to the pointer identified by Y, and all subsequent pointers up to (but not including)
+; himem_ptr, by some amount. Also sets up src_ptr, dst_ptr, and size for copy.
+; Used by both grow and shrink.
 
-calculate_bytes_to_move:
-        sec                       
+grow_shrink_common:
+        clc                             ; Clear carry to prepare for addition
+        lda     0,y                     ; Load the low byte of the pointer to increase
+        sta     src_ptr                 ; Store it as source for copy
+        adc     D                       ; Increase low byte
+        sta     dst_ptr                 ; It's also the destination pointer
+        lda     1,y                     ; Do the same thing for the high byte
+        sta     src_ptr+1
+        adc     E
+        sta     dst_ptr+1
+        sec                             ; Knowing src_ptr we can calculate number of bytes to move
         lda     free_ptr
         sbc     src_ptr
         sta     size                    ; Store low byte of size
         lda     free_ptr+1      
         sbc     src_ptr+1      
         sta     size+1                  ; High byte of length in size+1
+@next_ptr:
+        clc
+        lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
+        adc     D
+        sta     0,y
+        lda     1,y
+        adc     E
+        sta     1,y
+        iny
+        iny
+        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
+        bne     @next_ptr               ; Nope, keep going
         rts
 
 ; Checks if adding an amount to free_ptr will cause it to exceed himem_ptr.
