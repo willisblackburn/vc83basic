@@ -110,7 +110,6 @@ void advance_line_ptr(void);
 void insert_or_update_line(void);
 void grow(void* ptr, size_t size);
 void shrink(void* ptr, size_t size);
-void calculate_bytes_to_move(void);
 void check_himem(size_t size);
 void set_variable_value_ptr(char variable);
 
