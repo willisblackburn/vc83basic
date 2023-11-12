@@ -197,7 +197,6 @@
 .global advance_next_line_ptr, advance_next_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
-.global calculate_bytes_to_move
 .global check_himem
 .global set_variable_value_ptr
 .global mul_value_size, mul_value_size_a
