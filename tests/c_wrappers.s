@@ -190,24 +190,16 @@ _parse_statement:
 
 _parse_directive:
 .export _parse_directive
-        sta     lp
-        jsr     popa
-        sta     bp
-        jsr     popa
         jsr     parse_directive
         jmp     set_err
 
 _parse_expression:
 .export _parse_expression
-        sta     lp
-        jsr     popa
-        sta     bp
         jsr     parse_expression
         jmp     set_err
 
 _parse_argument_separator:
 .export _parse_argument_separator
-        sta     bp
         jsr     parse_argument_separator
         jmp     set_err
 

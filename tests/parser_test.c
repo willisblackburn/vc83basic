@@ -251,6 +251,20 @@ void test_read_number(void) {
     ASSERT_EQ(bp, 0);
 }
 
+void call_parse_expression(const char* s, const char* expected_line_data, size_t expected_line_data_size, int line) {
+    size_t s_length;
+    fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
+    s_length = strlen(s);
+    strcpy(buffer, s);
+    bp = 0;
+    lp = offsetof(Line, data);
+    parse_expression();
+    ASSERT_EQ(err, 0);
+    ASSERT_MEMORY_EQ(line_buffer.data, expected_line_data, expected_line_data_size);
+    ASSERT_EQ(bp, s_length);
+    ASSERT_EQ(lp, offsetof(Line, data) + expected_line_data_size);
+}
+
 void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
@@ -264,40 +278,11 @@ void test_parse_expression(void) {
 
     initialize_program();
 
-    strcpy(buffer, "1");
-    parse_expression(0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
-
-    strcpy(buffer, "X");
-    parse_expression(0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
-
-    strcpy(buffer, "X+1");
-    parse_expression(0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    ASSERT_EQ(bp, 3);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_3);
-
-    strcpy(buffer, "(X+3)*Y");
-    parse_expression(0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
-    ASSERT_EQ(bp, 7);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_4);
-
-    strcpy(buffer, "-X");
-    parse_expression(0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
-    ASSERT_EQ(bp, 2);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_5);
+    call_parse_expression("1", line_data_1, sizeof line_data_1, __LINE__);
+    call_parse_expression("X", line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_expression("X+1", line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_expression("(X+3)*Y", line_data_4, sizeof line_data_4, __LINE__);
+    call_parse_expression("-X", line_data_5, sizeof line_data_5, __LINE__);
 
     // TODO: add more tests
 }
@@ -307,24 +292,43 @@ void test_parse_argument_separator(void) {
     PRINT_TEST_NAME();
 
     strcpy(buffer, ",");
-    parse_argument_separator(0);
+    bp = 0;
+    parse_argument_separator();
     ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 1);
 
     strcpy(buffer, "  ,");
-    parse_argument_separator(0);
+    bp = 0;
+    parse_argument_separator();
     ASSERT_NE(err, 0);
     ASSERT_EQ(bp, 3);
 
     strcpy(buffer, "x");
-    parse_argument_separator(0);
+    bp = 0;
+    parse_argument_separator();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(bp, 0);
 
     strcpy(buffer, ",");
-    parse_argument_separator(1);
+    bp = 1;
+    parse_argument_separator();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(bp, 1);
+}
+
+void call_parse_directive(const char* s, char directive, const char* expect_line_data, size_t expect_line_data_length, 
+        int line) {
+    size_t s_length;
+    fprintf(stderr, "  %s:%d: parse_directive(\"%s\", %d)\n", __FILE__, line, s, directive);
+    s_length = strlen(s);
+    strcpy(buffer, s);
+    bp = 0;
+    lp = offsetof(Line, data);
+    parse_directive(directive);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(bp, s_length);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
+    ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
 }
 
 void test_parse_directive(void) {
@@ -341,64 +345,25 @@ void test_parse_directive(void) {
 
     initialize_program();
 
-    strcpy(buffer, "1");
-    parse_directive(1, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_1);
-
-    strcpy(buffer, "X");
-    parse_directive(1, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_2);
-
-    strcpy(buffer, "X");
-    parse_directive(NT_VAR, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_3);
-
-    strcpy(buffer, "X");
-    parse_directive(NT_RPT_VAR, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_4, sizeof line_data_4);
-    ASSERT_EQ(bp, 1);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_4);
-
-    strcpy(buffer, "X,Y");
-    parse_directive(NT_RPT_VAR, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_5, sizeof line_data_5);
-    ASSERT_EQ(bp, 3);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_5);
-
-    strcpy(buffer, "10");
-    parse_directive(NT_NUM, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_6, sizeof line_data_6);
-    ASSERT_EQ(bp, 2);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_6);
-
-    strcpy(buffer, "10,20");
-    parse_directive(NT_RPT_NUM, 0, offsetof(Line, data));
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_7, sizeof line_data_7);
-    ASSERT_EQ(bp, 5);
-    ASSERT_EQ(lp, offsetof(Line, data) + sizeof line_data_7);
+    call_parse_directive("1", 1, line_data_1, sizeof line_data_1, __LINE__);
+    call_parse_directive("X", 1, line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_directive("X", NT_VAR, line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_directive("X", NT_RPT_VAR, line_data_4, sizeof line_data_4, __LINE__);
+    call_parse_directive("X,Y", NT_RPT_VAR, line_data_5, sizeof line_data_5, __LINE__);
+    call_parse_directive("10", NT_NUM, line_data_6, sizeof line_data_6, __LINE__);
+    call_parse_directive("10,20", NT_RPT_NUM, line_data_7, sizeof line_data_7, __LINE__);
 }
 
-void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length,
-    int line) {
+void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
+    size_t s_length;
     fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
+    s_length = strlen(s);
     strcpy(buffer, s);
     bp = 0;
     lp = offsetof(Line, data);
     parse_statement(statement_name_table);
     ASSERT_EQ(err, 0);
+    ASSERT_EQ(bp, s_length);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
 }
