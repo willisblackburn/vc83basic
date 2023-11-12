@@ -78,7 +78,7 @@ parse_line:
 
 parse_statement:
         jsr     parse_name
-        bcs     @error
+        bcs     @done
         ldax    #statement_name_table
         stax    name_ptr                ; Store initial name_ptr
         mva     #0, matched_name_index  ; Initialize name table index to 0
@@ -125,6 +125,7 @@ parse_statement:
         pla                             ; Discard saved values
         pla
         pla
+@done:
         rts  
 
 parse_argument_type_vectors:
