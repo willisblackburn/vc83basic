@@ -4,9 +4,6 @@
 ; Logic depends on TOKEN_NO_VALUE being zero
 .assert TOKEN_NO_VALUE = 0, error
 
-; primary_stack must be page-aligned
-.assert <primary_stack = 0, error
-
 ; GOTO statement:
 
 exec_goto:
