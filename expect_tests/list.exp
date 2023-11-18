@@ -1,0 +1,36 @@
+source [file join [file dirname [info script]] common.expinc]
+spawn_basic
+
+# LIST
+
+# Formatting of expressions in LIST
+
+test {
+NEW
+100 PRINT 1
+101 PRINT X
+102 PRINT X+1
+103 PRINT (X+1)*3
+104 PRINT (X-1)/3
+105 PRINT -X
+106 PRINT -X+1
+107 PRINT -X+(-1)
+108 PRINT (-X+1)*3
+109 PRINT (-X+1)/3
+110 PRINT 1 AND 2
+111 PRINT (X+1) AND 2
+LIST
+} {
+100 PRINT 1
+101 PRINT X
+102 PRINT X+1
+103 PRINT (X+1)*3
+104 PRINT (X-1)/3
+105 PRINT -X
+106 PRINT -X+1
+107 PRINT -X+(-1)
+108 PRINT (-X+1)*3
+109 PRINT (-X+1)/3
+110 PRINT 1 AND 2
+111 PRINT (X+1) AND 2
+}
