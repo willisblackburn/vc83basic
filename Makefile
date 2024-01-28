@@ -4,7 +4,6 @@ TEST_TARGET = sim6502
 
 COMMON_SOURCES = \
 	control.s \
-	data.s \
 	decode.s \
 	encode.s \
 	expression.s \
@@ -18,7 +17,8 @@ COMMON_SOURCES = \
 	program.s \
 	run.s \
 	tables.s \
-	util.s
+	util.s \
+	zeropage.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
 TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
