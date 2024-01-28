@@ -2,7 +2,7 @@ TARGETS = sim6502 apple2
 
 TEST_TARGET = sim6502
 
-COMMON_SOURCES = data.s decode.s encode.s input.s let.s list.s main.s name.s parser.s print.s program.s run.s tables.s util.s
+COMMON_SOURCES = decode.s encode.s input.s let.s list.s main.s name.s parser.s print.s program.s run.s tables.s util.s zeropage.s
 COMMON_OBJECTS = $(COMMON_SOURCES:.s=.o)
 
 TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
