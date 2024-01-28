@@ -1,6 +1,6 @@
 .include "basic.inc"
 
-; Zeropage and BSS data
+; Zero page data
 
 .zeropage
 
