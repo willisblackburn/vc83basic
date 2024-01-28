@@ -1,4 +1,4 @@
-SOURCES = data.s init.s io.s main.s parser.s program.s startup.s util.s
+SOURCES = init.s io.s main.s parser.s program.s startup.s util.s zeropage.s
 OBJECTS = $(SOURCES:.s=.o)
 
 TEST_COMMON_SOURCES = c_wrappers.s
