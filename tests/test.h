@@ -17,8 +17,8 @@ typedef struct Line {
 
 // Zero Page
 
-extern char bp;
-#pragma zpsym ("bp")
+extern char buffer_pos;
+#pragma zpsym ("buffer_pos")
 extern void* src_ptr;
 #pragma zpsym ("src_ptr")
 extern void* dst_ptr;
@@ -51,26 +51,26 @@ extern char err;
 // Prototypes for C wrapper functions
 
 // parser.s
-int read_number(char bp);
-char char_to_digit(char c);
-void parse_keyword(const char* keyword, char bp);
+int read_number(void);
+char char_to_digit(/* A */ char c);
+void parse_keyword(/* AX */ const char* keyword);
 
 // program.s
 void initialize_target(void);
 void initialize_program(void);
 void reset_line_ptr(void);
-void find_line(int line_number);
+void find_line(/* AX */ int line_number);
 void advance_line_ptr(void);
 void insert_or_update_line(void);
-void grow(void* ptr, size_t size);
-void shrink(void* ptr, size_t size);
-void check_himem(size_t size);
+void grow(/* Y */ void* ptr, /* AX */ size_t size);
+void shrink(/* Y */ void* ptr, /* AX */ size_t size);
+void check_himem(/* AX */ size_t size);
 
 // util.s
-void copy(char* to, const char* from, size_t size);
-void reverse_copy(char* to, const char* from, size_t size);
-int mul10(int value);
-int div10(int value);
+void copy(/* AX */ size_t size);
+void reverse_copy(/* AX */ size_t size);
+int mul10(/* AX */ int value);
+int div10(/* AX */ int value);
 
 // Common functions and definitions used in tests
 

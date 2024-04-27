@@ -25,49 +25,54 @@ void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
+int call_read_number(const char* s, char set_buffer_pos) {
+    strcpy(buffer, s);
+    buffer_pos = set_buffer_pos;
+    return read_number();
+}
+
 void test_read_number(void) {
     int number;
 
     PRINT_TEST_NAME();
 
-    strcpy(buffer, "10 PRINT X");
-    number = read_number(0);
+    number = call_read_number("10 PRINT X", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 10);
-    ASSERT_EQ(bp, 2);
+    ASSERT_EQ(buffer_pos, 2);
 
     // The function should honor the current read position.
-    strcpy(buffer, "1020 PRINT X");
-    number = read_number(2);
+    number = call_read_number("1020 PRINT X", 2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 20);
-    ASSERT_EQ(bp, 4);
+    ASSERT_EQ(buffer_pos, 4);
 
     // The function should return carry set if an invalid number.
-    strcpy(buffer, "invalid");
-    read_number(0);
+    call_read_number("invalid", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 
-    strcpy(buffer, "");
-    read_number(0);
+    call_read_number("", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
+}
+
+void call_parse_keyword(const char* keyword, const char* s, char set_buffer_pos) {
+    strcpy(buffer, s);
+    buffer_pos = set_buffer_pos;
+    parse_keyword(keyword);
 }
 
 void test_parse_keyword(void) {
-    const char* print = "PRIN\xD4";
-
     PRINT_TEST_NAME();
 
-    strcpy(buffer, "PRINT");
-    parse_keyword("PRIN\xD4", 0); // \xD4 = 'T' with high bit set
+    call_parse_keyword("PRIN\xD4", "PRINT", 0); // \xD4 = 'T' with high bit set
     ASSERT_EQ(err, 0);
-    parse_keyword("LIS\xD4", 0);
+    call_parse_keyword("LIS\xD4", "PRINT", 0);
     ASSERT_NE(err, 0);
-    parse_keyword("PRINTE\xD2", 0);
+    call_parse_keyword("PRINTE\xD2", "PRINT", 0);
     ASSERT_NE(err, 0);
-    parse_keyword("PRIN\xD4", 2);
+    call_parse_keyword("PRIN\xD4", "PRINT", 2);
     ASSERT_NE(err, 0);
 }
 
