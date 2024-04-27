@@ -28,3 +28,7 @@ comment Program states
 
 def(PS_STOPPED,         hex(00))
 def(PS_RUNNING,         hex(01))
+
+comment Other constants
+
+def(BUFFER_SIZE, 256)
