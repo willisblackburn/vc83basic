@@ -19,3 +19,7 @@ comment Statement tokens
 def(ST_RUN,             0)
 def(ST_PRINT,           1)
 def(ST_LET,             2)
+
+comment Other constants
+
+def(BUFFER_SIZE, 256)

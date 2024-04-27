@@ -7,15 +7,6 @@
 .include "../macros.inc"
 .include "../basic.inc"
 
-; Buffers
-
-.segment "BUFFERS"
-
-buffer: .res 256
-line_buffer: .res 256
-
-.code
-
 ; Reads a string from the console into the buffer and adds a terminating NUL.
 ; Returns the length of the line in A.
 
@@ -24,7 +15,7 @@ readline:
         lda     #<buffer                ; Load buffer address into AX
         ldx     #>buffer
         jsr     pushax                  ; Push onto C stack
-        lda     #.sizeof(buffer)-1      ; Max length = buffer size - 1 byte for NUL
+        lda     #BUFFER_SIZE-1          ; Max length = buffer size - 1 byte for NUL
         ldx     #0
         jsr     _read                   ; Returns length in AX (will be <= 254)
         tax                             ; Length into X
