@@ -1,13 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-.bss
-
-; The program line produced by the parser
-line_buffer: .res 256
- 
- .code
-
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
 ; buffer_pos = the read position in buffer

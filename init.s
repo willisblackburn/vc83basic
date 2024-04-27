@@ -17,6 +17,13 @@ initialize_target:
         sta     $FFFF                   ; BRK vector high byte
         rts
 
+; Buffers
+
+.bss
+
+buffer: .res BUFFER_SIZE
+line_buffer: .res BUFFER_SIZE
+
 ; Debugging helpers
 
 .zeropage
