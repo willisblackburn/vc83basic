@@ -6,6 +6,8 @@
     data .res 1
 .endstruct
 
+BUFFER_SIZE = 256
+
 ; Zero Page
 
 .globalzp B

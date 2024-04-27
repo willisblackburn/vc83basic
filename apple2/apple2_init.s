@@ -7,3 +7,4 @@ initialize_target:
 ; Buffers
 
 buffer := $200
+line_buffer := $300
