@@ -1,14 +1,21 @@
 .include "macros.inc"
 .include "basic.inc"
 
+.bss
+
+; The program line produced by the parser
+line_buffer: .res 256
+ 
+ .code
+
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
-; bp = the read position in buffer
+; buffer_pos = the read position in buffer
 ; Returns the number in AX, carry clear if ok, carry set if error
 
 read_number:
         jsr     skip_whitespace         ; TODO: can check return here to see if it's a number
-        ldy     bp                      ; Use Y to index buffer (since AX will hold the number)
+        ldy     buffer_pos              ; Use Y to index buffer (since AX will hold the number)
         lda     #0                      ; Intialize the value to 0
         tax
 @next:
@@ -27,9 +34,9 @@ read_number:
         jmp     @next
 
 @finish:
-        cpy     bp                      ; Did we parse anything?
+        cpy     buffer_pos              ; Did we parse anything?
         beq     @nothing                ; Nope
-        sty     bp                      ; Update read position
+        sty     buffer_pos              ; Update read position
         clc                             ; Clear carry to signal OK
         rts
 
@@ -50,12 +57,12 @@ char_to_digit:
 ; Tests the input against a keyword. The last letter of the keyword must have bit 7 set (but it is ignored
 ; in the comparison).
 ; AX = pointer to the keyword
-; bp = the read position in buffer
+; buffer_pos = the read position in buffer
 ; Returns carry clear if the keyword matched, carry set if it didn't match.
 
 parse_keyword:
         stax    BC                      ; Keyword pointer into BC      
-        jsr     skip_whitespace         ; Leaves BP in X
+        jsr     skip_whitespace         ; Leaves buffer_pos in X
         ldy     #0                      ; Y will index the keyword
 @compare:       
         lda     (BC),y                  ; Get keyword character
@@ -70,7 +77,7 @@ parse_keyword:
 
 @match:
         inx                             ; Move past matched character
-        stx     bp                      ; Update read position
+        stx     buffer_pos              ; Update read position
         clc                             ; On match the carry flag will be set to have to clear it
         rts
 
@@ -78,14 +85,14 @@ parse_keyword:
         sec
         rts
 
-; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
-; bp = the read position (modified)
+; Skip past any whitespace in the buffer. Returns the next character in A. The final value of buffer_pos is also left in X.
+; buffer_pos = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
 loop_skip_whitespace:
-        inc     bp
+        inc     buffer_pos
 skip_whitespace:
-        ldx     bp                      ; Use X to index buffer
+        ldx     buffer_pos              ; Use X to index buffer
         lda     buffer,x        
         cmp     #' '        
         beq     loop_skip_whitespace       

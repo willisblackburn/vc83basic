@@ -34,15 +34,7 @@ free_ptr: .res 2
 himem_ptr: .res 2
 
 ; Read/write position in buffer
-bp: .res 1
-
-; Read/write position in line
-lp: .res 1
+buffer_pos: .res 1
 
 ; The line number sought by find_line
 line_number: .res 2
-
-.bss
-
-; The program line produced by the parser
-line_buffer: .res 256

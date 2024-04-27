@@ -12,7 +12,7 @@
 
 ; Aliases for globals
 
-.export _bp = bp
+.export _buffer_pos = buffer_pos
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
 .export _size = size
@@ -55,7 +55,6 @@ set_err:
 
 _read_number:
 .export _read_number
-        sta     bp               
         jsr     read_number
         jmp     set_err
 
@@ -66,8 +65,6 @@ _char_to_digit:
 
 _parse_keyword:
 .export _parse_keyword
-        sta     bp              
-        jsr     popax                   ; Keyword pointer
         jsr     parse_keyword
         jmp     set_err
 
@@ -126,22 +123,10 @@ _check_himem:
 
 _copy:
 .export _copy
-        stax    DE                      ; Size
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     copy
 
 _reverse_copy:
 .export _reverse_copy
-        stax    DE
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     reverse_copy
 
 _mul10:

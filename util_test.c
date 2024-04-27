@@ -29,7 +29,9 @@ void test_copy_case(size_t size, size_t offset, int line) {
     // Set up test data in test_data + offset and try to copy it to the lower position.
     fill_test_data(offset, size);
     HEXDUMP(test_data + offset, 16);
-    copy(test_data, test_data + offset, size);
+    src_ptr = test_data + offset;
+    dst_ptr = test_data;
+    copy(size);
     HEXDUMP(test_data, 16);
     verify_test_data(test_data, size);
 }
@@ -54,7 +56,9 @@ void test_reverse_copy_case(size_t size, size_t offset, int line) {
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
     HEXDUMP(test_data, 16);
-    reverse_copy(test_data + offset, test_data, size);
+    src_ptr = test_data;
+    dst_ptr = test_data + offset;
+    reverse_copy(size);
     HEXDUMP(test_data + offset, 16);
     verify_test_data(test_data + offset, size);
 }
