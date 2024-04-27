@@ -9,7 +9,7 @@ initialize_target:
 .segment "BUFFERS"
 
 buffer := $200
-line_buffer: .res 256
+line_buffer: .res BUFFER_SIZE
 
 ; Ensure that primary stack and operator stack fit together in unused part of page 3
 .assert PRIMARY_STACK_SIZE + OP_STACK_SIZE = 208, error
