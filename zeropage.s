@@ -43,13 +43,13 @@ free_ptr: .res 2
 himem_ptr: .res 2
 
 ; Read/write position in buffer
-bp: .res 1
+buffer_pos: .res 1
 
 ; The starting position of the name
-name_bp: .res 1
+name_start_pos: .res 1
 
 ; Read/write position in line
-lp: .res 1
+line_pos: .res 1
 
 ; The line number sought by find_line
 line_number: .res 2
@@ -64,9 +64,7 @@ variable_value_ptr: .res 2
 name_ptr: .res 2
 
 ; Read position in the name table entry
-np: .res 1
+name_pos: .res 1
 
 ; Index of matched name
 matched_name_index: .res 1
-
-.bss

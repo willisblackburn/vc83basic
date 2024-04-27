@@ -12,9 +12,9 @@
 
 ; Aliases for globals
 
-.export _bp = bp
-.export _name_bp = name_bp
-.export _lp = lp
+.export _buffer_pos = buffer_pos
+.export _name_start_pos = name_start_pos
+.export _line_pos = line_pos
 .export _src_ptr = src_ptr
 .export _dst_ptr = dst_ptr
 .export _size = size
@@ -34,7 +34,7 @@
 .export _variable_value_ptr = variable_value_ptr
 
 .export _name_ptr = name_ptr
-.export _np = np
+.export _name_pos = name_pos
 
 .bss
 
@@ -109,7 +109,7 @@ _add_variable:
 
 _read_number:
 .export _read_number
-        sta     bp                      ; Buffer index
+        sta     buffer_pos              ; Buffer index
         jsr     read_number
         jmp     set_err
 
@@ -207,30 +207,14 @@ _set_variable_value_ptr:
 
 _copy:
 .export _copy
-        stax    DE                      ; Size
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     copy
 
 _reverse_copy:
 .export _reverse_copy
-        stax    DE
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     reverse_copy
 
 _clear_memory:
 .export _clear_memory
-        stax    DE                      ; Size
-        jsr     popax
-        stax    dst_ptr                 ; Get the pointer into BC
-        ldax    DE                      ; Restore size into AX
         jmp     clear_memory
 
 _mul2:
@@ -256,6 +240,4 @@ _invoke_indexed_vector:
 
 _format_number:
 .export _format_number
-        sta     bp
-        jsr     popax
         jmp     format_number
