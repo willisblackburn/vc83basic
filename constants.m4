@@ -90,5 +90,6 @@ def(PS_RUNNING,         hex(01))
 
 comment Other constants
 
+def(BUFFER_SIZE, 256)
 def(PRIMARY_STACK_SIZE, 192)
 def(OP_STACK_SIZE, 16)
