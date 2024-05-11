@@ -30,94 +30,38 @@ typedef struct UnpackedFloat {
 
 // Zero Page
 
-extern int reg_bc;
-#pragma zpsym ("reg_bc")
-extern char reg_b;
-#pragma zpsym ("reg_b")
-extern char reg_c;
-#pragma zpsym ("reg_c")
-extern int reg_de;
-#pragma zpsym ("reg_de")
-extern char reg_d;
-#pragma zpsym ("reg_d")
-extern char reg_e;
-#pragma zpsym ("reg_e")
-extern UnpackedFloat FP0;
-#pragma zpsym ("FP0")
+#include "../zeropage.h"
+
+// References to exports defined in c_wrappers.s
+
+extern int AX;
+extern char A;
+extern char X;
+extern char X;
+
+extern char err;
+
+extern int BC;
+#pragma zpsym ("BC")
+extern int DE;
+#pragma zpsym ("DE")
 extern unsigned long FP0t;
 #pragma zpsym ("FP0t")
 extern char FP0e;
 #pragma zpsym ("FP0e")
 extern char FP0s;
 #pragma zpsym ("FP0s")
-extern UnpackedFloat FP1;
-#pragma zpsym ("FP1")
 extern unsigned long FP1t;
 #pragma zpsym ("FP1t")
 extern char FP1e;
 #pragma zpsym ("FP1e")
 extern char FP1s;
 #pragma zpsym ("FP1s")
-extern unsigned long FP2;
-#pragma zpsym ("FP2")
-extern unsigned long FP3;
-#pragma zpsym ("FP3")
-extern char bp;
-#pragma zpsym ("bp")
-extern char name_bp;
-#pragma zpsym ("name_bp")
-extern char lp;
-#pragma zpsym ("lp")
-extern void* src_ptr;
-#pragma zpsym ("src_ptr")
-extern void* dst_ptr;
-#pragma zpsym ("dst_ptr")
-extern size_t size;
-#pragma zpsym ("size")
-extern void** vector_table_ptr;
-#pragma zpsym ("vector_table_ptr")
-extern char* name_ptr;
-#pragma zpsym ("name_ptr")
-extern char np;
-#pragma zpsym ("np")
-extern Line* program_ptr;
-#pragma zpsym ("program_ptr")
-extern Line* line_ptr;
-#pragma zpsym ("line_ptr")
-extern Line* next_line_ptr;
-#pragma zpsym ("next_line_ptr")
-extern char* variable_name_table_ptr;
-#pragma zpsym ("variable_name_table_ptr")
-extern void* value_table_ptr;
-#pragma zpsym ("value_table_ptr")
-extern void* free_ptr;
-#pragma zpsym ("free_ptr")
-extern void* himem_ptr;
-#pragma zpsym ("himem_ptr")
-extern char variable_count;
-#pragma zpsym ("variable_count")
-extern void* variable_value_ptr;
-#pragma zpsym ("variable_value_ptr")
-extern char osp;
-#pragma zpsym ("osp")
-extern char psp;
-#pragma zpsym ("psp")
-
-// Data
 
 extern char buffer[];
 extern Line line_buffer;
 
 extern const char statement_name_table[];
-
-// Used by c_wrappers.s
-
-extern int reg_ax;
-extern char reg_a;
-extern char reg_x;
-extern char reg_y;
-
-extern char err;
 
 // Prototypes for C wrapper functions
 
