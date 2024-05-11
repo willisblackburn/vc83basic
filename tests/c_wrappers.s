@@ -10,66 +10,31 @@
 .include "../macros.inc"
 .include "../basic.inc"
 
-; Aliases for globals
-
-.export _reg_bc = BC
-.export _reg_b = B
-.export _reg_c = C
-.export _reg_de = DE
-.export _reg_d = D
-.export _reg_e = E
-
-.export _FP0 = FP0
-.export _FP0t = FP0t
-.export _FP0e = FP0e
-.export _FP0s = FP0s
-.export _FP1 = FP1
-.export _FP1t = FP1t
-.export _FP1e = FP1e
-.export _FP1s = FP1s
-.export _FP2 = FP2
-
-.export _bp = bp
-.export _name_bp = name_bp
-.export _lp = lp
-.export _src_ptr = src_ptr
-.export _dst_ptr = dst_ptr
-.export _size = size
-.export _vector_table_ptr = vector_table_ptr
-.export _buffer = buffer
-.export _line_buffer = line_buffer
-
-.export _statement_name_table = statement_name_table
-
-.export _program_ptr = program_ptr
-.export _line_ptr = line_ptr
-.export _next_line_ptr = next_line_ptr
-.export _variable_name_table_ptr = variable_name_table_ptr
-.export _value_table_ptr = value_table_ptr
-.export _free_ptr = free_ptr
-.export _himem_ptr = himem_ptr
-.export _variable_count = variable_count
-.export _variable_value_ptr = variable_value_ptr
-
-.export _name_ptr = name_ptr
-.export _np = np
-
-.export _osp = osp
-.export _psp = psp
-
 .bss
 
 ; The wrappers for functions that use the carry bit to flag errors return the carry and use these fields to
 ; save the register values returned from the function.
 
-_reg_ax:
-_reg_a: .res 1
-_reg_x: .res 1
-_reg_y: .res 1
-.export _reg_ax, _reg_a, _reg_x, _reg_y
+_AX:
+_A: .res 1
+_X: .res 1
+_Y: .res 1
+.export _AX, _A, _X, _Y
 
 _err: .res 1
 .export _err
+
+; C exports for non-zero-page data.
+; These must have corresponding extern declarations in test.h
+
+.export _BC = BC, _DE = DE
+.export _FP0t = FP0t, _FP0e = FP0e, _FP0s = FP0s
+.export _FP1t = FP1t, _FP1e = FP1e, _FP1s = FP1s
+
+.export _buffer = buffer
+.export _line_buffer = line_buffer
+
+.export _statement_name_table = statement_name_table
 
 .code
 
@@ -448,7 +413,7 @@ _mul10:
 _div10:
 .export _div10
         jsr     div10
-        sty     _reg_y                  ; Save remainder
+        sty     _Y                      ; Save remainder
         rts
 
 _invoke_indexed_vector:
