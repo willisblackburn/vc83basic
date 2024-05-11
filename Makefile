@@ -48,11 +48,11 @@ basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
 	cl65 -t $1 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^
 
 # Builds a target-specific object from a common source
-$1/%.o: %.s constants.inc
+$1/%.o: %.s constants.inc zeropage.inc basic.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 # Builds a target-specific object from a target-specific source
-$1/%.o: $1/%.s constants.inc
+$1/%.o: $1/%.s constants.inc zeropage.inc basic.inc
 	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
 
 -include $$(TARGET_$1_SOURCES:.s=.d)
@@ -92,19 +92,29 @@ constants.inc: constants.m4
 constants.h: constants.m4
 	m4 -D__C__ $< >$@
 
+# Rules for building the zero page files:
+zeropage.s: zeropage.m4
+	m4 -DOUTPUT=s $< >$@
+
+zeropage.inc: zeropage.m4
+	m4 -DOUTPUT=inc $< >$@
+
+zeropage.h: zeropage.m4
+	m4 -DOUTPUT=h $< >$@
+
 $(foreach TARGET,$(TARGETS),$(eval $(call create-target,$(TARGET))))
 
 $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 
 # Builds a common object from a common assembly language source; used by tests
-%.o: %.s constants.inc
+%.o: %.s constants.inc zeropage.inc basic.inc
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_ASMFLAGS) -o $@ $<
 
 # Same but for a C source
-%.o: %.c constants.h
+%.o: %.c constants.h zeropage.h tests/test.h
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_CFLAGS) -o $@ $<
 
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f constants.inc constants.h *.o *.d *.map tests/*.o tests/*.d tests/*.map
+	rm -f constants.inc constants.h zeropage.s zeropage.inc zeropage.h *.o *.d *.map tests/*.o tests/*.d tests/*.map
