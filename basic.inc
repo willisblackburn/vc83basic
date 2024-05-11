@@ -29,52 +29,17 @@
 
 ; Zero Page
 
-.globalzp B
-.globalzp BC
-.globalzp C
-.globalzp D
-.globalzp DE
-.globalzp E
-.globalzp FP0
-.globalzp FP0e
-.globalzp FP0s
-.globalzp FP0t
-.globalzp FP1
-.globalzp FP1e
-.globalzp FP1s
-.globalzp FP1t
-.globalzp FP2
-.globalzp FP3
-.globalzp argument_count
-.globalzp bp
-.globalzp decode_expression_vector_table_ptr
-.globalzp dst_ptr
-.globalzp fp_temp
-.globalzp free_ptr
-.globalzp himem_ptr
-.globalzp line_number
-.globalzp line_ptr
-.globalzp lp
-.globalzp matched_name_index
-.globalzp min_precedence
-.globalzp name_bp
-.globalzp name_ptr
-.globalzp next_line_ptr
-.globalzp np
-.globalzp on_handler
-.globalzp on_value
-.globalzp osp
-.globalzp program_ptr
-.globalzp program_state
-.globalzp psp
-.globalzp resume_line_ptr
-.globalzp size
-.globalzp src_ptr
-.globalzp value_table_ptr
-.globalzp variable_count
-.globalzp variable_name_table_ptr
-.globalzp variable_value_ptr
-.globalzp vector_table_ptr
+.include "zeropage.inc"
+
+BC = B
+DE = D
+
+FP0t = FP0+UnpackedFloat::t
+FP0e = FP0+UnpackedFloat::e
+FP0s = FP0+UnpackedFloat::s
+FP1t = FP1+UnpackedFloat::t
+FP1e = FP1+UnpackedFloat::e
+FP1s = FP1+UnpackedFloat::s
 
 ; Data
 

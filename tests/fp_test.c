@@ -70,21 +70,21 @@ void test_adjust_exponent(void) {
     SET_FPX(FP0, POSITIVE, 0, 0);
     adjust_exponent(0, 0);
     ASSERT_FPX_EQ(FP0, POSITIVE, 0, 0);
-    ASSERT_EQ(reg_c, 0);
+    ASSERT_EQ(C, 0);
     adjust_exponent(1, 0);
     ASSERT_FPX_EQ(FP0, POSITIVE, 1, 0);
-    ASSERT_EQ(reg_c, 0);
+    ASSERT_EQ(C, 0);
     adjust_exponent(0, 1);
     ASSERT_FPX_EQ(FP0, POSITIVE, 0, 0);
-    ASSERT_EQ(reg_c, 0);
+    ASSERT_EQ(C, 0);
     SET_FPX(FP0, POSITIVE, 192, 0);
     adjust_exponent(192, 0);
     ASSERT_FPX_EQ(FP0, POSITIVE, 128, 0);
-    ASSERT_EQ(reg_c, 1);
+    ASSERT_EQ(C, 1);
     SET_FPX(FP0, POSITIVE, 0, 0);
     adjust_exponent(0, 192);
     ASSERT_FPX_EQ(FP0, POSITIVE, 64, 0);
-    ASSERT_EQ(reg_c, 255);
+    ASSERT_EQ(C, 255);
 }
 
 void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
@@ -93,7 +93,7 @@ void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
     FP0e = e;
     FP2 = x;
     FP0t = t;
-    reg_b = b;
+    B = b;
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
     ASSERT_EQ(err, 0);

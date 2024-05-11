@@ -7,3 +7,6 @@ basic_*
 *_test
 constants.inc
 constants.h
+zeropage.inc
+zeropage.h
+zeropage.s
