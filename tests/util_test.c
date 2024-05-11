@@ -147,19 +147,19 @@ void test_div10(void) {
 
     result = div10(0);
     ASSERT_EQ(result, 0);
-    ASSERT_EQ(reg_y, 0);
+    ASSERT_EQ(Y, 0);
     result = div10(1);
     ASSERT_EQ(result, 0);
-    ASSERT_EQ(reg_y, 1);
+    ASSERT_EQ(Y, 1);
     result = div10(10);
     ASSERT_EQ(result, 1);
-    ASSERT_EQ(reg_y, 0);
+    ASSERT_EQ(Y, 0);
     result = div10(399);
     ASSERT_EQ(result, 39);
-    ASSERT_EQ(reg_y, 9);
+    ASSERT_EQ(Y, 9);
     result = div10(10000);
     ASSERT_EQ(result, 1000);
-    ASSERT_EQ(reg_y, 0);
+    ASSERT_EQ(Y, 0);
 }
 
 int f1(void) {
