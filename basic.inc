@@ -10,34 +10,10 @@
 
 ; Zero Page
 
-.globalzp B
-.globalzp BC
-.globalzp C
-.globalzp D
-.globalzp DE
-.globalzp E
-.globalzp argument_count
-.globalzp bp
-.globalzp decode_expression_vector_table_ptr
-.globalzp dst_ptr
-.globalzp free_ptr
-.globalzp himem_ptr
-.globalzp line_number
-.globalzp line_ptr
-.globalzp lp
-.globalzp matched_name_index
-.globalzp name_bp
-.globalzp name_ptr
-.globalzp np
-.globalzp program_ptr
-.globalzp program_state
-.globalzp size
-.globalzp src_ptr
-.globalzp value_table_ptr
-.globalzp variable_count
-.globalzp variable_name_table_ptr
-.globalzp variable_value_ptr
-.globalzp vector_table_ptr
+.include "zeropage.inc"
+
+BC = B
+DE = D
 
 ; Data
 
