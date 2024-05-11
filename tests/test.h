@@ -19,56 +19,38 @@ typedef struct Line {
 
 // Zero Page
 
-extern char buffer_pos;
-#pragma zpsym ("buffer_pos")
-extern char name_start_pos;
-#pragma zpsym ("name_start_pos")
-extern char line_pos;
-#pragma zpsym ("line_pos")
-extern void* src_ptr;
-#pragma zpsym ("src_ptr")
-extern void* dst_ptr;
-#pragma zpsym ("dst_ptr")
-extern size_t size;
-#pragma zpsym ("size")
-extern void** vector_table_ptr;
-#pragma zpsym ("vector_table_ptr")
-extern char* name_ptr;
-#pragma zpsym ("name_ptr")
-extern char name_pos;
-#pragma zpsym ("name_pos")
-extern Line* program_ptr;
-#pragma zpsym ("program_ptr")
-extern Line* line_ptr;
-#pragma zpsym ("line_ptr")
-extern char* variable_name_table_ptr;
-#pragma zpsym ("variable_name_table_ptr")
-extern void* value_table_ptr;
-#pragma zpsym ("value_table_ptr")
-extern void* free_ptr;
-#pragma zpsym ("free_ptr")
-extern void* himem_ptr;
-#pragma zpsym ("himem_ptr")
-extern char variable_count;
-#pragma zpsym ("variable_count")
-extern void* variable_value_ptr;
-#pragma zpsym ("variable_value_ptr")
+#include "../zeropage.h"
 
-// Data
+// References to exports defined in c_wrappers.s
+
+extern int AX;
+extern char A;
+extern char X;
+extern char Y;
+
+extern char err;
+
+extern int BC;
+#pragma zpsym ("BC")
+extern int DE;
+#pragma zpsym ("DE")
+extern unsigned long FP0t;
+#pragma zpsym ("FP0t")
+extern char FP0e;
+#pragma zpsym ("FP0e")
+extern char FP0s;
+#pragma zpsym ("FP0s")
+extern unsigned long FP1t;
+#pragma zpsym ("FP1t")
+extern char FP1e;
+#pragma zpsym ("FP1e")
+extern char FP1s;
+#pragma zpsym ("FP1s")
 
 extern char buffer[];
 extern Line line_buffer;
 
 extern const char statement_name_table[];
-
-// Used by c_wrappers.s
-
-extern int reg_ax;
-extern char reg_a;
-extern char reg_x;
-extern char reg_y;
-
-extern char err;
 
 // Prototypes for C wrapper functions
 
