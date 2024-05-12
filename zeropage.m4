@@ -59,7 +59,7 @@ comment Read/write position in line
 byte(line_pos)
 
 comment The line number sought by find_line
-word(line_number)
+word(line_number, int)
 
 comment The number of variables in the program
 byte(variable_count)
