@@ -2,8 +2,8 @@
 
 void add_variable_with_name(const char* name) {
     strcpy(buffer, name);
-    name_bp = 0;
-    bp = strlen(buffer);
+    name_start_pos = 0;
+    buffer_pos = strlen(buffer);
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     add_variable();
@@ -22,10 +22,10 @@ void call_list_directive(char directive, const char* line_data, size_t line_data
     const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_directive(%d)\n", __FILE__, line, directive);
     set_line(0, line_data, line_data_length);
-    bp = 0;
+    buffer_pos = 0;
     list_directive(directive);
     ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
-    ASSERT_EQ(bp, strlen(expect_buffer));
+    ASSERT_EQ(buffer_pos, strlen(expect_buffer));
 }
 
 void test_list_directive(void) {
@@ -60,10 +60,10 @@ void test_list_directive(void) {
 void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_statement()\n", __FILE__, line);
     set_line(0, line_data, line_data_length);
-    bp = 0;
+    buffer_pos = 0;
     list_statement();
     ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
-    ASSERT_EQ(bp, strlen(expect_buffer));
+    ASSERT_EQ(buffer_pos, strlen(expect_buffer));
 }
 
 void test_list_statment(void) {
@@ -113,13 +113,13 @@ void test_list_line(void) {
     list_line();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_1, sizeof list_1 - 1);
-    ASSERT_EQ(bp, sizeof list_1 - 1);
+    ASSERT_EQ(buffer_pos, sizeof list_1 - 1);
 
     set_line(400, line_data_2, sizeof line_data_2);
     list_line();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
-    ASSERT_EQ(bp, sizeof list_2 - 1);
+    ASSERT_EQ(buffer_pos, sizeof list_2 - 1);
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 

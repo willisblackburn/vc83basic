@@ -13,8 +13,8 @@ exec_print:
 ; Stop-gap function...
 
 print_number:
-        mvy     #0, bp
+        mvy     #0, buffer_pos
         jsr     format_number
         ldax    #buffer
-        ldy     bp
+        ldy     buffer_pos
         jmp     write
