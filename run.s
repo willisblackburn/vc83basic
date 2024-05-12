@@ -30,7 +30,7 @@ exec_run:
 ; Executes the line pointed by line_ptr
 
 run_line:
-        mva     #Line::data, lp         ; Initialize read position to start of data
+        mva     #Line::data, line_pos   ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement number
         jsr     invoke_statement_handler
         rts
@@ -54,7 +54,7 @@ invoke_statement_handler:
 ; Gets the value for an argument and returns it in AX.
 
 get_argument_value:
-        ldy     lp
+        ldy     line_pos
         lda     (line_ptr),y            ; Peek at the next byte
         bmi     @variable               ; It's a variable
         jmp     decode_number           ; Decode a number instead

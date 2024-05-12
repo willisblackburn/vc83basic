@@ -85,9 +85,9 @@ void test_is_operator_name_character(void) {
     ASSERT_NE(err, 0);
 }
 
-void call_parse_name(const char* s, char set_bp) {
+void call_parse_name(const char* s, char set_buffer_pos) {
     strcpy(buffer, s);
-    bp = set_bp;
+    buffer_pos = set_buffer_pos;
     parse_name();
 }
 
@@ -97,64 +97,64 @@ void test_parse_name(void) {
 
     call_parse_name("PRINT", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 5);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 5);
 
     // Start at the space to verify that it skips whitespace.
     call_parse_name("10 PRINT", 2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 8);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 8);
 
     call_parse_name("10 PRINT X", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 8);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 8);
 
     call_parse_name("10 PRINTX", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 9);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 9);
 
     call_parse_name("10 PRINT10", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 10);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 10);
 
     call_parse_name("10 PRINT10X", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 11);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 11);
 
     // Start parse at space.
     call_parse_name("ON X/2 GOTO 10,20", 2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 3);
-    ASSERT_EQ(bp, 4);
+    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_EQ(buffer_pos, 4);
     call_parse_name("ON X/2 GOTO 10,20", 6);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 7);
-    ASSERT_EQ(bp, 11);
+    ASSERT_EQ(name_start_pos, 7);
+    ASSERT_EQ(buffer_pos, 11);
 
     // Digits are names; this is okay because we try to parse numbers before names.
     call_parse_name("10", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 2);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 2);
 
-    // bp will reflect skipped whitespace even if parse fails.
+    // buffer_pos will reflect skipped whitespace even if parse fails.
     call_parse_name("   ", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 3);
+    ASSERT_EQ(buffer_pos, 3);
 
     call_parse_name("", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 }
 
 void call_parse_operator_name(const char* s, char set_bp) {
     strcpy(buffer, s);
-    bp = set_bp;
+    buffer_pos = set_bp;
     parse_operator_name();
 }
 
@@ -164,36 +164,36 @@ void test_parse_operator_name(void) {
 
     call_parse_operator_name("*", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 1);
 
     // NOT is an operator
     call_parse_operator_name("NOT", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 3);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 3);
 
     // XYZZY is not an operator, but it could be, so we match it
     call_parse_operator_name("XYZZY", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 5);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 5);
 
     // Trailing '+' or '-' should not match, as they can be start of unary operator
     call_parse_operator_name("+-", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 1);
 
     call_parse_operator_name("/+", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_bp, 0);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_EQ(buffer_pos, 1);
 
     // Don't match characters that can't be operators
     call_parse_operator_name("@", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 }
 
 void test_char_to_digit(void) {
@@ -221,34 +221,36 @@ void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
+int call_read_number(const char* s, char set_buffer_pos) {
+    strcpy(buffer, s);
+    buffer_pos = set_buffer_pos;
+    return read_number();
+}
+
 void test_read_number(void) {
     int number;
 
     PRINT_TEST_NAME();
 
-    strcpy(buffer, "10 PRINT X");
-    number = read_number(0);
+    number = call_read_number("10 PRINT X", 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 10);
-    ASSERT_EQ(bp, 2);
+    ASSERT_EQ(buffer_pos, 2);
 
     // The function should honor the current read position.
-    strcpy(buffer, "1020 PRINT X");
-    number = read_number(2);
+    number = call_read_number("1020 PRINT X", 2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(number, 20);
-    ASSERT_EQ(bp, 4);
+    ASSERT_EQ(buffer_pos, 4);
 
     // The function should return carry set if an invalid number.
-    strcpy(buffer, "invalid");
-    read_number(0);
+    call_read_number("invalid", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 
-    strcpy(buffer, "");
-    read_number(0);
+    call_read_number("", 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 }
 
 void call_parse_expression(const char* s, const char* expected_line_data, size_t expected_line_data_size, int line) {
@@ -256,13 +258,13 @@ void call_parse_expression(const char* s, const char* expected_line_data, size_t
     fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
     s_length = strlen(s);
     strcpy(buffer, s);
-    bp = 0;
-    lp = offsetof(Line, data);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
     parse_expression();
     ASSERT_EQ(err, 0);
     ASSERT_MEMORY_EQ(line_buffer.data, expected_line_data, expected_line_data_size);
-    ASSERT_EQ(bp, s_length);
-    ASSERT_EQ(lp, offsetof(Line, data) + expected_line_data_size);
+    ASSERT_EQ(buffer_pos, s_length);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expected_line_data_size);
 }
 
 void test_parse_expression(void) {
@@ -292,28 +294,28 @@ void test_parse_argument_separator(void) {
     PRINT_TEST_NAME();
 
     strcpy(buffer, ",");
-    bp = 0;
+    buffer_pos = 0;
     parse_argument_separator();
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(buffer_pos, 1);
 
     strcpy(buffer, "  ,");
-    bp = 0;
+    buffer_pos = 0;
     parse_argument_separator();
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 3);
+    ASSERT_EQ(buffer_pos, 3);
 
     strcpy(buffer, "x");
-    bp = 0;
+    buffer_pos = 0;
     parse_argument_separator();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 
     strcpy(buffer, ",");
-    bp = 1;
+    buffer_pos = 1;
     parse_argument_separator();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(buffer_pos, 1);
 }
 
 void call_parse_directive(const char* s, char directive, const char* expect_line_data, size_t expect_line_data_length, 
@@ -322,13 +324,13 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
     fprintf(stderr, "  %s:%d: parse_directive(\"%s\", %d)\n", __FILE__, line, s, directive);
     s_length = strlen(s);
     strcpy(buffer, s);
-    bp = 0;
-    lp = offsetof(Line, data);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
     parse_directive(directive);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, s_length);
+    ASSERT_EQ(buffer_pos, s_length);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
-    ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
 
 void test_parse_directive(void) {
@@ -355,13 +357,13 @@ void call_parse_statement(const char* s, const char* expect_line_data, size_t ex
     fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
     s_length = strlen(s);
     strcpy(buffer, s);
-    bp = 0;
-    lp = offsetof(Line, data);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
     parse_statement(statement_name_table);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(bp, s_length);
+    ASSERT_EQ(buffer_pos, s_length);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
-    ASSERT_EQ(lp, offsetof(Line, data) + expect_line_data_length);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
 
 void test_parse_statement(void) {
@@ -395,12 +397,12 @@ void test_parse_statement(void) {
     // Make sure the parser doesn't match continued names.
 
     strcpy(buffer, "PRINTX");
-    bp = 0;
-    lp = offsetof(Line, data);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
     parse_statement(statement_name_table);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 6);
-    ASSERT_EQ(lp, 3);
+    ASSERT_EQ(buffer_pos, 6);
+    ASSERT_EQ(line_pos, 3);
 }
 
 void test_parse_line(void) {
