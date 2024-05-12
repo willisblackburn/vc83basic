@@ -202,9 +202,9 @@ invoke_indexed_vector:
         rts                             ; RTS jumps to vector pushed on the stack
 
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
-; in buffer (i.e., it is equal to bp).
+; in buffer (i.e., it is equal to buffer_pos).
 ; AX = the number to format
-; bp = the position within buffer (updated)
+; buffer_pos = the position within buffer (updated)
 
 format_number:
         sta     B                       ; Keep low byte in B while we use A for other things
@@ -221,7 +221,7 @@ format_number:
         txa                             ; High byte into A
         ora     B                       ; OR with saved low byte
         bne     @next_digit             ; Still more digits
-        ldx     bp                      ; Load write offset into X
+        ldx     buffer_pos              ; Load write offset into X
 @output_digit:
         pla                             ; Get a digit
         beq     @done                   ; If it's 0 then we're done
@@ -230,5 +230,5 @@ format_number:
         jmp     @output_digit
 
 @done:
-        stx     bp                      ; Update X
+        stx     buffer_pos              ; Update X
         rts
