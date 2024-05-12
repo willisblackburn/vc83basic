@@ -93,7 +93,7 @@ _add_variable:
 
 _read_number:
 .export _read_number
-        sta     bp                      ; Buffer index
+        sta     buffer_pos              ; Buffer index
         jsr     read_number
         jmp     set_err
 
@@ -196,30 +196,14 @@ _set_variable_value_ptr:
 
 _copy:
 .export _copy
-        stax    DE                      ; Size
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     copy
 
 _reverse_copy:
 .export _reverse_copy
-        stax    DE
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     reverse_copy
 
 _clear_memory:
 .export _clear_memory
-        stax    DE                      ; Size
-        jsr     popax
-        stax    dst_ptr                 ; Get the pointer into BC
-        ldax    DE                      ; Restore size into AX
         jmp     clear_memory
 
 _mul2:
@@ -245,6 +229,4 @@ _invoke_indexed_vector:
 
 _format_number:
 .export _format_number
-        sta     bp
-        jsr     popax
         jmp     format_number

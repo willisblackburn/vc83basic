@@ -53,13 +53,10 @@ comment The address of "high memory" that will not be touched by the interpreter
 word(himem_ptr, void*)
 
 comment Read/write position in buffer
-byte(bp)
-
-comment The starting position of the name
-byte(name_bp)
+byte(buffer_pos)
 
 comment Read/write position in line
-byte(lp)
+byte(line_pos)
 
 comment The line number sought by find_line
 word(line_number)
@@ -74,7 +71,10 @@ comment Pointer to current name table entry
 word(name_ptr, char*)
 
 comment Read position in the name table entry
-byte(np)
+byte(name_pos)
+
+comment The starting position of the name
+byte(name_start_pos)
 
 comment Index of matched name
 byte(matched_name_index)
