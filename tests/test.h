@@ -65,7 +65,7 @@ void encode_byte(/* A */ char value);
 // list.s
 void list_line(void);
 void list_statement(void);
-void list_directive(char directive);
+void list_directive(/* A */ char directive);
 
 // name.s
 char find_name(/* AX */ const char* name_ptr);
