@@ -110,12 +110,12 @@ invoke_indexed_vector:
         pha
         rts                             ; RTS jumps to vector pushed on the stack
 
-; Advance lp by the number of bytes in A.
+; Advance line_pos by the number of bytes in A.
 
 advance_lp_sizeof_float:
         lda     #.sizeof(Float)
 advance_lp:
         clc
-        adc     lp
-        sta     lp
+        adc     line_pos
+        sta     line_pos
         rts                             ; Carry should be set on return since we can't overflow line_buffer

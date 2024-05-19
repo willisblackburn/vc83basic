@@ -53,7 +53,7 @@ exec_on:
         txa                             ; Check the high byte
         bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
-        ldy     lp
+        ldy     line_pos
         lda     (line_ptr),y            ; Peek at next character
         beq     @not_found              ; If it's TOKEN_NO_VALUE, nothing matched; continue
         jsr     decode_int              ; Get the next line number into AX

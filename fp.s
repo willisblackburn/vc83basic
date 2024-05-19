@@ -369,9 +369,9 @@ truncate_fp_to_int_common:
         rts
 
 ; Converts FP number in FP0 into a string.
-; Writes the string to buffer at the position specified by bp. Does not perform any error checking; there must 
+; Writes the string to buffer at the position specified by buffer_pos. Does not perform any error checking; there must 
 ; be enough space in the buffer for the write to succeed.
-; bp = the write position in buffer
+; buffer_pos = the write position in buffer
 
 string_max: .byte $00, $00, $00, $00, 159       ; 2^32     (4,294,967,296  )
 string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^32/10  (  429,496,729.6)
@@ -379,10 +379,10 @@ string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^32/10  (  429,496,729.6)
 fp_to_string:
         lda     FP0s                    ; Check for negative value
         bpl     @positive               ; Nope
-        ldx     bp                      ; Write index
+        ldx     buffer_pos              ; Write index
         lda     #'-'                    ; Minus sign
         sta     buffer,x
-        inc     bp                      ; Update index
+        inc     buffer_pos              ; Update index
 
 ; Handle 0 as a special case.
 ; The number is 0 if the significand is zero regardless of exponent.
@@ -392,10 +392,10 @@ fp_to_string:
         sta     FP0s                    ; Also set sign to positive since we already printed '-'
         jsr     fp0_is_zero
         bne     @maybe_scale_up
-        ldx     bp                      ; Write index
+        ldx     buffer_pos              ; Write index
         lda     #'0'
         sta     buffer,x
-        inc     bp                      ; Update index
+        inc     buffer_pos              ; Update index
         rts
 
 @scale_up:
@@ -435,7 +435,7 @@ fp_to_string:
 
 @output:
         clc                             ; It will be convenient for carry to be clear shortly
-        ldx     bp                      ; Load buffer position into X
+        ldx     buffer_pos              ; Load buffer position into X
         lda     E
         bpl     @whole                  ; Branch to @whole for the E >= 0 cases
         eor     #$FF                    ; It's easier to deal with E if it's positive so negate it giving (-E - 1)
@@ -460,7 +460,7 @@ fp_to_string:
         ldy     D
         jsr     output_y_digits
 @done:
-        stx     bp
+        stx     buffer_pos
         rts
 
 @initial_zero:
@@ -529,9 +529,9 @@ fp_to_string:
         sta     FP0t+3
         sta     D                       ; Reset number of digits and scaling factor
         sta     E
-        stx     bp                      ; generate_digits will clobber X so save it
+        stx     buffer_pos              ; generate_digits will clobber X so save it
         jsr     generate_digits
-        ldx     bp                      ; Recover X
+        ldx     buffer_pos              ; Recover X
         ldy     D
         jsr     output_y_digits
         ldy     E
@@ -605,13 +605,13 @@ output_y_zeros:
 ; Converts a string in bufer into an FP number in FP0.
 ; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
 ; The caller should skip whitespace (if necessary) before calling this function.
-; bp = the read position in buffer
+; buffer_pos = the read position in buffer
 ; Returns the number in FP0 and carry clear if ok, carry set if error.
 
 string_to_fp:
         jsr     clear_fp0               ; Reset to zero (including sign)
         ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
-        mvx     bp, B                   ; Temporarily keep read position in B
+        mvx     buffer_pos, B                   ; Temporarily keep read position in B
         lda     buffer,x
         cmp     #'-'                    ; Check if it's negative
         bne     @not_negative
@@ -668,7 +668,7 @@ string_to_fp:
 ; There was at least one digit character followed by a non-digit character that isn't E, so treat this as
 ; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
-        stx     bp                      ; X points to the first non-digit; update bp
+        stx     buffer_pos              ; X points to the first non-digit; update buffer_pos
         sty     D                       ; Use D to keep track of how many digits after decimal
         jsr     int32_to_fp
         lda     D                       ; Test number of digits

@@ -399,9 +399,9 @@ void test_char_to_digit(void) {
 void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
     fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X s=%02X)\n", __FILE__, line, t, e, s);
     SET_FPX(FP0, s, e, t);
-    bp = 0;
+    buffer_pos = 0;
     fp_to_string();
-    buffer[bp] = '\0';
+    buffer[buffer_pos] = '\0';
     ASSERT_STRING_EQ(buffer, expect_string);
 }
 
@@ -449,7 +449,7 @@ void test_fp_to_string(void) {
 void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
-    bp = 0;
+    buffer_pos = 0;
     string_to_fp();
     ASSERT_EQ(err, 0);
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
@@ -458,10 +458,10 @@ void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigne
 void fail_string_to_fp(const char* string, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
-    bp = 0;
+    buffer_pos = 0;
     string_to_fp();
     ASSERT_NE(err, 0);
-    ASSERT_EQ(bp, 0);
+    ASSERT_EQ(buffer_pos, 0);
 }
 
 void test_string_to_fp(void) {
@@ -497,7 +497,7 @@ void test_string_to_fp(void) {
     call_string_to_fp("-100-", NEGATIVE, 133, 0xC8000000, __LINE__);
     call_string_to_fp("3.14159+", POSITIVE, 128, 0xC90FCF81, __LINE__);
     
-    // Verify that string_to_fp leaves bp alone when faced with non-numbers.
+    // Verify that string_to_fp leaves buffer_pos alone when faced with non-numbers.
     fail_string_to_fp("X10", __LINE__);
     fail_string_to_fp("*3", __LINE__);
     fail_string_to_fp("-X", __LINE__);

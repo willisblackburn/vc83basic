@@ -14,8 +14,8 @@ exec_print:
 ; Prints the value in FP0 to standard output.
 
 print_number:
-        mva     #0, bp
+        mva     #0, buffer_pos
         jsr     fp_to_string            ; Format into buffer
         ldax    #buffer
-        ldy     bp
+        ldy     buffer_pos
         jmp     write

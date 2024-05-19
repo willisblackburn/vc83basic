@@ -3,16 +3,16 @@
 
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
-; bp = the read position in buffer (modified on success)
+; buffer_pos = the read position in buffer (modified on success)
 ; line_buffer = the buffer containing the tokenized output
-; lp = the token write position in line_buffer (modified on success)
+; line_pos = the token write position in line_buffer (modified on success)
 
 ; Parses a line from the buffer. The line is an optional line number followed by statements.
 ; If the line number is missing, set it to -1.
 
 parse_line:
-        mva     #0, bp                  ; Initialize the read pointer
-        mva     #Line::data, lp         ; Initialize write pointer
+        mva     #0, buffer_pos          ; Initialize the read pointer
+        mva     #Line::data, line_pos   ; Initialize write pointer
         jsr     string_to_fp            ; Parse line number
         bcs     @no_line_number         ; Line number was provided so store it
         jsr     truncate_fp_to_int      ; Truncate line number to integer
@@ -29,8 +29,8 @@ parse_line:
         jsr     parse_statement         ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
 @blank_line:
-        mva     lp, line_buffer+Line::next_line_offset  ; Write position is next statement offset
-        ldx     bp
+        mva     line_pos, line_buffer+Line::next_line_offset  ; Write position is next statement offset
+        ldx     buffer_pos
         lda     buffer,x                ; Verify the line ends as expected
         clc
         beq     @done                   ; If so then jump to done with carry still clear
@@ -51,10 +51,10 @@ parse_statement:
         stax    name_ptr                ; Store initial name_ptr
         mva     #0, matched_name_index  ; Initialize name table index to 0
 @next:
-        ldpha   name_bp                 ; Save state in case we have to backtrack
-        ldpha   bp
-        ldpha   lp                      ; Same for lp value
-        jsr     find_next_name          ; Start by finding name; sets np and returns index in A
+        ldpha   name_start_pos          ; Save state in case we have to backtrack
+        ldpha   buffer_pos
+        ldpha   line_pos                ; Same for line_pos value
+        jsr     find_next_name          ; Start by finding name; sets name_pos and returns index in A
         bcs     @error
         jsr     encode_byte             ; Encode index
 @after_directive:
@@ -66,23 +66,23 @@ parse_statement:
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
         tya                             ; Get character back
-        ldx     bp                      ; Otherwise comapre it to the current character in the buffer
+        ldx     buffer_pos              ; Otherwise comapre it to the current character in the buffer
         cmp     buffer,x
         bne     @backtrack_try_again
-        inc     np                      ; Go to next character
-        inc     bp
+        inc     name_pos                ; Go to next character
+        inc     buffer_pos
         bne     @next_character
         
 @directive:
-        inc     np                      ; Move position past directive
+        inc     name_pos                ; Move position past directive
         tya
         jsr     parse_directive
         bcc     @after_directive
 
 @backtrack_try_again:
-        plsta   lp                      ; Restore state
-        plsta   bp
-        plsta   name_bp
+        plsta   line_pos                ; Restore state
+        plsta   buffer_pos
+        plsta   name_start_pos
         jsr     advance_name_ptr        ; Advance past the failed name table entry (will preserve X)
         inc     matched_name_index      ; Increment matched_name_index since we advanced name_ptr
         bne     @next                   ; Unconditional
@@ -115,7 +115,7 @@ parse_argument_type_vectors:
 parse_directive:
         tay                             ; Keep in Y while using A to save state
         ldphaa  name_ptr                ; Save state in case of recursive call
-        ldpha   np
+        ldpha   name_pos
         ldpha   matched_name_index
         ldpha   argument_count
         tya                             ; Recover directive from Y
@@ -133,7 +133,7 @@ parse_directive:
 @pop:
         plsta   argument_count
         plsta   matched_name_index
-        plsta   np
+        plsta   name_pos
         plstaa  name_ptr                ; Recover variables from stack
         rts
 
@@ -170,18 +170,18 @@ parse_argument_list:
 parse_expression:
         jsr     parse_primary_expression    ; Parse an expression without any binary operators
         bcs     @error                  ; Not found; must be an error
-        ldpha   bp                      ; Save bp in case I have to put back an unmatched name
+        ldpha   buffer_pos              ; Save buffer_pos in case I have to put back an unmatched name
         jsr     parse_operator_name     ; Check for an operator
         bcs     @no_operator
         ldax    #operator_name_table
         jsr     find_name               ; Carry will be clear if one was found
         bcs     @no_operator            ; Not found; expression ends here
         jsr     encode_operator         ; The operator ID is in A; encode it
-        pla                             ; Pop and discard the saved bp value
+        pla                             ; Pop and discard the saved buffer_pos value
         jmp     parse_expression        ; Otherwise parse the following expression
 
 @no_operator:
-        plsta   bp                      ; Retore the bp value
+        plsta   buffer_pos              ; Retore the buffer_pos value
         jsr     encode_no_value         ; Terminate expression with TOKEN_NO_VALUE
         clc                             ; Signal success
 @error:
@@ -208,12 +208,12 @@ parse_parentheses:
         bne     @error                  ; This is not an expression in parentheses
         lda     #TOKEN_PAREN            ; Encode the paren
         jsr     encode_byte
-        inc     bp                      ; Skip over the left paren
+        inc     buffer_pos              ; Skip over the left paren
         jsr     parse_expression        ; Parse the expression in the parentheses
         jsr     skip_whitespace         ; Find the next character, ...
         cmp     #')'                    ; which had better be a right parenthesis
         bne     @error                  ; But it wasn't
-        inc     bp                      ; Skip over the close paren
+        inc     buffer_pos              ; Skip over the close paren
         clc                             ; Clear carry to indicate success
         rts
     
@@ -243,21 +243,21 @@ parse_repeated_number:
 ; Parses the unary operators '-' (minus) and NOT.
 
 parse_unary_operator:
-        ldpha   bp                      ; Save bp in case I have to put back an unmatched name
+        ldpha   buffer_pos              ; Save buffer_pos in case I have to put back an unmatched name
         jsr     parse_operator_name     ; Check for an operator
         bcs     @done
         ldax    #unary_operator_name_table
         jsr     find_name               ; See if it's one of the unary operators
         bcs     @done                   ; Nope
         jsr     encode_unary_operator   ; Store the unary minus token
-        pla                             ; Pop the saved bp value and throw it away
+        pla                             ; Pop the saved buffer_pos value and throw it away
         jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
 @done:
-        plsta   bp                      ; Restore bp
+        plsta   buffer_pos              ; Restore buffer_pos
         rts
 
 ; Parses a variable name.
-; Tries to match the current buffer at position bp with the names in the variable name table.
+; Tries to match the current buffer at position buffer_pos with the names in the variable name table.
 ; If the name is not found, then extends the variable name table.
 
 parse_variable:
@@ -292,21 +292,21 @@ parse_argument_separator:
         jsr     skip_whitespace         ; Leaves next character in A
         cmp     #','                    ; Sets carry if character was ','
         bne     @error
-        inc     bp
+        inc     buffer_pos
         rts
 
 @error:
         clc                             ; Clear carry since we don't know its state following the CMP above
         rts
 
-; Parses a name from buffer, starting at bp.
-; Sets name_bp.
-; Returns carry clear if there was a name at bp, or carry set if the character at bp doesn't start a name.
+; Parses a name from buffer, starting at buffer_pos.
+; Sets name_start_pos.
+; Returns carry clear if there was a name at buffer_pos, or carry set if the character at buffer_pos doesn't start a name.
 ; Y SAFE, BC SAFE, DE SAFE
 
 parse_name:
         jsr     skip_whitespace
-        stx     name_bp                 ; If there is a name, it starts here
+        stx     name_start_pos          ; If there is a name, it starts here
         jsr     is_name_character       ; Check for initial name character
         bcs     @done
 @next_character:
@@ -314,7 +314,7 @@ parse_name:
         lda     buffer,x                ; Check next character
         jsr     is_name_character       ; Is it a name character?
         bcc     @next_character         ; Yes, keep going
-        stx     bp                      ; Update bp
+        stx     buffer_pos              ; Update buffer_pos
         clc                             ; Signal success
 @done:
         rts
@@ -343,7 +343,7 @@ is_name_character:
 
 parse_operator_name:
         jsr     skip_whitespace
-        stx     name_bp                 ; Operator name starts here
+        stx     name_start_pos          ; Operator name starts here
         ldy     #0                      ; Start at index 0 of all operator chars
         jsr     is_operator_name_character
         bcs     parse_name              ; If not then try parsing a name
@@ -354,7 +354,7 @@ parse_operator_name:
         bcs     @single                 ; Second character was not a match; bypass the increment of X
         inx                             ; The second character was also an operator character, so advance past it
 @single:
-        stx     bp                      ; Update bp
+        stx     buffer_pos              ; Update buffer_pos
         clc                             ; Signal success
         rts        
 
@@ -381,14 +381,14 @@ is_operator_name_character:
         clc                             ; Matched an operator character; signal success
         rts
 
-; Skip past any whitespace in the buffer. Returns the next character in A. The final value of bp is also left in X.
-; bp = the read position (modified)
+; Skip past any whitespace in the buffer. Returns the next character in A. The final value of buffer_pos is also left in X.
+; buffer_pos = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
 loop_skip_whitespace:
-        inc     bp
+        inc     buffer_pos
 skip_whitespace:
-        ldx     bp                      ; Use X to index buffer
+        ldx     buffer_pos              ; Use X to index buffer
         lda     buffer,x        
         cmp     #' '        
         beq     loop_skip_whitespace       
