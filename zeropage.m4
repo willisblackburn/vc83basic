@@ -73,10 +73,10 @@ comment Read/write position in line
 byte(line_pos)
 
 comment The next value of line_pos (analogous to next_line_ptr)
-byte(next_lp)
+byte(next_line_pos)
 
 comment Position of current statement
-byte(statement_lp)
+byte(statement_line_pos)
 
 comment The line number sought by find_line
 word(line_number, int)
@@ -124,4 +124,4 @@ comment Where to resume execution after STOP
 word(resume_line_ptr, Line*)
 
 comment Position of resume statement
-byte(resume_lp)
+byte(resume_line_pos)

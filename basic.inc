@@ -22,7 +22,7 @@
 
 .struct Control
     next_line_ptr .res 2
-    next_lp .res 1
+    next_line_pos .res 1
     variable .res 1
     end_value .res .sizeof(Float)
     step_value .res .sizeof(Float)

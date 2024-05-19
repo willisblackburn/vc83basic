@@ -66,7 +66,7 @@ reset_next_line_ptr:
         ldax    program_ptr
 reset_next_line_ptr_to:
         stax    next_line_ptr
-        mvy     #Line::data, next_lp
+        mvy     #Line::data, next_line_pos
         rts
 
 ; Builds a line containing an END statement at next_line_ptr.
@@ -140,7 +140,7 @@ advance_next_line_ptr_a:
         bcc     @skip                   ; Don't need to change the high byte
         inc     next_line_ptr+1         ; Increment the high byte
 @skip:
-        mvy     #Line::data, next_lp
+        mvy     #Line::data, next_line_pos
         rts        
 
 ; Updates the program based on the information in line_buffer.

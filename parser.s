@@ -31,12 +31,12 @@ parse_line:
 ; statement or we just parsed a ':'.
 
 @next_statement:
-        mva     line_pos, statement_lp        ; Save start of statement position
+        mva     line_pos, statement_line_pos        ; Save start of statement position
         inc     line_pos                ; Begin tokenizing statement at next position
         jsr     parse_statement         ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
         lda     line_pos                ; Write position is next statement offset
-        ldx     statement_lp            ; Store at start of statement
+        ldx     statement_line_pos            ; Store at start of statement
         sta     line_buffer,x
         jsr     parse_statement_separator
         bcs     @next_statement
