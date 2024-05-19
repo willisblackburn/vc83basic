@@ -374,22 +374,10 @@ _mul_value_size:
 
 _copy:
 .export _copy
-        stax    DE                      ; Size
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     copy
 
 _reverse_copy:
 .export _reverse_copy
-        stax    DE
-        jsr     popax
-        stax    src_ptr
-        jsr     popax
-        stax    dst_ptr
-        ldax    DE
         jmp     reverse_copy
 
 _invoke_indexed_vector:
