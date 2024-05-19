@@ -77,8 +77,8 @@ char decode_byte(void);
 void evaluate_expression(void);
 void push_fp0(void);
 void pop_fp0(void);
-char stack_alloc(/* AX */ char size);
-void stack_free(/* AX */ char size);
+char stack_alloc(/* A */ char size);
+void stack_free(/* A */ char size);
 
 // encode.s
 void encode_number(void);
