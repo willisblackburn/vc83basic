@@ -26,7 +26,7 @@ main:
         beq     @get_command
         bne     @dispatch
 
-; Program is running; set line_ptr and lp to next statement and execute it.
+; Program is running; set line_ptr and line_pos to next statement and execute it.
 ; If the next statement is the end of the line, then go to the next statement. This is the *only* place where we
 ; move to the next line; during normal execution we can assume that next_line_ptr = line_ptr unless it has been
 ; modified by a control statement.
@@ -35,7 +35,7 @@ main:
         jsr     advance_next_line_ptr   ; Otherwise go to next line
 @dispatch:
         mvax    next_line_ptr, line_ptr ; Move to next statement
-        mva     next_lp, lp
+        mva     next_lp, line_pos
         ldy     #Line::next_line_offset
         cmp     (line_ptr),y            ; Is the current statement offset also the next line offset?
         beq     @next_line              ; If yes then restart from next line

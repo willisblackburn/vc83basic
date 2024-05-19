@@ -53,7 +53,7 @@ void test_decode_string(void) {
 
     s = decode_string();
     ASSERT_EQ(s, line_buffer.data);
-    ASSERT_EQ(lp, 9);
+    ASSERT_EQ(line_pos, 9);
 }
 
 extern void* decode_xh_vectors[];

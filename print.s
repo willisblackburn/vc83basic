@@ -9,7 +9,7 @@ exec_print_number:
         jsr     pop_fp0                 ; Get the value
         jsr     print_number            ; Print the number
 exec_print:
-        ldy     lp                      ; Read lp into Y
+        ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
         beq     @end_line               ; Found TOKEN_NO_VALUE
 @continue:
@@ -38,8 +38,8 @@ exec_print:
         and     #$0F                    ; Is column evenly divisible by 16?
         bne     @tab                    ; Not yet
 @empty_space:
-        inc     lp                      ; Skip over the empty space or tab token
-        ldy     lp
+        inc     line_pos                ; Skip over the empty space or tab token
+        ldy     line_pos
         lda     (line_ptr),y            ; Peek at next character
         bne     @continue               ; It's not the end of the PRINT so continue
         clc
@@ -49,10 +49,10 @@ exec_print:
 ; Prints the value in FP0 to standard output.
 
 print_number:
-        mva     #1, bp                  ; Start printing at buffer column 1
+        mva     #1, buffer_pos                  ; Start printing at buffer column 1
         jsr     fp_to_string            ; Format into buffer
-        ldx     bp                      ; Load length (including the length byte)
-        dex                             ; Length is one less than bp
+        ldx     buffer_pos              ; Load length (including the length byte)
+        dex                             ; Length is one less than buffer_pos
         stx     buffer                  ; Store the length in the first character of buffer; it is now a string
         ldax    #buffer                 ; Load the address in AX and fall through to print_string
 

@@ -2,8 +2,8 @@
 .include "basic.inc"
 
 ; Functions that decode the tokenized program for display on the console.
-; Most functions decode from the line pointed to by line_ptr, using lp as the read position,
-; and decode into buffer, using bp as the write position.
+; Most functions decode from the line pointed to by line_ptr, using line_pos as the read position,
+; and decode into buffer, using buffer_pos as the write position.
 
 ; LIST statement:
 ; Scans through the program and prints each line.
@@ -20,7 +20,7 @@ exec_list:
         jsr     list_line
         bcs     @done
         ldax    #buffer
-        ldy     bp                      ; bp will be the amount of data written to the buffer
+        ldy     buffer_pos              ; buffer_pos will be the amount of data written to the buffer
         jsr     write
         jsr     newline
         jsr     advance_next_line_ptr
@@ -37,7 +37,7 @@ exec_list:
 ; Returns with carry flag set if line_ptr points to the end of the program.
 
 list_line:
-        mva     #0, bp                  ; Initialize write position in buffer
+        mva     #0, buffer_pos          ; Initialize write position in buffer
         ldy     #Line::number+1         ; Position of line number high byte
         lda     (line_ptr),y            ; Into A
         bmi     @done                   ; If MSB of line number is set, we're at end of program
@@ -54,7 +54,7 @@ list_line:
         lda     #':'
         jsr     append_buffer
 @first_statement:
-        mva     next_lp, lp             ; Move to start of next statement
+        mva     next_lp, line_pos       ; Move to start of next statement
         jsr     decode_byte             ; Read next statement offset
         sta     next_lp                 ; Store in next_lp
         jsr     list_statement
@@ -75,14 +75,14 @@ list_statement:
         jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table
-        jsr     get_name_table_entry    ; Sets name_ptr and resets np; should never fail
+        jsr     get_name_table_entry    ; Sets name_ptr and resets name_pos; should never fail
 @next_name:
         jsr     append_from_name_table_entry    ; Outputs (possibly zero) characters from the name table
         bcs     @done                   ; If there is nothing after then exit
         tya                             ; Otherwise there is a directive in Y
         jsr     list_directive
-        inc     np                      ; Next byte
-        bne     @next_name              ; np is always >0 so unconditional
+        inc     name_pos                ; Next byte
+        bne     @next_name              ; name_pos is always >0 so unconditional
 
 @done:
         rts
@@ -97,10 +97,10 @@ list_name:
         clc                             ; Signal success
         rts
 
-; Outputs characters from the name table entry starting at np, until reaching the last character or a
+; Outputs characters from the name table entry starting at name_pos, until reaching the last character or a
 ; directive.
 ; name_ptr = pointer to the table entry
-; np = the name table entry position
+; name_pos = the name table entry position
 ; Returns carry set if the last character of the name was also the last byte of the name table entry, or carry clear
 ; if the next character is a directive, which will be in Y.
 
@@ -118,8 +118,8 @@ append_from_name_table_entry:
         beq     @done                   ; It is, return with carry still clear
         tya                             ; Get character back from Y
         jsr     append_buffer
-        inc     np                      ; Next character
-        bne     @next_character         ; np is always >0 so unconditional
+        inc     name_pos                ; Next character
+        bne     @next_character         ; name_pos is always >0 so unconditional
 
 @done:
         rts
@@ -141,7 +141,7 @@ list_argument_type_vectors:
 list_directive:
         tay                             ; Keep in Y while using A to save state
         ldphaa  name_ptr                ; Save existing value of name_ptr
-        ldpha   np                      ; Save existing name entry read position
+        ldpha   name_pos                ; Save existing name entry read position
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
@@ -155,7 +155,7 @@ list_directive:
         ldax    #list_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 @pop:
-        plsta   np                      ; Recover values previously saved on stack
+        plsta   name_pos                ; Recover values previously saved on stack
         plstaa  name_ptr
         rts
 
@@ -165,7 +165,7 @@ list_argument_list:
         jsr     decode_byte             ; Check if the next argument is TOKEN_NO_VALUE
         beq     @no_value               ; If so then don't list
 @next_argument:
-        dec     lp                      ; Back up
+        dec     line_pos                ; Back up
         jsr     list_expression         ; List the expression
 @no_value:
         dec     argument_count          ; Done with one argument
@@ -184,7 +184,7 @@ list_argument_list:
 list_print_expression:
         jsr     add_whitespace
 @next:
-        ldy     lp                      ; Read lp into Y
+        ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
         beq     @done                   ; Found TOKEN_NO_VALUE
         cmp     #TOKEN_EMPTY_SPACE
@@ -202,7 +202,7 @@ list_print_expression:
         lda     #';'
 @output:
         jsr     append_buffer
-        inc     lp
+        inc     line_pos
         bne     @next                   ; Unconditional
 
 @done:
@@ -234,10 +234,10 @@ loop_list_repeated_variable:
         jsr     append_buffer
 list_repeated_variable:
         jsr     list_variable           ; List one variable
-        ldy     lp                      ; Peek next byte
+        ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
-        inc     lp                      ; Skip over TOKEN_NO_VALUE
+        inc     line_pos                ; Skip over TOKEN_NO_VALUE
         clc                             ; Signal success
         rts
 
@@ -253,10 +253,10 @@ loop_list_repeated_number:
         jsr     append_buffer
 list_repeated_number:
         jsr     list_number             ; List one number
-        ldy     lp                      ; Peek next byte
+        ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_number   ; Not TOKEN_NO_VALUE so keep going
-        inc     lp                      ; Skip over TOKEN_NO_VALUE
+        inc     line_pos                ; Skip over TOKEN_NO_VALUE
         clc                             ; Signal success
         rts
 
@@ -309,11 +309,11 @@ list_string:
         rts
 
 ; Adds whitespace to the output if necessary.
-; Whitespace is necessary if bp > 0 and if buffer[bp-1] is a name character or is a ')' or '"'.
+; Whitespace is necessary if buffer_pos > 0 and if buffer[buffer_pos-1] is a name character or is a ')' or '"'.
 ; Y SAFE, BC SAFE, DE SAFE
 
 add_whitespace:
-        ldx     bp                      ; Current write position
+        ldx     buffer_pos              ; Current write position
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         cmp     #')'                    ; Is it ')'?
@@ -325,17 +325,17 @@ add_whitespace:
 @done:
         rts
 
-; Writes a single byte to buffer at position bp and increments bp.
+; Writes a single byte to buffer at position buffer_pos and increments buffer_pos.
 ; Does not check for buffer overflow; we assume this can't happen.
 ; STA is the last operation so zero flag will be set if we wrote zero.
 ; A = the byte to write (preserved)
-; bp = the buffer position (updated)
+; buffer_pos = the buffer position (updated)
 ; Y SAFE, BC SAFE, DE SAFE
 
 append_buffer_space:
         lda     #' '
 append_buffer:
-        ldx     bp                      ; Load position
-        inc     bp                      ; Incrment position
+        ldx     buffer_pos              ; Load position
+        inc     buffer_pos              ; Incrment position
         sta     buffer,x                ; Store A in buffer
         rts
