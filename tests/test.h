@@ -81,21 +81,21 @@ char stack_alloc(char size);
 void stack_free(char size);
 
 // encode.s
-void encode_number(int number);
-void encode_byte(char value);
+void encode_number(/* AX */ int number);
+void encode_byte(/* A */ char value);
 
 // fp.s
-void load_fpx(UnpackedFloat* fpx, const Float* value);
-void store_fpx(const UnpackedFloat* fpx, Float* value);
+void load_fpx(/* X */ UnpackedFloat* fpx, /* AY */ const Float* value);
+void store_fpx(/* X */ const UnpackedFloat* fpx, /* AY */ Float* value);
 void swap_fp0_fp1(void);
-void int_to_fp(int value);
+void int_to_fp(/* AX */ int value);
 void int32_to_fp(void);
 int truncate_fp_to_int(void);
 void truncate_fp_to_int32(void);
 void fp_to_string(void);
 void string_to_fp(void);
-char char_to_digit(char c);
-void adjust_exponent(char add, char subtract);
+char char_to_digit(/* A */ char c);
+void adjust_exponent(/* X */ char add, /* Y */ char subtract);
 void normalize(void);
 void fadd(void);
 void fsub(void);
@@ -110,19 +110,19 @@ void list_statement(void);
 void list_directive(char directive);
 
 // name.s
-char find_name(const char* name_ptr);
-void get_name_table_entry(const char* name_ptr, char index);
+char find_name(/* AX */ const char* name_ptr);
+void get_name_table_entry(/* AX */ const char* name_ptr, /* Y */ char index);
 char add_variable(void);
 
 // parser.s
-int read_number(char bp);
+int read_number(void);
 void parse_line(void);
-void parse_statement(const char* name_ptr);
-void parse_directive(char directive);
+void parse_statement(/* AX */ const char* name_ptr);
+void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_argument_separator(void);
 void parse_name(void);
-void is_name_character(char c);
+void is_name_character(/* A */ char c);
 void parse_operator_name();
 void is_operator_name_character(char c, char index);
 
@@ -130,23 +130,23 @@ void is_operator_name_character(char c, char index);
 void initialize_target(void);
 void initialize_program(void);
 void reset_next_line_ptr(void);
-void find_line(int line_number);
+void find_line(/* AX */ int line_number);
 void advance_next_line_ptr(void);
 void insert_or_update_line(void);
-void grow(void* ptr, size_t size);
-void shrink(void* ptr, size_t size);
-void check_himem(size_t size);
-void set_variable_value_ptr(char variable);
+void grow(/* Y */ void* ptr, /* AX */ size_t size);
+void shrink(/* Y */ void* ptr, /* AX */ size_t size);
+void check_himem(/* AX */ size_t size);
+void set_variable_value_ptr(/* A */ char variable);
 
 // util.s
-void copy(char* to, const char* from, size_t size);
-void reverse_copy(char* to, const char* from, size_t size);
-void clear_memory(char* p, size_t size);
-int mul2(int value);
-int mul10(int value);
-int div10(int value);
-int invoke_indexed_vector(void* vectors, char index);
-void format_number(int number, char bp);
+void copy(/* AX */ size_t size);
+void reverse_copy(/* AX */ size_t size);
+void clear_memory(/* AX */ size_t size);
+int mul2(/* AX */ int value);
+int mul10(/* AX */ int value);
+int div10(/* AX */ int value);
+int invoke_indexed_vector(/* AX */ void* vectors, /* Y */ char index);
+void format_number(/* AX */ int number);
 
 // Common functions and definitions used in tests
 
@@ -174,7 +174,7 @@ void set_line(int line, const char* data, size_t length) {
     line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
     memcpy(line_buffer.data, data, length);
     line_ptr = &line_buffer;
-    lp = (char)offsetof(Line, data);
+    line_pos = (char)offsetof(Line, data);
 }
 
 #define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))

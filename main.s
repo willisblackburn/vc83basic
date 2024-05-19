@@ -33,7 +33,7 @@ main:
 ; Reads the statement from line_ptr and dispatch to a handler.
 
 @dispatch:
-        mva     #Line::data, lp         ; Initialize read position to start of data
+        mva     #Line::data, line_pos   ; Initialize read position to start of data
         jsr     dispatch_statement
         bcc     @loop
 @error:

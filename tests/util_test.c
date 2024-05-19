@@ -11,13 +11,18 @@ void fill_test_data(size_t offset, size_t size) {
     }
 }
 
+void call_clear_memory(size_t size) {
+    dst_ptr = test_data;
+    clear_memory(size);
+}
+
 void test_clear_memory(void) {
     PRINT_TEST_NAME();
 
     // Clear <256 bytes
     fill_test_data(0, 100);
     HEXDUMP(test_data, 16);
-    clear_memory(test_data, 10);
+    call_clear_memory(10);
     HEXDUMP(test_data, 16);
     // Should clear offsets 0-9, offset 10 remains the same.
     ASSERT_EQ(test_data[0], 0);
@@ -26,7 +31,7 @@ void test_clear_memory(void) {
 
     // Clear >256 bytes
     fill_test_data(0, 300);
-    clear_memory(test_data, 259);
+    call_clear_memory(259);
     // Should clear offsets 0-9, offset 10 remains the same.
     ASSERT_EQ(test_data[0], 0);
     ASSERT_EQ(test_data[258], 0);
@@ -34,7 +39,7 @@ void test_clear_memory(void) {
 
     // Clear even multiple of 256 bytes
     fill_test_data(0, 1000);
-    clear_memory(test_data, 512);
+    call_clear_memory(512);
     // Should clear offsets 0-9, offset 10 remains the same.
     ASSERT_EQ(test_data[0], 0);
     ASSERT_EQ(test_data[511], 0);
@@ -43,7 +48,7 @@ void test_clear_memory(void) {
 
     // Clear zero bytes
     test_data[0] = test_data[1] = 1;
-    clear_memory(test_data, 0);
+    call_clear_memory(0);
     ASSERT_EQ(test_data[0], 1);
     ASSERT_EQ(test_data[1], 1);
 }
@@ -66,7 +71,9 @@ void test_copy_case(size_t size, size_t offset, int line) {
     // Set up test data in test_data + offset and try to copy it to the lower position.
     fill_test_data(offset, size);
     HEXDUMP(test_data + offset, 16);
-    copy(test_data, test_data + offset, size);
+    src_ptr = test_data + offset;
+    dst_ptr = test_data;
+    copy(size);
     HEXDUMP(test_data, 16);
     verify_test_data(test_data, size);
 }
@@ -91,7 +98,9 @@ void test_reverse_copy_case(size_t size, size_t offset, int line) {
     // Set up test data in test_data and try to copy it to the higher position.
     fill_test_data(0, size);
     HEXDUMP(test_data, 16);
-    reverse_copy(test_data + offset, test_data, size);
+    src_ptr = test_data;
+    dst_ptr = test_data + offset;
+    reverse_copy(size);
     HEXDUMP(test_data + offset, 16);
     verify_test_data(test_data + offset, size);
 }
@@ -186,25 +195,30 @@ void test_invoke_indexed_vector(void) {
     ASSERT_EQ(result, 31415);
 }
 
+void call_format_number(int number, char set_buffer_pos) {
+    buffer_pos = set_buffer_pos;
+    format_number(number);
+}
+
 void test_format_number(void) {
     PRINT_TEST_NAME();
 
-    format_number(5, 0);
+    call_format_number(5, 0);
     ASSERT_EQ(buffer[0], '5');
-    ASSERT_EQ(bp, 1);
+    ASSERT_EQ(buffer_pos, 1);
 
-    format_number(10, 0);
+    call_format_number(10, 0);
     ASSERT_EQ(buffer[0], '1');
     ASSERT_EQ(buffer[1], '0');
-    ASSERT_EQ(bp, 2);
+    ASSERT_EQ(buffer_pos, 2);
     
-    format_number(32767, 0);
+    call_format_number(32767, 0);
     ASSERT_EQ(buffer[0], '3');
     ASSERT_EQ(buffer[1], '2');
     ASSERT_EQ(buffer[2], '7');
     ASSERT_EQ(buffer[3], '6');
     ASSERT_EQ(buffer[4], '7');
-    ASSERT_EQ(bp, 5);
+    ASSERT_EQ(buffer_pos, 5);
 }
 
 int main(void) {
