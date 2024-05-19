@@ -2,7 +2,7 @@
 .include "basic.inc"
 
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.
-; All functions write to the output buffer at index lp and update lp.
+; All functions write to the output buffer at index line_pos and update line_pos.
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
@@ -67,11 +67,11 @@ encode_byte:
 ; Y SAFE, BC SAFE, DE SAFE
 
 encode:
-        ldx     lp
+        ldx     line_pos
         cpx     #(254 - Line::data - 1) ; Max length = 255 - 1 (for this byte) - space for END line in immediate mode
         bcs     @error
         sta     line_buffer,x
-        inc     lp
+        inc     line_pos
         rts
 
 @error:
