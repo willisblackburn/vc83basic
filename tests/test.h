@@ -66,7 +66,7 @@ extern const char statement_name_table[];
 // Prototypes for C wrapper functions
 
 // decode.s
-void decode_expression(void** vector_table_ptr);
+void decode_expression(/* AX */ void** vector_table_ptr);
 int decode_number(void);
 char decode_variable(void);
 char decode_operator(void);
@@ -75,10 +75,10 @@ char decode_byte(void);
 
 // expression.h
 void evaluate_expression(void);
-void push_value(int value);
+void push_value(/* AX */ int value);
 int pop_value(void);
-char stack_alloc(char size);
-void stack_free(char size);
+char stack_alloc(/* AX */ char size);
+void stack_free(/* AX */ char size);
 
 // encode.s
 void encode_number(/* AX */ int number);
@@ -107,7 +107,7 @@ int fcmp(void);
 // list.s
 void list_line(void);
 void list_statement(void);
-void list_directive(char directive);
+void list_directive(/* A */ char directive);
 
 // name.s
 char find_name(/* AX */ const char* name_ptr);
@@ -124,7 +124,7 @@ void parse_argument_separator(void);
 void parse_name(void);
 void is_name_character(/* A */ char c);
 void parse_operator_name();
-void is_operator_name_character(char c, char index);
+void is_operator_name_character(/* A */ char c, /* Y */ char index);
 
 // program.s
 void initialize_target(void);
