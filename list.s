@@ -13,7 +13,7 @@
 
 exec_list:
         ldphaa  next_line_ptr
-        ldpha   next_lp
+        ldpha   next_line_pos
         jsr     reset_next_line_ptr
 @list_one_line:
         mvaa    next_line_ptr, line_ptr
@@ -27,7 +27,7 @@ exec_list:
         jmp     @list_one_line
 
 @done:
-        plsta   next_lp
+        plsta   next_line_pos
         plstaa  next_line_ptr
         clc                             ; LIST always succeeds
         rts
@@ -47,18 +47,18 @@ list_line:
         jsr     int_to_fp
         jsr     fp_to_string            ; Format into buffer
         jsr     append_buffer_space
-        mva     #Line::data, next_lp    ; Initialize read position to start of data (skip over next statement offset)
+        mva     #Line::data, next_line_pos    ; Initialize read position to start of data (skip over next statement offset)
         bne     @first_statement        ; Unconditionally skip over code to write separator
 
 @next_statement:
         lda     #':'
         jsr     append_buffer
 @first_statement:
-        mva     next_lp, line_pos       ; Move to start of next statement
+        mva     next_line_pos, line_pos       ; Move to start of next statement
         jsr     decode_byte             ; Read next statement offset
-        sta     next_lp                 ; Store in next_lp
+        sta     next_line_pos           ; Store in next_line_pos
         jsr     list_statement
-        lda     next_lp
+        lda     next_line_pos
         ldy     #Line::next_line_offset ; Load the next line offset
         cmp     (line_ptr),y            ; Is the next statement offset also the next line offset?
         bne     @next_statement         ; If not then write another statement

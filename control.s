@@ -79,13 +79,13 @@ exec_return:
         sta     next_line_ptr           ; Restore next_line_ptr value
         lda     primary_stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
-        lda     primary_stack+Control::next_lp,x
-        sta     next_lp                 ; Restore next_lp value
+        lda     primary_stack+Control::next_line_pos,x
+        sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
 @done:
         rts
 
-; Add an entry onto the primary stack and set the next_line_ptr and next_lp fields.
+; Add an entry onto the primary stack and set the next_line_ptr and next_line_pos fields.
 ; Reflects carry return from stack_alloc. On success, A is still the stack pointer.
 ; Y SAFE, BC SAFE, DE SAFE
 
@@ -98,8 +98,8 @@ push_next_line_ptr:
         sta     primary_stack+Control::next_line_ptr,x
         lda     next_line_ptr+1
         sta     primary_stack+Control::next_line_ptr+1,x
-        lda     next_lp
-        sta     primary_stack+Control::next_lp,x
+        lda     next_line_pos
+        sta     primary_stack+Control::next_line_pos,x
         txa                             ; Move stack pointer back to A
 @done:
         rts
@@ -173,8 +173,8 @@ exec_next:
         sta     next_line_ptr           ; Restore next_line_ptr value
         lda     primary_stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
-        lda     primary_stack+Control::next_lp,x
-        sta     next_lp                 ; Restore next_lp value
+        lda     primary_stack+Control::next_line_pos,x
+        sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
         rts                            
 

@@ -35,12 +35,12 @@ main:
         jsr     advance_next_line_ptr   ; Otherwise go to next line
 @dispatch:
         mvax    next_line_ptr, line_ptr ; Move to next statement
-        mva     next_lp, line_pos
+        mva     next_line_pos, line_pos
         ldy     #Line::next_line_offset
         cmp     (line_ptr),y            ; Is the current statement offset also the next line offset?
         beq     @next_line              ; If yes then restart from next line
         jsr     decode_byte             ; The next byte is the next statement offset
-        sta     next_lp
+        sta     next_line_pos
         jsr     dispatch_statement
         bcc     @loop
 @error:
