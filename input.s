@@ -9,7 +9,7 @@ exec_input:
         lda     #'?'                    ; Prepare to print '?' prompt
         jsr     putch
         jsr     readline
-        mva     #0, bp                  ; Reset the read position
+        mva     #0, buffer_pos          ; Reset the read position
 @next_var:
         jsr     decode_variable         ; Read the variable
         pha                             ; Save it
@@ -18,7 +18,7 @@ exec_input:
         jsr     push_fp0                ; Push FP0 onto the value stack
         pla                             ; Recover variable
         jsr     pop_variable            ; Store the value
-        ldy     lp                      ; Peek at the next byte
+        ldy     line_pos                ; Peek at the next byte
         lda     (line_ptr),y
         clc                             ; Clear carry in case we're done            
         beq     @done                   ; It was TOKEN_NO_VALUE, nothing more to read

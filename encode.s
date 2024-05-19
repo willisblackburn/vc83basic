@@ -2,7 +2,7 @@
 .include "basic.inc"
 
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.
-; All functions write to the output buffer at index lp and update lp.
+; All functions write to the output buffer at index line_pos and update line_pos.
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
@@ -19,7 +19,7 @@ MAX_LINE_LENGTH = 240
 encode_number:
         lda     #TOKEN_NUM
         jsr     encode
-        lda     lp
+        lda     line_pos
         cmp     #MAX_LINE_LENGTH-.sizeof(Float) ; Check if enough space for Float
         bcs     @error                  ; Nope; return with carry set
         ldy     #>line_buffer           ; High byte of line_buffer in Y
@@ -76,11 +76,11 @@ encode_byte:
 ; Y SAFE, BC SAFE, DE SAFE
 
 encode:
-        ldx     lp                      ; lp is line position but it is also the current line length
+        ldx     line_pos                ; line_pos is line position but it is also the current line length
         cpx     #MAX_LINE_LENGTH-1      ; Subtract 1 for this byte
         bcs     @error                  ; If carry set (no borrow) then line length >= MAX_LINE_LENGTH-1
         sta     line_buffer,x
-        inc     lp
+        inc     line_pos
         rts
 
 @error:

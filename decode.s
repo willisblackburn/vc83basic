@@ -3,7 +3,7 @@
 
 ; Functions to decode values from the token stream.
 ; We don't have to worry about errors since we're decoding what we previously encoded.
-; For all functions, lp is the read position in line_ptr.
+; For all functions, line_pos is the read position in line_ptr.
 
 ; Decodes the an expression and invokes handlers as it encounters expression elements.
 ;   1xxx xxxx -> 0 (variable)
@@ -36,7 +36,7 @@ decode_expression:
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
         bcs     @done                   ; The handler failed
 @start:
-        ldy     lp                      ; Peek at next byte in token stream
+        ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
         ldy     #XH_VAR                 ; First handler is VAR
         tax                             ; Store it in X for now (sets flags from decoded byte)
@@ -51,7 +51,7 @@ decode_expression:
         iny
         asl     A                       ; Bit 3 into MSB
         bmi     @dispatch               ; Handle unary operator     (0000 1xxx)
-        inc     lp                      ; Each handler is unique from this point so advance past the byte
+        inc     line_pos                ; Each handler is unique from this point so advance past the byte
         txa                             ; It's in the range 0-7; see if it's zero (TOKEN_NO_VALUE)
         bne     @loop                   ; If not zero then keep doing stuff; carry is clear here due to shifts
 @done:
@@ -61,11 +61,11 @@ decode_expression:
 ; BC SAFE, DE SAFE
 
 decode_number:
-        inc     lp                      ; Skip past token
+        inc     line_pos                ; Skip past token
         ldy     line_ptr+1              ; High byte of line_ptr
         lda     line_ptr                ; Low byte
         clc
-        adc     lp                      ; Add lp
+        adc     line_pos                ; Add line_pos
         bcc     @no_carry
         iny                             ; Low byte addition overflowed so increment high byte
 @no_carry:
@@ -96,7 +96,7 @@ decode_unary_operator:
 decode_byte:
         lda     #$FF
 decode_byte_with_mask:
-        ldy     lp                      ; Read lp into Y and increment
-        inc     lp  
+        ldy     line_pos                ; Read line_pos into Y and increment
+        inc     line_pos  
         and     (line_ptr),y            ; AND byte with mask and return
         rts
