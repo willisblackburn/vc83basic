@@ -184,7 +184,7 @@ void set_line(int line, const char* data, size_t length) {
 #define ASSERT_LE(a, b) ASSERT_OP(a, b, <=)
 #define ASSERT_GT(a, b) ASSERT_OP(a, b, >)
 #define ASSERT_GE(a, b) ASSERT_OP(a, b, >=)
-#define ASSERT_PTR_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s ($%lX) %s %s ($%lX): ", __FILE__, __LINE__, #a, (long)(a), #op, #b, (long)(b)); assert((void*)(a) op (void*)(b)); fputs("OK\n", stderr); } while (0)
+#define ASSERT_PTR_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s %s ($%04X): ", __FILE__, __LINE__, #a, (a), #op, #b, (b)); assert((void*)(a) op (void*)(b)); fputs("OK\n", stderr); } while (0)
 #define ASSERT_PTR_EQ(a, b) ASSERT_PTR_OP(a, b, ==)
 #define ASSERT_PTR_NE(a, b) ASSERT_PTR_OP(a, b, !=)
 #define ASSERT_PTR_LT(a, b) ASSERT_PTR_OP(a, b, <)
@@ -193,7 +193,7 @@ void set_line(int line, const char* data, size_t length) {
 #define ASSERT_PTR_GE(a, b) ASSERT_PTR_OP(a, b, >=)
 #define ASSERT_STRING_EQ(a, b)  do { fprintf(stderr, "  %s:%u: assert \"%s\" == \"%s\": ", __FILE__, __LINE__, (a), (b)); assert(strcmp((a), (b)) == 0); fputs("OK\n", stderr); } while (0)
 #define ASSERT_MEMORY_EQ(a, b, length)  do { fprintf(stderr, "  %s:%u: assert %u byte(s) memory equals:\n", __FILE__, __LINE__, (length)); HEXDUMP(a, length); HEXDUMP(b, length); assert(memcmp((a), (b), (length)) == 0); fputs("OK\n", stderr); } while (0)
-#define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s (%u, $%X) %s NULL: ", __FILE__, __LINE__, #a, (a), (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
+#define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s NULL: ", __FILE__, __LINE__, #a, (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
 #define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
 #define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
 
