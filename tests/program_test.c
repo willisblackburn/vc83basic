@@ -213,8 +213,8 @@ void test_grow(void) {
 
     // Other pointers should be at their correct positions.
 
-    ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9));
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9));
 
     // Verify the program contents.
     ASSERT_EQ(line_ptr->next_line_offset, 3);
@@ -233,8 +233,8 @@ void test_grow(void) {
     grow(&free_ptr, 0x400);
     ASSERT_EQ(err, 0);
 
-    ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
 }
 
 void test_shrink(void) {
@@ -259,21 +259,21 @@ void test_shrink(void) {
     ASSERT_EQ(err, 0);
 
     // Make sure all the pointers are where they should be.
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 3);
-    ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
+    ASSERT_PTR_EQ(line_ptr, (char*)program_ptr + 3);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
 
     // Now shrink each section, each time checking that no data is corrupted.
 
     shrink(&line_ptr, 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(line_ptr->number, 20);
-    ASSERT_EQ((char*)free_ptr, (char*)line_ptr + 6);
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(line_ptr->number, 20);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
 
     shrink(&free_ptr, 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ((char *)free_ptr, (char*)line_ptr + 3);
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 3);
 }
 
 int main(void) {
