@@ -158,12 +158,14 @@ void hexdump(const char* name, const char* data, size_t length) {
         fprintf(stderr, "        %04X %04X  ", i, data + i);
         p = data + i;
         for (j = 0; j < 16; j++, p++) {
-            fprintf(stderr, "%02X ", *p);
+            if (i + j < length) fprintf(stderr, "%02X ", *p);
+            else fprintf(stderr, "   ");
         }
         fprintf(stderr, " ");
         p = data + i;
         for (j = 0; j < 16; j++, p++) {
-            fputc(isprint(*p) ? *p : '.', stderr);
+            if (i + j < length) fputc(isprint(*p) ? *p : '.', stderr);
+            else fputc(' ', stderr);
         }
         printf("\n");
     }
