@@ -56,16 +56,21 @@ extern const char statement_name_table[];
 
 // decode.s
 int decode_number(void);
+void decode_variable(void);
 char decode_byte(void);
 
 // encode.s
 void encode_number(/* AX */ int number);
 void encode_byte(/* A */ char value);
 
+// expression.s
+int evaluate_expression(void);
+
 // name.s
-char find_name(/* AX */ const char* name_ptr);
-void get_name_table_entry(/* AX */ const char* name_ptr, /* Y */ char index);
-char add_variable(void);
+char find_name(/* AX */ const char* record_ptr);
+void advance_record_ptr(void);
+void get_name_table_entry(/* AX */ const char* record_ptr, /* Y */ char index);
+void add_variable(size_t data_size);
 
 // parser.s
 int read_number(void);
@@ -87,7 +92,6 @@ void insert_or_update_line(void);
 void grow(/* Y */ void* ptr, /* AX */ size_t size);
 void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 void check_himem(/* AX */ size_t size);
-void set_variable_value_ptr(/* A */ char variable);
 
 // util.s
 void copy(/* AX */ size_t size);

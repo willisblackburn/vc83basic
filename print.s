@@ -4,7 +4,7 @@
 ; PRINT statement:
 
 exec_print:
-        jsr     get_argument_value      ; Returns value to print in AX
+        jsr     evaluate_expression     ; Returns value to print in AX
         jsr     print_number            ; Print the number
         jsr     newline
         clc                             ; Print always succeeds

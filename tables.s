@@ -1,7 +1,10 @@
 .include "basic.inc"
 
 statement_name_table:
-        .byte   'R', 'U', 'N' | NT_END
-        .byte   'P', 'R', 'I', 'N', 'T', 1 | NT_END
-        .byte   'L', 'E', 'T', NT_VAR, '=', 1 | NT_END
+        .byte   run_end - *, 'R', 'U', 'N' | NT_STOP
+run_end:
+        .byte   print_end - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1
+print_end:
+        .byte   let_end - *, 'L', 'E', 'T' | NT_STOP, NT_VAR, '=', 1
+let_end:
         .byte   0

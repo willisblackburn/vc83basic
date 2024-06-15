@@ -27,36 +27,24 @@ initialize_program:
         sta     (line_ptr),y            ; Save as next line offset
         jsr     advance_line_ptr_a      ; Add it to line_ptr; line_ptr is now invalid but that's okay
         mvax    line_ptr, variable_name_table_ptr   ; Invalid line_ptr is the start of variable name table
-        clc                             ; Add 1 to variable_name_table_ptr to get value_table_ptr
-        adc     #1
-        sta     value_table_ptr
-        txa
-        adc     #0
-        sta     value_table_ptr+1
-        lda     #0                      ; Load zero into A
-        tay                             ; Write index is also zero
-        sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        sta     variable_count          ; Initialize number of variables to 0
         
 ; Fall through to reset_program_state
 
 ; Clears the runtime state of the program.
-; value_table_ptr = the address of the variable value table, the next byte following the variable name table
-; variable_count = the number of variables in the variable name table
+; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
 
 reset_program_state:
-        mvaa    value_table_ptr, dst_ptr    ; Prepare to clear variable value table
-        lda     variable_count          ; Amount to clear is variable_count * 2
-        jsr     mul2a
-        jsr     clear_memory            ; Leaves the size of variable value table in DE
+        lda     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get free_ptr
         clc
-        lda     D                       ; Add size of variable value table to value_table_ptr
-        adc     value_table_ptr
-        sta     free_ptr                ; Set into free_ptr (the start of free space)
-        lda     E                       ; Same for high byte
-        adc     value_table_ptr+1
+        adc     #1
+        sta     free_ptr
+        lda     variable_name_table_ptr+1
+        adc     #0
         sta     free_ptr+1
+        lda     #0                      ; Load zero into A
+        tay                             ; Write index is also zero
+        sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
 
 ; Fall through
 
@@ -269,25 +257,3 @@ check_himem:
         pla                             ; Discard size from stack
         rts
 
-; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it. Since
-; the resulting variable_value_ptr is within the 64K address space, on return the carry will be clear.
-; A = the variable index (0-127)
-
-set_variable_value_ptr:
-        jsr     mul2a                   ; Multiply by 2; since MSB was clear, this will clear carry
-        adc     value_table_ptr         ; Add to the value table offset
-        sta     variable_value_ptr      ; Store low byte
-        txa                             
-        adc     value_table_ptr+1
-        sta     variable_value_ptr+1
-        rts
-
-; Sets the value of the variable referenced by variable_value_ptr to the value passed in AX.
-
-set_variable_value:
-        ldy     #0                      ; Index variable value with Y
-        sta     (variable_value_ptr),y  ; Low byte
-        iny
-        txa
-        sta     (variable_value_ptr),y  ; High byte
-        rts

@@ -7,12 +7,12 @@ comment Generated from __file__
 comment Name table definitions 
 
 def(NT_VAR,             hex(10))
-def(NT_END,             hex(80))
+def(NT_STOP,            hex(80))
 
 comment Tokenized form constants
 
-def(TOKEN_NUM,          hex(20))
-def(TOKEN_VAR,          hex(80)) comment OR with variable number
+def(TOKEN_NUM,          hex(01))
+def(TOKEN_VAR,          hex(20)) comment OR with variable length
 
 comment Statement tokens
 
