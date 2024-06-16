@@ -35,14 +35,13 @@ copy_size:
 ; Y must be 0 when we first reach this point, and size must be set to the number of bytes remaining (0 means none).
 
 @remaining:
-        ldx     size
-        beq     @done                   ; If equal then we're done
-@next_remaining_byte:
+        cpy     size                    ; More?
+        beq     @done                   ; Nope
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y    
-        iny
-        dex
-        bne     @next_remaining_byte
+        iny                             ; Y is the number of bytes written so will not be zero, ...
+        bne     @remaining              ; therefore this is an unconditional branch
+
 @done:
         rts
 
