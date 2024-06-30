@@ -92,12 +92,12 @@ _advance_record_ptr:
         jsr     advance_record_ptr
         jmp     set_err
 
-_get_name_table_entry:
-.export _get_name_table_entry
+_get_name_table_record:
+.export _get_name_table_record
         sta     B                       ; Index arrives in A; we need it in Y
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
-        jsr     get_name_table_entry
+        jsr     get_name_table_record
         jmp     set_err
 
 _add_variable:

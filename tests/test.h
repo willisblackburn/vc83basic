@@ -69,7 +69,7 @@ int evaluate_expression(void);
 // name.s
 char find_name(/* AX */ const char* record_ptr);
 void advance_record_ptr(void);
-void get_name_table_entry(/* AX */ const char* record_ptr, /* Y */ char index);
+void get_name_table_record(/* AX */ const char* record_ptr, /* Y */ char index);
 void add_variable(size_t data_size);
 
 // parser.s
