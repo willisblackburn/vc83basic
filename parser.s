@@ -83,7 +83,7 @@ parse_line:
 ; Parses a complete statement.
 ; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
-; AX = pointer to the first entry of the name table
+; AX = pointer to the start of the name table
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:

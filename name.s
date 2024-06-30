@@ -105,13 +105,13 @@ rebase_record_ptr:
 advance_rebase_record_ptr_done:
         rts
 
-; Finds a name entry by its index.
-; AX = pointer to the first entry in the name table
-; Y = the index of the entry to find
-; Returns carry clear on success, carry set on error. On success, record_ptr points to the name table entry and both Y
+; Finds a name table record from its index.
+; AX = pointer to the first record in the name table
+; Y = the index of the record to find
+; Returns carry clear on success, carry set on error. On success, record_ptr points to the name table record and both Y
 ; and name_pos are reset to zero.
 
-get_name_table_entry:
+get_name_table_record:
         stax    next_record_ptr         ; This will be copied into record_ptr
         sty     matched_name_index      ; Track the index in matched_name_index
 @next_name:

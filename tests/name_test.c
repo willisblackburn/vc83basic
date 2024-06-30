@@ -13,11 +13,11 @@ void test_advance_record_ptr(void) {
     memset(large_name_table, 0, sizeof large_name_table);
     // Use 2 entries from name_table_data: 16 bytes
     memcpy(large_name_table, name_table_data, sizeof name_table_data);
-    // Add a large 520-byte entry
+    // Add a large 520-byte variable
     large_name_table[16] = 0x82; // length high byte with high bit set
     large_name_table[17] = 0x08; // length low byte
     large_name_table[18] = 'X' | NT_STOP;
-    // Next entry will be at offset 16 + 520 = 536
+    // Next variable will be at offset 16 + 520 = 536
     memcpy(large_name_table + 536, name_table_data_2, sizeof name_table_data_2);
 
     // Pre-requisite
@@ -107,30 +107,30 @@ void test_find_name(void) {
     call_find_name_fail("PRINT", 5, name_table_10, 2, name_table_10 + 5 + 5, __LINE__);
 }
 
-void test_get_name_table_entry(void) {
+void test_get_name_table_record(void) {
 
     const char name_table[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP,
         10, 'F', 'O', 'R' | NT_STOP, 1, '=', 1, 'T', 'O', 1, 4, 'R', 'U', 'N' | NT_STOP, 0 };
     
     PRINT_TEST_NAME();
 
-    get_name_table_entry(name_table, 0);
+    get_name_table_record(name_table, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 1);
 
-    get_name_table_entry(name_table, 1);
+    get_name_table_record(name_table, 1);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 1);
 
-    get_name_table_entry(name_table, 2);
+    get_name_table_record(name_table, 2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 6 + 1);
 
-    get_name_table_entry(name_table, 3);
+    get_name_table_record(name_table, 3);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 6 + 10 + 1);
 
-    get_name_table_entry(name_table, 4);
+    get_name_table_record(name_table, 4);
     ASSERT_NE(err, 0);
 }
 
@@ -189,7 +189,7 @@ int main(void) {
     initialize_target();
     test_advance_record_ptr();
     test_find_name();
-    test_get_name_table_entry();
+    test_get_name_table_record();
     test_add_variable();
     return 0;
 }
