@@ -8,13 +8,12 @@ comment Name table definitions
 
 def(NT_VAR,             hex(10))
 def(NT_RPT_VAR,         hex(11))
-def(NT_END,             hex(80))
+def(NT_STOP,            hex(80))
 
 comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_NUM,          hex(20))
-def(TOKEN_VAR,          hex(80)) comment OR with variable number
+def(TOKEN_NUM,          hex(01))
 
 comment Statement tokens
 

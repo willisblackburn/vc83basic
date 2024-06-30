@@ -50,21 +50,3 @@ invoke_statement_handler:
         tay
         ldax    #statement_exec_vectors
         jmp     invoke_indexed_vector
-
-; Gets the value for an argument and returns it in AX.
-
-get_argument_value:
-        ldy     line_pos
-        lda     (line_ptr),y            ; Peek at the next byte
-        bmi     @variable               ; It's a variable
-        jmp     decode_number           ; Decode a number instead
-
-@variable:
-        jsr     decode_variable
-        jsr     set_variable_value_ptr  ; Address of variable data in AX
-        ldy     #1
-        lda     (variable_value_ptr),y  ; High byte of variable value
-        tax
-        dey
-        lda     (variable_value_ptr),y  ; Low byte of variable data
-        rts

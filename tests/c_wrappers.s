@@ -53,6 +53,10 @@ _decode_number:
 .export _decode_number
         jmp     decode_number
 
+_decode_name:
+.export _decode_name
+        jmp     decode_name
+
 _decode_byte:
 .export _decode_byte
         jmp     decode_byte
@@ -67,6 +71,13 @@ _encode_number:
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
+        jmp     set_err
+
+; expression.s
+
+_evaluate_expression:
+.export _evaluate_expression
+        jsr     evaluate_expression
         jmp     set_err
 
 ; list.s
@@ -91,12 +102,17 @@ _find_name:
         jsr     find_name
         jmp     set_err
 
-_get_name_table_entry:
-.export _get_name_table_entry
+_advance_record_ptr:
+.export _advance_record_ptr
+        jsr     advance_record_ptr
+        jmp     set_err
+
+_get_name_table_record:
+.export _get_name_table_record
         sta     B                       ; Index arrives in A; we need it in Y
         jsr     popax                   ; Name table pointer
         ldy     B                       ; Load index into Y
-        jsr     get_name_table_entry
+        jsr     get_name_table_record
         jmp     set_err
 
 _add_variable:
@@ -202,10 +218,6 @@ _check_himem:
 .export _check_himem
         jsr     check_himem
         jmp     set_err
-
-_set_variable_value_ptr:
-.export _set_variable_value_ptr
-        jmp     set_variable_value_ptr
 
 ; util.s
 

@@ -58,54 +58,52 @@ list_statement:
         jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table
-        jsr     get_name_table_entry    ; Sets name_ptr and resets name_pos; should never fail
-@next_name:
-        jsr     append_from_name_table_entry    ; Outputs (possibly zero) characters from the name table
-        bcs     @done                   ; If there is nothing after then exit
-        tya                             ; Otherwise there is a directive in Y
+        jsr     get_name_table_record   ; Sets record_ptr; should never fail
+        mvax    record_ptr, name_ptr
+        jsr     list_name
+        jsr     rebase_record_ptr
+@next_character:
+        lda     record_ptr              ; Check low byte of current record_ptr
+        cmp     next_record_ptr         ; Is it the next record_ptr?
+        beq     @done                   ; Finished
+        ldy     #0                      ; Prepare to read from record_ptr
+        lda     (record_ptr),y          ; Examine byte
+        tax                             ; Temporarily store in X
+        iny                             ; Move to next byte in name record
+        jsr     rebase_record_ptr       ; Move record_ptr past this character
+        txa                             ; Get character back
+        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
+        beq     @directive
+        txa                             ; Name record byte again
+        jsr     append_buffer           ; Write to buffer
+        jmp     @next_character
+
+@directive:
+        txa                             ; Get directive
         jsr     list_directive
-        inc     name_pos                ; Next byte
-        bne     @next_name              ; name_pos is always >0 so unconditional
+        jmp     @next_character
 
 @done:
         rts
 
-; Outputs a name from a name table.
-; AX = pointer to the first entry in the name table
-; Y = the index of the entry
+; Outputs a name.
+; name_ptr = pointer to the start of the name (note name_length is not required)
+; On return, Y will be set to the length of the name.
 
 list_name:
-        jsr     get_name_table_entry
-        jsr     append_from_name_table_entry
-        clc                             ; Signal success
-        rts
-
-; Outputs characters from the name table entry starting at name_pos, until reaching the last character or a
-; directive.
-; name_ptr = pointer to the table entry
-; name_pos = the name table entry position
-; Returns carry set if the last character of the name was also the last byte of the name table entry, or carry clear
-; if the next character is a directive, which will be in Y.
-
-append_from_name_table_entry:
-        jsr     read_name_table_byte    ; Get the first byte
-        bcs     @done                   ; No first byte
-        jsr     is_name_character       ; Is it a name character?
-        bcs     @next_character         ; It's not; don't add whitespace
         jsr     add_whitespace
+        ldy     #0                      ; Start with first character
 @next_character:
-        jsr     read_name_table_byte    ; Get the next byte
-        bcs     @done                   ; If last byte then return
-        tay                             ; Store temporarily in Y
-        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @done                   ; It is, return with carry still clear
-        tya                             ; Get character back from Y
+        lda     (name_ptr),y
+        bmi     @last
+        iny
         jsr     append_buffer
-        inc     name_pos                ; Next character
-        bne     @next_character         ; name_pos is always >0 so unconditional
+        bne     @next_character
 
-@done:
-        rts
+@last:
+        iny
+        eor     #NT_STOP                ; Clear high bit
+        jmp     append_buffer
 
 list_argument_type_vectors:
         .word   list_variable-1             ; NT_VAR
@@ -114,28 +112,26 @@ list_argument_type_vectors:
 ; Lists a single directive from the token stream.
 ; A = the directive
 
-; Make sure NT_VAR is the first typed directive
+; Make sure NT_VAR is the first single-arg directive
 .assert NT_VAR = $10, error
 
 list_directive:
         tay                             ; Keep in Y while using A to save state
-        ldphaa  name_ptr                ; Save existing value of name_ptr
-        ldpha   name_pos                ; Save existing name entry read position
+        ldphaa  record_ptr              ; Save existing value of record_ptr
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
         tya
         jsr     list_argument_list
-        jmp     @pop
+        jmp     @pop_state
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #list_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-@pop:
-        plsta   name_pos                ; Recover values previously saved on stack
-        plstaa  name_ptr
+@pop_state:
+        plstaa  record_ptr              ; Recover values previously saved on stack
         rts
 
 list_argument_list:
@@ -160,17 +156,15 @@ list_argument_list:
 
 list_expression:
         ldy     line_pos
-        lda     (line_ptr),y            ; Check the next token
-        bmi     list_variable           ; It's a variable
+        lda     (line_ptr),y            ; Peek at the next byte
+        cmp     #TOKEN_NUM
+        bne     list_variable           ; It's a variable
         jsr     add_whitespace
         jsr     decode_number           ; It must be a number; decode it (return value in AX)
         jmp     format_number           ; Send it right to format_number
 
 list_variable:
-        jsr     decode_variable         ; Get the variable
-        tay                             ; The variable index into Y
-        jsr     add_whitespace
-        ldax    variable_name_table_ptr ; Look up name in the variable name table
+        jsr     decode_name             ; Set up name_ptr
         jmp     list_name
 
 .assert TOKEN_NO_VALUE = 0, error
@@ -202,7 +196,7 @@ add_whitespace:
 
 ; Writes a single byte to buffer at position buffer_pos and increments buffer_pos.
 ; Does not check for buffer overflow; we assume this can't happen.
-; STA is the last operation so zero flag will be set if we wrote zero.
+; INC will leave zero flag set as long as buffer_pos hasn't overrun.
 ; A = the byte to write (preserved)
 ; buffer_pos = the buffer position (updated)
 ; Y SAFE, BC SAFE, DE SAFE

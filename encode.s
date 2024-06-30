@@ -20,15 +20,6 @@ encode_number:
         jsr     encode
         rts     
 
-; Encodes a variable by its ID.
-; A = the variable ID
-; Y SAFE, BC SAFE, DE SAFE
-
-encode_variable:
-        ora     #TOKEN_VAR              ; Variables are encoded with the high bit set
-        jsr     encode
-        rts
-
 ; Encodes the TOKEN_NO_VALUE token
 
 encode_no_value:

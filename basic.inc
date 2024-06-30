@@ -24,20 +24,24 @@ DE = D
 
 ; decode.s
 .global decode_number
-.global decode_variable
+.global decode_name
 .global decode_byte
 
 ; encode.s
 .global encode_number
-.global encode_variable
 .global encode_no_value
 .global encode_byte
+
+; expression.s
+.global evaluate_expression
 
 ; input.s
 .global exec_input
 
 ; let.s
 .global exec_let
+.global find_or_initialize_variable
+.global assign_variable
 
 ; list.s
 .global exec_list
@@ -52,9 +56,9 @@ DE = D
 ; name.s
 .global find_name
 .global match_name
-.global read_name_table_byte
-.global advance_name_ptr
-.global get_name_table_entry
+.global advance_record_ptr
+.global rebase_record_ptr
+.global get_name_table_record
 .global add_variable
 
 ; parser.s
@@ -80,14 +84,11 @@ DE = D
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
 .global check_himem
-.global set_variable_value_ptr
-.global set_variable_value
 
 ; run.s
 .global exec_run
 .global run_line
 .global invoke_statement_handler
-.global get_argument_value
 
 ; tables.s
 .global statement_name_table
@@ -95,7 +96,7 @@ DE = D
 ; util.s
 .global copy, copy_a, copy_size
 .global reverse_copy, reverse_copy_size
-.global clear_memory
+.global clear_memory, clear_memory_size
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global format_number

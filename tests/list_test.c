@@ -2,11 +2,13 @@
 
 void add_variable_with_name(const char* name) {
     strcpy(buffer, name);
-    name_start_pos = 0;
-    buffer_pos = strlen(buffer);
+    buffer_pos = 0;
+    line_pos = 0;
+    parse_name();
+    ASSERT_EQ(err, 0);
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
-    add_variable();
+    add_variable(2);
     ASSERT_EQ(err, 0);
 }
 
@@ -31,11 +33,11 @@ void call_list_directive(char directive, const char* line_data, size_t line_data
 void test_list_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x10, 0x10 };
-    const char line_data_2[] = { 0x80 };
-    const char line_data_3[] = { 0x80, TOKEN_NUM, 0x10, 0x10 };
-    const char line_data_4[] = { 0x80 };
-    const char line_data_5[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_6[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 'X' | NT_STOP };
+    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_NUM, 0x10, 0x10 };
+    const char line_data_4[] = { 'X' | NT_STOP };
+    const char line_data_5[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_6[] = { 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
@@ -69,11 +71,11 @@ void call_list_statement(const char* line_data, size_t line_data_length, const c
 void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F };
+    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0xFF, 0x7F };
     const char line_data_3[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00 };
     const char line_data_4[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE };
     const char line_data_5[] = { ST_LIST, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_6[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_6[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
@@ -98,8 +100,7 @@ void test_list_statment(void) {
 void test_list_line(void) {
 
     const char line_data_1[] = { ST_PRINT, TOKEN_NUM, 0x01, 0x01 };
-    const char line_data_2[] = { ST_LET, 0x80, TOKEN_NUM, 0xFF, 0x7F };
-    const char line_data_end[] = { 3, 0xFF, 0xFF };
+    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0xFF, 0x7F };
     
     const char list_1[] = "10 PRINT 257";
     const char list_2[] = "400 LET X=32767";
@@ -123,7 +124,7 @@ void test_list_line(void) {
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 
-    set_line(-1, line_data_end, sizeof line_data_end);
+    set_line(-1, line_data_2, 0);
     list_line();
     ASSERT_NE(err, 0);
 }
