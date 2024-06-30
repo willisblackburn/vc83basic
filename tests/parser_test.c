@@ -267,6 +267,17 @@ void test_parse_statement(void) {
     call_parse_statement("PRINT 8  ", line_data_2, sizeof line_data_2, __LINE__);
     call_parse_statement("LET   X  =  100  ", line_data_3, sizeof line_data_3, __LINE__);
 
+    // Make sure the parser doesn't keep parsing past the end of the name table record.
+    // Note the parser will skip the space after 8; that's okay.
+
+    strcpy(buffer, "PRINT 8 9");
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
+    parse_statement(statement_name_table);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(buffer_pos, 8);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + sizeof line_data_2);
+
     // Make sure the parser doesn't match continued names.
 
     strcpy(buffer, "PRINTX");

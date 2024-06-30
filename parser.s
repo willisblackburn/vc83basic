@@ -97,7 +97,7 @@ parse_statement:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
 @next_character:
         lda     record_ptr              ; Check low byte of current record_ptr
-        cmp     next_record_ptr+1       ; Is it the next record_ptr?
+        cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @success                ; If so, have reached the end of the statement
         ldy     #0
         lda     (record_ptr),y          ; Get the next byte
