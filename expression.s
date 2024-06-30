@@ -19,7 +19,7 @@ evaluate_expression:
         bcc     @found                  ; Found it
         ldax    #2                      ; Allocate 2 bytes of space for the variable
         jsr     add_variable            ; Add it
-        bcs     @fail                   ; Unable to add the variable
+        bcs     @error                  ; Unable to add the variable
 @found:
         ldy     #1                      ; Start with high byte of value
         lda     (record_ptr),y
@@ -27,5 +27,5 @@ evaluate_expression:
         dey
         lda     (record_ptr),y
         clc                             ; Success
-@fail:
+@error:
         rts

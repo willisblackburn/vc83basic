@@ -133,7 +133,7 @@ get_name_table_entry:
 add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
         ldy     matched_name_index      ; Check if too many variables already
-        bmi     @fail                   ; variable_count >= 128
+        bmi     @error                  ; variable_count >= 128
         adc     name_length             ; Add name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Park length low byte in B
         bcc     @skip_inx               ; No carry; don't need to increment high byte
@@ -146,13 +146,13 @@ add_variable:
         inx
 @skip_inx_2:
         txa                             ; Test high byte again
-        bmi     @fail                   ; If high bit is already set then length is too large to encode
+        bmi     @error                  ; If high bit is already set then length is too large to encode
 @single_byte_encoding:
         stx     C                       ; Store high byte of the length in C
         lda     B                       ; Recover low byte; length is now in AX for call to grow
         ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
         jsr     grow                    ; Do the grow
-        bcs     @fail
+        bcs     @error
         mvax    record_ptr, dst_ptr     ; Prepare to clear the newly-allocated record
         ldax    BC                      ; Recover size
         jsr     clear_memory
@@ -184,6 +184,6 @@ add_variable:
         clc                             ; Signal success
         rts
 
-@fail:
+@error:
         sec                             ; Signal error
         rts

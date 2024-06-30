@@ -10,7 +10,7 @@ exec_let:
         bcc     @found                  ; Found it
         ldax    #2                      ; Allocate 2 bytes of space for the variable
         jsr     add_variable            ; Add it
-        bcs     @fail                   ; Unable to add the variable
+        bcs     @error                  ; Unable to add the variable
 
 ; At this point record_ptr will be pointing to the variable data.
 ; Store it in variable_ptr because we might need record_ptr when parsing the right hand value.
@@ -24,5 +24,5 @@ exec_let:
         txa
         sta     (variable_ptr),y        ; High byte
         clc                             ; Success
-@fail:
+@error:
         rts
