@@ -55,49 +55,58 @@ void test_parse_name(void) {
 
     call_parse_name("PRINT", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_PTR_EQ(name_ptr, buffer);
+    ASSERT_EQ(name_length, 5);
     ASSERT_EQ(buffer_pos, 5);
 
     // Start at the space to verify that it skips whitespace.
     call_parse_name("10 PRINT", 2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 5);
     ASSERT_EQ(buffer_pos, 8);
 
     call_parse_name("10 PRINT X", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 5);
     ASSERT_EQ(buffer_pos, 8);
 
     call_parse_name("10 PRINTX", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 6);
     ASSERT_EQ(buffer_pos, 9);
 
     call_parse_name("10 PRINT10", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 7);
     ASSERT_EQ(buffer_pos, 10);
 
     call_parse_name("10 PRINT10X", 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 8);
     ASSERT_EQ(buffer_pos, 11);
 
     // Start parse at space.
     call_parse_name("ON X/2 GOTO 10,20", 2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
+    ASSERT_PTR_EQ(name_ptr, buffer + 3);
+    ASSERT_EQ(name_length, 1);
     ASSERT_EQ(buffer_pos, 4);
     call_parse_name("ON X/2 GOTO 10,20", 6);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 7);
+    ASSERT_EQ(name_ptr, buffer + 7);
+    ASSERT_EQ(name_length, 4);
     ASSERT_EQ(buffer_pos, 11);
 
     // Digits are names; this is okay because we try to parse numbers before names.
     call_parse_name("10", 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
+    ASSERT_PTR_EQ(name_ptr, buffer);
+    ASSERT_EQ(name_length, 2);
     ASSERT_EQ(buffer_pos, 2);
 
     // buffer_pos will reflect skipped whitespace even if parse fails.
@@ -167,7 +176,7 @@ void test_read_number(void) {
     ASSERT_EQ(buffer_pos, 0);
 }
 
-void call_parse_expression(const char* s, const char* expected_line_data, size_t expected_line_data_size, int line) {
+void call_parse_expression(const char* s, const char* expect_line_data, size_t expect_line_data_size, int line) {
     size_t s_length;
     fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
     s_length = strlen(s);
@@ -176,15 +185,15 @@ void call_parse_expression(const char* s, const char* expected_line_data, size_t
     line_pos = offsetof(Line, data);
     parse_expression();
     ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, expected_line_data, expected_line_data_size);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
     ASSERT_EQ(buffer_pos, s_length);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expected_line_data_size);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_size);
 }
 
 void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
-    const char line_data_2[] = { 0x80 };
+    const char line_data_2[] = { TOKEN_VAR | 1, 'X' };
 
     PRINT_TEST_NAME();
 
@@ -243,9 +252,9 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 void test_parse_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
-    const char line_data_2[] = { 0x80 };
-    const char line_data_3[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_4[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_2[] = { TOKEN_VAR | 1, 'X' };
+    const char line_data_3[] = { TOKEN_VAR | 1, 'X', TOKEN_NO_VALUE };
+    const char line_data_4[] = { TOKEN_VAR | 1, 'X', TOKEN_VAR | 1, 'Y', TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -276,8 +285,8 @@ void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00 };
-    const char line_data_3[] = { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 };
-    const char line_data_4[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_3[] = { ST_LET, TOKEN_VAR | 1, 'X', TOKEN_NUM, 0x64, 0x00 };
+    const char line_data_4[] = { ST_INPUT, 0x21, 'X', 0x21, 'Y', TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -307,7 +316,7 @@ void test_parse_statement(void) {
 
 void test_parse_line(void) {
 
-    const char line_data_1[] = { ST_LET, 0x80, TOKEN_NUM, 0x64, 0x00 };
+    const char line_data_1[] = { ST_LET, TOKEN_VAR | 1, 'X', TOKEN_NUM, 0x64, 0x00 };
     const char line_data_2[] = { ST_RUN };
 
     PRINT_TEST_NAME();

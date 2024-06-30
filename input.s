@@ -12,12 +12,13 @@ exec_input:
         mva     #0, buffer_pos          ; Reset the read position
 @next_var:
         jsr     decode_variable         ; Read the variable
-        jsr     set_variable_value_ptr  ; Sets variable_value_ptr to the storage for this variable
+        jsr     find_or_initialize_variable
+        bcs     @error
+        mvax    record_ptr, variable_ptr
         jsr     read_number             ; Returns value in AX
-        bcs     @error                  ; Failed to read a number
-        jsr     set_variable_value      ; Store the value
+        jsr     assign_variable
         ldy     line_pos                ; Peek at the next byte
-        lda     (line_ptr),y            
+        lda     (line_ptr),y
         beq     @done                   ; It was TOKEN_NO_VALUE, nothing more to read
         jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
         bcc     exec_input              ; Didn't find ',' so issue a new prompt
