@@ -193,7 +193,7 @@ void call_parse_expression(const char* s, const char* expect_line_data, size_t e
 void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
-    const char line_data_2[] = { 0x21, 'X' };
+    const char line_data_2[] = { TOKEN_VAR | 1, 'X' };
 
     PRINT_TEST_NAME();
 
@@ -223,7 +223,7 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 void test_parse_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00 };
-    const char line_data_2[] = { 0x21, 'X' };
+    const char line_data_2[] = { TOKEN_VAR | 1, 'X' };
 
     PRINT_TEST_NAME();
 
@@ -251,7 +251,7 @@ void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00 };
-    const char line_data_3[] = { ST_LET, 0x21, 'X', TOKEN_NUM, 0x64, 0x00 };
+    const char line_data_3[] = { ST_LET, TOKEN_VAR | 1, 'X', TOKEN_NUM, 0x64, 0x00 };
 
     PRINT_TEST_NAME();
 
