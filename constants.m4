@@ -12,7 +12,6 @@ def(NT_STOP,            hex(80))
 comment Tokenized form constants
 
 def(TOKEN_NUM,          hex(01))
-def(TOKEN_VAR,          hex(20)) comment OR with variable length
 
 comment Statement tokens
 

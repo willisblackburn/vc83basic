@@ -24,12 +24,11 @@ DE = D
 
 ; decode.s
 .global decode_number
-.global decode_variable
+.global decode_name
 .global decode_byte
 
 ; encode.s
 .global encode_number
-.global encode_variable
 .global encode_byte
 
 ; expression.s

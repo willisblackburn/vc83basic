@@ -90,17 +90,18 @@ parse_statement:
         jsr     parse_name
         bcs     @error
         ldax    #statement_name_table
-        jsr     find_name               ; Start by finding name; sets name_pos and returns index in A
+        jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error
-        jsr     encode_byte             ; Encode index
+        mvx     name_ptr, line_pos      ; name_ptr is pointing to name within line_buffer; back up line_pos to start
+        jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
 @next_character:
         lda     record_ptr              ; Check low byte of current record_ptr
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @success                ; If so, have reached the end of the statement
-        ldy     #0
-        lda     (record_ptr),y          ; Get the next byte
+        ldy     #0                      ; Get next byte from record_ptr
+        lda     (record_ptr),y
         tax                             ; Temporarily store in X
         iny                             ; Move to next byte in name record
         jsr     rebase_record_ptr
@@ -108,14 +109,14 @@ parse_statement:
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
         txa                             ; Name record byte again
-        ldx     buffer_pos              ; Comapre it to the current character in the buffer
+        ldx     buffer_pos              ; Compare it to the current character in the buffer
+        inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
         bne     @error
-        inc     buffer_pos              ; Increment buffer pointer
         bne     @next_character
         
 @directive:
-        txa                             ; Name record byte again
+        txa                             ; Recover the directive
         jsr     parse_directive
         bcc     @after_directive
 
@@ -128,7 +129,7 @@ parse_statement:
         rts  
 
 parse_argument_type_vectors:
-        .word   parse_variable-1            ; NT_VAR
+        .word   parse_name-1            ; NT_VAR
 
 ; Parses a single directive.
 ; Since parsing the directive can recursively invoke the name table element parser with new values for record_ptr etc.,
@@ -176,7 +177,7 @@ parse_directive:
 parse_expression:
         jsr     parse_number
         bcc     @done
-        jsr     parse_variable
+        jsr     parse_name
 @done:
         rts
 
@@ -190,17 +191,9 @@ parse_number:
 @done:
         rts
 
-; Parses a variable name.
-
-parse_variable:
-        jsr     parse_name              ; Find a name
-        bcs     @done
-        jsr     encode_variable       
-@done:
-        rts
-
 ; Parses a name from buffer, starting at buffer_pos.
-; Returns carry clear if there was a name at buffer_pos, and sets name_ptr and name_length.
+; Copies the name into line_buffer, sets the high bit on the last character, and sets name_ptr and name_length. 
+; Returns carry clear if there was a name at buffer_pos.
 ; Returns carry set if the character at buffer_pos doesn't start a name.
 ; Y SAFE, BC SAFE, DE SAFE
 
@@ -208,30 +201,37 @@ parse_variable:
 .assert <buffer = 0, error
 
 parse_name:
+        mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
+        mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
         jsr     skip_whitespace
+        stx     name_length             ; Set offset into name_length; will subtract to get actual name_length later
         jsr     is_name_character       ; Check for initial name character
         bcs     @done
-        stx     name_ptr                ; The buffer offset (still in X) is the low byte of name_ptr
-        stx     name_length             ; Also set into name_length; will subtract to get actual name_length later
-        mva     #>buffer, name_ptr+1    ; High byte of buffer address into name_ptr
 @next_character:
-        inx                             ; Next character
+        jsr     encode_byte             ; Encode it
+        inc     buffer_pos
+        ldx     buffer_pos
         lda     buffer,x                ; Check next character
         jsr     is_name_character       ; Is it a name character?
         bcc     @next_character         ; Yes, keep going
         txa                             ; End buffer position into A
-        sta     buffer_pos              ; Update buffer_pos
         sbc     name_length             ; Subtract the starting position (stored in name_length) to get length
         sta     name_length             ; Store it back
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        eor     #NT_STOP                ; Set bit 7
+        sta     line_buffer,x           ; Write back
         clc                             ; Signal success
 @done:
         rts
 
 ; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '_'.
-; Returns carry clear if it is, carry set if not.
+; Returns carry clear if it is, carry set if not. A is left unchanged.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 is_name_character:
+        pha                             ; Save the input character
         cmp     #'_'                    ; Underbar is sepcial case
         clc                             ; Clear carry for return in case it was '_'
         beq     @done
@@ -242,6 +242,7 @@ is_name_character:
         sbc     #'A'-'0'                ; Check range 'A'-'Z'
         cmp     #26                     ; Sets carry if char was >'Z'
 @done:      
+        pla                             ; Restore the input character
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.

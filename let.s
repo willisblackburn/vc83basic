@@ -4,7 +4,7 @@
 ; LET statement:
 
 exec_let:
-        jsr     decode_variable         ; Read the variable; sets name_ptr and name_length
+        jsr     decode_name             ; Sets name_ptr and name_length
         ldax    variable_name_table_ptr
         jsr     find_name               ; Look for a variable with this name
         bcc     @found                  ; Found it
