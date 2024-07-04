@@ -67,10 +67,10 @@ word(next_record_ptr, char*)
 comment Read position in the name table record
 byte(record_pos)
 
-comment Pointer to the name to match
+comment Pointer to name terminated with a character with the high bit set
 word(name_ptr, const char*)
 
-comment Length of the name to match
+comment Length of the name referred to by name_ptr
 byte(name_length)
 
 comment Index of matched name

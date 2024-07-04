@@ -4,7 +4,7 @@
 ; LET statement:
 
 exec_let:
-        jsr     decode_variable         ; Read the variable; sets name_ptr and name_length
+        jsr     decode_name             ; Sets name_ptr and name_length
         jsr     find_or_initialize_variable
         bcs     @error
 

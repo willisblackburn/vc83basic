@@ -53,9 +53,9 @@ _decode_number:
 .export _decode_number
         jmp     decode_number
 
-_decode_variable:
-.export _decode_variable
-        jmp     decode_variable
+_decode_name:
+.export _decode_name
+        jmp     decode_name
 
 _decode_byte:
 .export _decode_byte

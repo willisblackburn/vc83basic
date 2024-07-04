@@ -20,25 +20,6 @@ encode_number:
         jsr     encode
         rts     
 
-; Encodes a variable name.
-; name_ptr = pointer to the name of the variable
-; name_length = the length of the variable name
-; Y SAFE, BC SAFE, DE SAFE
-
-encode_variable:
-        lda     #TOKEN_VAR
-        ora     name_length
-        jsr     encode
-        ldy     #0                      ; Enocde the name starting with position 0
-@next:
-        lda     (name_ptr),y
-        jsr     encode
-        iny
-        cpy     name_length             ; Compare length after copy since it will always be at least 1
-        bne     @next
-        clc                             ; Signal success
-        rts
-
 ; Encodes the TOKEN_NO_VALUE token
 
 encode_no_value:

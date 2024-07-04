@@ -11,7 +11,7 @@ exec_input:
         jsr     readline
         mva     #0, buffer_pos          ; Reset the read position
 @next_var:
-        jsr     decode_variable         ; Read the variable
+        jsr     decode_name             ; Read the variable name
         jsr     find_or_initialize_variable
         bcs     @error
         mvax    record_ptr, variable_ptr

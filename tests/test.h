@@ -56,7 +56,7 @@ extern const char statement_name_table[];
 
 // decode.s
 int decode_number(void);
-void decode_variable(void);
+void decode_name(void);
 char decode_byte(void);
 
 // encode.s

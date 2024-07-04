@@ -14,7 +14,6 @@ comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
 def(TOKEN_NUM,          hex(01))
-def(TOKEN_VAR,          hex(20)) comment OR with variable length
 
 comment Statement tokens
 

@@ -13,7 +13,7 @@ evaluate_expression:
         rts
 
 @variable:
-        jsr     decode_variable
+        jsr     decode_name
         ldax    variable_name_table_ptr
         jsr     find_name               ; Look for a variable with this name
         bcc     @found                  ; Found it
@@ -21,6 +21,7 @@ evaluate_expression:
         jsr     add_variable            ; Add it
         bcs     @error                  ; Unable to add the variable
 @found:
+        ldax    record_ptr
         ldy     #1                      ; Start with high byte of value
         lda     (record_ptr),y
         tax

@@ -43,26 +43,33 @@ void test_advance_record_ptr(void) {
     ASSERT_NE(err, 0);
 }
 
-void call_find_name(const char* set_name_ptr, char set_name_length, const char* name_table, char expect_index,
+void call_parse_name(const char* name) {
+    // Parse given name to set name_ptr, name_length, and high bit on final character.
+    strcpy(buffer, name);
+    buffer_pos = 0;
+    line_pos = 0;
+    parse_name();
+    ASSERT_EQ(err, 0);
+}
+
+void call_find_name(const char* name, const char* name_table, char expect_index,
     const char* expect_record_ptr, int line) {        
     char index;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_length=%d)\n", __FILE__, line, set_name_ptr, set_name_length);
+    fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
+    call_parse_name(name);
     HEXDUMP(name_table, 32);
-    name_ptr = set_name_ptr;
-    name_length = set_name_length;
     index = find_name(name_table);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(index, expect_index);
     ASSERT_PTR_EQ(record_ptr, expect_record_ptr);
 }
 
-void call_find_name_fail(const char* set_name_ptr, char set_name_length, const char* name_table, char expect_index,
+void call_find_name_fail(const char* name, const char* name_table, char expect_index,
     const char* expect_record_ptr, int line) {
     char index;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_length=%d)\n", __FILE__, line, set_name_ptr, set_name_length);
+    fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
+    call_parse_name(name);
     HEXDUMP(name_table, 32);
-    name_ptr = set_name_ptr;
-    name_length = set_name_length;
     index = find_name(name_table);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, expect_index);
@@ -87,24 +94,24 @@ void test_find_name(void) {
 
     PRINT_TEST_NAME();
 
-    call_find_name("PRINT", 5, name_table_1, 0, name_table_1 + 6, __LINE__);
-    call_find_name("PRINT", 5, name_table_2, 0, name_table_2 + 6, __LINE__);
-    call_find_name("X", 1, name_table_2, 1, name_table_2 + 8, __LINE__);
-    call_find_name("PRINT", 5, name_table_3, 1, name_table_3 + 8, __LINE__);
-    call_find_name("X", 1, name_table_3, 0, name_table_3 + 2, __LINE__);
-    call_find_name("PRINT", 5, name_table_4, 1, name_table_4 + 11, __LINE__);
-    call_find_name("PRINT", 5, name_table_5, 1, name_table_5 + 12, __LINE__);
+    call_find_name("PRINT", name_table_1, 0, name_table_1 + 6, __LINE__);
+    call_find_name("PRINT", name_table_2, 0, name_table_2 + 6, __LINE__);
+    call_find_name("X", name_table_2, 1, name_table_2 + 8, __LINE__);
+    call_find_name("PRINT", name_table_3, 1, name_table_3 + 8, __LINE__);
+    call_find_name("X", name_table_3, 0, name_table_3 + 2, __LINE__);
+    call_find_name("PRINT", name_table_4, 1, name_table_4 + 11, __LINE__);
+    call_find_name("PRINT", name_table_5, 1, name_table_5 + 12, __LINE__);
 
     // Name not found
-    call_find_name_fail("PRINT", 5, name_table_6, 1, name_table_6 + 5, __LINE__);
+    call_find_name_fail("PRINT", name_table_6, 1, name_table_6 + 5, __LINE__);
 
     // Name in name table is longer than input namne
-    call_find_name_fail("PRINT", 5, name_table_7, 1, name_table_7 + 8, __LINE__);
-    call_find_name_fail("PRINT", 5, name_table_8, 2, name_table_8 + 5 + 8, __LINE__);
+    call_find_name_fail("PRINT", name_table_7, 1, name_table_7 + 8, __LINE__);
+    call_find_name_fail("PRINT", name_table_8, 2, name_table_8 + 5 + 8, __LINE__);
 
     // Input name is longer than name in table
-    call_find_name_fail("PRINT", 5, name_table_9, 1, name_table_9 + 5, __LINE__);
-    call_find_name_fail("PRINT", 5, name_table_10, 2, name_table_10 + 5 + 5, __LINE__);
+    call_find_name_fail("PRINT", name_table_9, 1, name_table_9 + 5, __LINE__);
+    call_find_name_fail("PRINT", name_table_10, 2, name_table_10 + 5 + 5, __LINE__);
 }
 
 void test_get_name_table_record(void) {
@@ -145,7 +152,7 @@ void test_add_variable(void) {
 
     // add_variable is used after find_name, which sets up record_ptr.
     // The call_find_name_fail function sets name_ptr and name_length
-    call_find_name_fail("X", 1, variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
+    call_find_name_fail("X", variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
     add_variable(2);
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
@@ -158,29 +165,29 @@ void test_add_variable(void) {
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 1);
 
     // Should be able to find X now
-    call_find_name("X", 1, variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
+    call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
 
     // Add more variables
-    call_find_name_fail("A(", 2, variable_name_table_ptr, 1, variable_name_table_ptr + 4, __LINE__);
+    call_find_name_fail("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4, __LINE__);
     add_variable(511);
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr[4], 0x82); // length (515) high byte with high bit set
     ASSERT_EQ(variable_name_table_ptr[5], 0x03); // length low byte
     ASSERT_EQ(variable_name_table_ptr[6], 'A');
-    ASSERT_EQ(variable_name_table_ptr[7], '(' | NT_STOP);
+    ASSERT_EQ(variable_name_table_ptr[7], 'B' | NT_STOP);
     ASSERT_EQ(variable_name_table_ptr[8], 0); // data bytes
     ASSERT_EQ(variable_name_table_ptr[519], 0); // end of variable name table
     ASSERT_PTR_EQ(record_ptr, variable_name_table_ptr + 4 + 4);
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 1);
 
-    call_find_name_fail("Y", 1, variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515, __LINE__);
+    call_find_name_fail("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515, __LINE__);
     add_variable(6);
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
 
-    call_find_name("X", 1, variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
-    call_find_name("A(", 2, variable_name_table_ptr, 1, variable_name_table_ptr + 4 + 4, __LINE__);
-    call_find_name("Y", 1, variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515 + 2, __LINE__);
+    call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
+    call_find_name("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4 + 4, __LINE__);
+    call_find_name("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515 + 2, __LINE__);
 
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 8 + 1);
 }

@@ -20,22 +20,27 @@ decode_number:
 
 ; Decodes a variable name and set up name_ptr and name_length.
 
-decode_variable:
-        ldy     line_pos
-        inc     line_pos                ; Skip past the token + length byte
-        lda     (line_ptr),y            ; Load token + length byte
-        and     #<~TOKEN_VAR            ; Clear the TOKEN_VAR bit
-        sta     name_length             ; Sets up the length of the name
-        lda     line_ptr                ; Start with line_ptr
+decode_name:
+        lda     line_pos                ; Add line_pos to line_ptr to get name_ptr
         clc
-        adc     line_pos                ; Add line_pos to set up name_ptr
+        adc     line_ptr
         sta     name_ptr
         lda     line_ptr+1
         adc     #0                      ; Will leave carry clear since name_ptr calculation should not roll over
         sta     name_ptr+1
-        lda     line_pos                ; Advance line_pos past the name
-        adc     name_length
-        sta     line_pos
+        ldy     #0                      ; Search for the end of the name starting at position 0
+@loop:
+        lda     (name_ptr),y
+        bmi     @last
+        iny
+        bne     @loop
+
+@last:
+        iny                             ; Account for last character
+        sty     name_length
+        tya                             ; Add to line_pos; carry should be clear
+        adc     line_pos
+        sta     line_pos                ; Update line_pos
         rts
 
 ; Decodes a single byte and returns it in A.
