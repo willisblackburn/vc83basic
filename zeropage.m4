@@ -64,9 +64,6 @@ word(record_ptr, char*)
 comment Pointer to the next name table record
 word(next_record_ptr, char*)
 
-comment Read position in the name table record
-byte(record_pos)
-
 comment Pointer to name terminated with a character with the high bit set
 word(name_ptr, const char*)
 
