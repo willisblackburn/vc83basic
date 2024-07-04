@@ -133,7 +133,7 @@ parse_argument_type_vectors:
         .word   parse_repeated_name-1   ; NT_RPT_VAR
 
 ; Parses a single directive.
-; Since parsing the directive can recursively invoke the name table element parser with new values for record_ptr etc.,
+; Since parsing the directive can recursively invoke the parser with new values for record_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
 ; A = the directive
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
