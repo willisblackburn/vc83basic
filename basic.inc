@@ -25,24 +25,28 @@ DE = D
 ; decode.s
 .global decode_expression
 .global decode_number
-.global decode_variable
+.global decode_name
 .global decode_operator
 .global decode_unary_operator
 .global decode_byte
 
 ; encode.s
 .global encode_number
-.global encode_variable
 .global encode_operator
 .global encode_unary_operator
 .global encode_no_value
 .global encode_byte
+
+; expression.s
+.global evaluate_expression
 
 ; input.s
 .global exec_input
 
 ; let.s
 .global exec_let
+.global find_or_initialize_variable
+.global assign_variable
 
 ; list.s
 .global exec_list
@@ -55,11 +59,12 @@ DE = D
 .global main
 
 ; name.s
-.global find_name
+.global find_name, find_name_2
 .global match_name
-.global read_name_table_byte
-.global advance_name_ptr
-.global get_name_table_entry
+.global initialize_record_ptr
+.global advance_record_ptr
+.global rebase_record_ptr
+.global get_name_table_record
 .global add_variable
 
 ; parser.s
@@ -69,10 +74,7 @@ DE = D
 .global parse_directive
 .global parse_expression
 .global parse_argument_separator
-.global parse_name
-.global is_name_character
-.global parse_operator_name
-.global is_operator_name_character
+.global parse_name, parse_name_2
 .global skip_whitespace
 
 ; print.s
@@ -82,31 +84,26 @@ DE = D
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
-.global find_line, find_line_continue
+.global find_line
 .global advance_line_ptr, advance_line_ptr_a
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
 .global check_himem
-.global set_variable_value_ptr
-.global set_variable_value
 
 ; run.s
 .global exec_run
 .global run_line
 .global invoke_statement_handler
-.global get_argument_value
 
 ; tables.s
 .global statement_name_table
 .global operator_name_table
-.global operator_chars
-.global operator_chars_end
 .global unary_operator_name_table
 
 ; util.s
 .global copy, copy_a, copy_size
 .global reverse_copy, reverse_copy_size
-.global clear_memory
+.global clear_memory, clear_memory_size
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global format_number
