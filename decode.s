@@ -2,7 +2,6 @@
 .include "basic.inc"
 
 ; Functions to decode values from the token stream.
-; We don't have to worry about errors since we're decoding what we previously encoded.
 ; For all functions, line_pos is the read position in line_ptr.
 
 ; Decodes a number and returns it in AX.
