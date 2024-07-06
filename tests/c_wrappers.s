@@ -148,11 +148,6 @@ _parse_name:
         jsr     parse_name
         jmp     set_err
 
-_is_name_character:
-.export _is_name_character
-        jsr     is_name_character
-        jmp     set_err
-
 ; program.s
 
 _initialize_target:
