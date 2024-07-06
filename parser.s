@@ -89,10 +89,10 @@ parse_line:
 parse_statement:
         jsr     parse_name
         bcs     @error
+        mva     name_ptr, line_pos      ; name_ptr is pointing to name within line_buffer; back up line_pos to start
         ldax    #statement_name_table
         jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error
-        mvx     name_ptr, line_pos      ; name_ptr is pointing to name within line_buffer; back up line_pos to start
         jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
