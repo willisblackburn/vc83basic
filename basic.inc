@@ -69,7 +69,6 @@ DE = D
 .global parse_expression
 .global parse_argument_separator
 .global parse_name
-.global is_name_character
 .global skip_whitespace
 
 ; print.s

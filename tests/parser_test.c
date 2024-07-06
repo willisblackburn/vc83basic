@@ -1,50 +1,7 @@
 #include "test.h"
 
-void test_is_name_character(void) {
-
-    PRINT_TEST_NAME();
-
-    is_name_character('A');
-    ASSERT_EQ(err, 0);
-    is_name_character('Z');
-    ASSERT_EQ(err, 0);
-    is_name_character('0');
-    ASSERT_EQ(err, 0);
-    is_name_character('9');
-    ASSERT_EQ(err, 0);
-    is_name_character('_');
-    ASSERT_EQ(err, 0);
-
-    is_name_character('?');
-    ASSERT_NE(err, 0);
-    is_name_character('=');
-    ASSERT_NE(err, 0);
-    is_name_character('#');
-    ASSERT_NE(err, 0);
-    is_name_character('%');
-    ASSERT_NE(err, 0);
-    is_name_character('@');
-    ASSERT_NE(err, 0);
-    is_name_character('[');
-    ASSERT_NE(err, 0);
-    is_name_character('/');
-    ASSERT_NE(err, 0);
-    is_name_character(':');
-    ASSERT_NE(err, 0);
-    is_name_character(' ');
-    ASSERT_NE(err, 0);
-    is_name_character(0);
-    ASSERT_NE(err, 0);
-    is_name_character(0x7F);
-    ASSERT_NE(err, 0);
-    is_name_character(0x80);
-    ASSERT_NE(err, 0);
-    is_name_character(0xFF);
-    ASSERT_NE(err, 0);
-}
-
- void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
-        char expect_name_length, char expect_buffer_pos, int line) {
+void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
+        char expect_buffer_pos, int line) {
     fprintf(stderr, "  %s:%d: parse_name(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
     buffer_pos = set_buffer_pos;
@@ -52,7 +9,6 @@ void test_is_name_character(void) {
     parse_name();
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(name_ptr, line_buffer.data);
-    ASSERT_EQ(name_length, expect_name_length);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
 }
@@ -65,29 +21,32 @@ void test_parse_name(void) {
     const char print10x_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0', 'X' | NT_STOP };
     const char x_line_data[] = { 'X' | NT_STOP  };
     const char goto_line_data[] = { 'G', 'O', 'T', 'O' | NT_STOP  };
-    const char digits_line_data[] = { '1', '0' | NT_STOP };
 
     PRINT_TEST_NAME();
 
-    call_parse_name("PRINT", 0, print_line_data, sizeof print_line_data, 5, 5, __LINE__);
+    call_parse_name("PRINT", 0, print_line_data, sizeof print_line_data, 5, __LINE__);
 
     // Start at the space to verify that it skips whitespace.
-    call_parse_name("10 PRINT", 2, print_line_data, sizeof print_line_data, 5, 8, __LINE__);
+    call_parse_name("10 PRINT", 2, print_line_data, sizeof print_line_data, 8, __LINE__);
 
-    call_parse_name("10 PRINT X", 3, print_line_data, sizeof print_line_data, 5, 8, __LINE__);
+    call_parse_name("10 PRINT X", 3, print_line_data, sizeof print_line_data, 8, __LINE__);
 
-    call_parse_name("10 PRINTX", 3, printx_line_data, sizeof printx_line_data, 6, 9, __LINE__);
+    call_parse_name("10 PRINTX", 3, printx_line_data, sizeof printx_line_data, 9, __LINE__);
 
-    call_parse_name("10 PRINT10", 3, print10_line_data, sizeof print10_line_data, 7, 10, __LINE__);
+    call_parse_name("10 PRINT10", 3, print10_line_data, sizeof print10_line_data, 10, __LINE__);
 
-    call_parse_name("10 PRINT10X", 3, print10x_line_data, sizeof print10x_line_data, 8, 11, __LINE__);
+    call_parse_name("10 PRINT10X", 3, print10x_line_data, sizeof print10x_line_data, 11, __LINE__);
 
     // Start parse at space.
-    call_parse_name("ON X/2 GOTO 10,20", 2, x_line_data, sizeof x_line_data, 1, 4, __LINE__);
-    call_parse_name("ON X/2 GOTO 10,20", 6, goto_line_data, sizeof goto_line_data, 4, 11, __LINE__);
+    call_parse_name("ON X/2 GOTO 10,20", 2, x_line_data, sizeof x_line_data, 4, __LINE__);
+    call_parse_name("ON X/2 GOTO 10,20", 6, goto_line_data, sizeof goto_line_data, 11, __LINE__);
 
-    // Digits are names; this is okay because we try to parse numbers before names.
-    call_parse_name("10", 0, digits_line_data, sizeof digits_line_data, 2, 2, __LINE__);
+    // Digits are not names.
+    strcpy(buffer, "10");
+    buffer_pos = 0;
+    parse_name();
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(buffer_pos, 0);
 
     // buffer_pos will reflect skipped whitespace even if parse fails.
     strcpy(buffer, "  ");
@@ -355,7 +314,6 @@ void test_parse_line(void) {
 
 int main(void) {
     initialize_target();
-    test_is_name_character();
     test_parse_name();
     test_char_to_digit();
     test_read_number();

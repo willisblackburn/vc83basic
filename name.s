@@ -37,13 +37,13 @@ find_next_name:
 
 match_name:
         ldy     #0                      ; Start matching at position 0; also clears N flag
-@loop:
+@next:
         lda     (record_ptr),y          ; Load next byte from name table record
         bmi     @last                   ; This is the last character
         cmp     (name_ptr),y            ; Compare to the source name
         bne     @no_match               ; If not match then fail; if we get past this point then we're still matching
         iny
-        bne     @loop
+        bne     @next
 
 @last:
         cmp     (name_ptr),y            ; One last compare
@@ -119,8 +119,8 @@ get_name_table_record:
         rts
 
 ; Extends the variable name table by adding a new name.
-; The new name consists of the characters defined by name_ptr and name_length. The name must already end in a
-; character with the high bit set.
+; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
+; The name must already end in a character with the high bit set.
 ; AX = the number of data bytes to allocate after the name
 ; record_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
 ; matched_name_index = the number of names currently in the table (also left by find_name)
@@ -168,10 +168,16 @@ add_variable:
         sta     (record_ptr),y
         iny
         jsr     rebase_record_ptr       ; Add Y to record_ptr
-        mvax    name_ptr, src_ptr       ; Copy from name_ptr
-        mvax    record_ptr, dst_ptr     ; to record_ptr
-        lda     name_length
-        jsr     copy_a                  ; Copy the name into the name table; Y will be name_length on return
+        ldy     #0                      ; Start copying name at offset 0
+@copy_next_character:
+        lda     (name_ptr),y            ; Get name character
+        sta     (record_ptr),y          ; Store into name table
+        bmi     @copy_last
+        iny
+        bne     @copy_next_character
+
+@copy_last:
+        iny                             ; Last character
         jsr     rebase_record_ptr       ; Make record_ptr point past end of data
         clc                             ; Signal success
         rts

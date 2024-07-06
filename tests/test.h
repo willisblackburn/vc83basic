@@ -86,7 +86,6 @@ void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_argument_separator(void);
 void parse_name(void);
-void is_name_character(/* A */ char c);
 
 // program.s
 void initialize_target(void);
