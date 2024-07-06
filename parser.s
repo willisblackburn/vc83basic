@@ -191,58 +191,65 @@ parse_number:
 @done:
         rts
 
+parse_name_states:
+        .byte   'A', 'Z' + 1, <(parse_name_states_1 - parse_name_states)
+        .byte   NAME_ERROR
+parse_name_states_1:
+        .byte   'A', 'Z' + 1, <(parse_name_states_1 - parse_name_states)
+        .byte   '0', '9' + 1, <(parse_name_states_1 - parse_name_states)
+        .byte   '_', '_' + 1, <(parse_name_states_1 - parse_name_states)
+        .byte   NAME_OK
+
 ; Parses a name from buffer, starting at buffer_pos.
-; Copies the name into line_buffer, sets the high bit on the last character, and sets name_ptr and name_length. 
+; Copies the name into line_buffer, sets the high bit on the last character, and sets name_ptr. 
 ; Returns carry clear if there was a name at buffer_pos.
-; Returns carry set if the character at buffer_pos doesn't start a name.
+; Returns carry set if the character at buffer_pos doesn't start a name. The state machine is set up so we only fail
+; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
+; non-name character just marks the end of the name.
 ; Y SAFE, BC SAFE, DE SAFE
 
 ; buffer must be page-aligned
 .assert <buffer = 0, error
 
+.assert NAME_OK = $80, error
+.assert NAME_ERROR = $81, error
+
 parse_name:
         mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
         mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
+        mvax    #parse_name_states, src_ptr
         jsr     skip_whitespace
-        stx     name_length             ; Set offset into name_length; will subtract to get actual name_length later
-        jsr     is_name_character       ; Check for initial name character
-        bcs     @done
-@next_character:
-        jsr     encode_byte             ; Encode it
-        inc     buffer_pos
-        ldx     buffer_pos
-        lda     buffer,x                ; Check next character
-        jsr     is_name_character       ; Is it a name character?
-        bcc     @next_character         ; Yes, keep going
-        txa                             ; End buffer position into A
-        sbc     name_length             ; Subtract the starting position (stored in name_length) to get length
-        sta     name_length             ; Store it back
+        ldy     #$FE                    ; After two INY will start out with the first state
+@skip_2:
+        iny
+@skip_1:
+        iny
+@next_state:
+        lda     (src_ptr),y             ; Check the lower bound value to see if termination bit is set
+        bmi     @terminate              ; We're done
+        ldx     buffer_pos              ; Handle the character at buffer_pos
+        lda     buffer,x                ; Next character
+        cmp     (src_ptr),y             ; Compare with lower bound
+        iny                             ; Y = upper bound offset
+        bcc     @skip_2                 ; Character is < lower bound
+        cmp     (src_ptr),y             ; Compare with upper bound
+        iny                             ; Y = next state offset
+        bcs     @skip_1                 ; Character is >= upper bound
+        jsr     encode_byte             ; Encode the byte
+        lda     (src_ptr),y             ; Load next state
+        tay                             ; Move into Y
+        inc     buffer_pos              ; Next character; should always be >0
+        bne     @next_state
+
+@terminate:
+        ror     A                       ; Roll bit 0 into carry flag for return
+        bcs     @done                   ; If we're going to fail then don't set the high bit on the last character   
         ldx     line_pos                ; Get line_buffer write position
         dex                             ; Back to last character we wrote
         lda     line_buffer,x
         eor     #NT_STOP                ; Set bit 7
         sta     line_buffer,x           ; Write back
-        clc                             ; Signal success
 @done:
-        rts
-
-; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '_'.
-; Returns carry clear if it is, carry set if not. A is left unchanged.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
-
-is_name_character:
-        pha                             ; Save the input character
-        cmp     #'_'                    ; Underbar is sepcial case
-        clc                             ; Clear carry for return in case it was '_'
-        beq     @done
-        sec                             ; Prepare for subtract
-        sbc     #'0'                    ; Check range 0-9
-        cmp     #10                     ; Sets carry if char was >'9'
-        bcc     @done                   ; It was in range 0-9
-        sbc     #'A'-'0'                ; Check range 'A'-'Z'
-        cmp     #26                     ; Sets carry if char was >'Z'
-@done:      
-        pla                             ; Restore the input character
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.

@@ -22,3 +22,5 @@ def(ST_LET,             2)
 comment Other constants
 
 def(BUFFER_SIZE, 256)
+def(NAME_OK, hex(80))
+def(NAME_ERROR, hex(81))

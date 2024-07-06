@@ -55,7 +55,6 @@ DE = D
 .global parse_directive
 .global parse_expression
 .global parse_name
-.global is_name_character
 .global skip_whitespace
 
 ; print.s

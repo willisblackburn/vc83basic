@@ -80,7 +80,6 @@ void parse_statement(/* AX */ const char* name_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_name(void);
-void is_name_character(/* A */ char c);
 
 // program.s
 void initialize_target(void);

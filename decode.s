@@ -29,11 +29,11 @@ decode_name:
         adc     #0                      ; Will leave carry clear since name_ptr calculation should not roll over
         sta     name_ptr+1
         ldy     #0                      ; Search for the end of the name starting at position 0
-@loop:
+@next:
         lda     (name_ptr),y
         bmi     @last
         iny
-        bne     @loop
+        bne     @next
 
 @last:
         iny                             ; Account for last character
