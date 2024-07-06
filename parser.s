@@ -96,7 +96,7 @@ parse_statement:
         jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
-@next_character:
+@next:
         lda     record_ptr              ; Check low byte of current record_ptr
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @success                ; If so, have reached the end of the statement
@@ -113,7 +113,7 @@ parse_statement:
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
         bne     @error
-        beq     @next_character
+        beq     @next
         
 @directive:
         txa                             ; Recover the directive

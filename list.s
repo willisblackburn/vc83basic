@@ -62,7 +62,7 @@ list_statement:
         mvax    record_ptr, name_ptr
         jsr     list_name
         jsr     rebase_record_ptr
-@next_character:
+@next:
         lda     record_ptr              ; Check low byte of current record_ptr
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @done                   ; Finished
@@ -76,12 +76,12 @@ list_statement:
         beq     @directive
         txa                             ; Name record byte again
         jsr     append_buffer           ; Write to buffer
-        jmp     @next_character
+        jmp     @next
 
 @directive:
         txa                             ; Get directive
         jsr     list_directive
-        jmp     @next_character
+        jmp     @next
 
 @done:
         rts
@@ -93,12 +93,12 @@ list_statement:
 list_name:
         jsr     add_whitespace
         ldy     #0                      ; Start with first character
-@next_character:
+@next:
         lda     (name_ptr),y
         bmi     @last
         iny
         jsr     append_buffer
-        bne     @next_character
+        bne     @next
 
 @last:
         iny
