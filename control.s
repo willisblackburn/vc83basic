@@ -31,7 +31,7 @@ exec_gosub_line_number:
         bcs     @done                   ; Stack overflow
         lda     #TOKEN_VAR              ; Set variable field to an invalid variable
         sta     primary_stack+Control::variable,x
-        jsr     find_line_continue      ; Find the line (already in line_number)
+        jsr     find_line_2             ; Find the line (already in line_number)
         bcs     @done
 @done:
         rts

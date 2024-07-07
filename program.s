@@ -99,7 +99,7 @@ build_end_statement:
 
 find_line:
         stax    line_number
-find_line_continue:
+find_line_2:
         jsr     reset_next_line_ptr     ; Set next_line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
