@@ -109,7 +109,7 @@ DE = D
 .global reset_program_state
 .global reset_next_line_ptr
 .global build_end_statement
-.global find_line, find_line_continue
+.global find_line, find_line_2
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
