@@ -64,7 +64,7 @@ reset_program_state:
 
 reset_next_line_ptr:
         ldax    program_ptr
-reset_next_line_ptr_to:
+reset_next_line_ptr_2:
         stax    next_line_ptr
         mvy     #Line::data, next_line_pos
         rts
