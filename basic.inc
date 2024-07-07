@@ -153,7 +153,7 @@ FP1s = FP1+UnpackedFloat::s
 ; program.s
 .global initialize_program
 .global reset_program_state
-.global reset_next_line_ptr, reset_next_line_ptr_to
+.global reset_next_line_ptr, reset_next_line_ptr_2
 .global build_end_statement
 .global find_line, find_line_2
 .global advance_next_line_ptr, advance_next_line_ptr_a
