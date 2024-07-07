@@ -16,6 +16,8 @@ define(`var', ``extern $3 $1;
 define(`byte', `var($1, 1, char)')
 define(`word', `var($1, 2, $2)')
 
+comment Generated from __file__
+
 comment Additional general-purpose "registers." Register rules apply; don't expect them to be preserved unless a
 comment function declares B SAFE etc. Can be used as the 16-bit pairs BC and DE. Don't alias these.
 
