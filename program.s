@@ -138,7 +138,6 @@ find_line_2:
 advance_next_line_ptr:
         ldy     #Line::next_line_offset
         lda     (next_line_ptr),y       ; Get next line offset into A
-advance_next_line_ptr_a:
         clc
         adc     next_line_ptr           ; Add line length to low byte of next_line_ptr
         sta     next_line_ptr           ; Save back
