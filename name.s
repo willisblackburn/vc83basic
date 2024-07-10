@@ -14,13 +14,13 @@
 find_name:
         stax    next_record_ptr         ; This will be copied into record_ptr
         mva     #0, matched_name_index  ; Initialize name table index to 0
-find_next_name:
+@next:
         jsr     advance_record_ptr      ; Tee up next record
         bcs     @done
         jsr     match_name              ; Try to match
         bcc     @match                  ; It matched; return
         inc     matched_name_index      ; Wasn't a match; try the next one
-        bne     find_next_name          ; Will never roll over since we're limited to 128 names
+        bne     @next                   ; Will never roll over since we're limited to 128 names
 
 @match:
         jsr     rebase_record_ptr       ; Advance record_ptr to point to data after name
