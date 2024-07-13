@@ -18,6 +18,8 @@ void test_evaluate_expression(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     set_line(0, line_data_1, sizeof line_data_1);
     value = evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -50,7 +52,6 @@ void test_evaluate_expression(void) {
 
 int main(void) {
     initialize_target();
-    initialize_program();
     test_evaluate_expression();
     return 0;
 }
