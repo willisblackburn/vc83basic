@@ -2,59 +2,60 @@
 .include "basic.inc"
 
 ; Functions to decode values from the token stream.
-; We don't have to worry about errors since we're decoding what we previously encoded.
 ; For all functions, line_pos is the read position in line_ptr.
 
 ; Decodes the an expression and invokes handlers as it encounters expression elements.
-;   1xxx xxxx -> 0 (variable)
-;   0000 0000 -> x (will never be dispatched)
-;   0000 0001 -> 1 (number)
-;   0000 0002 -> 2 (subexpression)
 ; AX = the table of vectors for dispatching
+; Returns carry clear on success, or carry set if either one of the handlers failed (returned carry set) or the
+; function encountered an invalid expression token (which should not happen).
 
 .assert TOKEN_NO_VALUE = 0, error
-.assert TOKEN_PAREN = 1, error
-.assert TOKEN_UNARY_OP = $08, error
-.assert TOKEN_OP = $10, error
-.assert TOKEN_NUM = $20, error
-.assert TOKEN_VAR = $80, error
 
 .assert XH_VAR = 0, error
-.assert XH_NUM = 1, error
-.assert XH_OP = 2, error
-.assert XH_UNARY_OP = 3, error
+.assert XH_OP = 1, error
+.assert XH_UNARY_OP = 2, error
+.assert XH_NUM = 3, error
 .assert XH_PAREN = 4, error
 
 decode_expression:
         stax    decode_expression_vector_table_ptr  ; Store the value passed in AX as the vector table
         jmp     @start
-@loop:
-        adc     #(XH_PAREN - TOKEN_PAREN)   ; Generate handler by aligning PAREN handler index with token
-        tay                             ; Transfer into Y for dispatch
+
+@inc_dispatch:
+        inc     line_pos
 @dispatch:
         ldax    decode_expression_vector_table_ptr  ; Remember what vector table we're using
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
-        bcs     @done                   ; The handler failed
+        bcs     @error                  ; The handler failed
 @start:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
+        beq     @end                    ; If we're at the end of the expression then stop
         ldy     #XH_VAR                 ; First handler is VAR
-        tax                             ; Store it in X for now (sets flags from decoded byte)
-        bmi     @dispatch               ; Handle variable           (1xxx xxxx)
-        iny                             ; Advance to next handler
-        asl     A                       ; Bit 6 into MSB
-        asl     A                       ; Bit 5 into MSB
-        bmi     @dispatch               ; Handle number             (001x xxxx)
+        tax                             ; Store token in X for now
+        and     #$60                    ; Start of variable name
+        bne     @dispatch
         iny
-        asl     A                       ; Bit 4 into MSB
-        bmi     @dispatch               ; Handle operator           (0001 xxxx)
+        txa
+        and     #TOKEN_OP               ; Binary operator
+        bne     @dispatch
         iny
-        asl     A                       ; Bit 3 into MSB
-        bmi     @dispatch               ; Handle unary operator     (0000 1xxx)
-        inc     line_pos                ; Each handler is unique from this point so advance past the byte
-        txa                             ; It's in the range 0-7; see if it's zero (TOKEN_NO_VALUE)
-        bne     @loop                   ; If not zero then keep doing stuff; carry is clear here due to shifts
-@done:
+        txa
+        and     #TOKEN_UNARY_OP         ; Unary operator
+        bne     @dispatch
+        iny
+        cpx     #TOKEN_NUM              ; Number
+        beq     @dispatch
+        iny
+        cpx     #TOKEN_PAREN            ; Subexpression start
+        beq     @inc_dispatch
+        sec                             ; None of the above; set carry to indicate failure
+@error:
+        rts
+
+@end:
+        inc     line_pos                ; Consume final TOKEN_NO_VALUE
+        clc                             ; Success
         rts
 
 ; Decodes a number and returns it in AX.
@@ -70,9 +71,30 @@ decode_number:
         lda     (line_ptr),y            ; Get the low byte of the number into A
         rts     
 
-decode_variable:
-        lda     #$7F
-        bne     decode_byte_with_mask   ; Unconditional jump
+; Decodes a variable name and set up name_ptr and name_length.
+
+decode_name:
+        lda     line_pos                ; Add line_pos to line_ptr to get name_ptr
+        clc
+        adc     line_ptr
+        sta     name_ptr
+        lda     line_ptr+1
+        adc     #0                      ; Will leave carry clear since name_ptr calculation should not roll over
+        sta     name_ptr+1
+        ldy     #0                      ; Search for the end of the name starting at position 0
+@next:
+        lda     (name_ptr),y
+        bmi     @last
+        iny
+        bne     @next
+
+@last:
+        iny                             ; Account for last character
+        sty     name_length
+        tya                             ; Add to line_pos; carry should be clear
+        adc     line_pos
+        sta     line_pos                ; Update line_pos
+        rts
 
 decode_operator:
         lda     #$0F

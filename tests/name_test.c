@@ -1,181 +1,218 @@
 #include "test.h"
 
-void call_find_name(const char* s, const char* name_table, char set_name_bp, char set_buffer_pos, char expect_index,
-    char expect_np, const char* expect_name_ptr, int line) {        
+void test_advance_record_ptr(void) {
+
+    const char name_table_data[] = { 6, 'L', 'I', 'S', 'T' | NT_STOP, 1, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
+        'T', 'O' | NT_STOP, 1 };
+    const char name_table_data_2[] = { 4, 'R', 'U', 'N' | NT_STOP, 0 };
+    static char large_name_table[541];
+
+    PRINT_TEST_NAME();
+
+    // Set up the large name table.
+    memset(large_name_table, 0, sizeof large_name_table);
+    // Use 2 entries from name_table_data: 16 bytes
+    memcpy(large_name_table, name_table_data, sizeof name_table_data);
+    // Add a large 520-byte variable
+    large_name_table[16] = 0x82; // length high byte with high bit set
+    large_name_table[17] = 0x08; // length low byte
+    large_name_table[18] = 'X' | NT_STOP;
+    // Next variable will be at offset 16 + 520 = 536
+    memcpy(large_name_table + 536, name_table_data_2, sizeof name_table_data_2);
+
+    // Pre-requisite
+    next_record_ptr = large_name_table;
+
+    advance_record_ptr();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(record_ptr, large_name_table + 1);
+    ASSERT_EQ(next_record_ptr, large_name_table + 6);
+    advance_record_ptr();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(record_ptr, large_name_table + 6 + 1);
+    ASSERT_EQ(next_record_ptr, large_name_table + 6 + 10);
+    advance_record_ptr();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(record_ptr, large_name_table + 6 + 10 + 2);
+    ASSERT_EQ(next_record_ptr, large_name_table + 6 + 10 + 520);
+    advance_record_ptr();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(record_ptr, large_name_table + 6 + 10 + 520 + 1);
+    ASSERT_EQ(next_record_ptr, large_name_table + 6 + 10 + 520 + 4);
+    advance_record_ptr();
+    ASSERT_NE(err, 0);
+}
+
+void set_name_ptr(const char* name) {
+    // Parse given name to set name_ptr and high bit on final character.
+    // Also sets name_length, which would normally be set in decode_name.
+    strcpy(buffer, name);
+    name_ptr = buffer;
+    name_length = strlen(buffer);
+    buffer[name_length - 1] |= NT_STOP;
+}
+
+void call_find_name(const char* name, const char* name_table, char expect_index,
+    const char* expect_record_ptr, int line) {        
     char index;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_start_pos=%d, buffer_pos=%d)\n", __FILE__, line, s, name_table,
-        set_name_bp, set_buffer_pos);
-    strcpy(buffer, s);
-    name_start_pos = set_name_bp;
-    buffer_pos = set_buffer_pos;
+    fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
+    set_name_ptr(name);
+    HEXDUMP(name_table, 32);
     index = find_name(name_table);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(index, expect_index);
-    ASSERT_EQ(name_pos, expect_np);
-    ASSERT_EQ(name_ptr, expect_name_ptr);
-    ASSERT_EQ(buffer_pos, set_buffer_pos);
+    ASSERT_PTR_EQ(record_ptr, expect_record_ptr);
 }
 
-void call_find_name_fail(const char* s, const char* name_table, char set_name_bp, char set_buffer_pos, char expect_index,
-    int line) {
+void call_find_name_fail(const char* name, const char* name_table, char expect_index,
+    const char* expect_record_ptr, int line) {
     char index;
-    fprintf(stderr, "  %s:%d: find_name(\"%s\", name_table=%s, name_start_pos=%d, buffer_pos=%d)\n", __FILE__, line, s, name_table,
-        set_name_bp, set_buffer_pos);
-    strcpy(buffer, s);
-    name_start_pos = set_name_bp;
-    buffer_pos = set_buffer_pos;
+    fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
+    set_name_ptr(name);
+    HEXDUMP(name_table, 32);
     index = find_name(name_table);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, expect_index);
-    // On fail name_ptr should always point to 0 at the end of the name table (automatically added by C string).
-    ASSERT_EQ(name_ptr, name_ptr + strlen(name_ptr));
-    ASSERT_EQ(buffer_pos, set_buffer_pos);
+    // On fail record_ptr should always point to 0 at the end of the name table.
+    ASSERT_PTR_EQ(record_ptr, expect_record_ptr);
 }
 
 void test_find_name(void) {
 
-    // C adds a trailing 0 to these strings which terminates the name table.
-    const char* name_table_1 = "PRIN\xD4"; // \xD4 = 'T' with bit 7 set
-    const char* name_table_2 = "PRIN\xD4LIS\xD4";
-    const char* name_table_3 = "LIS\xD4PRIN\xD4";
-    const char* name_table_4 = "LIS\xD4PRINT\x11TO\x91";
-    const char* name_table_5 = "LIST\x92PRINT\x11TO\x91";
-    const char* name_table_6 = "LIS\xD4";
-    const char* name_table_7 = "PRINTE\xD2";
-    const char* name_table_8 = "LIS\xD4PRINTE\xD2";
-    const char* name_table_9 = "PRI\xCE";
-    const char* name_table_10 = "LIS\xD4PRI\xCE";
+    const char name_table_1[] = { 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 0 };
+    const char name_table_2[] = { 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 'X' | NT_STOP, 0 };
+    const char name_table_3[] = { 1, 'X' | NT_STOP, 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 0 };
+    const char name_table_4[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
+        'T', 'O' | NT_STOP, 1, 0 };
+    const char name_table_5[] = { 6, 'L', 'I', 'S', 'T' | NT_STOP, 1, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
+        'T', 'O' | NT_STOP, 1, 0 };
+    const char name_table_6[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 0 };
+    const char name_table_7[] = { 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | NT_STOP, 0 };
+    const char name_table_8[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | NT_STOP, 0 };
+    const char name_table_9[] = { 5, 'P', 'R', 'I', 'N' | NT_STOP, 0 };
+    const char name_table_10[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 5, 'P', 'R', 'I', 'N' | NT_STOP, 0 };
 
     PRINT_TEST_NAME();
 
-    call_find_name("PRINT", name_table_1, 0, 5, 0, 5, name_table_1, __LINE__);
-    call_find_name("PRINT", name_table_2, 0, 5, 0, 5, name_table_2, __LINE__);
-    call_find_name("PRINT", name_table_3, 0, 5, 1, 5, name_table_3 + 4, __LINE__);
-
-    call_find_name("PRINT", name_table_4, 0, 5, 1, 5, name_table_4 + 4, __LINE__);
-    call_find_name("PRINT", name_table_5, 0, 5, 1, 5, name_table_5 + 5, __LINE__);
+    call_find_name("PRINT", name_table_1, 0, name_table_1 + 6, __LINE__);
+    call_find_name("PRINT", name_table_2, 0, name_table_2 + 6, __LINE__);
+    call_find_name("X", name_table_2, 1, name_table_2 + 8, __LINE__);
+    call_find_name("PRINT", name_table_3, 1, name_table_3 + 8, __LINE__);
+    call_find_name("X", name_table_3, 0, name_table_3 + 2, __LINE__);
+    call_find_name("PRINT", name_table_4, 1, name_table_4 + 11, __LINE__);
+    call_find_name("PRINT", name_table_5, 1, name_table_5 + 12, __LINE__);
 
     // Name not found
-    call_find_name_fail("PRINT", name_table_6, 0, 5, 1, __LINE__);
+    call_find_name_fail("PRINT", name_table_6, 1, name_table_6 + 5, __LINE__);
 
     // Name in name table is longer than input namne
-    call_find_name_fail("PRINT", name_table_7, 0, 5, 1, __LINE__);
-    call_find_name_fail("PRINT", name_table_8, 0, 5, 2, __LINE__);
+    call_find_name_fail("PRINT", name_table_7, 1, name_table_7 + 8, __LINE__);
+    call_find_name_fail("PRINT", name_table_8, 2, name_table_8 + 5 + 8, __LINE__);
 
-    // // Input name is longer than name in table
-    call_find_name_fail("PRINT", name_table_9, 0, 5, 1, __LINE__);
-    call_find_name_fail("PRINT", name_table_10, 0, 5, 2, __LINE__);
-
-    // Name does not start at position 0
-    call_find_name_fail("PRINT", name_table_1, 1, 5, 1, __LINE__);
-
-    // Make sure find_name ignores name after buffer_pos
-    call_find_name_fail("PRINT", name_table_1, 0, 4, 1, __LINE__);
+    // Input name is longer than name in table
+    call_find_name_fail("PRINT", name_table_9, 1, name_table_9 + 5, __LINE__);
+    call_find_name_fail("PRINT", name_table_10, 2, name_table_10 + 5 + 5, __LINE__);
 }
 
 void test_find_name_operators(void) {
 
-    // C adds a trailing 0 to these strings which terminates the name table.
-    const char* name_table_1 = ">\xBD"; // \xBD = '=' with bit 7 set
-    const char* name_table_2 = "\xBE>\xBD"; // \xBE = '>' with bit 7 set
-    const char* name_table_3 = "\xBD>\xBD\xBE";
+    const char name_table_1[] = { 3, '>', '=' | NT_STOP, 0 };
+    const char name_table_2[] = { 2, '>' | NT_STOP, 3, '>', '=' | NT_STOP, 0 };
+    const char name_table_3[] = { 2, '=' | NT_STOP, 3, '>', '=' | NT_STOP, 2, '>' | NT_STOP, 0 };
 
     PRINT_TEST_NAME();
 
-    call_find_name(">=", name_table_1, 0, 2, 0, 2, name_table_1, __LINE__);
-    call_find_name(">=", name_table_2, 0, 2, 1, 2, name_table_2 + 1, __LINE__);
-    call_find_name(">", name_table_2, 0, 1, 0, 1, name_table_2, __LINE__);
-    call_find_name(">=", name_table_3, 0, 2, 1, 2, name_table_3 + 1, __LINE__);
-    call_find_name(">", name_table_3, 0, 1, 2, 1, name_table_3 + 3, __LINE__);
+    call_find_name(">=", name_table_1, 0, name_table_1 + 3, __LINE__);
+    call_find_name(">=", name_table_2, 1, name_table_2 + 5, __LINE__);
+    call_find_name(">", name_table_2, 0, name_table_2 + 2, __LINE__);
+    call_find_name(">=", name_table_3, 1, name_table_3 + 5, __LINE__);
+    call_find_name(">", name_table_3, 2, name_table_3 + 7, __LINE__);
 }
 
-void test_get_name_table_entry(void) {
+void test_get_name_table_record(void) {
 
-    const char* name_table = "LIST\x92" "PRIN\xD4" "FOR\x11=\x11TO\x91" "RU\xCE";
-
+    const char name_table[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP,
+        10, 'F', 'O', 'R' | NT_STOP, 1, '=', 1, 'T', 'O', 1, 4, 'R', 'U', 'N' | NT_STOP, 0 };
+    
     PRINT_TEST_NAME();
 
-    get_name_table_entry(name_table, 0);
+    get_name_table_record(name_table, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table);
+    ASSERT_EQ(record_ptr, name_table + 1);
 
-    get_name_table_entry(name_table, 1);
+    get_name_table_record(name_table, 1);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 5);
+    ASSERT_EQ(record_ptr, name_table + 5 + 1);
 
-    get_name_table_entry(name_table, 2);
+    get_name_table_record(name_table, 2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 5 + 5);
+    ASSERT_EQ(record_ptr, name_table + 5 + 6 + 1);
 
-    get_name_table_entry(name_table, 3);
+    get_name_table_record(name_table, 3);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 5 + 5 + 9);
+    ASSERT_EQ(record_ptr, name_table + 5 + 6 + 10 + 1);
+
+    get_name_table_record(name_table, 4);
+    ASSERT_NE(err, 0);
 }
 
 void test_add_variable(void) {
-    char index;
 
     PRINT_TEST_NAME();
 
     // Call initialize_program to set up variable_name_table_ptr.
     initialize_program();
     ASSERT_EQ(variable_name_table_ptr[0], 0);
-    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 1);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
 
-    // add_variable is used after find_name, which sets up name_ptr.
-    strcpy(buffer, "X");
-    name_start_pos = 0;
-    buffer_pos = 1;
-    find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    index = add_variable();
+    // add_variable is used after find_name, which sets up record_ptr.
+    // The call_find_name_fail function sets name_ptr.
+    call_find_name_fail("X", variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
+    add_variable(2);
+    HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(index, 0);
-    ASSERT_EQ(buffer_pos, 1);
-    ASSERT_EQ(variable_count, 1);
-    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
-    ASSERT_EQ(variable_name_table_ptr[1], 0);
-    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 2);
-    ASSERT_EQ(*(int*)value_table_ptr, 0);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + 2);
-
-    strcpy(buffer, "Y,Z");
-    name_start_pos = 0;
-    buffer_pos = 1;
-    find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    index = add_variable();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(index, 1);
-    ASSERT_EQ(buffer_pos, 1);
-    ASSERT_EQ(variable_count, 2);
-    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
-    ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
-    ASSERT_EQ(variable_name_table_ptr[2], 0);
-    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 3);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + 4);
-    name_start_pos = 2;
-    buffer_pos = 3;
-    find_name(variable_name_table_ptr);
-    ASSERT_NE(err, 0);
-    index = add_variable();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(index, 2);
-    ASSERT_EQ(buffer_pos, 3);
-    ASSERT_EQ(variable_count, 3);
-    ASSERT_EQ(variable_name_table_ptr[0], 'X' | NT_END);
-    ASSERT_EQ(variable_name_table_ptr[1], 'Y' | NT_END);
-    ASSERT_EQ(variable_name_table_ptr[2], 'Z' | NT_END);
+    ASSERT_EQ(variable_name_table_ptr[0], 4); // length
+    ASSERT_EQ(variable_name_table_ptr[1], 'X' | NT_STOP);
+    ASSERT_EQ(variable_name_table_ptr[2], 0); // 2 data bytes
     ASSERT_EQ(variable_name_table_ptr[3], 0);
-    ASSERT_PTR_EQ(value_table_ptr, variable_name_table_ptr + 4);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + 6);
+    ASSERT_EQ(variable_name_table_ptr[4], 0); // end of variable name table
+    ASSERT_PTR_EQ(record_ptr, variable_name_table_ptr + 2);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 1);
+
+    // Should be able to find X now
+    call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
+
+    // Add more variables
+    call_find_name_fail("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4, __LINE__);
+    add_variable(511);
+    HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(variable_name_table_ptr[4], 0x82); // length (515) high byte with high bit set
+    ASSERT_EQ(variable_name_table_ptr[5], 0x03); // length low byte
+    ASSERT_EQ(variable_name_table_ptr[6], 'A');
+    ASSERT_EQ(variable_name_table_ptr[7], 'B' | NT_STOP);
+    ASSERT_EQ(variable_name_table_ptr[8], 0); // data bytes
+    ASSERT_EQ(variable_name_table_ptr[519], 0); // end of variable name table
+    ASSERT_PTR_EQ(record_ptr, variable_name_table_ptr + 4 + 4);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 1);
+
+    call_find_name_fail("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515, __LINE__);
+    add_variable(6);
+    HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
+
+    call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
+    call_find_name("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4 + 4, __LINE__);
+    call_find_name("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515 + 2, __LINE__);
+
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 8 + 1);
 }
 
 int main(void) {
     initialize_target();
+    test_advance_record_ptr();
     test_find_name();
     test_find_name_operators();
-    test_get_name_table_entry();
+    test_get_name_table_record();
     test_add_variable();
     return 0;
 }

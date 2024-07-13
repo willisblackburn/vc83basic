@@ -57,21 +57,22 @@ extern const char statement_name_table[];
 // decode.s
 void decode_expression(/* AX */ void** vector_table_ptr);
 int decode_number(void);
-char decode_variable(void);
+void decode_name(void);
 char decode_operator(void);
 char decode_unary_operator(void);
 char decode_byte(void);
 
-// expression.h
+// encode.s
+void encode_number(/* AX */ int number);
+void encode_byte(/* A */ char value);
+
+// expression.s
 void evaluate_expression(void);
 void push_value(/* AX */ int value);
 int pop_value(void);
 char stack_alloc(/* A */ char size);
 void stack_free(/* A */ char size);
 
-// encode.s
-void encode_number(/* AX */ int number);
-void encode_byte(/* A */ char value);
 
 // list.s
 void list_line(void);
@@ -79,9 +80,10 @@ void list_statement(void);
 void list_directive(/* A */ char directive);
 
 // name.s
-char find_name(/* AX */ const char* name_ptr);
-void get_name_table_entry(/* AX */ const char* name_ptr, /* Y */ char index);
-char add_variable(void);
+char find_name(/* AX */ const char* record_ptr);
+void advance_record_ptr(void);
+void get_name_table_record(/* AX */ const char* record_ptr, /* Y */ char index);
+void add_variable(size_t data_size);
 
 // parser.s
 int read_number(void);
@@ -92,9 +94,6 @@ void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_argument_separator(void);
 void parse_name(void);
-void is_name_character(/* A */ char c);
-void parse_operator_name();
-void is_operator_name_character(/* A */ char c, /* Y */ char index);
 
 // program.s
 void initialize_target(void);
@@ -106,7 +105,6 @@ void insert_or_update_line(void);
 void grow(/* Y */ void* ptr, /* AX */ size_t size);
 void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 void check_himem(/* AX */ size_t size);
-void set_variable_value_ptr(/* A */ char variable);
 
 // util.s
 void copy(/* AX */ size_t size);

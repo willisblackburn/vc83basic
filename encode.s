@@ -19,30 +19,6 @@ encode_number:
         lda     C
         jmp     encode_byte
 
-; Encodes a variable by its ID.
-; A = the variable ID
-; Y SAFE, BC SAFE, DE SAFE
-
-encode_variable:
-        ora     #TOKEN_VAR              ; Variables are encoded with the high bit set
-        bne     encode_byte
-
-; Encodes an operator.
-; A = the operator ID
-; Y SAFE, BC SAFE, DE SAFE
-
-encode_operator:
-        ora     #TOKEN_OP               ; OR the value with the operator token
-        bne     encode_byte
-
-; Encodes a unary operator.
-; A = the operator ID
-; Y SAFE, BC SAFE, DE SAFE
-
-encode_unary_operator:
-        ora     #TOKEN_UNARY_OP         ; OR the value with the unary operator token
-        bne     encode_byte
-
 ; Encodes the TOKEN_NO_VALUE token
 
 encode_no_value:

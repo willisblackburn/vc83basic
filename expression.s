@@ -12,20 +12,30 @@ evaluate_expression:
 
 evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_operator-1         ; XH_OP
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
-        jsr     decode_variable         ; Returns variable index in A
-        jsr     set_variable_value_ptr  ; Calculate address of variable
-        ldy     #1
-        lda     (variable_value_ptr),y  ; High byte of variable value
+        jsr     decode_name
+        ldax    variable_name_table_ptr
+        jsr     find_name               ; Look for a variable with this name
+        bcc     @found                  ; Found it
+        ldax    #2                      ; Allocate 2 bytes of space for the variable
+        jsr     add_variable            ; Add it
+        bcs     @error                  ; Unable to add the variable
+@found:
+        ldax    record_ptr
+        ldy     #1                      ; Start with high byte of value
+        lda     (record_ptr),y
         tax
         dey
-        lda     (variable_value_ptr),y  ; Low byte of variable data
+        lda     (record_ptr),y
         jmp     push_value
+
+@error:
+        rts
 
 evaluate_number:
         jsr     decode_number           ; Returns number in AX
