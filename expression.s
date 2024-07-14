@@ -19,13 +19,8 @@ evaluate_vectors:
 
 evaluate_variable:
         jsr     decode_name
-        ldax    variable_name_table_ptr
-        jsr     find_name               ; Look for a variable with this name
-        bcc     @found                  ; Found it
-        ldax    #2                      ; Allocate 2 bytes of space for the variable
-        jsr     add_variable            ; Add it
-        bcs     @error                  ; Unable to add the variable
-@found:
+        jsr     find_or_initialize_variable
+        bcs     @error                  ; No memory for new variable
         ldax    record_ptr
         ldy     #1                      ; Start with high byte of value
         lda     (record_ptr),y
