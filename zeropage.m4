@@ -49,9 +49,6 @@ word(next_line_ptr, Line*)
 comment The start of the variable name table
 word(variable_name_table_ptr, char*)
 
-comment The start of the variable value table; maintained as the end of the variable name table
-word(value_table_ptr, void*)
-
 comment The start of free space past the heap; initialized to heap_ptr
 word(free_ptr, void*)
 
@@ -70,23 +67,23 @@ byte(line_pos)
 comment The line number sought by find_line
 word(line_number, int)
 
-comment The number of variables in the program
-byte(variable_count)
+comment Pointer to current name table record
+word(record_ptr, char*)
 
-comment Pointer to the variable value set by a statement like LET, INPUT, and READ
-word(variable_value_ptr, void*)
+comment Pointer to the next name table record
+word(next_record_ptr, char*)
 
-comment Pointer to current name table entry
-word(name_ptr, char*)
+comment Pointer to name terminated with a character with the high bit set
+word(name_ptr, const char*)
 
-comment Read position in the name table entry
-byte(name_pos)
-
-comment The starting position of the name
-byte(name_start_pos)
+comment Length of the name referred to by name_ptr
+byte(name_length)
 
 comment Index of matched name
 byte(matched_name_index)
+
+comment Pointer to a variable within the variable value set by a statement like LET, INPUT, and READ
+word(variable_ptr, void*)
 
 comment Whether the program is not running, running, stopped, or awaiting reset.
 byte(program_state)

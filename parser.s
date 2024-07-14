@@ -80,60 +80,57 @@ parse_line:
 @done:
         rts
 
-; Parses a complete statement, either at the start of a line, or after THEN.
+; Parses a complete statement.
 ; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
-; AX = pointer to the first entry of the name table
+; AX = pointer to the start of the name table
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
-        jsr     parse_name
-        bcs     @done
         ldax    #statement_name_table
-        stax    name_ptr                ; Store initial name_ptr
-        mva     #0, matched_name_index  ; Initialize name table index to 0
-@next:
-        ldpha   name_start_pos          ; Save state in case we have to backtrack
-        ldpha   buffer_pos
-        ldpha   line_pos                ; Same for line_pos value
-        jsr     find_next_name          ; Start by finding name; sets name_pos and returns index in A
+        jsr     initialize_record_ptr
+@try:
+        ldpha   buffer_pos              ; Save the buffer position in case we need to backtrack
+        ldpha   line_pos                ; And the line buffer position
+        jsr     parse_tokenized_name_2
         bcs     @error
-        jsr     encode_byte             ; Encode index
+        jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
-@next_character:
-        jsr     read_name_table_byte    ; Read the next byte from the name table
-        bcs     @success                ; If the high bit was set, then it was the last byte; success
-        tay                             ; Store it in Y so we can use it again later
+        ldy     #0                      ; Start reading from record_ptr offset 0
+@next:
+        tya                             ; Read position into A
+        clc
+        adc     record_ptr              ; Add to record_ptr; A is now low byte of read position
+        cmp     next_record_ptr         ; Is it the next record_ptr?
+        beq     @success                ; If so, have reached the end of the statement
+        lda     (record_ptr),y
+        iny                             ; Move to next byte in name record
+        tax                             ; Temporarily store in X
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        tya                             ; Get character back
-        ldx     buffer_pos              ; Otherwise comapre it to the current character in the buffer
+        txa                             ; Restore byte from name record
+        ldx     buffer_pos              ; Compare it to the current character in the buffer
+        inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
+        beq     @next
         bne     @backtrack_try_again
-        inc     name_pos                ; Go to next character
-        inc     buffer_pos
-        bne     @next_character
-        
+
 @directive:
-        inc     name_pos                ; Move position past directive
-        tya
+        jsr     rebase_record_ptr       ; Catch up record_ptr
+        txa                             ; Recover the directive
         jsr     parse_directive
         bcc     @after_directive
 
 @backtrack_try_again:
         plsta   line_pos                ; Restore state
         plsta   buffer_pos
-        plsta   name_start_pos
-        jsr     advance_name_ptr        ; Advance past the failed name table entry (will preserve X)
-        inc     matched_name_index      ; Increment matched_name_index since we advanced name_ptr
-        bne     @next                   ; Unconditional
+        jmp     @try
 
 @success:
         clc                             ; Signal success
 @error:
         pla                             ; Discard saved values
-        pla
         pla
 @done:
         rts  
@@ -145,7 +142,7 @@ parse_argument_type_vectors:
         .word   parse_repeated_number-1     ; NT_RPT_NUM
 
 ; Parses a single directive.
-; Since parsing the directive can recursively invoke the name table element parser with new values for name_ptr etc.,
+; Since parsing the directive can recursively invoke the parser with new values for record_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
 ; A = the directive
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
@@ -153,29 +150,43 @@ parse_argument_type_vectors:
 ; Make sure NT_VAR is the first typed directive
 .assert NT_VAR = $10, error
 
+; Number of bytes of parser state to save, starting with record_ptr
+PARSER_STATE_BYTES = 8
+
 parse_directive:
         tay                             ; Keep in Y while using A to save state
-        ldphaa  name_ptr                ; Save state in case of recursive call
-        ldpha   name_pos
-        ldpha   matched_name_index
-        ldpha   argument_count
+        phzp    record_ptr, PARSER_STATE_BYTES
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        and     #$0F                    ; Mask out top 4 bits
+        tya                             ; Recover the directive again
         jsr     parse_argument_list
-        jmp     @pop
+        jmp     @pop_parser_state
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-@pop:
-        plsta   argument_count
-        plsta   matched_name_index
-        plsta   name_pos
-        plstaa  name_ptr                ; Recover variables from stack
+
+@pop_parser_state:
+        plzp    record_ptr, PARSER_STATE_BYTES
+        rts
+
+parse_variable:
+        jsr     parse_name              ; Parse the variable name
+        cpy     #<(name_rules_op - name_rules)  ; Make sure it was a name not an operator
+        rts                             ; CPY sets carry correctly for return
+
+; Parses a series of names separated by commas.
+
+parse_repeated_variable:
+        jsr     parse_variable          ; Parse next variable name
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_no_value         ; Terminate the repeated list
+@done:
         rts
 
 ; Parses an argument list of N expressions delimited by commas.
@@ -211,18 +222,15 @@ parse_argument_list:
 parse_expression:
         jsr     parse_primary_expression    ; Parse an expression without any binary operators
         bcs     @error                  ; Not found; must be an error
-        ldpha   buffer_pos              ; Save buffer_pos in case I have to put back an unmatched name
-        jsr     parse_operator_name     ; Check for an operator
-        bcs     @no_operator
         ldax    #operator_name_table
-        jsr     find_name               ; Carry will be clear if one was found
+        jsr     parse_tokenized_name
         bcs     @no_operator            ; Not found; expression ends here
-        jsr     encode_operator         ; The operator ID is in A; encode it
-        pla                             ; Pop and discard the saved buffer_pos value
+        ora     #TOKEN_OP               ; OR in the operator token
+        jsr     encode_byte
+        bcs     @error
         jmp     parse_expression        ; Otherwise parse the following expression
 
 @no_operator:
-        plsta   buffer_pos              ; Retore the buffer_pos value
         jsr     encode_no_value         ; Terminate expression with TOKEN_NO_VALUE
         clc                             ; Signal success
 @error:
@@ -237,7 +245,7 @@ parse_primary_expression:
         bcc     @done
         jsr     parse_unary_operator
         bcc     @done
-        jsr     parse_variable
+        jsr     parse_name              ; Try to parse a variable name
 @done:
         rts
 
@@ -284,44 +292,104 @@ parse_repeated_number:
 ; Parses the unary operators '-' (minus) and NOT.
 
 parse_unary_operator:
-        ldpha   buffer_pos              ; Save buffer_pos in case I have to put back an unmatched name
-        jsr     parse_operator_name     ; Check for an operator
-        bcs     @done
         ldax    #unary_operator_name_table
-        jsr     find_name               ; See if it's one of the unary operators
-        bcs     @done                   ; Nope
-        jsr     encode_unary_operator   ; Store the unary minus token
-        pla                             ; Pop the saved buffer_pos value and throw it away
+        jsr     parse_tokenized_name
+        bcs     @error
+        ora     #TOKEN_UNARY_OP         ; OR in the unary operator token
+        jsr     encode_byte             ; Store the unary minus token
+        bcs     @error
         jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
-@done:
+@error:
+        rts
+
+; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
+; AX = pointer to the start of the name table
+; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
+; on error.
+
+parse_tokenized_name:
+        jsr     initialize_record_ptr
+parse_tokenized_name_2:
+        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
+        jsr     parse_name              ; Go parse the name; name_ptr set on return
+        bcs     @error
+        mva     name_ptr, line_pos      ; Prepare to overwrite name in line_buffer (referenced by name_ptr) with token
+        jsr     find_name_2             ; Try to find the name in the name table
+        bcs     @error                  ; Not valid
+        tay                             ; Need A again
+        pla                             ; Pop and discard the saved buffer_pos
+        tya                             ; Recover A
+        rts                             ; Return with carry clear        
+
+@error:
         plsta   buffer_pos              ; Restore buffer_pos
-        rts
+        rts                             ; Return with carry set
 
-; Parses a variable name.
-; Tries to match the current buffer at position buffer_pos with the names in the variable name table.
-; If the name is not found, then extends the variable name table.
+name_rules:
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
+        .byte   '&', 10, <(name_rules_op - name_rules)
+        .byte   '<',  3, <(name_rules_relational - name_rules)
+        .byte   NAME_ERROR
+name_rules_identifier:
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
+        .byte   '0', 10, <(name_rules_identifier - name_rules)
+        .byte   '_',  1, <(name_rules_identifier - name_rules)
+        .byte   NAME_OK
+name_rules_op:
+        .byte   NAME_OK
+name_rules_relational:
+        .byte   '<',  3, <(name_rules_relational - name_rules)
+        .byte   NAME_OK
 
-parse_variable:
-        jsr     parse_name              ; Find a name
-        bcs     @done
-        ldax    variable_name_table_ptr
-        jsr     find_name
-        bcc     @found
-        jsr     add_variable
-        bcs     @done
-@found:
-        jsr     encode_variable       
-@done:
-        rts
+; Parses a name from buffer, starting at buffer_pos.
+; Copies the name into line_buffer, sets the high bit on the last character, and sets name_ptr. 
+; Returns carry clear if there was a name at buffer_pos.
+; Returns carry set if the character at buffer_pos doesn't start a name. The state machine is set up so we only fail
+; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
+; non-name character just marks the end of the name.
+; On return, Y will be left pointing to the rule that ended the parse, so a caller can check which rule it was.
+; BC SAFE, DE SAFE
 
-; Parses a series of variable names separated by commas.
+; buffer must be page-aligned
+.assert <buffer = 0, error
 
-parse_repeated_variable:
-        jsr     parse_variable          ; Parse 1 variable
-        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_no_value         ; Terminate the repeated list
+.assert NAME_OK = $80, error
+.assert NAME_ERROR = $81, error
+
+parse_name:
+        mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
+        mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
+        jsr     skip_whitespace
+        ldy     #$FD                    ; Y=0 after three INY
+@next_rule:
+        iny                             ; Move to next state
+        iny
+        iny
+@next_state:
+        lda     name_rules,y            ; Check if first byte of rule has high bit set
+        bmi     @terminal               ; If so then treat it like matching a terminal state
+        ldx     buffer_pos              ; Handle the character at buffer_pos
+        lda     buffer,x
+        sec                             ; Set carry for subtract
+        sbc     name_rules,y            ; Subtract lower bound
+        cmp     name_rules+1,y          ; Compare with upper bound
+        bcs     @next_rule              ; Character does not match this rule; continue
+        lda     name_rules+2,y          ; Load next state
+        bmi     @terminal
+        tay                             ; Next state into Y
+        lda     buffer,x
+        jsr     encode_byte             ; Encode
+        inc     buffer_pos              ; Next character; should always be >0
+        bne     @next_state
+
+@terminal:
+        lsr     A                       ; Shift bit 0 into carry flag for return
+        bcs     @done                   ; If we're going to fail then don't set the high bit on the last character   
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        eor     #NT_STOP                ; Set bit 7
+        sta     line_buffer,x           ; Write back
 @done:
         rts
 
@@ -340,89 +408,8 @@ parse_argument_separator:
         clc                             ; Clear carry since we don't know its state following the CMP above
         rts
 
-; Parses a name from buffer, starting at buffer_pos.
-; Sets name_start_pos.
-; Returns carry clear if there was a name at buffer_pos, or carry set if the character at buffer_pos doesn't start a name.
-; Y SAFE, BC SAFE, DE SAFE
-
-parse_name:
-        jsr     skip_whitespace
-        stx     name_start_pos          ; If there is a name, it starts here
-        jsr     is_name_character       ; Check for initial name character
-        bcs     @done
-@next_character:
-        inx                             ; Next character
-        lda     buffer,x                ; Check next character
-        jsr     is_name_character       ; Is it a name character?
-        bcc     @next_character         ; Yes, keep going
-        stx     buffer_pos              ; Update buffer_pos
-        clc                             ; Signal success
-@done:
-        rts
-
-; Checks if the character A is a name character. A name character is 'A'-'Z', '0'-'9', or '_'.
-; Returns carry clear if it is, carry set if not.
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
-
-is_name_character:
-        cmp     #'_'                    ; Underbar is sepcial case
-        clc                             ; Clear carry for return in case it was '_'
-        beq     @done
-        sec                             ; Prepare for subtract
-        sbc     #'0'                    ; Check range 0-9
-        cmp     #10                     ; Sets carry if char was >'9'
-        bcc     @done                   ; It was in range 0-9
-        sbc     #'A'-'0'                ; Check range 'A'-'Z'
-        cmp     #26                     ; Sets carry if char was >'Z'
-@done:      
-        rts
-
-; Parses an operator name.
-; An operator is any of the single operator characters in the operator name table, or one of the relational
-; operators, or one of the logic operators. Since the logical operators are names, we delegate to parse_name to
-; identify them.
-
-parse_operator_name:
-        jsr     skip_whitespace
-        stx     name_start_pos          ; Operator name starts here
-        ldy     #0                      ; Start at index 0 of all operator chars
-        jsr     is_operator_name_character
-        bcs     parse_name              ; If not then try parsing a name
-        inx
-        lda     buffer,x                ; Check the next position
-        ldy     #2                      ; Start at index 2; ignore '+' and '-'
-        jsr     is_operator_name_character
-        bcs     @single                 ; Second character was not a match; bypass the increment of X
-        inx                             ; The second character was also an operator character, so advance past it
-@single:
-        stx     buffer_pos              ; Update buffer_pos
-        clc                             ; Signal success
-        rts        
-
-; Checks if the character in A is an operator name character.
-; The value of Y on entry determines which characters the function considers valid. If it is
-; 0, then all characters in the operator name table will be considered, but if it greater, then the function will
-; ignore the first Y operator characters. When Y=2, it will skip '+' and '-' in order to avoid considering those
-; characters as the second character of an operator rather than separate unary operator.
-; X SAFE, DE SAFE
-
-is_operator_name_character:
-        sta     B                       ; Store character in B
-@next_operator:
-        iny                             ; Pre-increment, so have to adjust Y down when using it 
-        cpy     #<(operator_chars_end - operator_name_table + 1)    ; Check if we've reached the end of one-char names
-        bne     @more                   ; No, check the next one
-        rts                             ; Reached the end; since CPX was equal, carry is set to signal error
-
-@more:
-        lda     operator_chars-1,y      ; Check the next character
-        and     #$7F                    ; Clear high bit
-        cmp     B                       ; Is it B?
-        bne     @next_operator
-        clc                             ; Matched an operator character; signal success
-        rts
-
-; Skip past any whitespace in the buffer. Returns the next character in A. The final value of buffer_pos is also left in X.
+; Skip past any whitespace in the buffer. Returns the next character in A.
+; The final value of buffer_pos is also left in X.
 ; buffer_pos = the read position (modified)
 ; Y SAFE, BC SAFE, DE SAFE
 
