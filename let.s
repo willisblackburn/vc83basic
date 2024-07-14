@@ -12,7 +12,8 @@ exec_let:
 ; Store it in variable_ptr because we might need record_ptr when parsing the right hand value.
 
         mvax    record_ptr, variable_ptr
-        jsr     evaluate_expression     ; Value is in AX
+        jsr     evaluate_expression
+        jsr     pop_value               ; Get result of expression
         jmp     assign_variable
 
 @error:
