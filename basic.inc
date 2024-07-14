@@ -41,8 +41,10 @@ DE = D
 
 ; expression.s
 .global evaluate_expression
-.global push_value, pop_value
-.global stack_alloc, stack_free
+.global push_value
+.global pop_value
+.global stack_alloc
+.global stack_free
 
 ; input.s
 .global exec_input
