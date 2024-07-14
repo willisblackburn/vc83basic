@@ -89,7 +89,7 @@ parse_line:
 parse_statement:
         ldax    #statement_name_table
         jsr     initialize_record_ptr
-        ldax    #operator_name_states
+        ldax    #name_states
         jsr     parse_tokenized_name
         bcs     @error
         jsr     encode_byte             ; Replace name with statement token
