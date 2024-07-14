@@ -13,19 +13,16 @@
 
 find_name:
         stax    next_record_ptr         ; This will be copied into record_ptr
-        mva     #0, matched_name_index  ; Initialize name table index to 0
+        mva     #$FF, matched_name_index    ; Initialize name table index to -1 so first INC makes it 0
 @next:
+        inc     matched_name_index      ; Increment name index
         jsr     advance_record_ptr      ; Tee up next record
         bcs     @done
         jsr     match_name              ; Try to match
-        bcc     @match                  ; It matched; return
-        inc     matched_name_index      ; Wasn't a match; try the next one
-        bne     @next                   ; Will never roll over since we're limited to 128 names
-
-@match:
+        bcs     @next                   ; If no match then try next one
         jsr     rebase_record_ptr       ; Advance record_ptr to point to data after name
 @done:
-        lda     matched_name_index      ; Number of entries in the name table
+        lda     matched_name_index      ; Matched index or number of entries in the name table
         rts
 
 ; Matches a name found in the input buffer with characters from the name table record.
