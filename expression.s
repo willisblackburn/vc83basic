@@ -21,7 +21,6 @@ evaluate_variable:
         jsr     decode_name
         jsr     find_or_initialize_variable
         bcs     @error                  ; No memory for new variable
-        ldax    record_ptr
         ldy     #1                      ; Start with high byte of value
         lda     (record_ptr),y
         tax
