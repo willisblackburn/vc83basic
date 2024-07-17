@@ -53,6 +53,7 @@ match_name:
         rts
 
 ; Saves a new value (passed in AX) into record_ptr and also resets matched_name_index to 0.
+; AX = pointer to the start of the name table
 
 initialize_record_ptr:
         stax    next_record_ptr         ; This will be copied into record_ptr
