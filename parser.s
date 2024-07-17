@@ -222,12 +222,12 @@ parse_number:
         rts
 
 parse_name_rules:
-        .byte   'A', 'Z' + 1, <(parse_name_rules_continue_name - parse_name_rules)
+        .byte   'A', 'Z' + 1, <(parse_name_rules_identifier - parse_name_rules)
         .byte   NAME_ERROR
-parse_name_rules_continue_name:
-        .byte   'A', 'Z' + 1, <(parse_name_rules_continue_name - parse_name_rules)
-        .byte   '0', '9' + 1, <(parse_name_rules_continue_name - parse_name_rules)
-        .byte   '_', '_' + 1, <(parse_name_rules_continue_name - parse_name_rules)
+parse_name_rules_identifier:
+        .byte   'A', 'Z' + 1, <(parse_name_rules_identifier - parse_name_rules)
+        .byte   '0', '9' + 1, <(parse_name_rules_identifier - parse_name_rules)
+        .byte   '_', '_' + 1, <(parse_name_rules_identifier - parse_name_rules)
         .byte   NAME_OK
 
 ; Parses a name from buffer, starting at buffer_pos.
