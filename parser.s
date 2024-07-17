@@ -191,13 +191,13 @@ parse_number:
 @done:
         rts
 
-parse_name_states:
-        .byte   'A', 'Z' + 1, <(parse_name_states_1 - parse_name_states)
+parse_name_rules:
+        .byte   'A', 'Z' + 1, <(parse_name_rules_continue_name - parse_name_rules)
         .byte   NAME_ERROR
-parse_name_states_1:
-        .byte   'A', 'Z' + 1, <(parse_name_states_1 - parse_name_states)
-        .byte   '0', '9' + 1, <(parse_name_states_1 - parse_name_states)
-        .byte   '_', '_' + 1, <(parse_name_states_1 - parse_name_states)
+parse_name_rules_continue_name:
+        .byte   'A', 'Z' + 1, <(parse_name_rules_continue_name - parse_name_rules)
+        .byte   '0', '9' + 1, <(parse_name_rules_continue_name - parse_name_rules)
+        .byte   '_', '_' + 1, <(parse_name_rules_continue_name - parse_name_rules)
         .byte   NAME_OK
 
 ; Parses a name from buffer, starting at buffer_pos.
@@ -206,7 +206,8 @@ parse_name_states_1:
 ; Returns carry set if the character at buffer_pos doesn't start a name. The state machine is set up so we only fail
 ; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
 ; non-name character just marks the end of the name.
-; Y SAFE, BC SAFE, DE SAFE
+; On return, Y will be left pointing to the rule that ended the parse, so a caller can check which rule it was.
+; DE SAFE
 
 ; buffer must be page-aligned
 .assert <buffer = 0, error
@@ -217,32 +218,29 @@ parse_name_states_1:
 parse_name:
         mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
         mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
-        mvax    #parse_name_states, src_ptr
         jsr     skip_whitespace
-        ldy     #$FE                    ; After two INY will start out with the first state
-@skip_2:
+        ldy     #$FD                    ; After three INY will start out with the first state
+@skip:
         iny
-@skip_1:
+        iny
         iny
 @next_state:
-        lda     (src_ptr),y             ; Check the lower bound value to see if termination bit is set
+        lda     parse_name_rules,y      ; Check the lower bound value to see if termination bit is set
         bmi     @terminate              ; We're done
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x                ; Next character
-        cmp     (src_ptr),y             ; Compare with lower bound
-        iny                             ; Y = upper bound offset
-        bcc     @skip_2                 ; Character is < lower bound
-        cmp     (src_ptr),y             ; Compare with upper bound
-        iny                             ; Y = next state offset
-        bcs     @skip_1                 ; Character is >= upper bound
+        cmp     parse_name_rules,y      ; Compare with lower bound
+        bcc     @skip                   ; Character is < lower bound
+        cmp     parse_name_rules+1,y    ; Compare with upper bound
+        bcs     @skip                   ; Character is >= upper bound
         jsr     encode_byte             ; Encode the byte
-        lda     (src_ptr),y             ; Load next state
+        lda     parse_name_rules+2,y    ; Load next state
         tay                             ; Move into Y
         inc     buffer_pos              ; Next character; should always be >0
         bne     @next_state
 
 @terminate:
-        ror     A                       ; Roll bit 0 into carry flag for return
+        lsr     A                       ; Shift bit 0 into carry flag for return
         bcs     @done                   ; If we're going to fail then don't set the high bit on the last character   
         ldx     line_pos                ; Get line_buffer write position
         dex                             ; Back to last character we wrote
