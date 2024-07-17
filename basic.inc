@@ -79,8 +79,8 @@ DE = D
 .global parse_statement
 .global parse_directive
 .global parse_expression
+.global parse_name
 .global parse_argument_separator
-.global parse_name, parse_name_2
 .global skip_whitespace
 
 ; print.s
