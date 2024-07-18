@@ -60,8 +60,8 @@ DE = D
 .global parse_statement
 .global parse_directive
 .global parse_expression
-.global parse_argument_separator
 .global parse_name
+.global parse_argument_separator
 .global skip_whitespace
 
 ; print.s
