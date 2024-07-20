@@ -104,11 +104,11 @@ list_tokenized_name:
 ; Fall through
 
 ; Outputs a name.
+; Does NOT add whitespace; callers must add (or not).
 ; name_ptr = pointer to the start of the name (note name_length is not required)
 ; On return, Y will be set to the length of the name.
 
 list_name:
-        jsr     add_whitespace
         ldy     #0                      ; Start with first character
 @next:
         lda     (name_ptr),y
@@ -181,6 +181,7 @@ list_expression:
         jmp     format_number           ; Send it right to format_number
 
 list_variable:
+        jsr     add_whitespace
         jsr     decode_name             ; Set up name_ptr
         jmp     list_name
 
