@@ -60,26 +60,28 @@ list_statement:
         ldax    #statement_name_table
         jsr     list_tokenized_name
         jsr     rebase_record_ptr       ; Add the name length in Y to record_ptr
+@after_directive:
+        ldy     #0                      ; Start reading from record_ptr offset 0
 @next:
-        lda     record_ptr              ; Check low byte of current record_ptr
+        tya                             ; Read position into A
+        clc
+        adc     record_ptr              ; Add to record_ptr; A is now low byte of read position
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @done                   ; Finished
-        ldy     #0                      ; Prepare to read from record_ptr
-        lda     (record_ptr),y          ; Examine byte
-        tax                             ; Temporarily store in X
+        lda     (record_ptr),y
         iny                             ; Move to next byte in name record
-        jsr     rebase_record_ptr       ; Move record_ptr past this character
-        txa                             ; Get character back
+        tax                             ; Temporarily store in X
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @directive
-        txa                             ; Name record byte again
+        beq     @directive              ; It is
+        txa                             ; Restore byte from name record
         jsr     append_buffer           ; Write to buffer
-        jmp     @next
+        bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
 
 @directive:
+        jsr     rebase_record_ptr       ; Catch up record_ptr
         txa                             ; Get directive
         jsr     list_directive
-        jmp     @next
+        jmp     @after_directive
 
 @done:
         rts
