@@ -93,37 +93,38 @@ parse_statement:
         jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
+        ldy     #0                      ; Start reading from record_ptr offset 0
 @next:
-        lda     record_ptr              ; Check low byte of current record_ptr
+        tya                             ; Read position into A
+        clc
+        adc     record_ptr              ; Add to record_ptr; A is now low byte of read position
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @success                ; If so, have reached the end of the statement
-        ldy     #0                      ; Get next byte from record_ptr
         lda     (record_ptr),y
-        tax                             ; Temporarily store in X
         iny                             ; Move to next byte in name record
-        jsr     rebase_record_ptr
-        txa                             ; Restore byte from name record
+        tax                             ; Temporarily store in X
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        txa                             ; Name record byte again
+        txa                             ; Restore byte from name record
         ldx     buffer_pos              ; Compare it to the current character in the buffer
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
-        bne     @error
         beq     @next
-        
+        bne     @error
+
 @directive:
+        jsr     rebase_record_ptr       ; Catch up record_ptr
         txa                             ; Recover the directive
         jsr     parse_directive
         bcc     @after_directive
 
-@success:
-        clc                             ; Signal success
-        rts
-
 @error:
         sec
         rts  
+
+@success:
+        clc                             ; Signal success
+        rts
 
 parse_argument_type_vectors:
         .word   parse_variable-1            ; NT_VAR
