@@ -58,8 +58,8 @@ list_statement:
         jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table
-        jsr     list_name_table_record
-        jsr     rebase_record_ptr
+        jsr     list_tokenized_name
+        jsr     rebase_record_ptr       ; Add the name length in Y to record_ptr
 @next:
         ldax    record_ptr
         lda     record_ptr              ; Check low byte of current record_ptr
@@ -85,13 +85,20 @@ list_statement:
 @done:
         rts
 
-; Outputs the name at the start of a name table record.
-; AX = pointer to the name table
-; Y = the index of the record
+; Given a name table index obtained from a token, list the name from the name table.
+; AX = pointer to the start of the name table
+; Y = index number
 
-list_name_table_record:
-        jsr     get_name_table_record   ; Sets record_ptr; should never fail
-        mvax    record_ptr, name_ptr
+list_tokenized_name:
+        stax    next_record_ptr         ; This will be copied into record_ptr
+        sty     matched_name_index      ; Track the index in matched_name_index
+@next_name:
+        jsr     advance_record_ptr      ; Next record
+        bcs     @not_found              ; Found end of name table; should not happen but will just list nothing
+        dec     matched_name_index
+        bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
+@not_found:
+        mvax    record_ptr, name_ptr    ; Copy into name_ptr
 
 ; Fall through
 
@@ -202,14 +209,14 @@ list_operator:
         jsr     decode_operator
         tay         
         ldax    #operator_name_table
-        jmp     list_name_table_record
+        jmp     list_tokenized_name
 
 list_unary_operator:
         jsr     add_whitespace          ; In case it's "NOT"
         jsr     decode_unary_operator
         tay         
         ldax    #unary_operator_name_table
-        jmp     list_name_table_record
+        jmp     list_tokenized_name
 
 list_paren:
         jsr     add_whitespace

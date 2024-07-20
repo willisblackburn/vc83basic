@@ -64,7 +64,6 @@ DE = D
 .global initialize_record_ptr
 .global advance_record_ptr
 .global rebase_record_ptr
-.global get_name_table_record
 .global add_variable
 
 ; parser.s
