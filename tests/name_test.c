@@ -139,18 +139,22 @@ void test_get_name_table_record(void) {
     get_name_table_record(name_table, 0);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 1);
+    ASSERT_PTR_EQ(name_ptr, record_ptr);
 
     get_name_table_record(name_table, 1);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 1);
+    ASSERT_PTR_EQ(name_ptr, record_ptr);
 
     get_name_table_record(name_table, 2);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 6 + 1);
+    ASSERT_PTR_EQ(name_ptr, record_ptr);
 
     get_name_table_record(name_table, 3);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(record_ptr, name_table + 5 + 6 + 10 + 1);
+    ASSERT_PTR_EQ(name_ptr, record_ptr);
 
     get_name_table_record(name_table, 4);
     ASSERT_NE(err, 0);
