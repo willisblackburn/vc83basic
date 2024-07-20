@@ -113,7 +113,7 @@ parse_statement:
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
         bne     @error
-        bne     @next
+        beq     @next
         
 @directive:
         txa                             ; Recover the directive
