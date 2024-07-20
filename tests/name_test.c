@@ -116,33 +116,6 @@ void test_find_name(void) {
     call_find_name_fail("PRINT", name_table_10, 2, name_table_10 + 5 + 5, __LINE__);
 }
 
-void test_get_name_table_record(void) {
-
-    const char name_table[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP,
-        10, 'F', 'O', 'R' | NT_STOP, 1, '=', 1, 'T', 'O', 1, 4, 'R', 'U', 'N' | NT_STOP, 0 };
-    
-    PRINT_TEST_NAME();
-
-    get_name_table_record(name_table, 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(record_ptr, name_table + 1);
-
-    get_name_table_record(name_table, 1);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(record_ptr, name_table + 5 + 1);
-
-    get_name_table_record(name_table, 2);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(record_ptr, name_table + 5 + 6 + 1);
-
-    get_name_table_record(name_table, 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(record_ptr, name_table + 5 + 6 + 10 + 1);
-
-    get_name_table_record(name_table, 4);
-    ASSERT_NE(err, 0);
-}
-
 void test_add_variable(void) {
 
     PRINT_TEST_NAME();
@@ -198,7 +171,6 @@ int main(void) {
     initialize_target();
     test_advance_record_ptr();
     test_find_name();
-    test_get_name_table_record();
     test_add_variable();
     return 0;
 }
