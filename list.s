@@ -59,7 +59,6 @@ list_statement:
         tay
         ldax    #statement_name_table
         jsr     get_name_table_record   ; Sets record_ptr; should never fail
-        mvax    record_ptr, name_ptr
         jsr     list_name
         jsr     rebase_record_ptr
 @next:
