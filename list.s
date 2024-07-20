@@ -58,9 +58,8 @@ list_statement:
         jsr     decode_byte             ; Get statement token
         tay
         ldax    #statement_name_table
-        jsr     get_name_table_record   ; Sets record_ptr; should never fail
-        jsr     list_name
-        jsr     rebase_record_ptr
+        jsr     list_tokenized_name
+        jsr     rebase_record_ptr       ; Add the name length in Y to record_ptr
 @next:
         lda     record_ptr              ; Check low byte of current record_ptr
         cmp     next_record_ptr         ; Is it the next record_ptr?
@@ -84,6 +83,23 @@ list_statement:
 
 @done:
         rts
+
+; Given a name table index obtained from a token, list the name from the name table.
+; AX = pointer to the start of the name table
+; Y = index number
+
+list_tokenized_name:
+        stax    next_record_ptr         ; This will be copied into record_ptr
+        sty     matched_name_index      ; Track the index in matched_name_index
+@next_name:
+        jsr     advance_record_ptr      ; Next record
+        bcs     @not_found              ; Found end of name table; should not happen but will just list nothing
+        dec     matched_name_index
+        bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
+@not_found:
+        mvax    record_ptr, name_ptr    ; Copy into name_ptr
+
+; Fall through
 
 ; Outputs a name.
 ; name_ptr = pointer to the start of the name (note name_length is not required)

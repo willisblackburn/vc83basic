@@ -98,25 +98,6 @@ rebase_record_ptr:
 advance_rebase_record_ptr_done:
         rts
 
-; Finds a name table record from its index.
-; AX = pointer to the first record in the name table
-; Y = the index of the record to find
-; Returns carry clear on success, carry set on error. On success, record_ptr points to the name table record. Also
-; copies record_ptr into name_ptr.
-
-get_name_table_record:
-        stax    next_record_ptr         ; This will be copied into record_ptr
-        sty     matched_name_index      ; Track the index in matched_name_index
-@next_name:
-        jsr     advance_record_ptr      ; Next record
-        bcs     @not_found              ; Found end of name table
-        dec     matched_name_index
-        bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
-        mvax    record_ptr, name_ptr    ; Copy into name_ptr
-        clc                             ; Return with carry clear
-@not_found:
-        rts
-
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
 ; The name must already end in a character with the high bit set.
