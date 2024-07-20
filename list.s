@@ -61,7 +61,6 @@ list_statement:
         jsr     list_tokenized_name
         jsr     rebase_record_ptr       ; Add the name length in Y to record_ptr
 @next:
-        ldax    record_ptr
         lda     record_ptr              ; Check low byte of current record_ptr
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @done                   ; Finished
