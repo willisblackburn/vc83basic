@@ -192,13 +192,13 @@ parse_number:
 @done:
         rts
 
-parse_name_rules:
-        .byte   'A', 'Z' + 1, <(parse_name_rules_identifier - parse_name_rules)
+name_rules:
+        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
         .byte   NAME_ERROR
-parse_name_rules_identifier:
-        .byte   'A', 'Z' + 1, <(parse_name_rules_identifier - parse_name_rules)
-        .byte   '0', '9' + 1, <(parse_name_rules_identifier - parse_name_rules)
-        .byte   '_', '_' + 1, <(parse_name_rules_identifier - parse_name_rules)
+name_rules_identifier:
+        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
+        .byte   '0', '9' - '0' + 1, <(name_rules_identifier - name_rules)
+        .byte   '_', 1, <(name_rules_identifier - name_rules)
         .byte   NAME_OK
 
 ; Parses a name from buffer, starting at buffer_pos.
@@ -220,27 +220,19 @@ parse_name:
         mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
         mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
         jsr     skip_whitespace
-        ldy     #$FD                    ; After three INY will start out with the first state
-@skip:
-        iny
-        iny
-        iny
+        ldy     #0                      ; Start with first rule
 @next_state:
-        lda     parse_name_rules,y      ; Check the lower bound value to see if termination bit is set
-        bmi     @terminate              ; We're done
         ldx     buffer_pos              ; Handle the character at buffer_pos
-        lda     buffer,x                ; Next character
-        cmp     parse_name_rules,y      ; Compare with lower bound
-        bcc     @skip                   ; Character is < lower bound
-        cmp     parse_name_rules+1,y    ; Compare with upper bound
-        bcs     @skip                   ; Character is >= upper bound
-        jsr     encode_byte             ; Encode the byte
-        lda     parse_name_rules+2,y    ; Load next state
-        tay                             ; Move into Y
+        lda     buffer,x
+        jsr     apply_name_rules        ; Run the state machine
+        bmi     @terminal               ; If a terminal state then end
+        tay                             ; Next state into Y
+        txa                             ; Get the character back
+        jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
         bne     @next_state
 
-@terminate:
+@terminal:
         lsr     A                       ; Shift bit 0 into carry flag for return
         bcs     @done                   ; If we're going to fail then don't set the high bit on the last character   
         ldx     line_pos                ; Get line_buffer write position
@@ -248,6 +240,30 @@ parse_name:
         lda     line_buffer,x
         eor     #NT_STOP                ; Set bit 7
         sta     line_buffer,x           ; Write back
+@done:
+        rts
+
+; Apply the parse_name state machine rules to the supplied character and return the next state.
+; Entry point is apply_rules_for_state.
+; A = the input character (copied into X)
+; Y = the current state
+; BC SAFE, DE SAFE
+
+next_rule:
+        txa                             ; Recover character from A
+        iny                             ; Move to next state
+        iny
+        iny
+apply_name_rules:
+        tax                             ; Hold the character
+        lda     name_rules,y            ; Check if first byte of rule has high bit set
+        bmi     @done                   ; If so then treat it like matching a terminal state
+        txa                             ; Get character back from X
+        sec                             ; Set carry for subtract
+        sbc     name_rules,y            ; Subtract lower bound
+        cmp     name_rules+1,y          ; Compare with upper bound
+        bcs     next_rule               ; Character does not match this rule; continue
+        lda     name_rules+2,y          ; Load next state and return
 @done:
         rts
 
