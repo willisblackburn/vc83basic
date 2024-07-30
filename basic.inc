@@ -72,7 +72,9 @@ DE = D
 .global parse_statement
 .global parse_directive
 .global parse_expression
+.global name_rules, name_rules_identifier, name_rules_op, name_rules_relational
 .global parse_name
+.global apply_name_rules
 .global parse_argument_separator
 .global skip_whitespace
 
