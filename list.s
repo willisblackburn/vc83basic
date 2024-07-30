@@ -238,11 +238,9 @@ add_whitespace:
         ldx     buffer_pos              ; Current write position
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
-        cmp     #')'                    ; Is it ')'?
-        beq     append_buffer_space     ; Yes, add a space
-        cmp     #'A'                    ; First possible name character
-        bcc     @done                   ; Was < 'A'
-        cmp     #'Z' + 1                ; Was < 'Z' + 1 aka <= 'Z'
+        ldy     #<(name_rules_identifier - name_rules)  ; Evaluate the "identifier" rule
+        jsr     apply_name_rules
+        bmi     @done                   ; Not a name character
         bcc     append_buffer_space     ; Yes
 @done:
         rts
