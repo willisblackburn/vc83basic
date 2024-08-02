@@ -327,7 +327,7 @@ name_rules_relational:
 ; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
 ; non-name character just marks the end of the name.
 ; On return, Y will be left pointing to the rule that ended the parse, so a caller can check which rule it was.
-; DE SAFE
+; BC SAFE, DE SAFE
 
 ; buffer must be page-aligned
 .assert <buffer = 0, error
@@ -339,14 +339,24 @@ parse_name:
         mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
         mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
         jsr     skip_whitespace
-        ldy     #0                      ; Start with first rule
+        ldy     #$FD                    ; Y=0 after three INY
+@next_rule:
+        iny                             ; Move to next state
+        iny
+        iny
 @next_state:
+        lda     name_rules,y            ; Check if first byte of rule has high bit set
+        bmi     @terminal               ; If so then treat it like matching a terminal state
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x
-        jsr     apply_name_rules        ; Run the state machine
-        bmi     @terminal               ; If a terminal state then end
+        sec                             ; Set carry for subtract
+        sbc     name_rules,y            ; Subtract lower bound
+        cmp     name_rules+1,y          ; Compare with upper bound
+        bcs     @next_rule              ; Character does not match this rule; continue
+        lda     name_rules+2,y          ; Load next state
+        bmi     @terminal
         tay                             ; Next state into Y
-        txa                             ; Get the character back
+        lda     buffer,x
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
         bne     @next_state
@@ -359,30 +369,6 @@ parse_name:
         lda     line_buffer,x
         eor     #NT_STOP                ; Set bit 7
         sta     line_buffer,x           ; Write back
-@done:
-        rts
-
-; Apply the parse_name state machine rules to the supplied character and return the next state.
-; Entry point is apply_rules_for_state.
-; A = the input character (copied into X)
-; Y = the current state
-; BC SAFE, DE SAFE
-
-next_rule:
-        txa                             ; Recover character from A
-        iny                             ; Move to next state
-        iny
-        iny
-apply_name_rules:
-        tax                             ; Hold the character
-        lda     name_rules,y            ; Check if first byte of rule has high bit set
-        bmi     @done                   ; If so then treat it like matching a terminal state
-        txa                             ; Get character back from X
-        sec                             ; Set carry for subtract
-        sbc     name_rules,y            ; Subtract lower bound
-        cmp     name_rules+1,y          ; Compare with upper bound
-        bcs     next_rule               ; Character does not match this rule; continue
-        lda     name_rules+2,y          ; Load next state and return
 @done:
         rts
 
