@@ -238,10 +238,15 @@ add_whitespace:
         ldx     buffer_pos              ; Current write position
         beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
-        ldy     #<(name_rules_identifier - name_rules)  ; Evaluate the "identifier" rule
-        jsr     apply_name_rules
-        bmi     @done                   ; Not a name character
-        bcc     append_buffer_space     ; Yes
+        sec
+        sbc     #'0'
+        cmp     #10
+        bcc     append_buffer_space
+        sbc     #'A' - '0'
+        cmp     #26
+        bcc     append_buffer_space
+        cmp     #'_' - 'A'
+        beq     append_buffer_space
 @done:
         rts
 
