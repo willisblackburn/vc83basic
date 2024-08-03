@@ -118,13 +118,13 @@ list_name:
         ldy     #$FF                    ; Y=0 after INY
 @next:
         iny
-        bne     @not_initial
+        bne     @not_initial_alpha
         lda     (name_ptr),y            ; Check first character of name to see if we need to add whitespace
         and     #$7F                    ; Clear high bit if it's set
         cmp     #'A'
-        bcc     @not_initial
+        bcc     @not_initial_alpha
         jsr     add_whitespace
-@not_initial:
+@not_initial_alpha:
         lda     (name_ptr),y
         bmi     @last
         jsr     append_buffer
