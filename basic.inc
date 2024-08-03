@@ -11,7 +11,7 @@
 
 .struct Control
     next_line_ptr .res 2
-    variable .res 1
+    variable_name_ptr .res 2
     end_value .res 2
     step_value .res 2
 .endstruct
@@ -64,14 +64,13 @@ FP1s = FP1+UnpackedFloat::s
 ; decode.s
 .global decode_expression
 .global decode_number
-.global decode_variable
+.global decode_name
 .global decode_operator
 .global decode_unary_operator
 .global decode_byte
 
 ; encode.s
 .global encode_number
-.global encode_variable
 .global encode_operator
 .global encode_unary_operator
 .global encode_no_value
@@ -79,8 +78,11 @@ FP1s = FP1+UnpackedFloat::s
 
 ; expression.s
 .global evaluate_expression
-.global push_value, pop_value
-.global stack_alloc, stack_free
+.global push_value
+.global push_variable_value
+.global pop_value
+.global stack_alloc
+.global stack_free
 
 ; fp.s
 .global fp_one, fp_ten
@@ -109,6 +111,8 @@ FP1s = FP1+UnpackedFloat::s
 
 ; let.s
 .global exec_let
+.global find_or_initialize_variable
+.global assign_variable
 
 ; list.s
 .global exec_list
@@ -122,12 +126,11 @@ FP1s = FP1+UnpackedFloat::s
 .global dispatch_statement
 
 ; name.s
-.global find_name
-.global find_next_name
+.global find_name, find_name_2
 .global match_name
-.global read_name_table_byte
-.global advance_name_ptr
-.global get_name_table_entry
+.global initialize_record_ptr
+.global advance_record_ptr
+.global rebase_record_ptr
 .global add_variable
 
 ; parser.s
@@ -136,11 +139,8 @@ FP1s = FP1+UnpackedFloat::s
 .global parse_statement
 .global parse_directive
 .global parse_expression
-.global parse_argument_separator
 .global parse_name
-.global is_name_character
-.global parse_operator_name
-.global is_operator_name_character
+.global parse_argument_separator
 .global skip_whitespace
 
 ; print.s
@@ -157,8 +157,6 @@ FP1s = FP1+UnpackedFloat::s
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
 .global check_himem
-.global set_variable_value_ptr
-.global set_variable_value
 
 ; run.s
 .global exec_run
@@ -169,15 +167,13 @@ FP1s = FP1+UnpackedFloat::s
 ; tables.s
 .global statement_name_table
 .global operator_name_table
-.global operator_chars
-.global operator_chars_end
-.global operator_precedence_table
 .global unary_operator_name_table
+.global operator_precedence_table
 
 ; util.s
 .global copy, copy_a, copy_size
 .global reverse_copy, reverse_copy_size
-.global clear_memory
+.global clear_memory, clear_memory_size
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global format_number

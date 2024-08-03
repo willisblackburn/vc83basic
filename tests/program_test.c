@@ -10,8 +10,7 @@ void test_initalize_program(void) {
     ASSERT_EQ(next_line_ptr->number, -1);
     ASSERT_EQ((char*)variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 1);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_EQ((void*)value_table_ptr, (void*)(variable_name_table_ptr + 1)); // Variable name table is empty with terminating 0
-    ASSERT_EQ((void*)free_ptr, (void*)value_table_ptr);
+    ASSERT_EQ((void*)free_ptr, (void*)(variable_name_table_ptr + 1)); // Variable name table is empty with terminating 0
     ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
 }
 
@@ -73,7 +72,7 @@ void test_find_line(void) {
     // Patch up the program end.
     advance_next_line_ptr();
     variable_name_table_ptr = (char*)next_line_ptr;
-    value_table_ptr = line_ptr;
+    free_ptr = variable_name_table_ptr + 1;
 
     // Test if we can find each line separately.
     find_line(10);
@@ -221,8 +220,7 @@ void test_grow(void) {
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 10);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + 1));
-    ASSERT_PTR_EQ(free_ptr, value_table_ptr);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
 
     // Verify the program contents.
     ASSERT_EQ(next_line_ptr->next_line_offset, 3);
@@ -244,14 +242,16 @@ void test_grow(void) {
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 10);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + 1));
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + 0x400);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1 + 0x400);
 }
 
 void test_shrink(void) {
 
-    const char variable_name_data[] = { 'A' | NT_END, 'B' | NT_END, 'X', 'Y' | NT_END, 0 };
-    const char value_data[] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17 };
+    const char variable_name_table_data[] = { 
+        4, 'A' | NT_STOP, 0x10, 0x11, 
+        4, 'B' | NT_STOP, 0x12, 0x13,
+        8, 'X', 'Y' | NT_STOP, 0x14, 0x15, 0x16, 0x17, 0x18,
+        0 };
 
     // To test shrink, we first grow some sections, write some data to them, then make sure that data is
     // preserved when we shrink. We know that grow works because it's been separately tested.
@@ -264,63 +264,32 @@ void test_shrink(void) {
     grow(&variable_name_table_ptr, 0x400);
     ASSERT_EQ(err, 0);
 
-    // Expand the variable name table by moving the value table pointer.
+    // Expand the variable name table.
     // The variable name table already contains 1 byte, so subtract 1 from the size of the data we want to write.
-    grow(&value_table_ptr, sizeof variable_name_data - 1);
+    grow(&free_ptr, sizeof variable_name_table_data - 1);
     ASSERT_EQ(err, 0);
-    // Fill in some variable names.
-    memcpy(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
-
-    // Add some space for some variable values.
-    grow(&free_ptr, sizeof value_data + 0x1000);
-    ASSERT_EQ(err, 0);
-    memcpy(value_table_ptr, value_data, sizeof value_data);
+    // Fill in some variable data.
+    memcpy(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
 
     // Make sure all the pointers are where they should be.
 
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 4 + 0x400);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
+    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data);
 
     // Now shrink each section, each time checking that no data is corrupted.
 
     shrink(&variable_name_table_ptr, 0x10);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 4 + 0x400 - 0x10);
-    ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data));
-    ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
+    ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data);
 
-    shrink(&value_table_ptr, 4);
+    shrink(&free_ptr, 4);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 4 + 0x400 - 0x10);
-    ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
-    ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + sizeof value_data + 0x1000);
-
-    shrink(&free_ptr, 0x200);
-    ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 4 + 0x400 - 0x10);
-    ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_data, sizeof variable_name_data - 4);
-    ASSERT_PTR_EQ(value_table_ptr, (void*)(variable_name_table_ptr + sizeof variable_name_data - 4));
-    ASSERT_MEMORY_EQ(value_table_ptr, value_data, sizeof value_data - 4);
-    ASSERT_PTR_EQ(free_ptr, (char*)value_table_ptr + sizeof value_data + 0xE00);
-}
-
-void test_set_variable_value_ptr(void) {
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    set_variable_value_ptr(0);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr));
-    set_variable_value_ptr(1);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 1));
-    set_variable_value_ptr(127);
-    ASSERT_EQ(variable_value_ptr, (void*)((int*)value_table_ptr + 127));
+    ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data - 4);
+    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data - 4);
 }
 
 int main(void) {
@@ -333,6 +302,5 @@ int main(void) {
     test_check_himem();
     test_grow();
     test_shrink();
-    test_set_variable_value_ptr();
     return 0;
 }
