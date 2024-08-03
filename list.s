@@ -69,14 +69,13 @@ list_statement:
         beq     @done                   ; Finished
         lda     (record_ptr),y
         iny                             ; Move to next byte in name record
-        tax                             ; Temporarily store in X
-        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @directive              ; It is
-        txa                             ; Restore byte from name record
+        cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
+        bcc     @directive              ; It is
         jsr     append_buffer           ; Write to buffer
         bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
 
 @directive:
+        tax                             ; Save directive in X
         jsr     rebase_record_ptr       ; Catch up record_ptr
         txa                             ; Get directive
         jsr     list_directive
