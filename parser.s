@@ -194,12 +194,12 @@ parse_number:
         rts
 
 name_rules:
-        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
         .byte   NAME_ERROR
 name_rules_identifier:
-        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
-        .byte   '0', '9' - '0' + 1, <(name_rules_identifier - name_rules)
-        .byte   '_', 1, <(name_rules_identifier - name_rules)
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
+        .byte   '0', 10, <(name_rules_identifier - name_rules)
+        .byte   '_',  1, <(name_rules_identifier - name_rules)
         .byte   NAME_OK
 
 ; Parses a name from buffer, starting at buffer_pos.
