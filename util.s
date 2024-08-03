@@ -35,14 +35,13 @@ copy_size:
 ; Y must be 0 when we first reach this point, and size must be set to the number of bytes remaining (0 means none).
 
 @remaining:
-        ldx     size
-        beq     @done                   ; If equal then we're done
-@next_remaining_byte:
+        cpy     size                    ; More?
+        beq     @done                   ; Nope
         lda     (src_ptr),y             ; Otherwise move one more byte
         sta     (dst_ptr),y    
-        iny
-        dex
-        bne     @next_remaining_byte
+        iny                             ; Y is the number of bytes written so will not be zero, ...
+        bne     @remaining              ; therefore this is an unconditional branch
+
 @done:
         rts
 
@@ -89,19 +88,19 @@ reverse_copy_size:
 
 ; Clears memory to zero.
 ; dst_ptr = pointer to the memory to clear
-; AX = the number of bytes to clear (_de entry point uses value in DE instead)
-; On return the byte count will remain in DE.
-; BC SAFE
+; AX = the number of bytes to clear (_size entry point uses value in size instead)
+; On return the byte count will remain in size.
+; BC SAFE, DE SAFE
 
 clear_memory:
-        stax    DE                      ; Number of bytes in DE
-clear_memory_de:
+        stax    size                    ; Number of bytes in size
+clear_memory_size:
         lda     #0                      ; Zero byte to write
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0
 @next_block:
-        cpx     E                       ; More blocks to clear?
-        beq     @remaining_byte         ; No more blocks; go clear remaining bytes
+        cpx     size+1                  ; More blocks to clear?
+        beq     @remaining              ; No more blocks; go clear remaining bytes
 @block_byte:
         sta     (dst_ptr),y             ; Write one zero
         iny                             ; Y is the number of bytes written; when it wraps to 0 means 256 bytes
@@ -110,12 +109,12 @@ clear_memory_de:
         inx                             ; Increment number of blocks written
         bne     @next_block             ; X will never be zero, so this is is unconditional
 
-@remaining_byte:
-        cpy     D                       ; More?
+@remaining:
+        cpy     size                    ; More?
         beq     @done                   ; Nope
         sta     (dst_ptr),y             ; Write remaining byte
         iny                             ; Y is the number of bytes written so will not be zero, ...
-        bne     @remaining_byte         ; therefore this is an unconditional branch
+        bne     @remaining              ; therefore this is an unconditional branch
 
 @done:
         rts

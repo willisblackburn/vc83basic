@@ -12,20 +12,14 @@ evaluate_expression:
 
 evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_operator-1         ; XH_OP
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
-        jsr     decode_variable         ; Returns variable index in A
-        jsr     set_variable_value_ptr  ; Calculate address of variable
-        ldy     #1
-        lda     (variable_value_ptr),y  ; High byte of variable value
-        tax
-        dey
-        lda     (variable_value_ptr),y  ; Low byte of variable data
-        jmp     push_value
+        jsr     decode_name
+        jmp     push_variable_value
 
 evaluate_number:
         jsr     decode_number           ; Returns number in AX
@@ -297,3 +291,19 @@ unary_op_not:
         ora     B                       ; OR the low and high bytes together
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
+
+; Pushes the value of a variable onto the stack.
+; name_ptr = pointer to the variable name
+
+push_variable_value:
+        jsr     find_or_initialize_variable
+        bcs     @error                  ; No memory for new variable
+        ldy     #1                      ; Start with high byte of value
+        lda     (record_ptr),y
+        tax
+        dey
+        lda     (record_ptr),y
+        jmp     push_value
+
+@error:
+        rts
