@@ -144,7 +144,7 @@ PARSER_STATE_BYTES = 8
 
 parse_directive:
         tay                             ; Keep in Y while using A to save state
-        phzp    record_ptr, 8
+        phzp    record_ptr, PARSER_STATE_BYTES
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
@@ -159,7 +159,7 @@ parse_directive:
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 @pop_parser_state:
-        plzp    record_ptr, 8
+        plzp    record_ptr, PARSER_STATE_BYTES
         rts
 
 parse_variable:
