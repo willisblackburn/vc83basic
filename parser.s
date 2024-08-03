@@ -305,19 +305,19 @@ parse_tokenized_name:
         rts                             ; Return with carry set
 
 name_rules:
-        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
-        .byte   '&', '/' - '&' + 1, <(name_rules_op - name_rules)
-        .byte   '<', '>' - '<' + 1, <(name_rules_relational - name_rules)
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
+        .byte   '&', 10, <(name_rules_op - name_rules)
+        .byte   '<',  3, <(name_rules_relational - name_rules)
         .byte   NAME_ERROR
 name_rules_identifier:
-        .byte   'A', 'Z' - 'A' + 1, <(name_rules_identifier - name_rules)
-        .byte   '0', '9' - '0' + 1, <(name_rules_identifier - name_rules)
-        .byte   '_', 1, <(name_rules_identifier - name_rules)
+        .byte   'A', 26, <(name_rules_identifier - name_rules)
+        .byte   '0', 10, <(name_rules_identifier - name_rules)
+        .byte   '_',  1, <(name_rules_identifier - name_rules)
         .byte   NAME_OK
 name_rules_op:
         .byte   NAME_OK
 name_rules_relational:
-        .byte   '<', '>' - '<' + 1, <(name_rules_relational - name_rules)
+        .byte   '<',  3, <(name_rules_relational - name_rules)
         .byte   NAME_OK
 
 ; Parses a name from buffer, starting at buffer_pos.
