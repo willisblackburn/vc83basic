@@ -43,7 +43,6 @@ list_line:
         dey                             ; Position of line number low byte
         lda     (line_ptr),y
         jsr     format_number           ; Format into buffer
-        jsr     append_buffer_space
         mva     #Line::data, line_pos   ; Initialize read position to start of data
         jsr     list_statement
         clc
@@ -70,12 +69,10 @@ list_statement:
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @done                   ; Finished
         tya                             ; Test Y
-        bne     @no_whitespace          ; If not the first character in this sequence, don't add whitespace
+        bne     @not_initial            ; If not the first character in this sequence, don't add whitespace
         lda     (record_ptr),y
-        cmp     #'A'
-        bcc     @no_whitespace          ; Don't add whitespace because first character literal is a symbol, e.g., '='
-        jsr     add_whitespace          ; Maybe add some whitespace
-@no_whitespace:
+        jsr     add_whitespace_if_alpha
+@not_initial:
         lda     (record_ptr),y
         iny                             ; Move to next byte in name record
         tax                             ; Temporarily store in X
@@ -117,11 +114,16 @@ list_tokenized_name:
 ; On return, Y will be set to the length of the name.
 
 list_name:
-        ldy     #0                      ; Start with first character
+        ldy     #$FF                    ; Y=0 after INY
 @next:
+        iny
+        bne     @not_initial
+        lda     (name_ptr),y
+        and     #$7F                    ; Clear high bit if it's set
+        jsr     add_whitespace_if_alpha
+@not_initial:
         lda     (name_ptr),y
         bmi     @last
-        iny
         jsr     append_buffer
         bne     @next
 
@@ -197,7 +199,6 @@ list_expression:
         jmp     decode_expression
 
 list_variable:
-        jsr     add_whitespace
         jsr     decode_name             ; Set up name_ptr
         jmp     list_name
 
@@ -238,7 +239,7 @@ list_operator:
         jmp     list_tokenized_name
 
 list_unary_operator:
-        jsr     add_whitespace          ; In case it's "NOT"
+        jsr     add_whitespace
         jsr     decode_unary_operator
         tay         
         ldax    #unary_operator_name_table
@@ -257,12 +258,20 @@ list_paren:
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if buffer_pos > 0 and if buffer[buffer_pos-1] is a name character or is a ')'.
-; BC SAFE, DE SAFE
+; The add_whitespace_if_alpha variant adds the additional condition that the value in A must be >= 'A'.
+; Y SAFE, BC SAFE, DE SAFE
 
+add_whitespace_if_alpha:
+        cmp     #'A'
+        bcc     add_whitespace_done
 add_whitespace:
         ldx     buffer_pos              ; Current write position
-        beq     @done                   ; Just return if it's zero
+        beq     add_whitespace_done     ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
+        cmp     #')'
+        beq     append_buffer_space
+        cmp     #'_'
+        beq     append_buffer_space
         sec
         sbc     #'0'
         cmp     #10
@@ -270,9 +279,7 @@ add_whitespace:
         sbc     #'A' - '0'
         cmp     #26
         bcc     append_buffer_space
-        cmp     #'_' - 'A'
-        beq     append_buffer_space
-@done:
+add_whitespace_done:
         rts
 
 ; Writes a single byte to buffer at position buffer_pos and increments buffer_pos.
