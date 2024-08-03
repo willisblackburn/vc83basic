@@ -69,20 +69,21 @@ list_statement:
         cmp     next_record_ptr         ; Is it the next record_ptr?
         beq     @done                   ; Finished
         tya                             ; Test Y
-        bne     @not_initial            ; If not the first character in this sequence, don't add whitespace
+        bne     @not_initial_alpha      ; Not first character in group
         lda     (record_ptr),y
-        jsr     add_whitespace_if_alpha
-@not_initial:
+        cmp     #'A'                    ; Check if it's alpha
+        bcc     @not_initial_alpha      ; No
+        jsr     add_whitespace
+@not_initial_alpha:
         lda     (record_ptr),y
         iny                             ; Move to next byte in name record
-        tax                             ; Temporarily store in X
-        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @directive              ; It is
-        txa                             ; Restore byte from name record
+        cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
+        bcc     @directive              ; It is
         jsr     append_buffer           ; Write to buffer
         bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
 
 @directive:
+        tax                             ; Save directive in X
         jsr     rebase_record_ptr       ; Catch up record_ptr
         txa                             ; Get directive
         jsr     list_directive
@@ -118,9 +119,11 @@ list_name:
 @next:
         iny
         bne     @not_initial
-        lda     (name_ptr),y
+        lda     (name_ptr),y            ; Check first character of name to see if we need to add whitespace
         and     #$7F                    ; Clear high bit if it's set
-        jsr     add_whitespace_if_alpha
+        cmp     #'A'
+        bcc     @not_initial
+        jsr     add_whitespace
 @not_initial:
         lda     (name_ptr),y
         bmi     @last
@@ -258,15 +261,11 @@ list_paren:
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if buffer_pos > 0 and if buffer[buffer_pos-1] is a name character or is a ')'.
-; The add_whitespace_if_alpha variant adds the additional condition that the value in A must be >= 'A'.
 ; Y SAFE, BC SAFE, DE SAFE
 
-add_whitespace_if_alpha:
-        cmp     #'A'
-        bcc     add_whitespace_done
 add_whitespace:
         ldx     buffer_pos              ; Current write position
-        beq     add_whitespace_done     ; Just return if it's zero
+        beq     @done                   ; Just return if it's zero
         lda     buffer-1,x              ; Get buffer[x-1]
         cmp     #')'
         beq     append_buffer_space
@@ -279,7 +278,7 @@ add_whitespace:
         sbc     #'A' - '0'
         cmp     #26
         bcc     append_buffer_space
-add_whitespace_done:
+@done:
         rts
 
 ; Writes a single byte to buffer at position buffer_pos and increments buffer_pos.
