@@ -83,30 +83,30 @@ exec_return:
 ; FOR statement:
 
 exec_for:
-        jsr     decode_name             ; Get the name (now in name_ptr)
-        jsr     find_or_initialize_variable
-        bcs     @error                  ; No space for variable
-        mvax    record_ptr, variable_ptr
-        jsr     evaluate_expression
-        jsr     pop_value
-        jsr     assign_variable         ; Assign starting value
-        jsr     evaluate_expression     ; End value
-        jsr     pop_value               ; Get the evaluated value
-        stax    BC                      ; Store the end value into BC
-        jsr     push_next_line_ptr      ; Push return address; X is now the stack pointer
+        jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
+        jsr     decode_name             ; Get the name (now in name_ptr)
+        ldx     psp                     ; Get stack pointer to store name
         lda     name_ptr                ; Store pointer to variable name
         sta     primary_stack+Control::variable_name_ptr,x
         lda     name_ptr+1
         sta     primary_stack+Control::variable_name_ptr+1,x
-        lda     B                       ; Store end value
-        sta     primary_stack+Control::end_value,x
-        lda     C
-        sta     primary_stack+Control::end_value+1,x
+        jsr     find_or_initialize_variable
+        bcs     @error                  ; No space for variable
+        mvax    record_ptr, variable_ptr
+        jsr     evaluate_expression     ; Start value (may clobber name_ptr)
+        jsr     pop_value
+        jsr     assign_variable         ; Assign starting value
+        jsr     evaluate_expression     ; End value
+        jsr     pop_value               ; Get the evaluated value
+        ldy     psp                     ; Get stack pointer to store end value
+        sta     primary_stack+Control::end_value,y
+        txa
+        sta     primary_stack+Control::end_value+1,y
         lda     #1                      ; Set step value to 1
-        sta     primary_stack+Control::step_value,x
+        sta     primary_stack+Control::step_value,y
         lda     #0                      ; High byte is 0
-        sta     primary_stack+Control::step_value+1,x
+        sta     primary_stack+Control::step_value+1,y
 @error:
         rts
 
