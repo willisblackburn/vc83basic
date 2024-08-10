@@ -19,7 +19,7 @@ evaluate_vectors:
 
 evaluate_variable:
         jsr     decode_name
-        jsr     find_or_initialize_variable
+        jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
         ldy     #1                      ; Start with high byte of value
         lda     (record_ptr),y

@@ -52,7 +52,6 @@ DE = D
 
 ; let.s
 .global exec_let
-.global find_or_initialize_variable
 .global assign_variable
 
 ; list.s
@@ -71,6 +70,7 @@ DE = D
 .global initialize_record_ptr
 .global advance_record_ptr
 .global rebase_record_ptr
+.global find_or_add_variable
 .global add_variable
 
 ; parser.s
