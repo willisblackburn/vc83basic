@@ -46,6 +46,7 @@ DE = D
 .global match_name
 .global advance_record_ptr
 .global rebase_record_ptr
+.global find_or_add_variable
 .global add_variable
 
 ; parser.s
