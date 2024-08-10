@@ -1,6 +1,7 @@
 .include "constants.inc"
 
 ; Data structures
+
 .struct Line
     next_line_offset .res 1
     number .res 2
