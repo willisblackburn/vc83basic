@@ -41,7 +41,6 @@ DE = D
 
 ; let.s
 .global exec_let
-.global find_or_initialize_variable
 .global assign_variable
 
 ; main.s
@@ -52,6 +51,7 @@ DE = D
 .global match_name
 .global advance_record_ptr
 .global rebase_record_ptr
+.global find_or_add_variable
 .global add_variable
 
 ; parser.s
