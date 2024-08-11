@@ -105,6 +105,22 @@ rebase_record_ptr:
 advance_rebase_record_ptr_done:
         rts
 
+; Finds a variable, or adds it.
+; name_ptr = pointer to the variable name
+; name_length = the length of the variable
+; Returns carry clear if find_name or add_variable succeeded, or carry set on error.
+
+find_or_add_variable:
+        ldax    variable_name_table_ptr
+        jsr     find_name               ; Look for a variable with this name
+        bcs     @not_found              ; Most common case is that it's found, so branch only if it's not
+        rts                             ; Return success
+
+@not_found:
+        ldax    #2                      ; Allocate 2 bytes of space for the variable
+
+; Fall through
+
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
 ; The name must already end in a character with the high bit set.
