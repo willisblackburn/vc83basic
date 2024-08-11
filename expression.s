@@ -19,7 +19,17 @@ evaluate_vectors:
 
 evaluate_variable:
         jsr     decode_name
-        jmp     push_variable_value
+        jsr     find_or_add_variable
+        bcs     @error                  ; No memory for new variable
+        ldy     #1                      ; Start with high byte of value
+        lda     (record_ptr),y
+        tax
+        dey
+        lda     (record_ptr),y
+        jmp     push_value
+
+@error:
+        rts
 
 evaluate_number:
         jsr     decode_number           ; Returns number in AX
@@ -291,19 +301,3 @@ unary_op_not:
         ora     B                       ; OR the low and high bytes together
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
-
-; Pushes the value of a variable onto the stack.
-; name_ptr = pointer to the variable name
-
-push_variable_value:
-        jsr     find_or_initialize_variable
-        bcs     @error                  ; No memory for new variable
-        ldy     #1                      ; Start with high byte of value
-        lda     (record_ptr),y
-        tax
-        dey
-        lda     (record_ptr),y
-        jmp     push_value
-
-@error:
-        rts

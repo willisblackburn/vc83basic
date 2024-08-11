@@ -61,7 +61,6 @@ DE = D
 ; expression.s
 .global evaluate_expression
 .global push_value
-.global push_variable_value
 .global pop_value
 .global stack_alloc
 .global stack_free
@@ -71,7 +70,6 @@ DE = D
 
 ; let.s
 .global exec_let
-.global find_or_initialize_variable
 .global assign_variable
 
 ; list.s
@@ -91,6 +89,7 @@ DE = D
 .global initialize_record_ptr
 .global advance_record_ptr
 .global rebase_record_ptr
+.global find_or_add_variable
 .global add_variable
 
 ; parser.s
