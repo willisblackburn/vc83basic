@@ -12,7 +12,7 @@ exec_input:
         mva     #0, buffer_pos          ; Reset the read position
 @next_var:
         jsr     decode_name             ; Read the variable name
-        jsr     find_or_initialize_variable
+        jsr     find_or_add_variable
         bcs     @error
         mvax    record_ptr, variable_ptr
         jsr     read_number             ; Returns value in AX

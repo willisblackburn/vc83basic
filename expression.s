@@ -19,7 +19,17 @@ evaluate_vectors:
 
 evaluate_variable:
         jsr     decode_name
-        jmp     push_variable_value
+        jsr     find_or_add_variable
+        bcs     @error                  ; No memory for new variable
+        ldy     #1                      ; Start with high byte of value
+        lda     (record_ptr),y
+        tax
+        dey
+        lda     (record_ptr),y
+        jmp     push_value
+
+@error:
+        rts
 
 evaluate_number:
         jsr     decode_number           ; Returns number in AX
@@ -171,22 +181,6 @@ push_value:
         sta     primary_stack+1,x
         clc                             ; Signal success
 @done:
-        rts
-
-; Pushes the value of a variable onto the stack.
-; name_ptr = pointer to the variable name
-
-push_variable_value:
-        jsr     find_or_initialize_variable
-        bcs     @error                  ; No memory for new variable
-        ldy     #1                      ; Start with high byte of value
-        lda     (record_ptr),y
-        tax
-        dey
-        lda     (record_ptr),y
-        jmp     push_value
-
-@error:
         rts
 
 pop_value: 

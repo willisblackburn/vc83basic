@@ -91,7 +91,7 @@ exec_for:
         sta     primary_stack+Control::variable_name_ptr,x
         lda     name_ptr+1
         sta     primary_stack+Control::variable_name_ptr+1,x
-        jsr     find_or_initialize_variable
+        jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
         mvax    record_ptr, variable_ptr
         jsr     evaluate_expression     ; Start value (may clobber name_ptr)
@@ -125,7 +125,7 @@ exec_next:
         sta     record_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
-        jsr     find_or_initialize_variable     ; Should not fail since variable is already initialized from FOR
+        jsr     find_or_add_variable    ; Should not fail since variable is already initialized from FOR
         bcs     @error                  ; Just in case...
         ldx     psp                     ; Load stack position
         ldy     #0                      ; Use Y to index variable value
