@@ -15,14 +15,26 @@ evaluate_expression:
 
 evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_operator-1         ; XH_OP
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_number-1           ; XH_NUM
         .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
-        jsr     decode_variable         ; Returns variable index in A
-        jmp     push_variable           ; Copy variable to stack
+        jsr     decode_name
+        jsr     find_or_add_variable
+        bcs     @error                  ; No memory for new variable
+        lda     #.sizeof(Float)         ; Make space on the stack
+        jsr     stack_alloc
+        bcs     @error
+        ldx     #>primary_stack         ; Segment of stack
+        stax    dst_ptr                 ; Copy to stack
+        ldax    record_ptr              ; Copy from variable data
+        ldy     #.sizeof(Float)
+        jsr     copy_y_from
+        clc                             ; Signal success
+@error:
+        rts
 
 evaluate_number:
         jsr     decode_number           ; Returns number in FP0
@@ -247,44 +259,6 @@ pop_fpx:
         tya                             ; Previous position back in A to use as pointer
         ldy     #>primary_stack         ; Segment of stack
         jsr     load_fpx                ; Load value into FPx
-        rts
-
-; Pushes the variable value identified by A onto the stack.
-
-push_variable:
-        jsr     set_variable_value_ptr
-        lda     #.sizeof(Float)         ; Make space on the stack
-        jsr     stack_alloc
-        bcs     @done
-        ldx     #>primary_stack         ; Segment of stack
-        stax    BC                      ; BC -> the target address on the stack
-        ldy     #0                      ; Index
-@next:
-        lda     (variable_value_ptr),y  ; Load variable value
-        sta     (BC),y                  ; Save to stack
-        iny
-        cpy     #.sizeof(Float)
-        bne     @next                   ; More bytes to copy
-        clc                             ; Signal success
-@done:
-        rts
-
-; Pops the value from the stack and copies it into the variable identified by A.
-
-pop_variable:
-        jsr     set_variable_value_ptr
-        lda     psp                     ; Get stack pointer
-        ldx     #>primary_stack         ; Segment of stack
-        stax    BC                      ; BC -> the source address on the stack
-        lda     #.sizeof(Float)         ; Free this many bytes
-        jsr     stack_free
-        ldy     #0                      ; Index
-@next:
-        lda     (BC),y                  ; Load value from stack
-        sta     (variable_value_ptr),y  ; Save to variable
-        iny
-        cpy     #.sizeof(Float)
-        bne     @next                   ; More bytes to copy
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.

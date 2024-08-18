@@ -59,9 +59,9 @@ _decode_number:
 .export _decode_number
         jmp     decode_number
 
-_decode_variable:
-.export _decode_variable
-        jmp     decode_variable
+_decode_name:
+.export _decode_name
+        jmp     decode_name
 
 _decode_operator:
 .export _decode_operator
@@ -248,12 +248,9 @@ _find_name:
         jsr     find_name
         jmp     set_err
 
-_get_name_table_entry:
-.export _get_name_table_entry
-        sta     B                       ; Index arrives in A; we need it in Y
-        jsr     popax                   ; Name table pointer
-        ldy     B                       ; Load index into Y
-        jsr     get_name_table_entry
+_advance_record_ptr:
+.export _advance_record_ptr
+        jsr     advance_record_ptr
         jmp     set_err
 
 _add_variable:
@@ -291,24 +288,6 @@ _parse_argument_separator:
 _parse_name:
 .export _parse_name
         jsr     parse_name
-        jmp     set_err
-
-_is_name_character:
-.export _is_name_character
-        jsr     is_name_character
-        jmp     set_err
-
-_parse_operator_name:
-.export _parse_operator_name
-        jsr     parse_operator_name
-        jmp     set_err
-
-_is_operator_name_character:
-.export _is_operator_name_character
-        sta     B                       ; Index arrives in A; we need it in Y
-        jsr     popa                    ; Character to test
-        ldy     B                       ; Recover index from B
-        jsr     is_operator_name_character
         jmp     set_err
 
 ; program.s
@@ -361,14 +340,6 @@ _check_himem:
 .export _check_himem
         jsr     check_himem
         jmp     set_err
-
-_set_variable_value_ptr:
-.export _set_variable_value_ptr
-        jmp     set_variable_value_ptr
-
-_mul_value_size:
-.export _mul_value_size
-        jmp     mul_value_size
 
 ; util.s
 
