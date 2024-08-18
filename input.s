@@ -11,13 +11,14 @@ exec_input:
         jsr     readline
         mva     #0, buffer_pos          ; Reset the read position
 @next_var:
-        jsr     decode_variable         ; Read the variable
-        pha                             ; Save it
+        jsr     decode_name             ; Read the variable name
+        jsr     find_or_add_variable
+        bcs     @done
+        mvax    record_ptr, variable_ptr    ; Set up target for assign_variable
         jsr     string_to_fp            ; Parse the number
-        bcs     @error                  ; Failed to read a number
+        bcs     @done                   ; Failed to read a number
         jsr     push_fp0                ; Push FP0 onto the value stack
-        pla                             ; Recover variable
-        jsr     pop_variable            ; Store the value
+        jsr     assign_variable         ; Store the value
         ldy     line_pos                ; Peek at the next byte
         lda     (line_ptr),y
         clc                             ; Clear carry in case we're done            
@@ -25,8 +26,5 @@ exec_input:
         jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
         bcc     exec_input              ; Didn't find ',' so issue a new prompt
         bcs     @next_var               ; Otherwise just read the next variable
-
-@error:
-        pla                             ; Remove variable from stack
 @done:
         rts

@@ -2,13 +2,6 @@
 
 ; Data structures
 
-.struct Line
-    next_line_offset .res 1
-    number .res 2
-    ; data consists of next statement offset followed by tokenized data, repeated until end of line
-    data .res 1
-.endstruct
-
 .struct Float
     t .res 4
     e .res 1
@@ -20,10 +13,17 @@
     s .res 1
 .endstruct
 
+.struct Line
+    next_line_offset .res 1
+    number .res 2
+    ; data consists of next_statement_offset followed by tokenized data
+    data .res 1
+.endstruct
+
 .struct Control
     next_line_ptr .res 2
     next_line_pos .res 1
-    variable .res 1
+    variable_name_ptr .res 2
     end_value .res .sizeof(Float)
     step_value .res .sizeof(Float)
 .endstruct
@@ -66,14 +66,13 @@ FP1s = FP1+UnpackedFloat::s
 .global decode_expression
 .global decode_number
 .global decode_int
-.global decode_variable
+.global decode_name
 .global decode_operator
 .global decode_unary_operator
 .global decode_byte
 
 ; encode.s
 .global encode_number
-.global encode_variable
 .global encode_operator
 .global encode_unary_operator
 .global encode_no_value
@@ -81,10 +80,11 @@ FP1s = FP1+UnpackedFloat::s
 
 ; expression.s
 .global evaluate_expression
+.global evaluate_variable
 .global call_binary_operator
 .global push_fpx, push_fp0, pop_fpx, pop_fp0
-.global push_variable, pop_variable
-.global stack_alloc, stack_free
+.global stack_alloc
+.global stack_free
 
 ; fp.s
 .global fp_one, fp_ten
@@ -113,6 +113,7 @@ FP1s = FP1+UnpackedFloat::s
 
 ; let.s
 .global exec_let
+.global assign_variable
 
 ; list.s
 .global exec_list
@@ -126,12 +127,12 @@ FP1s = FP1+UnpackedFloat::s
 .global dispatch_statement
 
 ; name.s
-.global find_name
-.global find_next_name
+.global find_name, find_name_2
 .global match_name
-.global read_name_table_byte
-.global advance_name_ptr
-.global get_name_table_entry
+.global initialize_record_ptr
+.global advance_record_ptr
+.global rebase_record_ptr
+.global find_or_add_variable
 .global add_variable
 
 ; parser.s
@@ -139,11 +140,8 @@ FP1s = FP1+UnpackedFloat::s
 .global parse_statement
 .global parse_directive
 .global parse_expression
-.global parse_argument_separator
 .global parse_name
-.global is_name_character
-.global parse_operator_name
-.global is_operator_name_character
+.global parse_argument_separator
 .global skip_whitespace
 
 ; print.s
@@ -160,9 +158,6 @@ FP1s = FP1+UnpackedFloat::s
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
 .global check_himem
-.global set_variable_value_ptr
-.global mul_value_size, mul_value_size_a
-.global initialize_variable
 
 ; run.s
 .global exec_run
@@ -175,14 +170,14 @@ FP1s = FP1+UnpackedFloat::s
 ; tables.s
 .global statement_name_table
 .global operator_name_table
-.global operator_chars
-.global operator_chars_end
-.global operator_precedence_table
 .global unary_operator_name_table
+.global operator_precedence_table
 
 ; util.s
-.global copy, copy_a, copy_size
+.global copy, copy_a, copy_size, copy_y_from
 .global reverse_copy, reverse_copy_size
+.global clear_memory, clear_memory_size
+.global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global advance_lp_sizeof_float, advance_lp
 

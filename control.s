@@ -29,8 +29,8 @@ exec_gosub_line_number:
         stax    line_number             ; Store the line number before calling find_line
         jsr     push_next_line_ptr      ; Save return address
         bcs     @done                   ; Stack overflow
-        lda     #TOKEN_VAR              ; Set variable field to an invalid variable
-        sta     primary_stack+Control::variable,x
+        lda     #0                      ; Set variable field to an invalid pointer
+        sta     primary_stack+Control::variable_name_ptr+1,x
         jsr     find_line_2             ; Find the line (already in line_number)
         bcs     @done
 @done:
@@ -71,9 +71,8 @@ exec_on:
 exec_return:
         jsr     exec_pop                ; RETURN is just POP except we do something with the popped value
         bcs     @done
-        lda     primary_stack+Control::variable,x   ; Get the variable
-        cmp     #TOKEN_VAR              ; Make sure it's the invalid value that signals a GOSUB
         sec                             ; If we take this next branch then carry will be set to signal error
+        lda     primary_stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
         bne     @done                   ; Variable was not GOSUB signal
         lda     primary_stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
@@ -85,88 +84,75 @@ exec_return:
 @done:
         rts
 
-; Add an entry onto the primary stack and set the next_line_ptr and next_line_pos fields.
-; Reflects carry return from stack_alloc. On success, A is still the stack pointer.
-; Y SAFE, BC SAFE, DE SAFE
-
-push_next_line_ptr:
-        lda     #.sizeof(Control)       ; Allocate this much space for the control record
-        jsr     stack_alloc
-        bcs     @done                   ; Stack overflow
-        tax                             ; Stack pointer into X to use as index
-        lda     next_line_ptr           ; Store next_line_ptr on stack
-        sta     primary_stack+Control::next_line_ptr,x
-        lda     next_line_ptr+1
-        sta     primary_stack+Control::next_line_ptr+1,x
-        lda     next_line_pos
-        sta     primary_stack+Control::next_line_pos,x
-        txa                             ; Move stack pointer back to A
-@done:
-        rts
-
 ; FOR statement:
 
 exec_for:
-        jsr     decode_variable         ; Get the variable
-        pha                             ; Save on the stack twice
-        pha
-        jsr     evaluate_expression     ; Start value
-        pla                             ; Get variable back
-        jsr     pop_variable            ; Pop value from stack into variable
+        jsr     push_next_line_ptr      ; Save return address
+        bcs     @error                  ; Stack overflow
+        jsr     decode_name             ; Get the name (now in name_ptr)
+        ldx     psp                     ; Get stack pointer to store name
+        lda     name_ptr                ; Store pointer to variable name
+        sta     primary_stack+Control::variable_name_ptr,x
+        lda     name_ptr+1
+        sta     primary_stack+Control::variable_name_ptr+1,x
+        jsr     find_or_add_variable
+        bcs     @error                  ; No space for variable
+        mvax    record_ptr, variable_ptr
+        jsr     evaluate_expression     ; Start value (may clobber name_ptr)
+        jsr     assign_variable
         jsr     evaluate_expression     ; End value
         jsr     pop_fp0                 ; Get the evaluated value
-        jsr     push_next_line_ptr      ; Push return address; X is now the stack pointer
-        pla                             ; Get variable again
-        sta     primary_stack+Control::variable,x   ; Store it in control record
-        txa                             ; Stack pointer into A
-        pha                             ; Save it because we'll want it again soon
+        lda     psp                     ; Stack pointer
         clc
         adc     #Control::end_value     ; Add the offset of the end value
         ldy     #>primary_stack         ; Segment of stack
         jsr     store_fp0               ; Store FP0 there
         lday    #fp_one
         jsr     load_fp0
-        pla                             ; Recover stack pointer
+        lda     psp                     ; Stack pointer again
         clc
         adc     #Control::step_value    ; Add the offset of the step value
         ldy     #>primary_stack
         jsr     store_fp0               ; Store the step value
         clc
+@error:
         rts
 
 ; NEXT statement:
 
 exec_next:
-        jsr     decode_variable         ; Get the variable
-        pha                             ; Save it on stack twice
-        pha
+        jsr     evaluate_variable       ; Evaluates the variable after next; sets name_ptr
+        bcs     @error
+        mvax    record_ptr, variable_ptr    ; Set up target for assign_variable later
+        jsr     pop_fp0                 ; Variable value is now in FP0
         ldx     psp                     ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
+        sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
-        pla                             ; Get the variable back
-        cmp     primary_stack+Control::variable,x   ; Is it the right one?
-        bne     @error2                 ; If not then fail
-        jsr     push_variable           ; Otherwise get the value and push onto the stack
-        jsr     pop_fp0                 ; Move it to FP0 to prepare for fadd
+        lda     primary_stack+Control::variable_name_ptr,x  ; Point record_ptr to name at top of control stack
+        sta     record_ptr
+        lda     primary_stack+Control::variable_name_ptr+1,x
+        beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
+        sta     record_ptr+1
+        jsr     match_name              ; Make sure it's the right name
+        bcs     @error
         lda     psp                     ; Get stack position again
-        clc
-        adc     #Control::step_value    ; Add offset of step value to stack pointer
+        adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
         ldy     #>primary_stack         ; Segment of stack
         ldx     #FP1                    ; Load step into FP1
         jsr     load_fpx
-        jsr     fadd                    ; Add the values
+        jsr     fadd                    ; Add the step value to the variable value from before
         jsr     push_fp0                ; Push back onto stack
-        pla                             ; Get the variable back
-        jsr     pop_variable            ; Back into variable
+        jsr     assign_variable         ; Assign stack value to variable_ptr set up earlier
         lda     psp                     ; Get stack position again
         clc
-        adc     #Control::end_value     ; Calculate address of end value
+        adc     #Control::end_value     ; Calculate address of end value (carry will be clear)
         ldy     #>primary_stack
         ldx     #FP1                    ; Load end value into FP1
         jsr     load_fpx        
-        jsr     fcmp                    ; Compare the current value with the end value
-        bcc     @return_to_for          ; Had to borrow so end value > start value
-        bne     exec_pop                ; If not equal then end value < start value; terminate FOR
+        jsr     fcmp                    ; Compare the current value (still in FP0) with the end value
+        bcc     @return_to_for          ; Current value < end value so continue
+        bne     exec_pop                ; If not equal then value > end value so stop; else continue
 @return_to_for:
         ldx     psp                     ; Get stack pointer once again
         lda     primary_stack+Control::next_line_ptr,x
@@ -176,14 +162,8 @@ exec_next:
         lda     primary_stack+Control::next_line_pos,x
         sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
-        rts                            
-
 @error:
-        pla                             ; Get rid of variable on stack
-@error2:
-        pla                             ; Second copy of variable
-        sec                             ; Signal error
-        rts
+        rts                            
 
 ; POP statement:
 ; Returns with the popped stack pointer still in X so caller can use.
@@ -211,4 +191,19 @@ exec_if:
 @next_line:
         jsr     advance_next_line_ptr   ; Unconditionally go to the next line
         clc
+        rts
+
+push_next_line_ptr:
+        lda     #.sizeof(Control)       ; Allocate this much space for the control record
+        jsr     stack_alloc
+        bcs     @done                   ; Stack overflow
+        tax                             ; Stack pointer into X to use as index
+        lda     next_line_ptr           ; Store next_line_ptr on stack
+        sta     primary_stack+Control::next_line_ptr,x
+        lda     next_line_ptr+1
+        sta     primary_stack+Control::next_line_ptr+1,x
+        lda     next_line_pos
+        sta     primary_stack+Control::next_line_pos,x
+        txa                             ; Move stack pointer back to A
+@done:
         rts

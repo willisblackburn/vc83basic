@@ -18,44 +18,30 @@ initialize_program:
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
         stax    next_line_ptr           ; Also set next_line_ptr
         ldy     #0                      ; Populate END statement starting at offset 0
+        sty     program_state           ; Before adding END statement, set program state to stopped
         jsr     build_end_statement
         jsr     advance_next_line_ptr   ; Advance next_line_ptr to the next line
         mvax    next_line_ptr, variable_name_table_ptr  ; New value is the start of variable name table
-        clc                             ; Add 1 to variable_name_table_ptr to get value_table_ptr
-        adc     #1
-        sta     value_table_ptr
-        txa
-        adc     #0
-        sta     value_table_ptr+1
-        lda     #0                      ; Load zero into A
-        tay                             ; Write index is also zero
-        sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        sta     variable_count          ; Initialize number of variables to 0
-        sta     program_state           ; Set program state to stopped
         
 ; Fall through to reset_program_state
 
 ; Clears the runtime state of the program.
 ; Clears all variables and the heap. The run state and next_line_ptr remain unchanged, so this can be called
 ; while the program is running.
-; value_table_ptr = the address of the variable value table, the next byte following the variable name table
-; variable_count = the number of variables in the variable name table
+; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
 
 reset_program_state:
-        ldpha   variable_count          ; Save original variable_count value
-@reset_variable:
-        dec     variable_count
-        bmi     @reset_heap
-        lda     variable_count
-        jsr     set_variable_value_ptr
-        jsr     initialize_variable
-        jmp     @reset_variable
-
-@reset_heap:
-        plsta   variable_count          ; Restore variable_count
-        jsr     set_variable_value_ptr  ; Set variable_value_ptr to just past the last variable
-        mvaa    variable_value_ptr, free_ptr    ; Set into free_ptr (the start of free space)
+        lda     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get free_ptr
+        clc
+        adc     #1
+        sta     free_ptr
+        lda     variable_name_table_ptr+1
+        adc     #0
+        sta     free_ptr+1
+        lda     #0                      ; Load zero into A
+        tay                             ; Write index is also zero
+        sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, psp
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
@@ -179,9 +165,9 @@ insert_or_update_line:
         jsr     grow_a                  ; Create space for the new line
         plstaa  dst_ptr                 ; Restore the previous next_line_ptr into dst_ptr (even if grow failed)
         bcs     @done                   ; Don't copy if grow failed
-        mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
-        lda     line_buffer+Line::next_line_offset  ; Length of the new line
-        jsr     copy_a                  ; Copy the line into the program
+        ldax    #line_buffer            ; Set up copy source
+        ldy     line_buffer+Line::next_line_offset  ; Length of the new line
+        jsr     copy_y_from             ; Copy the line into the program
 
 @finish:
         clc
@@ -296,52 +282,3 @@ check_himem:
         pla                             ; Discard size from stack
         rts
 
-; Calculates the offset of a variable in the value table and sets variable_value_ptr to point to it. Since
-; the resulting variable_value_ptr is within the 64K address space, on return the carry will be clear.
-; A = the variable index (0-127)
-; Y SAFE, BC SAFE
-
-set_variable_value_ptr:
-        jsr     mul_value_size_a        ; Multiply by VALUE_SIZE; since MSB was clear, this will clear carry
-        adc     value_table_ptr         ; Add to the value table offset
-        sta     variable_value_ptr      ; Store low byte
-        txa                             
-        adc     value_table_ptr+1
-        sta     variable_value_ptr+1
-        ldax    variable_value_ptr
-        rts
-
-; Multiplies the value in AX by VALUE_SIZE (6).
-; Y SAFE, BC SAFE
-
-.assert VALUE_SIZE = 6, error
-
-mul_value_size_a:
-        ldx     #0                      ; Only multiply A by initializing high byte to 0     
-mul_value_size:
-        stax    DE                      ; Save into DE
-        asl     A
-        rol     E                       ; Shift one left to multiply by 2
-        clc
-        adc     D                       ; Add original low byte value to A
-        sta     D
-        txa                             ; Original high byte into A
-        adc     E                       ; Add shfited value, completing multiplication by 3
-        sta     E
-        lda     D                       ; Load low byte of value
-        asl     A                       ; Shift left to multiply by 2, completing multiplication by 6
-        rol     E
-        ldx     E                       ; Load high byte into X for return
-        rts
-
-; Clears the value of the variable referenced by variable_value_ptr.
-
-initialize_variable:
-        ldy     #0
-        tya                             ; Set following bytes to 0
-@next:
-        sta     (variable_value_ptr),y
-        iny
-        cpy     #VALUE_SIZE
-        bne     @next
-        rts

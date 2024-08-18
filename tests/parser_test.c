@@ -1,247 +1,94 @@
 #include "test.h"
 
-void test_is_name_character(void) {
-
-    PRINT_TEST_NAME();
-
-    is_name_character('A');
-    ASSERT_EQ(err, 0);
-    is_name_character('Z');
-    ASSERT_EQ(err, 0);
-    is_name_character('0');
-    ASSERT_EQ(err, 0);
-    is_name_character('9');
-    ASSERT_EQ(err, 0);
-    is_name_character('_');
-    ASSERT_EQ(err, 0);
-
-    is_name_character('?');
-    ASSERT_NE(err, 0);
-    is_name_character('=');
-    ASSERT_NE(err, 0);
-    is_name_character('#');
-    ASSERT_NE(err, 0);
-    is_name_character('%');
-    ASSERT_NE(err, 0);
-    is_name_character('@');
-    ASSERT_NE(err, 0);
-    is_name_character('[');
-    ASSERT_NE(err, 0);
-    is_name_character('/');
-    ASSERT_NE(err, 0);
-    is_name_character(':');
-    ASSERT_NE(err, 0);
-    is_name_character(' ');
-    ASSERT_NE(err, 0);
-    is_name_character(0);
-    ASSERT_NE(err, 0);
-    is_name_character(0x7F);
-    ASSERT_NE(err, 0);
-    is_name_character(0x80);
-    ASSERT_NE(err, 0);
-    is_name_character(0xFF);
-    ASSERT_NE(err, 0);
-}
-
-void test_is_operator_name_character(void) {
-
-    PRINT_TEST_NAME();
-
-    is_operator_name_character('+', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('-', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('*', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('/', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('^', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('&', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('<', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('>', 0);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('=', 0);
-    ASSERT_EQ(err, 0);
-
-    is_operator_name_character('+', 2);
-    ASSERT_NE(err, 0);
-    is_operator_name_character('-', 2);
-    ASSERT_NE(err, 0);
-    is_operator_name_character('<', 2);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('>', 2);
-    ASSERT_EQ(err, 0);
-    is_operator_name_character('=', 2);
-    ASSERT_EQ(err, 0);
-
-    is_operator_name_character('A', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character('0', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character('@', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character('[', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(':', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(' ', 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(0, 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(0x7F, 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(0x80, 0);
-    ASSERT_NE(err, 0);
-    is_operator_name_character(0xFF, 0);
-    ASSERT_NE(err, 0);
-}
-
-void call_parse_name(const char* s, char set_buffer_pos) {
+void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
+        char expect_buffer_pos, int line) {
+    fprintf(stderr, "  %s:%d: parse_name(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
     buffer_pos = set_buffer_pos;
+    line_pos = offsetof(Line, data);
     parse_name();
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(name_ptr, line_buffer.data);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
 }
 
 void test_parse_name(void) {
 
+    const char print_line_data[] = { 'P', 'R', 'I', 'N', 'T' | NT_STOP };
+    const char printx_line_data[] = { 'P', 'R', 'I', 'N', 'T', 'X' | NT_STOP };
+    const char print10_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0' | NT_STOP };
+    const char print10x_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0', 'X' | NT_STOP };
+    const char x_line_data[] = { 'X' | NT_STOP  };
+    const char goto_line_data[] = { 'G', 'O', 'T', 'O' | NT_STOP  };
+
     PRINT_TEST_NAME();
 
-    call_parse_name("PRINT", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 5);
+    call_parse_name("PRINT", 0, print_line_data, sizeof print_line_data, 5, __LINE__);
 
     // Start at the space to verify that it skips whitespace.
-    call_parse_name("10 PRINT", 2);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 8);
+    call_parse_name("10 PRINT", 2, print_line_data, sizeof print_line_data, 8, __LINE__);
 
-    call_parse_name("10 PRINT X", 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 8);
+    call_parse_name("10 PRINT X", 3, print_line_data, sizeof print_line_data, 8, __LINE__);
 
-    call_parse_name("10 PRINTX", 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 9);
+    call_parse_name("10 PRINTX", 3, printx_line_data, sizeof printx_line_data, 9, __LINE__);
 
-    call_parse_name("10 PRINT10", 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 10);
+    call_parse_name("10 PRINT10", 3, print10_line_data, sizeof print10_line_data, 10, __LINE__);
 
-    call_parse_name("10 PRINT10X", 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 11);
+    call_parse_name("10 PRINT10X", 3, print10x_line_data, sizeof print10x_line_data, 11, __LINE__);
 
     // Start parse at space.
-    call_parse_name("ON X/2 GOTO 10,20", 2);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 3);
-    ASSERT_EQ(buffer_pos, 4);
-    call_parse_name("ON X/2 GOTO 10,20", 6);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 7);
-    ASSERT_EQ(buffer_pos, 11);
+    call_parse_name("ON X/2 GOTO 10,20", 2, x_line_data, sizeof x_line_data, 4, __LINE__);
+    call_parse_name("ON X/2 GOTO 10,20", 6, goto_line_data, sizeof goto_line_data, 11, __LINE__);
 
-    // Digits are names; this is okay because we try to parse numbers before names.
-    call_parse_name("10", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 2);
+    // Digits are not names.
+    strcpy(buffer, "10");
+    buffer_pos = 0;
+    parse_name();
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(buffer_pos, 0);
 
     // buffer_pos will reflect skipped whitespace even if parse fails.
-    call_parse_name("   ", 0);
+    strcpy(buffer, "  ");
+    buffer_pos = 0;
+    parse_name();
     ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 3);
-
-    call_parse_name("", 0);
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-}
-
-void call_parse_operator_name(const char* s, char set_bp) {
-    strcpy(buffer, s);
-    buffer_pos = set_bp;
-    parse_operator_name();
-}
-
-void test_parse_operator_name(void) {
-
-    PRINT_TEST_NAME();
-
-    call_parse_operator_name("*", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 1);
-
-    call_parse_operator_name("<>", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
     ASSERT_EQ(buffer_pos, 2);
 
-    // NOT is an operator
-    call_parse_operator_name("NOT", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 3);
-
-    // XYZZY is not an operator, but it could be, so we match it
-    call_parse_operator_name("XYZZY", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 5);
-
-    // Trailing '+' or '-' should not match, as they can be start of unary operator
-    call_parse_operator_name("+-", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 1);
-
-    call_parse_operator_name("/+", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_start_pos, 0);
-    ASSERT_EQ(buffer_pos, 1);
-
-    // Don't match characters that can't be operators
-    call_parse_operator_name("@", 0);
+    strcpy(buffer, "");
+    buffer_pos = 0;
+    parse_name();
     ASSERT_NE(err, 0);
     ASSERT_EQ(buffer_pos, 0);
 }
 
-void call_parse_expression(const char* s, const char* expected_line_data, size_t expected_line_data_size, int line) {
-    size_t s_length;
+void call_parse_expression(const char* s, const char* expect_line_data, size_t expect_line_data_size, int line) {
+    size_t expect_buffer_pos;
     fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
-    s_length = strlen(s);
+    expect_buffer_pos = strlen(s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
     parse_expression();
     ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, expected_line_data, expected_line_data_size);
-    ASSERT_EQ(buffer_pos, s_length);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expected_line_data_size);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_size);
 }
 
 void test_parse_expression(void) {
     
     const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 127, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 127, TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_PAREN, 0x80, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, 
-        TOKEN_NO_VALUE, TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
-    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x80, TOKEN_NO_VALUE };
-    const char line_data_6[] = { 0x80, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128,
-        TOKEN_OP | OP_OR, 0x80, TOKEN_OP | OP_LE, 0x81, TOKEN_NO_VALUE };
-    const char line_data_7[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_PAREN, 0x80, TOKEN_OP | OP_EQ, 
+    const char line_data_2[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 127, TOKEN_NO_VALUE };
+    const char line_data_4[] = { TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, 
+        TOKEN_NO_VALUE, TOKEN_OP | OP_MUL, 'Y' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_6[] = { 'X' | NT_STOP, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128,
+        TOKEN_OP | OP_OR,  'X' | NT_STOP, TOKEN_OP | OP_LE, 'Y' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_7[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_EQ, 
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS, 0x81, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'Y' | NT_STOP, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
 
     PRINT_TEST_NAME();
 
@@ -254,8 +101,6 @@ void test_parse_expression(void) {
     call_parse_expression("-X", line_data_5, sizeof line_data_5, __LINE__);
     call_parse_expression("X=3 OR X<=Y", line_data_6, sizeof line_data_6, __LINE__);
     call_parse_expression("NOT (X=3 OR NOT -Y)", line_data_7, sizeof line_data_7, __LINE__);
-
-    // TODO: add more tests
 }
 
 void test_parse_argument_separator(void) {
@@ -289,15 +134,15 @@ void test_parse_argument_separator(void) {
 
 void call_parse_directive(const char* s, char directive, const char* expect_line_data, size_t expect_line_data_length, 
         int line) {
-    size_t s_length;
+    size_t expect_buffer_pos;
     fprintf(stderr, "  %s:%d: parse_directive(\"%s\", %d)\n", __FILE__, line, s, directive);
-    s_length = strlen(s);
+    expect_buffer_pos = strlen(s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
     parse_directive(directive);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, s_length);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
@@ -305,10 +150,10 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 void test_parse_directive(void) {
 
     const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 127, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 0x80 };
-    const char line_data_4[] = { 0x80, TOKEN_NO_VALUE };
-    const char line_data_5[] = { 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_3[] = { 'X' | NT_STOP };
+    const char line_data_4[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_5[] = { 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
     const char line_data_6[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130 };
     const char line_data_7[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131,
         TOKEN_NO_VALUE };
@@ -327,15 +172,15 @@ void test_parse_directive(void) {
 }
 
 void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
-    size_t s_length;
+    size_t expect_buffer_pos;
     fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
-    s_length = strlen(s);
+    expect_buffer_pos = strlen(s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
     parse_statement(statement_name_table);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, s_length);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
@@ -344,16 +189,16 @@ void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 130, TOKEN_NO_VALUE };
-    const char line_data_3[] = { ST_LET, 0x80, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE };
-    const char line_data_4[] = { ST_INPUT, 0x80, 0x81, TOKEN_NO_VALUE };
+    const char line_data_3[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE };
+    const char line_data_4[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
     const char line_data_5[] = { ST_LIST, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NO_VALUE,
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
-    const char line_data_6[] = { ST_PRINT, TOKEN_PAREN, 0x80, TOKEN_OP | OP_ADD,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, TOKEN_NO_VALUE, TOKEN_OP | OP_MUL, 0x81, TOKEN_NO_VALUE };
-    const char line_data_7[] = { ST_ON_GOTO, 0x80, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 128, 
+    const char line_data_6[] = { ST_PRINT, TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD,
+        TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, TOKEN_NO_VALUE, TOKEN_OP | OP_MUL, 'Y' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_7[] = { ST_ON_GOTO, 'X' | NT_STOP, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 128, 
         TOKEN_NO_VALUE, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131,
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x70, 131, TOKEN_NO_VALUE };
-    const char line_data_8[] = { ST_ON_GOSUB, 0x80, TOKEN_NO_VALUE,
+    const char line_data_8[] = { ST_ON_GOSUB, 'X' | NT_STOP, TOKEN_NO_VALUE,
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131,
         TOKEN_NUM, 0x00, 0x00, 0x00, 0x70, 131, TOKEN_NO_VALUE };
 
@@ -386,15 +231,14 @@ void test_parse_statement(void) {
     line_pos = offsetof(Line, data);
     parse_statement(statement_name_table);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 6);
-    ASSERT_EQ(line_pos, 3);
+    ASSERT_EQ(buffer_pos, 0);
 }
 
 void test_parse_line(void) {
 
-    const char line_data_1[] = { 13, ST_LET, 0x80, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 13, ST_LET, 0x80, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE,
-        17, ST_PRINT, 0x80, TOKEN_NO_VALUE };
+    const char line_data_1[] = { 13, ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE };
+    const char line_data_2[] = { 13, ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133, TOKEN_NO_VALUE,
+        17, ST_PRINT, 'X' | NT_STOP, TOKEN_NO_VALUE };
     const char line_data_3[] = { 5, ST_RUN };
 
     PRINT_TEST_NAME();
@@ -446,10 +290,7 @@ void test_parse_line(void) {
 
 int main(void) {
     initialize_target();
-    test_is_name_character();
-    test_is_operator_name_character();
     test_parse_name();
-    test_parse_operator_name();
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_directive();
