@@ -1115,7 +1115,7 @@ fneg:
 
 ; Compares FP0 with FP1.
 ; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
-; FP0 >= FP1.
+; FP0 >= FP1 (or carry clear if FP0 < FP1).
 
 fcmp:
         lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
