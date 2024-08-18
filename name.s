@@ -2,175 +2,189 @@
 .include "basic.inc"
 
 ; Matches the input against names from a table.
-; Each name table entry consists of a name, which is a sequence of character bytes in the range $20-$5F,
-; followed by any number of extra data bytes. The last byte of the name table entry must have bit 7 set.
-; AX = pointer to the first entry of the name table; saved into name_ptr
-; buffer_pos = read position in buffer (updated on success)
+; Each name table record consists of a length (one byte if in the range 0-127, otherwise two bytes, high byte first),
+; followed by a name, followed by any number of extra data bytes. The last byte of the name must have bit 7 set.
+; AX = pointer to the first record in the name table; saved into next_record_ptr
+; name_ptr = pointer to the name to match
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
-; On match, updates name_ptr to point to the matched name, and returns the index of the matched name in A and
-; the next position in the name table after the matched name in Y.
-; If no match, then A is the number of names in the name table and name_ptr points to the 0 at the end of the table.
-; The find_next_name entry point searches from the current name_ptr.
+; On match, updates record_ptr to point to the data following matched name, and returns the index of the matched name
+; in A.
+; If no match, then A is the number of names in the name table and record_ptr points to the 0 at the end of the table.
 
 find_name:
-        stax    name_ptr
-        mva     #0, matched_name_index  ; Initialize name table index to 0
-find_next_name:
-        mvy     #0, name_pos            ; Set name table entry read position to 0
-        lda     (name_ptr),y            ; Get first byte of name
-        beq     @end                    ; If it's zero then we're at the end
+        jsr     initialize_record_ptr
+find_name_2:
+        inc     matched_name_index      ; Increment name index
+        jsr     advance_record_ptr      ; Tee up next record
+        bcs     @done
         jsr     match_name              ; Try to match
-        bcc     @match                  ; It matched; return
-        jsr     advance_name_ptr        ; Move name_pos up to the next entry
-        inc     matched_name_index      ; Increment name table index
-        bne     find_next_name          ; Handle the next entry (unconditional)
-
-@end:
-        sec                             ; Signal error
-@match:
-        lda     matched_name_index      ; Number of entries in the name table
+        bcs     find_name_2             ; If no match then try next one
+        jsr     rebase_record_ptr       ; Advance record_ptr to point to data after name
+@done:
+        lda     matched_name_index      ; Matched index or number of entries in the name table
         rts
 
-; Matches a name found in the input buffer with characters from the name table entry.
-; name_ptr = pointer to the name table entry
-; name_pos = current position within the name table entry
-; name_start_pos = the start of the name within the buffer
-; buffer_pos = the position of the first non-name character after the name
-; Returns carry clear if the sequence matched, and name_pos and buffer_pos both advance to the next position past the match.
-; Returns carry set if no match; buffer_pos is unchanged.
+; Matches a name found in the input buffer with characters from the name table record.
+; name_ptr = pointer to the name to match
+; record_ptr = pointer to the name within the name table record that we're going to match
+; Returns carry clear if the sequence matched. Y will be left set to the length of the matched name.
+; Returns carry set if no match.
 ; BC SAFE, DE SAFE
 
 match_name:
-        ldx     name_start_pos          ; Load buffer_pos into x
-@loop:
-        jsr     read_name_table_byte    ; Read the next byte from the name table
-        tay                             ; Save in Y
-        bcs     @end_of_name            ; Carry set means last by had bit 7 set; end of word
-        and     #$60                    ; Check if it's a literal
-        beq     @end_of_name            ; Not a literal; must be the end of the name
-        cpx     buffer_pos              ; Are we out of name characters to match?
-        beq     @error                  ; We have a name table character but no buffer character; match fails
-        tya                             ; Get character back from Y
-        cmp     buffer,x                ; Does it match the buffer character?
-        bne     @error                  ; If not then fail
-        inx                             ; Next buffer character
-        inc     name_pos                
-        jmp     @loop        
+        ldy     #0                      ; Start matching at position 0; also clears N flag
+@next:
+        lda     (record_ptr),y          ; Load next byte from name table record
+        bmi     @last                   ; This is the last character
+        cmp     (name_ptr),y            ; Compare to the source name
+        bne     @no_match               ; If not match then fail; if we get past this point then we're still matching
+        iny
+        bne     @next
 
-@end_of_name:
-        cpx     buffer_pos              ; Found end of name; are we also at end of buffer?
-        bne     @error                  ; No, buffer is longer so no match
+@last:
+        cmp     (name_ptr),y            ; One last compare
+        bne     @no_match
+        iny                             ; Account for matching last character
         clc                             ; Signal success
         rts
         
+@no_match:
+        sec                             ; Signal error
+        rts
+
+; Saves a new value (passed in AX) into record_ptr and also resets matched_name_index to 0.
+; AX = pointer to the start of the name table
+
+initialize_record_ptr:
+        stax    next_record_ptr         ; This will be copied into record_ptr
+        mva     #$FF, matched_name_index    ; Initialize name table index to -1 so first INC makes it 0
+        rts
+
+; Replaces record_ptr with next_record_ptr and advances next_record_ptr.
+; next_record_ptr = a pointer to the current name table record (updated)
+; Returns carry clear if record_ptr points to a valid record, or set if it is pointing to the end of the name table.
+; BC SAFE, DE SAFE
+
+advance_record_ptr:
+        mvax    next_record_ptr, record_ptr ; Advance to next record
+        ldy     #0                      ; record_ptr index
+        ldx     #0                      ; X is the high byte of the name record
+        sec                             ; Set carry for error return if we find no more records
+        lda     (record_ptr),y          ; Load first byte of name table record; may be single byte or high byte
+        beq     advance_rebase_record_ptr_done  ; If length is zero then no more names
+        bpl     @single_byte            ; High bit is clear; just add this as the low byte
+        and     #$7F                    ; Clear the high bit
+        tax                             ; The byte we read is the high byte
+        iny
+        lda     (record_ptr),y          ; It was a two-byte length, so get the low byte at Y=1
+@single_byte:
+        clc
+        adc     next_record_ptr         ; Add AX to next_record_ptr
+        sta     next_record_ptr
+        txa
+        adc     next_record_ptr+1
+        sta     next_record_ptr+1
+        iny                             ; Y is now the number of bytes in the length
+
+; Fall through
+
+; Rebases record_ptr by adding Y.
+; record_ptr = pointer to somewhere within the current name table record
+; Y = the offset to add to record_ptr
+; Always succeeds. Returns with carry clear, record_ptr updated.
+; X SAFE, Y SAFE, BC SAFE, DE SAFE
+
+rebase_record_ptr:
+        tya                             ; Move offset into A and add to record_ptr
+        clc                             ; Not sure if carry is set or not so clear it now
+        adc     record_ptr              ; Add to record_ptr
+        sta     record_ptr
+        bcc     advance_rebase_record_ptr_done
+        inc     record_ptr+1
+        clc                             ; Clear carry for return
+advance_rebase_record_ptr_done:
+        rts
+
+; Finds a variable, or adds it.
+; name_ptr = pointer to the variable name
+; name_length = the length of the variable
+; Returns carry clear if find_name or add_variable succeeded, or carry set on error.
+
+find_or_add_variable:
+        ldax    variable_name_table_ptr
+        jsr     find_name               ; Look for a variable with this name
+        bcs     @not_found              ; Most common case is that it's found, so branch only if it's not
+        rts                             ; Return success
+
+@not_found:
+        ldax    #2                      ; Allocate 2 bytes of space for the variable
+
+; Fall through
+
+; Extends the variable name table by adding a new name.
+; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
+; The name must already end in a character with the high bit set.
+; AX = the number of data bytes to allocate after the name
+; record_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
+; matched_name_index = the number of names currently in the table (also left by find_name)
+; Returns carry clear on success or carry set on failure.
+; On return, updates record_ptr to point to the data following the new name, as if found by find_name.
+add_variable:
+        sec                             ; Set carry in case the variable count check fails and to add 1 for length
+        ldy     matched_name_index      ; Check if too many variables already
+        bmi     @error                  ; variable_count >= 128
+        adc     name_length             ; Add name_length plus 1 (carry) to get total size to allocate
+        sta     B                       ; Park length low byte in B
+        bcc     @skip_inx               ; No carry; don't need to increment high byte
+        inx
+@skip_inx:
+        txa                             ; Test high byte
+        beq     @single_byte_encoding   ; High byte is zero; we can use a single-byte encoding
+        inc     B                       ; Else we have to use two bytes, so add one more to length
+        bne     @skip_inx_2             ; Didn't roll over so don't need to INX
+        inx
+@skip_inx_2:
+        txa                             ; Test high byte again
+        bmi     @error                  ; If high bit is already set then length is too large to encode
+@single_byte_encoding:
+        stx     C                       ; Store high byte of the length in C
+        lda     B                       ; Recover low byte; length is now in AX for call to grow, and in BC
+        ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
+        jsr     grow                    ; Do the grow
+        bcs     @error
+        mvax    record_ptr, dst_ptr     ; Prepare to clear the newly-allocated record
+        ldax    BC                      ; Recover size
+        jsr     clear_memory
+        sta     (dst_ptr),y             ; Y will be first uncleared byte on return; clear it to terminate name table
+        ldy     #0                      ; Start writing length to record_ptr starting at offset 0
+        ldx     C                       ; Consider the high byte
+        bne     @write_two_byte_length  ; High byte is non-zero; use two-byte encoding
+        lda     B                       ; Consider the low byte again (note we are discarding the zero high byte)
+        bpl     @write_length_low_byte  ; It's < 128; just use single-byte encoding
+@write_two_byte_length:
+        txa                             ; High byte into A
+        eor     #$80                    ; Set high bit, which we know is clear because we tested it before
+        sta     (record_ptr),y
+        iny
+        lda     B                       ; Replace A with low byte
+@write_length_low_byte:
+        sta     (record_ptr),y
+        iny
+        jsr     rebase_record_ptr       ; Add Y to record_ptr
+        ldy     #0                      ; Start copying name at offset 0
+@copy_next_character:
+        lda     (name_ptr),y            ; Get name character
+        sta     (record_ptr),y          ; Store into name table
+        bmi     @copy_last
+        iny
+        bne     @copy_next_character
+
+@copy_last:
+        iny                             ; Last character
+        jsr     rebase_record_ptr       ; Make record_ptr point past end of data
+        clc                             ; Signal success
+        rts
+
 @error:
         sec                             ; Signal error
         rts
-        
-; Reads the name table byte at position name_pos.
-; If name_pos > 0, checks the byte at position name_pos-1 to see if it was the last character in the name table entry.
-; Returns carry clear if there is another byte to read, with the byte in A.
-; Returns carry set if there are no more bytes.
-; X SAFE, BC SAFE, DE SAFE
-
-read_name_table_byte:
-        clc                             ; Default signal success
-        ldy     name_pos                ; Load name_pos
-        beq     @done                   ; If zero then just return
-        dey                             ; Go look at character at name_pos-1
-        lda     (name_ptr),y
-        iny                             ; Increment Y so it's equal to name_pos again
-        asl     A                       ; Shift NT_END bit into carry
-@done:
-        lda     (name_ptr),y            ; Load next character to match
-        and     #$7F                    ; Don't need NT_END bit; it's only checked here
-        rts
-
-; Advances name_ptr to the next name table entry.
-; We don't know where name_pos is when this gets called, so we start scanning from the start of the current entry
-; until we find the next one.
-; name_ptr = a pointer to the current name table entry (updated)
-; X SAFE, BC SAFE, DE SAFE
-
-advance_name_ptr:
-        ldy     #$FF                    ; Start at -1 because we pre-increment
-@loop:
-        iny
-        lda     (name_ptr),y            ; Load character at current position
-        bpl     @loop                   ; Keep searching if bit 7 not set
-        iny                             ; Skip past the last character
-        tya                             ; Y is the offset of the next element
-        clc                             ; Add it to name_ptr to get updated name_ptr
-        adc     name_ptr            
-        sta     name_ptr        
-        bcc     @done                   ; Don't have to increment high byte
-        inc     name_ptr+1
-@done:
-        rts
-
-; Finds a name entry by its index.
-; AX = pointer to the first entry in the name table
-; Y = the index of the entry to find
-; Returns carry clear on success, carry set on error. On success, name_ptr points to the name table entry and both Y
-; and name_pos are reset to zero.
-
-get_name_table_entry:
-        stax    name_ptr                ; Initialize name_ptr
-        sty     matched_name_index      ; Track the index in matched_name_index
-@next_name:
-        mvy     #0, name_pos            ; Initialize name_pos to 0
-        dec     matched_name_index
-        bmi     @found                  ; If @index is now <0 then we're done (this limits name table to 128 entries)
-        lda     (name_ptr),y            ; Check if at end of name table
-        beq     @not_found
-        jsr     advance_name_ptr        ; Advance to the next entry
-        jmp     @next_name
-@found:
-        clc
-        rts
-@not_found:
-        sec
-        rts
-        
-; Extends the variable name table by adding a new name.
-; The new name consists of the characters in buffer from position name_start_pos to buffer_pos.
-; name_ptr = a pointer to the 0 at the end of the variable name table (left there by find_name)
-; Returns carry clear on success or carry set on failure.
-; On success, updates variable_value_table and variable_count, and returns ID of new variable in A.
-
-add_variable:
-        sec                             ; We need carry set for SBC; set here to re-use as error bit on fail
-        lda     variable_count          ; Check if too many variables already
-        bmi     @fail                   ; variable_count >= 128
-        lda     buffer_pos              ; Read position in buffer
-        sbc     name_start_pos          ; Subtract name_start_pos to find length of name
-        ldy     #value_table_ptr        ; Grow variable name table by moving value table pointer
-        jsr     grow_a                  ; Do the grow
-        bcs     @fail
-        ldx     name_start_pos          ; Copy from name_start_pos
-        ldy     #0                      ; Copy to name_ptr offset 0
-@next_character:
-        lda     buffer,x                ; Load one character
-        sta     (name_ptr),y
-        inx
-        iny
-        cpx     buffer_pos              ; Reached end?
-        bne     @next_character
-        lda     #0
-        sta     (name_ptr),y            ; Store 0 to terminate the name table
-        dey                             ; Back up 1
-        lda     (name_ptr),y            ; Get the last name character saved to name table
-        ora     #$80                    ; Set high bit in last value
-        sta     (name_ptr),y            ; Save it again
-        ldy     #free_ptr               ; Grow value table by VALUE_SIZE
-        lda     #VALUE_SIZE
-        jsr     grow_a
-        bcs     @fail
-        lda     variable_count
-        jsr     set_variable_value_ptr  ; variable_value_ptr points to the space for the new value
-        jsr     initialize_variable
-        lda     variable_count          ; This will become the return value
-        inc     variable_count          ; Add one to variable count
-        clc                             ; Signal success
-@fail:
-        rts                             ; All jumps to @fail have carry set

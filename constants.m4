@@ -11,16 +11,15 @@ def(NT_RPT_VAR,         hex(11))
 def(NT_NUM,             hex(12))
 def(NT_RPT_NUM,         hex(13))
 def(NT_STATEMENT,       hex(14))
-def(NT_END,             hex(80))
+def(NT_STOP,            hex(80))
 
 comment Tokenized form constants
 
 def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_PAREN,        hex(01))
+def(TOKEN_NUM,          hex(01))
+def(TOKEN_PAREN,        hex(03))
 def(TOKEN_UNARY_OP,     hex(08)) comment OR with OP_UNARY_*
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
-def(TOKEN_NUM,          hex(20))
-def(TOKEN_VAR,          hex(80)) comment OR with variable number
 
 comment Statement tokens
 
@@ -67,9 +66,9 @@ def(UNARY_OP_NOT,       1)
 comment Expression decode handlers
 
 def(XH_VAR,             0)
-def(XH_NUM,             1)
-def(XH_OP,              2)
-def(XH_UNARY_OP,        3)
+def(XH_OP,              1)
+def(XH_UNARY_OP,        2)
+def(XH_NUM,             3)
 def(XH_PAREN,           4)
 
 comment Expression precedence levels
@@ -91,6 +90,8 @@ def(PS_RUNNING,         hex(01))
 comment Other constants
 
 def(BUFFER_SIZE, 256)
+def(NAME_OK, hex(80))
+def(NAME_ERROR, hex(81))
 def(PRIMARY_STACK_SIZE, 192)
 def(OP_STACK_SIZE, 16)
 def(VALUE_SIZE, 6)

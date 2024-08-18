@@ -5,6 +5,8 @@ void test_stack_alloc_free(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     ASSERT_EQ(osp, OP_STACK_SIZE);
     ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
 
@@ -29,9 +31,15 @@ void test_stack_alloc_free(void) {
     stack_alloc(96);
     stack_alloc(96);
     ASSERT_NE(err, 0);
+}
 
-    // Re-initialize program since this test leaves it in a bad state.
-    initialize_program();
+void set_name_ptr(const char* name) {
+    // Parse given name to set name_ptr and high bit on final character.
+    // Also sets name_length, which would normally be set in decode_name.
+    strcpy(buffer, name);
+    name_ptr = buffer;
+    name_length = strlen(buffer);
+    buffer[name_length - 1] |= NT_STOP;
 }
 
 void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
@@ -130,6 +138,8 @@ void test_evaluate_expression(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     test_one_op(OP_ADD, &value_0, &value_1, &value_1, &value_2);
     test_one_op(OP_SUB, &value_0, &value_negative_1, &value_1, &value_0);
 
@@ -166,6 +176,8 @@ void test_evaluate_expression_precedence(void) {
 
     PRINT_TEST_NAME();
 
+    initialize_program();
+
     set_line(0, line_data_1, sizeof line_data_1);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -183,7 +195,6 @@ void test_evaluate_expression_precedence(void) {
 
 int main(void) {
     initialize_target();
-    initialize_program();
     test_stack_alloc_free();
     test_evaluate_expression();
     test_evaluate_expression_precedence();
