@@ -211,4 +211,4 @@ advance_lp:
         clc
         adc     line_pos
         sta     line_pos
-        rts                             ; Carry should be set on return since we can't overflow line_buffer
+        rts                             ; Carry should be clear on return since we can't overflow line_buffer
