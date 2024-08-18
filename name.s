@@ -117,7 +117,7 @@ find_or_add_variable:
         rts                             ; Return success
 
 @not_found:
-        ldax    #2                      ; Allocate 2 bytes of space for the variable
+        ldax    #.sizeof(Float)         ; Allocate space for the variable
 
 ; Fall through
 
