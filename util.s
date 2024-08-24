@@ -122,64 +122,6 @@ clear_memory_size:
 @done:
         rts
 
-; Shifts the value in AX left by 1 bit, multiplying it by 2.
-; Y SAFE, BC SAFE
-
-mul2a:
-        ldx     #0                      ; Only multiply A by initializing high byte to 0     
-mul2:
-        stx     E                       ; Park high byte in E so we can roll into it
-        asl     A                       ; Low byte * 2
-        rol     E                       ; High byte * 2
-        ldx     E                       ; Reload X
-        rts
-
-; Multiplies the value in AX by 10 by shifting left twice, adding original value, shifting left once more.
-; AX = the value to multiply by 10
-; Returns the product in AX
-; Y SAFE, BC SAFE
-
-mul10:
-        stax    DE
-        asl     A                       ; Shift A + E left 2
-        rol     E
-        asl     A
-        rol     E
-        clc                             ; Clear carry to prepare for addition
-        adc     D                       ; Add in original low byte in D and save back
-        sta     D  
-        txa                             ; Same thing for high byte
-        adc     E                      
-        asl     D                       ; Shift the value left once more; A is now the high byte
-        rol     A
-        tax                             ; Move high byte back into X
-        lda     D                       ; Reload low byte from D back into A
-        rts
-
-; Divides the value in AX by 10. Unfortunately we have to do "real" division; there's no clever shortcut.
-; AX = the value to divide by 10
-; Returns the quotient in AX and the remainder in Y
-; BC SAFE
-
-div10:
-        stax    DE
-        ldx     #16                     ; 16 bits
-        lda     #0                      ; Initialize remainder to 0
-@next_bit:  
-        asl     D                       ; Shift dividend left into A
-        rol     E  
-        rol     A   
-        cmp     #10                     ; Reached 10 yet?
-        bcc     @not_10 
-        sbc     #10                     ; Subtract 10 from remainder; carry is set
-        inc     D                       ; Set bit in quotient
-@not_10:    
-        dex                             ; One bit down
-        bne     @next_bit               ; Some more to go
-        tay                             ; Remainder into Y
-        ldax    DE
-        rts
-
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
