@@ -75,9 +75,9 @@ void test_evaluate_expression(void) {
 
     HEXDUMP(variable_name_table_ptr, 32);
 
-    ASSERT_EQ(record_ptr, variable_name_table_ptr + 5 + 5);
-    record_ptr[0] = 0x0A;
-    record_ptr[1] = 0x01;
+    ASSERT_EQ(node_ptr, variable_name_table_ptr + 5 + 5);
+    node_ptr[0] = 0x0A;
+    node_ptr[1] = 0x01;
 
     set_line(0, line_data_3, sizeof line_data_3);
     evaluate_expression();
