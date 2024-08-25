@@ -79,8 +79,8 @@ word(name_ptr, const char*)
 comment Length of the name referred to by name_ptr
 byte(name_length)
 
-comment Index of matched name
-byte(matched_name_index)
+comment Index of node
+byte(node_index)
 
 comment Pointer to a variable within the variable value set by a statement like LET, INPUT, and READ
 word(variable_ptr, void*)
