@@ -99,11 +99,11 @@ list_statement:
 
 list_tokenized_name:
         stax    next_node_ptr           ; This will be copied into node_ptr
-        sty     matched_name_index      ; Track the index in matched_name_index
+        sty     node_index              ; Track the index in node_index
 @next_name:
         jsr     advance_node_ptr        ; Next node
         bcs     @not_found              ; Found end of name table; should not happen but will just list nothing
-        dec     matched_name_index
+        dec     node_index
         bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
 @not_found:
         mvax    node_ptr, name_ptr      ; Copy into name_ptr
