@@ -75,24 +75,24 @@ list_statement:
         tay
         ldax    #statement_name_table
         jsr     list_tokenized_name
-        jsr     rebase_record_ptr       ; Add the name length in Y to record_ptr
+        jsr     rebase_node_ptr         ; Add the name length in Y to node_ptr
 @after_directive:
-        ldy     #0                      ; Start reading from record_ptr offset 0
+        ldy     #0                      ; Start reading from node_ptr offset 0
 @next:
         tya                             ; Read position into A
         clc
-        adc     record_ptr              ; Add to record_ptr; A is now low byte of read position
-        cmp     next_record_ptr         ; Is it the next record_ptr?
+        adc     node_ptr                ; Add to node_ptr; A is now low byte of read position
+        cmp     next_node_ptr           ; Is it the next node_ptr?
         beq     @done                   ; Finished
         tya                             ; Test Y
         bne     @not_initial_alpha      ; Not first character in group
-        lda     (record_ptr),y
+        lda     (node_ptr),y
         cmp     #'A'                    ; Check if it's alpha
         bcc     @not_initial_alpha      ; No
         jsr     add_whitespace
 @not_initial_alpha:
-        lda     (record_ptr),y
-        iny                             ; Move to next byte in name record
+        lda     (node_ptr),y
+        iny                             ; Move to next byte in node data
         cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
         bcc     @directive              ; It is
         jsr     append_buffer           ; Write to buffer
@@ -100,7 +100,7 @@ list_statement:
 
 @directive:
         tax                             ; Save directive in X
-        jsr     rebase_record_ptr       ; Catch up record_ptr
+        jsr     rebase_node_ptr         ; Catch up node_ptr
         txa                             ; Get directive
         jsr     list_directive
         jmp     @after_directive
@@ -113,15 +113,15 @@ list_statement:
 ; Y = index number
 
 list_tokenized_name:
-        stax    next_record_ptr         ; This will be copied into record_ptr
+        stax    next_node_ptr           ; This will be copied into node_ptr
         sty     matched_name_index      ; Track the index in matched_name_index
 @next_name:
-        jsr     advance_record_ptr      ; Next record
+        jsr     advance_node_ptr        ; Next node
         bcs     @not_found              ; Found end of name table; should not happen but will just list nothing
         dec     matched_name_index
         bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
 @not_found:
-        mvax    record_ptr, name_ptr    ; Copy into name_ptr
+        mvax    node_ptr, name_ptr      ; Copy into name_ptr
 
 ; Fall through
 
@@ -167,7 +167,7 @@ list_argument_type_vectors:
 
 list_directive:
         tay                             ; Keep in Y while using A to save state
-        phzp    record_ptr, 4
+        phzp    node_ptr, 4
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
@@ -181,7 +181,7 @@ list_directive:
         ldax    #list_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 @pop_state:
-        plzp    record_ptr, 4
+        plzp    node_ptr, 4
         rts
 
 list_argument_list:
