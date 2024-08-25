@@ -13,16 +13,16 @@
 
 find_name:
         stax    next_node_ptr           ; This will be copied into node_ptr
-        mva     #$FF, matched_name_index    ; Initialize name table index to -1 so first INC makes it 0
+        mva     #$FF, node_index        ; Initialize node index to -1 so first INC makes it 0
 @next:
-        inc     matched_name_index      ; Increment name index
+        inc     node_index              ; Increment index
         jsr     advance_node_ptr        ; Tee up next node
         bcs     @done
         jsr     match_name              ; Try to match
         bcs     @next                   ; If no match then try next one
         jsr     rebase_node_ptr         ; Advance node_ptr to point to data after name
 @done:
-        lda     matched_name_index      ; Matched index or number of entries in the name table
+        lda     node_index              ; Matched index or number of entries in the name table
         rts
 
 ; Matches a name found in the input buffer with characters from the name table node.
@@ -119,12 +119,12 @@ find_or_add_variable:
 ; The name must already end in a character with the high bit set.
 ; AX = the number of data bytes to allocate after the name
 ; node_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
-; matched_name_index = the number of names currently in the table (also left by find_name)
+; node_index = the number of nodes currently in the table (also left by find_name)
 ; Returns carry clear on success or carry set on failure.
 ; On return, updates node_ptr to point to the data following the new name, as if found by find_name.
 add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
-        ldy     matched_name_index      ; Check if too many variables already
+        ldy     node_index              ; Check if too many variables already
         bmi     @error                  ; variable_count >= 128
         adc     name_length             ; Add name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Park length low byte in B
