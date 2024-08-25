@@ -95,7 +95,7 @@ exec_for:
         sta     primary_stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
-        mvax    record_ptr, variable_ptr
+        mvax    node_ptr, variable_ptr
         jsr     evaluate_expression     ; Start value (may clobber name_ptr)
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
@@ -121,17 +121,17 @@ exec_for:
 exec_next:
         jsr     evaluate_variable       ; Evaluates the variable after next; sets name_ptr
         bcs     @error
-        mvax    record_ptr, variable_ptr    ; Set up target for assign_variable later
+        mvax    node_ptr, variable_ptr  ; Set up target for assign_variable later
         jsr     pop_fp0                 ; Variable value is now in FP0
         ldx     psp                     ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
-        lda     primary_stack+Control::variable_name_ptr,x  ; Point record_ptr to name at top of control stack
-        sta     record_ptr
+        lda     primary_stack+Control::variable_name_ptr,x  ; Point node_ptr to name at top of control stack
+        sta     node_ptr
         lda     primary_stack+Control::variable_name_ptr+1,x
         beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
-        sta     record_ptr+1
+        sta     node_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
         lda     psp                     ; Get stack position again
