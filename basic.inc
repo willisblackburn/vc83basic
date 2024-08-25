@@ -67,9 +67,9 @@ DE = D
 ; name.s
 .global find_name, find_name_2
 .global match_name
-.global initialize_record_ptr
-.global advance_record_ptr
-.global rebase_record_ptr
+.global initialize_node_ptr
+.global advance_node_ptr
+.global rebase_node_ptr
 .global find_or_add_variable
 .global add_variable
 

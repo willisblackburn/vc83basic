@@ -22,10 +22,10 @@ evaluate_variable:
         jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
         ldy     #1                      ; Start with high byte of value
-        lda     (record_ptr),y
+        lda     (node_ptr),y
         tax
         dey
-        lda     (record_ptr),y
+        lda     (node_ptr),y
         jmp     push_value
 
 @error:
