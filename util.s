@@ -154,3 +154,8 @@ advance_lp:
         adc     line_pos
         sta     line_pos
         rts                             ; Carry should be clear on return since we can't overflow line_buffer
+
+; Allocates space 
+
+node_alloc:
+

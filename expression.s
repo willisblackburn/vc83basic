@@ -73,8 +73,7 @@ evaluate_paren:
 
 evaluate_string:
         jsr     decode_string           ; Returns pointer in AX
-        jsr     push_string
-        rts        
+        jmp     copy_push_string
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
@@ -319,6 +318,11 @@ pop_fpx:
         ldy     #>primary_stack         ; Segment of stack
         jsr     load_fpx                ; Load value into FPx
         rts
+
+; Copy a string into the string heap, then pushes the string pointer onto the heap.
+
+copy_push_string:
+        mvax             
 
 ; Pushes the string in AX onto the stack.
 ; Returns carry clear on success, carry set on failure.

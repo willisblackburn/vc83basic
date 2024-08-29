@@ -67,3 +67,15 @@ read_string:
         sta     (dst_ptr),y             ; Store length
         clc                             ; Signal success
         rts
+
+; Allocates space for a new string on the string heap.
+; A = the length of the new string
+
+string_alloc:
+        ldy     #free_ptr               ; Allocate space by moving up free_ptr
+        jsr     node_alloc              ; Allocate space for a new node
+        
+
+        pha                             ; Push the string length on the heap so we can get it later
+        mvax    string_ptr, BC          ; Save string_ptr in BC; this will be the 
+        ldx     #string_ptr             ; 
