@@ -322,7 +322,23 @@ pop_fpx:
 ; Copy a string into the string heap, then pushes the string pointer onto the heap.
 
 copy_push_string:
-        mvax             
+        jsr     load_st1
+        
+
+
+        jsr     load_string_ptr         ; Set string_ptr and return length
+        jsr     string_alloc            ; Allocate space for string
+        bcs     push_string_error
+
+
+
+        stax    src_ptr                 ; Original string pointer into src_ptr
+        ldy     #0                      ; Offset of string length
+        lda     (stc_ptr),y             ; Load length
+        jsr     string_alloc            ; Allocate space for the string
+        bcs     push_string_error
+        mvax    string_ptr, dst_ptr
+             
 
 ; Pushes the string in AX onto the stack.
 ; Returns carry clear on success, carry set on failure.
@@ -331,7 +347,7 @@ push_string:
         stax    BC                      ; Store string address in BC
         lda     #.sizeof(Value)
         jsr     stack_alloc
-        bcs     @error   
+        bcs     push_string_error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
         sta     primary_stack+Value::type,y
@@ -339,7 +355,7 @@ push_string:
         sta     primary_stack+Value::string_ptr,y   ; Save low and high byte of string address
         lda     C                       ; High byte
         sta     primary_stack+Value::string_ptr+1,y ; Carry still clear for return
-@error:
+push_string_error:
         rts
 
 ; Pops the string value from the stack and returns the address in AX.

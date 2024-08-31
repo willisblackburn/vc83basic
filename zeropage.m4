@@ -60,6 +60,9 @@ word(next_line_ptr, Line*)
 comment The start of the variable name table
 word(variable_name_table_ptr, char*)
 
+comment The beginning of the string space
+word(string_space_ptr, void*)
+
 comment The start of free space past the heap; initialized to heap_ptr
 word(free_ptr, void*)
 
@@ -132,3 +135,6 @@ byte(resume_line_pos)
 comment Tracks how many characters have been printed so tabs work correctly.
 comment Is reset to 0 by printing the banner message and/or READY.
 byte(print_column)
+
+comment Pointer to a string
+word(string_ptr, char*)

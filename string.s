@@ -69,13 +69,30 @@ read_string:
         rts
 
 ; Allocates space for a new string on the string heap.
-; A = the length of the new string
+; A = the length of the new string (not including length byte)
+; Returns the address of the new string in string_ptr.
+; BC SAFE
 
 string_alloc:
+        pha                             ; Save the original length
         ldy     #free_ptr               ; Allocate space by moving up free_ptr
-        jsr     node_alloc              ; Allocate space for a new node
-        
+        ldx     #0                      ; Initialize high byte of block length to 0
+        clc
+        adc     #STRING_EXTRA           ; Add 3 bytes to length: 1 byte for length, 2 bytes for GC relocation pointer
+        bcc     @skip_inx               ; If no carry then leave high byte at 0
+        inx                             ; Otherwise it's 1
+@skip_inx:
+        jsr     grow                    ; Grow the heap and set/clear carry
+        pla                             ; Return the length in A
+        rts
 
-        pha                             ; Push the string length on the heap so we can get it later
-        mvax    string_ptr, BC          ; Save string_ptr in BC; this will be the 
-        ldx     #string_ptr             ; 
+load_string_ptr:
+        stax    string_ptr
+inc_string_ptr:
+        ldy     #0
+        lda     (string_ptr),y
+        inc     string_ptr
+        bne     @skip_inc
+        inc     string_ptr+1
+@skip_inc:
+        rts
