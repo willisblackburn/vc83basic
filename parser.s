@@ -368,6 +368,9 @@ name_rules_identifier:
         .byte   'A', 26, <(name_rules_identifier - name_rules)
         .byte   '0', 10, <(name_rules_identifier - name_rules)
         .byte   '_',  1, <(name_rules_identifier - name_rules)
+        .byte   '$',  1, <(name_rules_string_suffix - name_rules)
+        .byte   NAME_OK
+name_rules_string_suffix:
         .byte   NAME_OK
 name_rules_op:
         .byte   NAME_OK
