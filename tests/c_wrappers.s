@@ -367,11 +367,6 @@ _read_string:
         jsr     read_string
         jmp     set_err
 
-_string_alloc:
-.export _string_alloc
-        jsr     string_alloc
-        jmp     set_err
-
 _load_sy:
 .export _load_sy
         stax    BC                      ; value pointer
@@ -380,6 +375,10 @@ _load_sy:
         ldax    BC
         jmp     load_sy
 
+_string_alloc:
+.export _string_alloc
+        jsr     string_alloc
+        jmp     set_err
 
 ; util.s
 
