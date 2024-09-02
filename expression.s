@@ -164,15 +164,15 @@ compare_string_values:
         jsr     pop_string              ; Get second string
         ldy     #S1
         jsr     load_sy                 ; Second string into S1
-        sta     B                       ; Length of second string in B
+        sta     C                       ; Length of second string in C
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
-        sta     C                       ; Length of first string in C
-        cmp     B                       ; Compare string length to other string
-        bcc     @use_second_string_length
+        sta     B                       ; Length of first string in B
+        cmp     C                       ; Compare first string length to second
+        bcs     @use_second_string_length
         lda     B                       ; Replace length in A with the shorter first string length 
 @use_second_string_length:
-        sta     D                       ; Store shorest string length in D
+        sta     D                       ; Store shortest string length in D
         ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
 @next_character:
         iny
@@ -184,8 +184,8 @@ compare_string_values:
         rts                             ; Return with the flags from the comparison
 
 @compare_lengths:
-        lda     C                       ; Characters are the same, so shorter string is lesser or equal
-        cmp     B
+        lda     B                       ; Characters are the same, so shorter string is lesser or equal
+        cmp     C
         rts
 
 op_eq:
