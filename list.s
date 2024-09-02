@@ -269,6 +269,8 @@ add_whitespace:
         lda     buffer-1,x              ; Get buffer[x-1]
         cmp     #')'
         beq     append_buffer_space
+        cmp     #'"'
+        beq     append_buffer_space
         cmp     #'_'
         beq     append_buffer_space
         sec
