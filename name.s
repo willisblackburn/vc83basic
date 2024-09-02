@@ -126,8 +126,6 @@ find_or_add_variable:
 @error:
         rts
 
-; Fall through
-
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
 ; The name must already end in a character with the high bit set.
