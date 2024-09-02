@@ -160,6 +160,7 @@ void check_himem(/* AX */ size_t size);
 
 // string.s
 char read_string(void);
+char load_sy(/* Y */ void* sy, /* AY */ const String* value);
 
 // util.s
 void copy(/* AX */ size_t size);

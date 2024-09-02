@@ -33,8 +33,24 @@ void test_read_string(void) {
     call_read_string("\"REPEATED\"\"CHARS\"", 17, "\x0EREPEATED\"CHARS", 14, __LINE__);
 }
 
+void test_load_sy(void) {
+
+    const String s = { 5, { 'H', 'E', 'L', 'L', 'O' }};
+    char length;
+
+    PRINT_TEST_NAME();
+
+    S0 = NULL;
+    S1 = NULL;
+
+    length = load_sy(&S0, &s);
+    ASSERT_PTR_EQ(S0, &s.data);
+    ASSERT_EQ(length, s.length);
+}
+
 int main(void) {
     initialize_target();
     test_read_string();
+    test_load_sy();
     return 0;
 }
