@@ -169,9 +169,9 @@ compare_string_values:
         jsr     load_s0                 ; First string into S0
         sta     B                       ; Length of first string in B
         cmp     C                       ; Compare first string length to second
-        bcs     @use_second_string_length
-        lda     B                       ; Replace length in A with the shorter first string length 
-@use_second_string_length:
+        bcc     @use_first_string_length
+        lda     C                       ; Replace length in A with the shorter second string length 
+@use_first_string_length:
         sta     D                       ; Store shortest string length in D
         ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
 @next_character:
