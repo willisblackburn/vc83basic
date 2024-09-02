@@ -1,25 +1,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; Sets src_ptr to point to the character data for a string, and returns the length.
-; AX = the address of the string
-; On return, src_ptr is set to the address of the string data (or 0 if the string address was 0),
-; and Y is the length of the string.
-; BC SAFE, DE SAFE
-
-set_string_src_ptr:
-        ldy     #0                      ; Initialize Y to zero first
-        stax    src_ptr                 ; Initialize string address
-        ora     src_ptr+1               ; OR the address bytes together
-        beq     @done                   ; If address was 0, return with 0 in Y for length
-        lda     (src_ptr),y             ; Length into A
-        tay                             ; Into Y for return
-        inc     src_ptr                 ; Increment the buffer address
-        bne     @done                   ; If it didn't roll over to 0 then don't increment the high byte
-        inc     src_ptr+1               ; Otherwise do
-@done:
-        rts
-
 ; Parses a string from src_ptr at index si and writes it to dst_ptr at index di.
 ; Stops parsing upon reaching the termination character. If the first character of the input is a double quote, then
 ; the termination character is also a double quote, and read_string interprets two double-quotes in the middle of the
@@ -72,12 +53,12 @@ read_string:
 ; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or the
 ; register identified by Y for load_sy.
 ; AX = a pointer to the string to load
-; DE SAFE
+; BC SAFE
 
 load_s0:
         ldy     #S0
 load_sy:
-        stax    BC                      ; BC is a temporary pointer
+        stax    DE                      ; DE is a temporary pointer
         sec
         adc     #0                      ; Move past length byte
         sta     0,y                     ; Set low byte of string pointer
@@ -86,5 +67,5 @@ load_sy:
 @skip_inx:
         stx     1,y                     ; High byte of string pointer
         ldy     #0                      ; Length offset
-        lda     (BC),y                  ; Load the length for return
+        lda     (DE),y                  ; Load the length for return
         rts

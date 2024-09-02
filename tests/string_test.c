@@ -46,6 +46,11 @@ void test_load_sy(void) {
     length = load_sy(&S0, &s);
     ASSERT_PTR_EQ(S0, &s.data);
     ASSERT_EQ(length, s.length);
+    ASSERT_NULL(S1);
+
+    length = load_sy(&S1, &s);
+    ASSERT_PTR_EQ(S1, &s.data);
+    ASSERT_EQ(length, s.length);
 }
 
 int main(void) {

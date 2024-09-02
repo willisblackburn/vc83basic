@@ -60,12 +60,12 @@ print_number:
 ; DE SAFE
 
 print_string:
-        jsr     set_string_src_ptr      ; Get string address and length
-        tya                             ; Length into A for add
+        jsr     load_s0                 ; Get string address and length
+        tay                             ; Transfer length into Y for write
         clc
         adc     print_column            ; Increase print_column by the size of the printed string
         sta     print_column
-        ldax    src_ptr                 ; Load string address into AX; length is already in Y
+        ldax    S0                      ; Load string address into AX
         jmp     write
         
 print_newline:
