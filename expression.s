@@ -151,8 +151,56 @@ op_div:
         jmp     call_binary_operator_push
 
 op_pow:
-op_concat:
         jmp     op_add
+
+op_concat:
+;         jsr     pop_string              ; Get the second string
+;         ldy     #S1
+;         jsr     load_sy                 ; Load into S1
+;         sta     B                       ; Length of 
+
+
+
+
+
+;         lda     #255                    ; Allocate 255 bytes on heap for the new string
+;         jsr     heap_alloc_a
+;         bcs     @done                   ; No memory for string
+;         stax    dst_ptr                 ; Write the string to the new block
+;         stax    DE                      ; Will also use it as return value later
+;         inc     dst_ptr                 ; Increment by one byte to store length
+;         bcc     @skip_dst_ptr_inc
+;         inc     dst_ptr+1               ; INC overflowed into high byte
+; @skip_dst_ptr_inc:
+;         jsr     pop_string              ; Get second string; DE SAFE
+;         phax                            ; Also save on the stack
+;         jsr     pop_string              ; Get first string; DE SAFE
+;         jsr     set_string_src_ptr
+;         tya                             ; Length into A for copy
+;         sta     B                       ; Store in B
+;         jsr     copy_a                  ; Copy string data
+;         plax                            ; Recover second string
+;         jsr     set_string_src_ptr
+;         tya                             ; Length into A to calculate cobined length
+;         clc             
+;         adc     B                       ; Add the length of the first string
+;         bcs     @done                   ; Combined string is too long
+;         sta     B
+;         tya                             ; Length into A for copy
+;         jsr     copy_a                  ; Copy string data
+;         ldy     #0                      ; Length offset
+;         lda     B                       ; Length
+;         sta     (DE),y                  ; Update string length
+;         jsr     heap_unalloc            ; Unallocate the block we allocated earlier
+;         sec                             ; Set carry in case INC overflows
+;         inc     B                       ; Add 1 to length for size byte
+;         beq     @done                   ; If overflow to 0 then string is too long
+;         lda     B
+;         jsr     heap_alloc_a            ; Reallocate the block to the size; conveniently returns the pointer again
+;         jsr     push_string             ; Might compact heap and clobber everything
+;         clc                             ; Signal success
+; @done:
+        rts
 
 ; Compares two strings from the stack returns flags based on the comparison.
 ; CMP s1 len, s2 len
