@@ -310,8 +310,8 @@ list_paren:
 list_string:
         jsr     add_whitespace
         jsr     decode_string           ; Returns string address in AX
-        jsr     set_string_src_ptr
-        sty     D                       ; Length in D
+        jsr     load_s0
+        sta     D                       ; Length in D
         ldy     #0                      ; Start at offset 0
         lda     #'"'                    ; Start by writing a quote
 @append_quote:
@@ -319,7 +319,7 @@ list_string:
 @next_character:
         cpy     D                       ; If Y is equal to length then done
         beq     @done
-        lda     (src_ptr),y             ; Get next string character
+        lda     (S0),y                  ; Get next string character
         iny
         jsr     append_buffer           ; Write the character to the buffer
         cmp     #'"'

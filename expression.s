@@ -161,24 +161,24 @@ op_concat:
 
 compare_string_values:
         jsr     pop_string              ; Get second string
-        jsr     set_string_src_ptr
-        mvaa    src_ptr, dst_ptr        ; Copy it into dst_ptr
-        sty     B                       ; Length of dst_ptr string in B
-        sty     D                       ; D will be the shorter of the two lengths
+        ldy     #S1
+        jsr     load_sy                 ; Second string into S1
+        sta     B                       ; Length of second string in B
         jsr     pop_string              ; Get first string
-        jsr     set_string_src_ptr
-        sty     C                       ; Length of src_ptr string in C
-        cpy     B                       ; Compare string length to other string
-        bcs     @use_second_string_length
-        sty     D                       ; Replace D with the shorter first string length 
+        jsr     load_s0                 ; First string into S0
+        sta     C                       ; Length of first string in C
+        cmp     B                       ; Compare string length to other string
+        bcc     @use_second_string_length
+        lda     B                       ; Replace length in A with the shorter first string length 
 @use_second_string_length:
+        sta     D                       ; Store shorest string length in D
         ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
 @next_character:
         iny
         cpy     D                       ; Out of characters?
         beq     @compare_lengths        ; Yes
-        lda     (src_ptr),y             ; Compare the next character
-        cmp     (dst_ptr),y
+        lda     (S0),y                  ; Compare the next character
+        cmp     (S1),y
         beq     @next_character
         rts                             ; Return with the flags from the comparison
 
