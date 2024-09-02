@@ -346,7 +346,7 @@ pop_fpx:
         jsr     load_fpx                ; Load value into FPx
         rts
 
-; Copy a string into the string heap, then pushes the string pointer onto the heap.
+; Copy a string into the string space, then pushes the string pointer onto the stack.
 
 copy_push_string:
         ldy     #S1
@@ -367,16 +367,16 @@ copy_push_string:
 ; Returns carry clear on success, carry set on failure.
 
 push_string:
-        stax    S0                      ; Store string address in S0
+        stax    BC                      ; Store string address in BC
         lda     #.sizeof(Value)
         jsr     stack_alloc
         bcs     push_string_error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
         sta     primary_stack+Value::type,y
-        lda     S0                      ; Recover low byte of string address
+        lda     B                       ; Recover low byte of string address
         sta     primary_stack+Value::string_ptr,y   ; Save low and high byte of string address
-        lda     S0+1                    ; High byte
+        lda     C                       ; High byte
         sta     primary_stack+Value::string_ptr+1,y ; Carry still clear for return
 push_string_error:
         rts
