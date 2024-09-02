@@ -28,13 +28,13 @@ evaluate_variable:
         jsr     decode_name
         jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
-        lda     #.sizeof(Value)         ; Make space on the stack
+        lda     #.sizeof(NumberValue)   ; Make space on the stack
         jsr     stack_alloc
         bcs     @error
         ldx     #>primary_stack         ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
         ldax    node_ptr                ; Copy from variable data
-        ldy     #.sizeof(Value)
+        ldy     #.sizeof(NumberValue)
         jsr     copy_y_from
         clc                             ; Signal success
 @error:
@@ -229,8 +229,8 @@ op_gt:
 
 compare_values:
         ldy     psp                     ; Get stack pointer
-        lda     primary_stack+Value::type,y                 ; Type of first argument
-        cmp     primary_stack+.sizeof(Value)+Value::type,y  ; Type of second argument
+        lda     primary_stack+NumberValue::type,y                       ; Type of first argument
+        cmp     primary_stack+.sizeof(NumberValue)+NumberValue::type,y  ; Type of second argument
         beq     @same_types
         rts                                                 ; Return early if the types differ
     
@@ -277,7 +277,7 @@ unary_op_not:
 ; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
 ; BC SAFE, DE SAFE
 
-.assert Value::number_value = 1, error
+.assert NumberValue::value = 1, error
 
 push_value_0:
         jsr     clear_fp0
@@ -330,11 +330,11 @@ push_string:
         bcs     @error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
-        sta     primary_stack+Value::type,y
+        sta     primary_stack+StringValue::type,y
         lda     B                       ; Recover low byte of string address
-        sta     primary_stack+Value::string_ptr,y   ; Save low and high byte of string address
+        sta     primary_stack+StringValue::value_ptr,y      ; Save low and high byte of string address
         lda     C                       ; High byte
-        sta     primary_stack+Value::string_ptr+1,y ; Carry still clear for return
+        sta     primary_stack+StringValue::value_ptr+1,y    ; Carry still clear for return
 @error:
         rts
 
@@ -345,8 +345,8 @@ pop_string:
         ldy     psp                     ; Load original stack pointer to Y
         lda     #.sizeof(Value)
         jsr     stack_free
-        lda     primary_stack+Value::string_ptr,y   ; Return with address in AX
-        ldx     primary_stack+Value::string_ptr+1,y
+        lda     primary_stack+StringValue::value_ptr,y      ; Return with address in AX
+        ldx     primary_stack+StringValue::value_ptr+1,y
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.

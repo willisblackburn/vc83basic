@@ -28,17 +28,21 @@
     step_value .res .sizeof(Float)
 .endstruct
 
-.struct Value
+.struct NumberValue
     type .res 1
-    .union
-        .struct
-            number_value .res .sizeof(Float)
-        .endstruct
-        .struct
-            string_ptr .res 2
-        .endstruct
-    .endunion
+    value .res .sizeof(Float)
 .endstruct
+
+.struct StringValue
+    type .res 1
+    value_ptr .res 2
+.endstruct
+
+.union Value
+    type .res 1
+    .res .sizeof(NumberValue)
+    .res .sizeof(StringValue)
+.endunion
 
 ; Zero Page
 
