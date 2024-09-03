@@ -351,11 +351,6 @@ _shrink:
         jsr     shrink
         jmp     set_err
 
-_check_himem:
-.export _check_himem
-        jsr     check_himem
-        jmp     set_err
-
 ; string.s
 
 _read_string:
