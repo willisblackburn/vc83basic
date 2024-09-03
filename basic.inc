@@ -53,7 +53,6 @@ BUFFER_SIZE = 256
 .global set_variable_value_ptr
 .global set_variable_value
 .global grow, grow_a, shrink, shrink_a
-.global check_himem
 
 ; run.s
 .global exec_run

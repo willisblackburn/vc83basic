@@ -44,6 +44,97 @@ void test_advance_line_ptr(void) {
     ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
 }
 
+void test_grow(void) {
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Add 3 bytes to the program space by adding to line_ptr.
+    // First make sure line_ptr points to the beginning of the program.
+    ASSERT_EQ(line_ptr, program_ptr);
+
+    // Add 3 bytes.
+    grow(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+
+    // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
+    line_ptr = program_ptr;
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 20;
+
+    // Now move it up 3 again.
+    grow(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    line_ptr = program_ptr;
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 10;
+
+    // Other pointers should be at their correct positions.
+
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9));
+
+    // Verify the program contents.
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, 10);
+    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, 20);
+    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->number, -1);
+
+    // Now grow free_ptr by 1K.
+    // Nothing should change except free_ptr.
+
+    line_ptr = program_ptr;
+    grow(&free_ptr, 0x400);
+    ASSERT_EQ(err, 0);
+
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
+}
+
+void test_shrink(void) {
+
+    // To test shrink, we first grow some sections, write some data to them, then make sure that data is
+    // preserved when we shrink. We know that grow works because it's been separately tested.
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Create some program space.
+    grow(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    program_ptr->next_line_offset = 3;
+    program_ptr->number = 10;
+
+    // Move free pointer up by 3 bytes.
+    grow(&free_ptr, 3);
+    line_ptr->next_line_offset = 3;
+    line_ptr->number = 20;
+    ASSERT_EQ(err, 0);
+
+    // Make sure all the pointers are where they should be.
+    ASSERT_PTR_EQ(line_ptr, (char*)program_ptr + 3);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
+
+    // Now shrink each section, each time checking that no data is corrupted.
+
+    shrink(&line_ptr, 3);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(line_ptr->number, 20);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
+
+    shrink(&free_ptr, 3);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 3);
+}
+
 void test_find_line(void) {
 
     PRINT_TEST_NAME();
@@ -163,128 +254,14 @@ void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->number, -1);    
 }
 
-void test_check_himem(void) {
-
-    PRINT_TEST_NAME();
-
-    free_ptr = (void*)0x1000;
-    himem_ptr = (void*)0x2000;
-
-    check_himem(0x0F00);
-    ASSERT_EQ(err, 0);
-
-    check_himem(0x1F00);
-    ASSERT_NE(err, 0);
-
-    himem_ptr = (void*)0xFF00;
-
-    check_himem(0xEF00);
-    ASSERT_EQ(err, 0);
-
-    check_himem(0xFF00);
-    ASSERT_NE(err, 0);
-}
-
-void test_grow(void) {
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    // Add 3 bytes to the program space by adding to line_ptr.
-    // First make sure line_ptr points to the beginning of the program.
-    ASSERT_EQ(line_ptr, program_ptr);
-
-    // Add 3 bytes.
-    grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
-
-    // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
-    line_ptr = program_ptr;
-    line_ptr->next_line_offset = 3;
-    line_ptr->number = 20;
-
-    // Now move it up 3 again.
-    grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
-    line_ptr = program_ptr;
-    line_ptr->next_line_offset = 3;
-    line_ptr->number = 10;
-
-    // Other pointers should be at their correct positions.
-
-    ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9));
-
-    // Verify the program contents.
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
-    ASSERT_EQ(line_ptr->number, 10);
-    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
-    ASSERT_EQ(line_ptr->number, 20);
-    line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
-    ASSERT_EQ(line_ptr->number, -1);
-
-    // Now grow free_ptr by 1K.
-    // Nothing should change except free_ptr.
-
-    line_ptr = program_ptr;
-    grow(&free_ptr, 0x400);
-    ASSERT_EQ(err, 0);
-
-    ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
-}
-
-void test_shrink(void) {
-
-    // To test shrink, we first grow some sections, write some data to them, then make sure that data is
-    // preserved when we shrink. We know that grow works because it's been separately tested.
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    // Create some program space.
-    grow(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
-    program_ptr->next_line_offset = 3;
-    program_ptr->number = 10;
-
-    // Move free pointer up by 3 bytes.
-    grow(&free_ptr, 3);
-    line_ptr->next_line_offset = 3;
-    line_ptr->number = 20;
-    ASSERT_EQ(err, 0);
-
-    // Make sure all the pointers are where they should be.
-    ASSERT_PTR_EQ(line_ptr, (char*)program_ptr + 3);
-    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
-
-    // Now shrink each section, each time checking that no data is corrupted.
-
-    shrink(&line_ptr, 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(line_ptr->number, 20);
-    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 6);
-
-    shrink(&free_ptr, 3);
-    ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + 3);
-}
-
 int main(void) {
     initialize_target();
     test_initalize_program();
     test_reset_line_ptr();
     test_advance_line_ptr();
-    test_find_line();
-    test_insert_or_update_line();
-    test_check_himem();
     test_grow();
     test_shrink();
+    test_find_line();
+    test_insert_or_update_line();
     return 0;
 }
