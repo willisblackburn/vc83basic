@@ -113,7 +113,6 @@ DE = D
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
-.global check_himem
 
 ; run.s
 .global exec_run
