@@ -78,14 +78,14 @@ find_line:
         lda     (line_ptr),y        
         cmp     line_number+1      
         bcc     @next_line              ; Line number high byte is <target; go to next line
-        bne     @done                   ; Return with carry set
+        bne     @not_found              ; Return with carry set
         dey                             ; High byte is equal; decrement Y to get low byte of line number
         lda     (line_ptr),y            ; Check the low byte of line number
         cmp     line_number             ; Same logic for low byte
         bcc     @next_line     
-        bne     @done                   ; If not the line then return with carry bit set
+        bne     @not_found              ; If not the line then return with carry bit set
         clc                             ; If it was the line then return with carry clear
-@done:        
+@not_found:        
         rts     
 
 ; Advances the current line pointer to the next line.
@@ -139,14 +139,14 @@ insert_or_update_line:
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
         jsr     grow_a                  ; Create space for the new line
         plstaa  dst_ptr                 ; Restore the previous line_ptr into dst_ptr (even if grow failed)
-        bcs     @done                   ; Don't copy if grow failed
+        bcs     @error                  ; Don't copy if grow failed
         mvaa    #line_buffer, src_ptr   ; Set up copy into the space for the new line
         lda     line_buffer+Line::next_line_offset  ; Length of the new line
         jsr     copy_a                  ; Copy the line into the program
 
 @finish:
         clc
-@done:
+@error:
         rts
 
 ; Grows a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
@@ -160,9 +160,21 @@ insert_or_update_line:
 grow_a:
         ldx     #0                      ; Initialize high byte to 0
 grow:
-        stax    DE                      ; Store length in DE
-        jsr     check_himem             ; Check if expansion will push BASIC memory past himem_ptr
-        bcs     @done                   ; If check_himem failed then we fail
+        stax    DE                      ; Store size in DE
+        clc                             ; Do 16-bit add of size in AX to free_ptr to see if it grows past himem_ptr
+        adc     free_ptr                ; Add low byte
+        tax                             ; Low byte into X
+        lda     E                       ; Re-load high byte of size from E
+        adc     free_ptr+1              ; Add high byte of free_ptr
+        bcs     @done                   ; If carry is set after high byte add then address has overflowed
+        cmp     himem_ptr+1             ; Test new high byte of free_ptr
+        bcc     @continue               ; Less, everything okay, return
+        bne     @done                   ; Not equal so greater, return with carry set
+        txa                             ; High bytes are equal; compare low bytes
+        cmp     himem_ptr
+        bcc     @continue               ; Same logic for low byte
+        bne     @done
+@continue:
         jsr     grow_shrink_common
         jsr     reverse_copy_size       ; Copy data up to the higher address
         clc                             ; Success
@@ -229,31 +241,3 @@ grow_shrink_common:
         cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
         bne     @next_ptr               ; Nope, keep going
         rts
-
-; Checks if adding an amount to free_ptr will cause it to exceed himem_ptr.
-; Returns carry set if this would happen, otherwise carry clear.
-; AX = the amount to add to free_ptr
-; Y SAFE, BC SAFE, DE SAFE
-
-check_himem:
-        clc                             ; Do 16-bit add of size in AX to free_ptr
-        adc     free_ptr                ; Add low byte
-        pha                             ; Save the low byte on the stack
-        txa                             ; High byte of size into A
-        adc     free_ptr+1              ; Add high byte of free_ptr
-        bcs     @error                  ; If carry is set after high byte add then address has overflowed
-        cmp     himem_ptr+1             ; Compare high byte
-        bcc     @error                  ; argument high byte < himem_ptr high byte
-        bne     @error                  ; argument high byte > himem_ptr high byte (carry is set)
-        pla                             ; High bytes are equal; compare low bytes
-        cmp     himem_ptr
-        bcc     @done                   ; argument low byte < himem_ptr low byte
-        bne     @done                   ; argument low byte > himem_ptr low byte (carry is set)
-        clc                             ; Pointers are equal; clear carry since this is success
-@done:
-        rts
-
-@error:
-        pla                             ; Discard size from stack
-        rts
-
