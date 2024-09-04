@@ -4,6 +4,7 @@
 ; PRINT statement:
 
 .assert TOKEN_NO_VALUE = 0, error
+.assert TYPE_NUM = 0, error
 
 exec_print_number:
         jsr     pop_fp0                 ; Get the value
@@ -21,7 +22,6 @@ exec_print:
         bcs     @done
         ldx     psp                     ; Get the current stack pointer
         lda     primary_stack+Value::type,x     ; Get the type of the variable
-        cmp     #TYPE_NUM
         beq     exec_print_number
         jsr     pop_string
         jsr     print_string

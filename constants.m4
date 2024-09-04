@@ -80,9 +80,8 @@ def(XH_PAREN,           5)
 
 comment Types
 
-def(TYPE_NONE,          hex(00))
-def(TYPE_NUM,           hex(01))
-def(TYPE_STRING,        hex(02))
+def(TYPE_NUM,           hex(00))
+def(TYPE_STRING,        hex(01))
 
 comment Expression precedence levels
 
