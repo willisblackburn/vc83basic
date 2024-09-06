@@ -117,14 +117,9 @@ find_or_add_variable:
         rts                             ; Return success
 
 @not_found:
-        ldax    #.sizeof(Value)         ; Allocate space for the variable
-        jsr     add_variable
-        bcs     @error
-        ldy     #Value::type
-        lda     #TYPE_NUM
-        sta     (node_ptr),y            ; Carry still clear here
-@error:
-        rts
+        ldax    #.sizeof(Float)         ; Allocate space for the variable
+
+; Fall through
 
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.

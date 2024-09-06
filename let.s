@@ -23,9 +23,11 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        lda     psp                     ; Get stack pointer
+        ldx     psp                     ; Get stack pointer
+        inx                             ; Skip past the type
+        txa                             ; Becomes low byte of source address
         ldx     #>primary_stack         ; Segment of stack
-        ldy     #.sizeof(Value)
+        ldy     #.sizeof(Float)
         jsr     copy_y_from             ; Copy from stack into variable data
         lda     #.sizeof(Value)         ; Discard from stack
         jsr     stack_free
