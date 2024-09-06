@@ -7,6 +7,10 @@
 ; primary_stack must be page-aligned
 .assert <primary_stack = 0, error
 
+; We depend on being able to increment an index to go from type to value.
+.assert Value::type = 0, error
+.assert Value::number_value = 1, error
+
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
@@ -31,10 +35,15 @@ evaluate_variable:
         lda     #.sizeof(Value)         ; Make space on the stack
         jsr     stack_alloc
         bcs     @error
+        tax                             ; Stack position into X to set type
+        lda     #TYPE_NUM               ; Set type of value on stack
+        sta     primary_stack+Value::type,x
+        inx                             ; Write value to next byte
+        txa                             ; Use as low byte of copy address
         ldx     #>primary_stack         ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
         ldax    node_ptr                ; Copy from variable data
-        ldy     #.sizeof(Value)
+        ldy     #.sizeof(Float)
         jsr     copy_y_from
         clc                             ; Signal success
 @error:
@@ -303,8 +312,6 @@ unary_op_not:
 ; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
 ; BC SAFE, DE SAFE
 
-.assert Value::number_value = 1, error
-
 push_value_0:
         jsr     clear_fp0
         jmp     push_fp0
@@ -316,10 +323,10 @@ push_value_1:
 push_fp0:
         ldx     #FP0
 push_fpx:
-        lda     #.sizeof(Value)         ; Allocate enough space for a float on the stack
+        lda     #.sizeof(Value)         ; Allocate space for a value on the stack
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
-        tay                             ; Offset into X
+        tay                             ; Stack offset into Y
         lda     #TYPE_NUM               ; Assign the number type
         sta     primary_stack+Value::type,y
         iny
