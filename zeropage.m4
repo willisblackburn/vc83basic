@@ -99,6 +99,9 @@ word(name_ptr, char*)
 comment Length of the name referred to by name_ptr
 byte(name_length)
 
+comment The type of the name referred to by name_ptr
+byte(name_type)
+
 comment Index of node
 byte(node_index)
 

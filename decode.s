@@ -101,8 +101,11 @@ decode_string:
 @no_carry:
         rts
 
-; Decodes a variable name and set up name_ptr and name_length.
-; X SAFE, BC SAFE, DE SAFE
+; Decodes a variable name and set up name_ptr, name_length, and name_type.
+; BC SAFE, DE SAFE
+
+.assert TYPE_NUM = 0, error
+.assert TYPE_STRING = 1, error
 
 decode_name:
         lda     line_pos                ; Add line_pos to line_ptr to get name_ptr
@@ -125,6 +128,14 @@ decode_name:
         tya                             ; Add to line_pos; carry should be clear
         adc     line_pos
         sta     line_pos                ; Update line_pos
+        ldx     #TYPE_NUM               ; Variable is a number unless we learn otherwise
+        dey                             ; Back up one so we can check if the last character is '$'
+        lda     (name_ptr),y
+        cmp     #'$'
+        bne     @not_string
+        inx                             ; It was a string; change the type
+@not_string:
+        stx     name_type               ; Remember the type
         rts
 
 decode_operator:

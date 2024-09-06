@@ -52,6 +52,10 @@ match_name:
         sec                             ; Signal error
         rts
 
+type_size_table:
+        .byte .sizeof(Float)    ; TYPE_NUM
+        .byte 2                 ; TYPE_STRING
+
 ; Finds a variable, or adds it.
 ; name_ptr = pointer to the variable name
 ; name_length = the length of the variable
@@ -64,14 +68,11 @@ find_or_add_variable:
         rts                             ; Return success
 
 @not_found:
-        ldax    #.sizeof(Value)         ; Allocate space for the variable
-        jsr     add_variable
-        bcs     @error
-        ldy     #Value::type
-        lda     #TYPE_NUM
-        sta     (node_ptr),y            ; Carry still clear here
-@error:
-        rts
+        ldx     name_type
+        lda     type_size_table,x
+        ldx     #0
+
+; Fall through
 
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
