@@ -16,6 +16,10 @@ operator_name_table:
 :       .byte   :+ - *, '^' | NT_STOP
 :       .byte   0
 
+unary_operator_name_table:
+        .byte   :+ - *, '-' | NT_STOP
+:       .byte   0
+
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
 
@@ -23,7 +27,3 @@ operator_precedence_table:
         .byte   PR_ADD          ; +, -
         .byte   PR_MUL          ; *, /
         .byte   PR_POW          ; ^
-
-unary_operator_name_table:
-        .byte   :+ - *, '-' | NT_STOP
-:       .byte   0
