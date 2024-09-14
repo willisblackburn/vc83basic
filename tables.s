@@ -37,6 +37,11 @@ operator_name_table:
 :       .byte   :+ - *, 'O', 'R' | NT_STOP
 :       .byte   0
 
+unary_operator_name_table:
+        .byte   :+ - *, '-' | NT_STOP
+:       .byte   :+ - *, 'N', 'O', 'T' | NT_STOP
+:       .byte   0
+
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
 
@@ -48,8 +53,3 @@ operator_precedence_table:
         .byte   PR_RELATIONAL   ; <=, <
         .byte   PR_RELATIONAL   ; >=, >
         .byte   PR_LOGICAL      ; AND, OR
-
-unary_operator_name_table:
-        .byte   :+ - *, '-' | NT_STOP
-:       .byte   :+ - *, 'N', 'O', 'T' | NT_STOP
-:       .byte   0
