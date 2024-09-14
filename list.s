@@ -124,7 +124,7 @@ list_name:
 
 @last:
         iny
-        eor     #NT_STOP                ; Clear high bit
+        and     #$7F                    ; Clear high bit
         jmp     append_buffer
 
 list_argument_type_vectors:
