@@ -388,7 +388,7 @@ parse_name:
         ldx     line_pos                ; Get line_buffer write position
         dex                             ; Back to last character we wrote
         lda     line_buffer,x
-        eor     #NT_STOP                ; Set bit 7
+        ora     #NT_STOP                ; Set bit 7
         sta     line_buffer,x           ; Write back
 @done:
         rts
