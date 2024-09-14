@@ -131,7 +131,7 @@ decode_name:
         ldx     #TYPE_NUM               ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
         lda     (name_ptr),y
-        cmp     #'$'
+        cmp     #'$' | NT_STOP          ; If it's there, it will have the high bit set
         bne     @not_string
         inx                             ; It was a string; change the type
 @not_string:
