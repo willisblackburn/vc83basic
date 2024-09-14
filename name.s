@@ -156,7 +156,7 @@ add_variable:
         bpl     @write_length_low_byte  ; It's < 128; just use single-byte encoding
 @write_two_byte_length:
         txa                             ; High byte into A
-        eor     #$80                    ; Set high bit, which we know is clear because we tested it before
+        ora     #$80                    ; Set high bit, which we know is clear because we tested it before
         sta     (node_ptr),y
         iny
         lda     B                       ; Replace A with low byte
