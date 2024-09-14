@@ -49,7 +49,7 @@ exec_print:
 ; Prints the value in FP0 to standard output.
 
 print_number:
-        mva     #1, buffer_pos                  ; Start printing at buffer column 1
+        mva     #1, buffer_pos          ; Start printing at buffer column 1
         jsr     fp_to_string            ; Format into buffer
         ldx     buffer_pos              ; Load length (including the length byte)
         dex                             ; Length is one less than buffer_pos
