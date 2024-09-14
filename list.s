@@ -148,7 +148,7 @@ list_name:
 
 @last:
         iny
-        eor     #NT_STOP                ; Clear high bit
+        and     #$7F                    ; Clear high bit
         clc                             ; This will cause expression decode handlers to return success
         jmp     append_buffer
 
