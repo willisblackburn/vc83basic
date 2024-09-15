@@ -32,3 +32,15 @@ RUN
 5
 0
 }
+
+test {
+NEW
+10 LET X$="HELLO"
+20 PRINT "(";X$;")"
+30 CLR
+40 PRINT "(";X$;")"
+RUN
+} {
+(HELLO)
+()
+}
