@@ -59,13 +59,19 @@ load_s0:
         ldy     #S0
 load_sy:
         stax    DE                      ; DE is a temporary pointer
-        sec
-        adc     #0                      ; Move past length byte
-        sta     0,y                     ; Set low byte of string pointer
-        bcc     @skip_inx
-        inx                             ; Increment high byte of address
-@skip_inx:
-        stx     1,y                     ; High byte of string pointer
+        stx     1,y                     ; Store high byte of string address
+        tax                             ; Move low byte into X since I'm about to clobber A
+        ora     E                       ; Check for null
+        beq     @null_string            ; A is conveniently 0 for return
+        inx                             ; Increment low byte of address
+        stx     0,y                     ; Store low byte of string address
+        bne     @skip_inc               ; Low byte didn't roll over so don't have to adjust high byte
+        ldx     E                       ; High byte is in E, so re-load and re-store
+        inx
+        stx     1,y
+@skip_inc:
         ldy     #0                      ; Length offset
         lda     (DE),y                  ; Load the length for return
+@null_string:
         rts
+

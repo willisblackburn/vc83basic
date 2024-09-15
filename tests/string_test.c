@@ -51,6 +51,11 @@ void test_load_sy(void) {
     length = load_sy(&S1, &s);
     ASSERT_PTR_EQ(S1, &s.data);
     ASSERT_EQ(length, s.length);
+
+    // Test the null case
+
+    length = load_sy(&S0, NULL);
+    ASSERT_EQ(length, 0);
 }
 
 int main(void) {
