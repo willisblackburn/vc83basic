@@ -15,3 +15,47 @@ PRINT X
 } {
 4
 }
+
+# Multiple values on one line
+
+send_echo {
+INPUT X,Y
+}
+expect -ex "?"
+send_echo {
+5,6
+}
+test {
+PRINT X
+} {
+5
+}
+test {
+PRINT Y
+} {
+6
+}
+
+# Multiple values on multiple lines
+
+send_echo {
+INPUT X,Y
+}
+expect -ex "?"
+send_echo {
+5
+}
+expect -ex "?"
+send_echo {
+6
+}
+test {
+PRINT X
+} {
+5
+}
+test {
+PRINT Y
+} {
+6
+}
