@@ -6,7 +6,7 @@
 ; the termination character is also a double quote, and read_string interprets two double-quotes in the middle of the
 ; string as a single quote. Otherwise the termination character is a comma (',').
 ; Finding a NUL in the input terminates the string no matter what.
-; Returns carry clear and updates buffer_pos and line_pos on success, or carry set on failure (and does not update buffer_pos and line_pos).
+; Returns carry clear and updates si and di on success, or carry set on failure (and does not update si and di).
 ; BC SAFE
 
 read_string:
