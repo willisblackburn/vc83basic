@@ -96,19 +96,19 @@ parse_statement:
         jsr     encode_byte             ; Replace name with statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
-        ldy     #0                      ; Start reading from node_ptr offset 0
+        ldy     #0                      ; Start reading from name_ptr offset 0
 @next:
         tya                             ; Read position into A
         clc
-        adc     node_ptr                ; Add to node_ptr; A is now low byte of read position
-        cmp     next_node_ptr           ; Is it the next node_ptr?
+        adc     name_ptr                ; Add to name_ptr; A is now low byte of read position
+        cmp     next_name_ptr           ; Is it the next name_ptr?
         beq     @success                ; If so, have reached the end of the statement
-        lda     (node_ptr),y
-        iny                             ; Move to next byte in node data
+        lda     (name_ptr),y
+        iny                             ; Move to next byte in name table entry data
         tax                             ; Temporarily store in X
         and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
         beq     @directive              ; It is
-        txa                             ; Restore byte from node data
+        txa                             ; Restore byte from name table entry data
         ldx     buffer_pos              ; Compare it to the current character in the buffer
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
@@ -116,7 +116,7 @@ parse_statement:
         bne     @error
 
 @directive:
-        jsr     rebase_node_ptr         ; Catch up node_ptr
+        jsr     rebase_name_ptr         ; Catch up name_ptr
         txa                             ; Recover the directive
         jsr     parse_directive
         bcc     @after_directive
@@ -133,7 +133,7 @@ parse_argument_type_vectors:
         .word   parse_name-1            ; NT_VAR
 
 ; Parses a single directive.
-; Since parsing the directive can recursively invoke the parser with new values for node_ptr etc.,
+; Since parsing the directive can recursively invoke the parser with new values for name_ptr etc.,
 ; save the current values to the stack first. The parsers invoked after this point should NOT use these values.
 ; A = the directive
 ; TODO: make sure there's enough room on the stack; detect parses that recurse too deeply.
@@ -141,14 +141,14 @@ parse_argument_type_vectors:
 ; Make sure NT_VAR is the first typed directive
 .assert NT_VAR = $10, error
 
-; Number of bytes of parser state to save, starting with node_ptr
+; Number of bytes of parser state to save, starting with name_ptr
 PARSER_STATE_BYTES = 8
 
 parse_directive:
         tay                             ; Keep in Y while using A to save state
         ldx     #(256 - PARSER_STATE_BYTES)     ; After PARSER_STATE_BYTES increments, X will wrap around to 0
 @push_next:
-        lda     node_ptr + PARSER_STATE_BYTES,x ; Push the parser state
+        lda     name_ptr + PARSER_STATE_BYTES,x ; Push the parser state
         pha                             ; First iteration, adding PARSER_STATE_BYTES + X = 256,
         inx                             ; wraps around to record_ptr
         bne     @push_next
@@ -169,7 +169,7 @@ parse_directive:
 @pop_next:
         pla
         dex                             ; Decrement to write index; sets Z flag it's zero
-        sta     node_ptr,x
+        sta     name_ptr,x
         bne     @pop_next
         rts
 

@@ -17,10 +17,10 @@ evaluate_expression:
         jsr     find_or_add_variable
         bcs     @error
         ldy     #1                      ; Start with high byte of value
-        lda     (node_ptr),y
+        lda     (name_ptr),y
         tax
         dey
-        lda     (node_ptr),y
+        lda     (name_ptr),y
         clc                             ; Success
 @error:
         rts

@@ -44,8 +44,8 @@ DE = D
 ; name.s
 .global find_name
 .global match_name
-.global advance_node_ptr
-.global rebase_node_ptr
+.global advance_name_ptr
+.global rebase_name_ptr
 .global find_or_add_variable
 .global add_variable
 
