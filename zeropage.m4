@@ -74,11 +74,11 @@ byte(line_pos)
 comment The line number sought by find_line
 word(line_number, int)
 
-comment Pointer to current list node
-word(node_ptr, char*)
+comment Pointer to current name table entry
+word(name_ptr, char*)
 
-comment Pointer to the next list node
-word(next_node_ptr, char*)
+comment Pointer to the next name table entry
+word(next_name_ptr, char*)
 
 comment Pointer to name terminated with a character with the high bit set
 word(match_ptr, const char*)
@@ -86,8 +86,8 @@ word(match_ptr, const char*)
 comment Length of the name referred to by match_ptr
 byte(match_length)
 
-comment Index of node
-byte(node_index)
+comment Index of name in name table
+byte(name_index)
 
 comment Pointer to a variable within the variable value set by a statement like LET, INPUT, and READ
 word(variable_ptr, void*)

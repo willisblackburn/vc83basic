@@ -111,8 +111,9 @@ void list_statement(void);
 void list_directive(/* A */ char directive);
 
 // name.s
-char find_name(/* AX */ const char* node_ptr);
-void advance_node_ptr(void);
+char find_name(/* AX */ const char* name_ptr);
+void initialize_name_ptr(void* name_ptr);
+void advance_name_ptr(void);
 void add_variable(size_t data_size);
 
 // parser.s
