@@ -143,6 +143,6 @@
 :
         pla
         dex                             ; Decrement to save index; sets Z flag it's zero
-        sta     node_ptr,x
+        sta     name_ptr,x
         bne     :-
 .endmacro
