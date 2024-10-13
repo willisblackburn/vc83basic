@@ -88,7 +88,7 @@ void add_variable(size_t data_size);
 int read_number(void);
 char char_to_digit(/* A */ char c);
 void parse_line(void);
-void parse_statement(/* AX */ const char* name_ptr);
+void parse_statement(/* AX */ const char* match_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_argument_separator(void);
