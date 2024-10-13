@@ -105,13 +105,13 @@ list_tokenized_name:
         dec     node_index
         bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
 @not_found:
-        mvax    node_ptr, name_ptr      ; Copy into name_ptr
+        mvax    node_ptr, match_ptr     ; Copy into match_ptr
 
 ; Fall through
 
 ; Outputs a name.
 ; Does NOT add whitespace; callers must add (or not).
-; name_ptr = pointer to the start of the name (note name_length is not required)
+; match_ptr = pointer to the start of the name (note match_length is not required)
 ; On return, Y will be set to the length of the name.
 
 list_name:
@@ -119,13 +119,13 @@ list_name:
 @next:
         iny
         bne     @not_initial_alpha
-        lda     (name_ptr),y            ; Check first character of name to see if we need to add whitespace
+        lda     (match_ptr),y           ; Check first character of name to see if we need to add whitespace
         and     #$7F                    ; Clear high bit if it's set
         cmp     #'A'
         bcc     @not_initial_alpha
         jsr     add_whitespace
 @not_initial_alpha:
-        lda     (name_ptr),y
+        lda     (match_ptr),y
         bmi     @last
         jsr     append_buffer
         bne     @next
@@ -202,7 +202,7 @@ list_expression:
         jmp     decode_expression
 
 list_variable:
-        jsr     decode_name             ; Set up name_ptr
+        jsr     decode_name             ; Set up match_ptr
         jmp     list_name
 
 loop_list_repeated_variable:
