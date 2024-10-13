@@ -44,14 +44,14 @@ void test_advance_node_ptr(void) {
 }
 
 void call_parse_name(const char* name) {
-    // Parse given name to set name_ptr and high bit on final character.
-    // Also sets name_length, which would normally be set in decode_name.
+    // Parse given name to set match_ptr and high bit on final character.
+    // Also sets match_length, which would normally be set in decode_name.
     strcpy(buffer, name);
     buffer_pos = 0;
     line_pos = 0;
     parse_name();
     ASSERT_EQ(err, 0);
-    name_length = strlen(name);
+    match_length = strlen(name);
 }
 
 void call_find_name(const char* name, const char* name_table, char expect_index,
@@ -126,7 +126,7 @@ void test_add_variable(void) {
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
 
     // add_variable is used after find_name, which sets up node_ptr.
-    // The call_find_name_fail function sets name_ptr.
+    // The call_find_name_fail function sets match_ptr.
     call_find_name_fail("X", variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
     add_variable(2);
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));

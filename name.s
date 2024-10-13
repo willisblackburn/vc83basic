@@ -5,7 +5,7 @@
 ; Each name table node consists of a length (one byte if in the range 0-127, otherwise two bytes, high byte first),
 ; followed by a name, followed by any number of extra data bytes. The last byte of the name must have bit 7 set.
 ; AX = pointer to the first node in the name table; saved into next_node_ptr
-; name_ptr = pointer to the name to match
+; match_ptr = pointer to the name to match
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On match, updates node_ptr to point to the data following matched name, and returns the index of the matched name
 ; in A.
@@ -26,7 +26,7 @@ find_name:
         rts
 
 ; Matches a name found in the input buffer with characters from the name table node.
-; name_ptr = pointer to the name to match
+; match_ptr = pointer to the name to match
 ; node_ptr = pointer to the name within the name table node that we're going to match
 ; Returns carry clear if the sequence matched. Y will be left set to the length of the matched name.
 ; Returns carry set if no match.
@@ -37,13 +37,13 @@ match_name:
 @next:
         lda     (node_ptr),y            ; Load next byte from name table node
         bmi     @last                   ; This is the last character
-        cmp     (name_ptr),y            ; Compare to the source name
+        cmp     (match_ptr),y           ; Compare to the source name
         bne     @no_match               ; If not match then fail; if we get past this point then we're still matching
         iny
         bne     @next
 
 @last:
-        cmp     (name_ptr),y            ; One last compare
+        cmp     (match_ptr),y           ; One last compare
         bne     @no_match
         iny                             ; Account for matching last character
         clc                             ; Signal success
@@ -99,8 +99,8 @@ advance_rebase_node_ptr_done:
         rts
 
 ; Finds a variable, or adds it.
-; name_ptr = pointer to the variable name
-; name_length = the length of the variable
+; match_ptr = pointer to the variable name
+; match_length = the length of the variable
 ; Returns carry clear if find_name or add_variable succeeded, or carry set on error.
 
 find_or_add_variable:
@@ -115,7 +115,7 @@ find_or_add_variable:
 ; Fall through
 
 ; Extends the variable name table by adding a new name.
-; The new name consists of the characters defined by name_ptr and name_length. These are both set in decode_name.
+; The new name consists of the characters defined by match_ptr and match_length. These are both set in decode_name.
 ; The name must already end in a character with the high bit set.
 ; AX = the number of data bytes to allocate after the name
 ; node_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
@@ -126,7 +126,7 @@ add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
         ldy     node_index              ; Check if too many variables already
         bmi     @error                  ; variable_count >= 128
-        adc     name_length             ; Add name_length plus 1 (carry) to get total size to allocate
+        adc     match_length            ; Add match_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Park length low byte in B
         bcc     @skip_inx               ; No carry; don't need to increment high byte
         inx
@@ -166,7 +166,7 @@ add_variable:
         jsr     rebase_node_ptr         ; Add Y to node_ptr
         ldy     #0                      ; Start copying name at offset 0
 @copy_next_character:
-        lda     (name_ptr),y            ; Get name character
+        lda     (match_ptr),y           ; Get name character
         sta     (node_ptr),y            ; Store into name table
         bmi     @copy_last
         iny
