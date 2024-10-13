@@ -42,7 +42,7 @@ evaluate_variable:
         txa                             ; Use as low byte of copy address
         ldx     #>primary_stack         ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
-        ldax    node_ptr                ; Copy from variable data
+        ldax    name_ptr                ; Copy from variable data
         ldy     #.sizeof(Float)
         jsr     copy_y_from
         clc                             ; Signal success
