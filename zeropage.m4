@@ -90,11 +90,11 @@ word(node_ptr, char*)
 comment Pointer to the next list node
 word(next_node_ptr, char*)
 
-comment Pointer to current name table entry
-word(name_ptr, char*)
+comment Pointer to name terminated with a character with the high bit set
+word(match_ptr, char*)
 
-comment Length of the name referred to by name_ptr
-byte(name_length)
+comment Length of the name referred to by match_ptr
+byte(match_length)
 
 comment Index of node
 byte(node_index)

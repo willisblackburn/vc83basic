@@ -147,7 +147,7 @@ parse_directive:
 
 parse_variable:
         jsr     parse_name              ; Parse the variable name
-        cpy     #<(name_rules_op - name_rules)  ; Make sure it was a name not an operator
+        cpy     #<(name_pattern_op - name_pattern)  ; Make sure it was a name not an operator
         rts                             ; CPY sets carry correctly for return
 
 ; Parses a series of names separated by commas.
@@ -345,9 +345,9 @@ parse_tokenized_name:
         jsr     initialize_node_ptr
 parse_tokenized_name_2:
         ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
-        jsr     parse_name              ; Go parse the name; name_ptr set on return
+        jsr     parse_name              ; Go parse the name; match_ptr set on return
         bcs     @error
-        mva     name_ptr, line_pos      ; Prepare to overwrite name in line_buffer (referenced by name_ptr) with token
+        mva     match_ptr, line_pos     ; Prepare to overwrite name in line_buffer (referenced by match_ptr) with token
         jsr     find_name_2             ; Try to find the name in the name table
         bcs     @error                  ; Not valid
         tay                             ; Need A again
@@ -359,29 +359,29 @@ parse_tokenized_name_2:
         plsta   buffer_pos              ; Restore buffer_pos
         rts                             ; Return with carry set
 
-name_rules:
-        .byte   'A', 26, <(name_rules_identifier - name_rules)
-        .byte   '&', 10, <(name_rules_op - name_rules)
-        .byte   '<',  3, <(name_rules_relational - name_rules)
+name_pattern:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '&', 10, <(name_pattern_op - name_pattern)
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
         .byte   NAME_ERROR
-name_rules_identifier:
-        .byte   'A', 26, <(name_rules_identifier - name_rules)
-        .byte   '0', 10, <(name_rules_identifier - name_rules)
-        .byte   '_',  1, <(name_rules_identifier - name_rules)
+name_pattern_identifier:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
+        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
         .byte   NAME_OK
-name_rules_op:
+name_pattern_op:
         .byte   NAME_OK
-name_rules_relational:
-        .byte   '<',  3, <(name_rules_relational - name_rules)
+name_pattern_relational:
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
         .byte   NAME_OK
 
-; Parses a name from buffer, starting at buffer_pos.
-; Copies the name into line_buffer, sets the high bit on the last character, and sets name_ptr. 
-; Returns carry clear if there was a name at buffer_pos.
-; Returns carry set if the character at buffer_pos doesn't start a name. The state machine is set up so we only fail
+; Parses characters from buffer that match a pattern, starting at buffer_pos.
+; Copies the text into line_buffer, sets the high bit on the last character, and sets match_ptr. 
+; Returns carry clear if there was a match at buffer_pos.
+; Returns carry set if the character at buffer_pos didn't match. The patterns are set up so we only fail
 ; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
-; non-name character just marks the end of the name.
-; On return, Y will be left pointing to the rule that ended the parse, so a caller can check which rule it was.
+; non-matching character just marks the end of the match.
+; On return, Y will be left pointing to the state that ended the parse, so a caller can check which one it was.
 ; BC SAFE, DE SAFE
 
 ; buffer must be page-aligned
@@ -391,30 +391,30 @@ name_rules_relational:
 .assert NAME_ERROR = $81, error
 
 parse_name:
-        mva     line_pos, name_ptr      ; Initialize name_ptr to the write position in line_buffer
-        mva     #>line_buffer, name_ptr+1   ; High byte of buffer address into name_ptr
+        mva     line_pos, match_ptr     ; Initialize match_ptr to the write position in line_buffer
+        mva     #>line_buffer, match_ptr+1  ; High byte of buffer address into match_ptr
         jsr     skip_whitespace
         ldy     #$FD                    ; Y=0 after three INY
-@next_rule:
+@next_state:
         iny                             ; Move to next state
         iny
         iny
-@next_state:
-        lda     name_rules,y            ; Check if first byte of rule has high bit set
+@match:
+        lda     name_pattern,y          ; Check if first byte has high bit set
         bmi     @terminal               ; If so then treat it like matching a terminal state
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x
         sec                             ; Set carry for subtract
-        sbc     name_rules,y            ; Subtract lower bound
-        cmp     name_rules+1,y          ; Compare with upper bound
-        bcs     @next_rule              ; Character does not match this rule; continue
-        lda     name_rules+2,y          ; Load next state
+        sbc     name_pattern,y          ; Subtract lower bound
+        cmp     name_pattern+1,y        ; Compare with upper bound
+        bcs     @next_state             ; Character does not match this state; continue
+        lda     name_pattern+2,y        ; Load next state
         bmi     @terminal
         tay                             ; Next state into Y
         lda     buffer,x
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
-        bne     @next_state
+        bne     @match
 
 @terminal:
         lsr     A                       ; Shift bit 0 into carry flag for return
