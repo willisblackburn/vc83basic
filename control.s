@@ -93,7 +93,7 @@ exec_for:
         sta     primary_stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
-        mvax    node_ptr, variable_ptr
+        mvax    name_ptr, variable_ptr
         jsr     evaluate_expression     ; Start value (may clobber match_ptr)
         jsr     pop_value
         jsr     assign_variable         ; Assign starting value
@@ -118,11 +118,11 @@ exec_next:
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         beq     @error                  ; If so then fail
         sec                             ; Set carry in case this next check fails
-        lda     primary_stack+Control::variable_name_ptr,x  ; Point node_ptr to name at top of control stack
-        sta     node_ptr
+        lda     primary_stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
+        sta     name_ptr
         lda     primary_stack+Control::variable_name_ptr+1,x
         beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
-        sta     node_ptr+1
+        sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
         jsr     find_or_add_variable    ; Should not fail since variable is already initialized from FOR
@@ -131,13 +131,13 @@ exec_next:
         ldy     #0                      ; Use Y to index variable value
         clc
         lda     primary_stack+Control::step_value,x   ; Get low byte of step value
-        adc     (node_ptr),y            ; Add to variable value
-        sta     (node_ptr),y            ; Store back
+        adc     (name_ptr),y            ; Add to variable value
+        sta     (name_ptr),y            ; Store back
         sta     C                       ; Store in C also, to use in comparison
         iny                             ; Increment to add high byte
         lda     primary_stack+Control::step_value+1,x 
-        adc     (node_ptr),y
-        sta     (node_ptr),y
+        adc     (name_ptr),y
+        sta     (name_ptr),y
         cmp     primary_stack+Control::end_value+1,x    ; Compare high byte to end value
         bcc     @return_to_for          ; Value high byte < end, keep going
         bne     exec_pop                ; Value high byte > end, stop
