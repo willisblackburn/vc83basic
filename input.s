@@ -14,7 +14,7 @@ exec_input:
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
         bcs     @error
-        mvax    node_ptr, variable_ptr
+        mvax    name_ptr, variable_ptr
         jsr     read_number             ; Returns value in AX
         jsr     assign_variable
         ldy     line_pos                ; Peek at the next byte
