@@ -1,14 +1,14 @@
 #include "test.h"
 
 void call_parse_name(const char* name) {
-    // Parse given name to set name_ptr and high bit on final character.
-    // Also sets name_length, which would normally be set in decode_name.
+    // Parse given name to set match_ptr and high bit on final character.
+    // Also sets match_length, which would normally be set in decode_name.
     strcpy(buffer, name);
     buffer_pos = 0;
     line_pos = 0;
     parse_name();
     ASSERT_EQ(err, 0);
-    name_length = strlen(name);
+    match_length = strlen(name);
 }
 
 void test_evaluate_expression(void) {

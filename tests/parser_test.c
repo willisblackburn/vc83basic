@@ -8,7 +8,7 @@ void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line
     line_pos = offsetof(Line, data);
     parse_name();
     ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(name_ptr, line_buffer.data);
+    ASSERT_PTR_EQ(match_ptr, line_buffer.data);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
 }
