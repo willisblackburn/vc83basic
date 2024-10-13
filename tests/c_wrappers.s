@@ -102,9 +102,9 @@ _find_name:
         jsr     find_name
         jmp     set_err
 
-_advance_node_ptr:
-.export _advance_node_ptr
-        jsr     advance_node_ptr
+_advance_name_ptr:
+.export _advance_name_ptr
+        jsr     advance_name_ptr
         jmp     set_err
 
 _add_variable:
