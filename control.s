@@ -87,16 +87,16 @@ exec_return:
 exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
-        jsr     decode_name             ; Get the name (now in name_ptr)
+        jsr     decode_name             ; Get the name (now in match_ptr)
         ldx     psp                     ; Get stack pointer to store name
-        lda     name_ptr                ; Store pointer to variable name
+        lda     match_ptr               ; Store pointer to variable name
         sta     primary_stack+Control::variable_name_ptr,x
-        lda     name_ptr+1
+        lda     match_ptr+1
         sta     primary_stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
         mvax    node_ptr, variable_ptr
-        jsr     evaluate_expression     ; Start value (may clobber name_ptr)
+        jsr     evaluate_expression     ; Start value (may clobber match_ptr)
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
         jsr     pop_fp0                 ; Get the evaluated value
@@ -119,7 +119,7 @@ exec_for:
 ; NEXT statement:
 
 exec_next:
-        jsr     evaluate_variable       ; Evaluates the variable after next; sets name_ptr
+        jsr     evaluate_variable       ; Evaluates the variable after next; sets match_ptr
         bcs     @error
         mvax    node_ptr, variable_ptr  ; Set up target for assign_variable later
         jsr     pop_fp0                 ; Variable value is now in FP0
