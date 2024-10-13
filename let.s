@@ -8,10 +8,10 @@ exec_let:
         jsr     find_or_add_variable
         bcs     @error
 
-; At this point node_ptr will be pointing to the variable data.
-; Store it in variable_ptr because we might need node_ptr when parsing the right hand value.
+; At this point name_ptr will be pointing to the variable data.
+; Store it in variable_ptr because we might need name_ptr when parsing the right hand value.
 
-        mvax    node_ptr, variable_ptr
+        mvax    name_ptr, variable_ptr
         jsr     evaluate_expression     ; Value is in AX
         jmp     assign_variable
 
