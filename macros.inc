@@ -165,6 +165,6 @@
 :
         pla
         dex                             ; Decrement to save index; sets Z flag it's zero
-        sta     name_ptr,x
+        sta     address,x
         bne     :-
 .endmacro
