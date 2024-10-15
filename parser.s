@@ -147,12 +147,7 @@ PARSER_STATE_BYTES = 8
 
 parse_directive:
         tay                             ; Keep in Y while using A to save state
-        ldx     #(256 - PARSER_STATE_BYTES)     ; After PARSER_STATE_BYTES increments, X will wrap around to 0
-@push_next:
-        lda     name_ptr + PARSER_STATE_BYTES,x ; Push the parser state
-        pha                             ; First iteration, adding PARSER_STATE_BYTES + X = 256,
-        inx                             ; wraps around to record_ptr
-        bne     @push_next
+        phzp    name_ptr, PARSER_STATE_BYTES
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
@@ -166,12 +161,7 @@ parse_directive:
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 @pop_parser_state:
-        ldx     #PARSER_STATE_BYTES     ; Pop the parser state
-@pop_next:
-        pla
-        dex                             ; Decrement to write index; sets Z flag it's zero
-        sta     name_ptr,x
-        bne     @pop_next
+        plzp    name_ptr, PARSER_STATE_BYTES
         rts
 
 ; Parses and tokenizes a expression.
