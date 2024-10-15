@@ -124,3 +124,25 @@
         tay
         pla
 .endmacro
+
+; Pushes `size` bytes from zero page onto the stack starting at `address`.
+
+.macro phzp address, size
+        ldx     #(256 - size)           ; After size increments, X will wrap around to 0
+:
+        lda     address + size,x        ; Load ZP value
+        pha                             ; First iteration, adding size + X = 256, wraps around to address
+        inx
+        bne     :-
+.endmacro
+
+; Pulls `size` bytes from the stack into zero page starting at `address`.
+
+.macro plzp address, size
+        ldx     #size                   ; Pop size bytes
+:
+        pla
+        dex                             ; Decrement to save index; sets Z flag it's zero
+        sta     address,x
+        bne     :-
+.endmacro
