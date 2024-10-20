@@ -10,11 +10,6 @@ def(NT_VAR,             hex(10))
 def(NT_RPT_VAR,         hex(11))
 def(NT_STOP,            hex(80))
 
-comment Tokenized form constants
-
-def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_NUM,          hex(01))
-
 comment Statement tokens
 
 def(ST_RUN,             0)
@@ -25,5 +20,3 @@ def(ST_INPUT,           3)
 comment Other constants
 
 def(BUFFER_SIZE, 256)
-def(NAME_OK, hex(80))
-def(NAME_ERROR, hex(81))

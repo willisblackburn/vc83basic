@@ -60,7 +60,6 @@ void decode_name(void);
 char decode_byte(void);
 
 // encode.s
-void encode_number(/* AX */ int number);
 void encode_byte(/* A */ char value);
 
 // expression.s
@@ -72,14 +71,13 @@ void advance_name_ptr(void);
 void add_variable(size_t data_size);
 
 // parser.s
-int read_number(void);
-char char_to_digit(/* A */ char c);
 void parse_line(void);
 void parse_statement(/* AX */ const char* match_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_argument_separator(void);
 void parse_name(void);
+void parse_number(void);
 
 // program.s
 void initialize_target(void);
@@ -99,6 +97,8 @@ int mul2(/* AX */ int value);
 int mul10(/* AX */ int value);
 int div10(/* AX */ int value);
 int invoke_indexed_vector(/* AX */ void* vectors, /* Y */ char index);
+int read_number(const char* ptr, char pos);
+char char_to_digit(/* A */ char c);
 void format_number(/* AX */ int number);
 
 // Common functions and definitions used in tests
