@@ -29,7 +29,6 @@ DE = D
 .global decode_byte
 
 ; encode.s
-.global encode_number
 .global encode_byte
 
 ; expression.s
@@ -50,12 +49,12 @@ DE = D
 .global add_variable
 
 ; parser.s
-.global read_number, char_to_digit
 .global parse_line
 .global parse_statement
 .global parse_directive
 .global parse_expression
 .global parse_name
+.global parse_number
 .global skip_whitespace
 
 ; print.s
@@ -84,6 +83,7 @@ DE = D
 .global clear_memory, clear_memory_size
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
+.global read_number, char_to_digit
 .global format_number
 
 ; target/*

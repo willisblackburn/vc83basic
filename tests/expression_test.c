@@ -14,7 +14,7 @@ void call_parse_name(const char* name) {
 void test_evaluate_expression(void) {
     int value;
 
-    const char line_data_1[] = { TOKEN_NUM, 0x0A, 0x02 };
+    const char line_data_1[] = { '5', '2', '2', 0 };
     const char line_data_2[] = { 'X', 'Y' | NT_STOP };
     const char line_data_3[] = { 'D', 'A', 'T', 'A' | NT_STOP };
 

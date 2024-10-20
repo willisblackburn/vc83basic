@@ -6,20 +6,6 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
-; Encodes a number.
-; AX = the number to encode
-; Y SAFE, DE SAFE
-
-encode_number:
-        stax    BC
-        lda     #TOKEN_NUM
-        jsr     encode
-        lda     B
-        jsr     encode
-        lda     C
-        jsr     encode
-        rts     
-
 ; Encodes a single byte.
 ; A = the byte to encode
 ; Y SAFE, BC SAFE, DE SAFE

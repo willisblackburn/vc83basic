@@ -9,10 +9,6 @@ comment Name table definitions
 def(NT_VAR,             hex(10))
 def(NT_STOP,            hex(80))
 
-comment Tokenized form constants
-
-def(TOKEN_NUM,          hex(01))
-
 comment Statement tokens
 
 def(ST_RUN,             0)
@@ -22,5 +18,3 @@ def(ST_LET,             2)
 comment Other constants
 
 def(BUFFER_SIZE, 256)
-def(NAME_OK, hex(80))
-def(NAME_ERROR, hex(81))
