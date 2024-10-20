@@ -7,15 +7,12 @@
 ; Decodes a number and returns it in AX.
 
 decode_number:
-        inc     line_pos                ; Advance past number marker token
-        inc     line_pos                ; Increment read position to high byte 
-        ldy     line_pos                ; Load position of high byte into Y
-        inc     line_pos                ; Increment read one position again
-        lda     (line_ptr),y            ; Load the high byte of the number
-        tax                             ; Move into X
-        dey                             ; Decrement Y
-        lda     (line_ptr),y            ; Get the low byte of the number into A
-        rts     
+        ldax    line_ptr
+        ldy     line_pos
+        jsr     read_number             ; May fail with carry set
+        iny                             ; Skip over the 0 that terminated the number
+        sty     line_pos                ; Update line_pos
+        rts
 
 ; Decodes a variable name and set up match_ptr and match_length.
 

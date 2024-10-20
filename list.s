@@ -159,7 +159,7 @@ list_directive:
 list_argument_list:
         and     #$07                    ; Isolate the count
         sta     argument_count          ; Re-use argument_count from parser module
-        jsr     decode_byte             ; Check if the next argument is TOKEN_NO_VALUE
+        jsr     decode_byte             ; Check if the next argument is 0
         beq     @no_value               ; If so then don't list
 @next_argument:
         dec     line_pos                ; Back up
@@ -167,7 +167,7 @@ list_argument_list:
 @no_value:
         dec     argument_count          ; Done with one argument
         beq     @done                   ; Finish if no more
-        jsr     decode_byte             ; Check if next argument is TOKEN_NO_VALUE
+        jsr     decode_byte             ; Check if next argument is 0
         beq     @no_value               
         lda     #','                    ; Output argument separator
         jsr     append_buffer
@@ -179,8 +179,8 @@ list_argument_list:
 list_expression:
         ldy     line_pos
         lda     (line_ptr),y            ; Peek at the next byte
-        cmp     #TOKEN_NUM
-        bne     list_variable           ; It's a variable
+        cmp     #'A'                    ; Does it look like a name?
+        bcs     list_variable           ; It's a variable
         jsr     add_whitespace
         jsr     decode_number           ; It must be a number; decode it (return value in AX)
         jmp     format_number           ; Send it right to format_number
@@ -189,8 +189,6 @@ list_variable:
         jsr     decode_name             ; Set up match_ptr
         jmp     list_name
 
-.assert TOKEN_NO_VALUE = 0, error
-
 loop_list_repeated_variable:
         lda     #','                    ; Write ',' to output
         jsr     append_buffer
@@ -198,8 +196,8 @@ list_repeated_variable:
         jsr     list_variable           ; List one variable
         ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
-        bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
-        inc     line_pos                ; Skip over TOKEN_NO_VALUE
+        bne     loop_list_repeated_variable ; Not 0 so keep going
+        inc     line_pos                ; Skip over 0
         clc                             ; Signal success
         rts
 

@@ -6,8 +6,8 @@
 evaluate_expression:
         ldy     line_pos
         lda     (line_ptr),y            ; Peek at the next byte
-        cmp     #TOKEN_NUM
-        bne     @variable               ; It's a variable
+        cmp     #'A'                    ; Does it look like a name?
+        bcs     @variable               ; Yep
         jsr     decode_number           ; Decode a number instead
         clc
         rts

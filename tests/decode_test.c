@@ -22,7 +22,7 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     int value;
-    const char line_data[] = {  TOKEN_NUM, 0, 0, TOKEN_NUM, 0, 1, TOKEN_NUM, 1, 3 };
+    const char line_data[] = { '0', 0, '2', '5', '6', 0, '7', '6', '9', 0 };
 
     PRINT_TEST_NAME();
 
