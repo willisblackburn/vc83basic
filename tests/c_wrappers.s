@@ -75,11 +75,6 @@ _decode_byte:
 
 ; encode.s
 
-_encode_number:
-.export _encode_number
-        jsr     encode_number
-        jmp     set_err
-
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
@@ -148,17 +143,6 @@ _add_variable:
 
 ; parser.s
 
-_read_number:
-.export _read_number
-        sta     buffer_pos              ; Buffer index
-        jsr     read_number
-        jmp     set_err
-
-_char_to_digit:
-.export _char_to_digit
-        jsr     char_to_digit
-        jmp     set_err
-
 _parse_line:
 .export _parse_line
         jsr     parse_line
@@ -187,6 +171,11 @@ _parse_argument_separator:
 _parse_name:
 .export _parse_name
         jsr     parse_name
+        jmp     set_err
+
+_parse_number:
+.export _parse_number
+        jsr     parse_number
         jmp     set_err
 
 ; program.s
@@ -269,6 +258,20 @@ _invoke_indexed_vector:
         jsr     popax                   ; Address of vector array
         ldy     B      
         jmp     invoke_indexed_vector
+
+_read_number:
+.export _read_number
+        sta     B                       ; Have to shuffle pos to Y
+        jsr     popax                   ; Address of ptr
+        ldy     B      
+        jsr     read_number
+        sty     _Y
+        jmp     set_err
+
+_char_to_digit:
+.export _char_to_digit
+        jsr     char_to_digit
+        jmp     set_err
 
 _format_number:
 .export _format_number

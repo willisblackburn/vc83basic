@@ -6,23 +6,10 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
-; Encodes a number.
-; AX = the number to encode
-; Y SAFE, DE SAFE
+; Encodes zero, which terminates a number, repeated list, or subexpression.
 
-encode_number:
-        stax    BC
-        lda     #TOKEN_NUM
-        jsr     encode
-        lda     B
-        jsr     encode
-        lda     C
-        jmp     encode_byte
-
-; Encodes the TOKEN_NO_VALUE token
-
-encode_no_value:
-        lda     #TOKEN_NO_VALUE
+encode_zero:
+        lda     #0
 
 ; Fall through
 
