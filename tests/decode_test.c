@@ -114,7 +114,7 @@ void* decode_xh_vectors[] = {
 
 void test_decode_expression(void) {
 
-    // 41112+(X/3)*-X
+    // 4112+(X/3)*-X
     const char line_data[] = {
         '4', '1', '1', '2', 0,
         TOKEN_OP | OP_ADD,        
