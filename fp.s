@@ -293,6 +293,7 @@ div10_significand:
 
 ; Accepts a 16-bit int in AX and converts it into a float in FP0.
 ; AX = the input value
+; DE SAFE
 
 int_to_fp:
         sta     FP0t+2                  ; Low byte
@@ -602,30 +603,31 @@ output_y_zeros:
 @done:
         rts
 
-; Converts a string in bufer into an FP number in FP0.
+; Converts a string from the buffer into an FP number in FP0.
 ; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
 ; The caller should skip whitespace (if necessary) before calling this function.
-; buffer_pos = the read position in buffer
-; Returns the number in FP0 and carry clear if ok, carry set if error.
+; AX = the buffer address (stored in src_ptr)
+; Y = the starting offset
+; Returns the number in FP0 and the last read position in Y, carry clear if ok, carry set if error.
 
 string_to_fp:
+        stax    src_ptr                 ; Store src_ptr
+        sty     E                       ; Save starting position in E        
         jsr     clear_fp0               ; Reset to zero (including sign)
-        ldy     #$80                    ; Y counts digits after '.'; starts at -128 and jumps to 0 on '.'
-        mvx     buffer_pos, B                   ; Temporarily keep read position in B
-        lda     buffer,x
+        mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
+        lda     (src_ptr),y
         cmp     #'-'                    ; Check if it's negative
         bne     @not_negative
         ror     FP0s                    ; If equal then carry will have been set; roll into sign
 @next_character:
-        inc     B                       ; Skip past negative sign
+        iny                             ; Skip past negative sign
 @not_negative:
-        ldx     B
-        lda     buffer,x                ; Get the next character
+        lda     (src_ptr),y             ; Get the next character
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
-        tya                             ; Check if we've already seen a decimal
+        lda     D                       ; Check if we've already seen a decimal
         bpl     @err_multiple_decimals
-        ldy     #0                      ; Set Y to 0 to count digits after '.'
+        mva     #0, D                   ; Set D to 0 to count digits after '.'
         beq     @next_character         ; Unconditional
 
 @not_decimal_point:
@@ -644,7 +646,7 @@ string_to_fp:
         jsr     mul10_significand
         pla                             ; Recover digit from stack (does not affect carry)
         bcs     @err_overflow
-        iny                             ; Increment digits after '.'
+        inc     D                       ; Increment digits after '.'
         adc     FP0t                    ; Add digit to LSB (carry will be clear)
         sta     FP0t
         bcc     @next_character         ; If no carry then next character
@@ -658,21 +660,22 @@ string_to_fp:
 @err_multiple_decimals:
 @err_overflow:
 @err_not_digit:
+        ldy     E                       ; Reset position to start for return
         sec                             ; Signal error
         rts
 
 @not_digit:
-        cpy     #$80                    ; Has Y changed at all?
+        lda     D                       ; Has D changed at all?
+        cmp     #$80                    
         beq     @err_not_digit          ; No, so this is an error: we wanted a number and didn't find one
 
 ; There was at least one digit character followed by a non-digit character that isn't E, so treat this as
 ; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
-        stx     buffer_pos              ; X points to the first non-digit; update buffer_pos
-        sty     D                       ; Use D to keep track of how many digits after decimal
+        sty     E                       ; Y points to the first non-digit; save in E
         jsr     int32_to_fp
         lda     D                       ; Test number of digits
-        bmi     @whole                  ; If Y is negative or zero then no decimal point or no digits after it
+        bmi     @whole                  ; If negative or zero then no decimal point or no digits after it
         beq     @whole
         lday    #fp_temp
         jsr     store_fp0               ; Hold FP0 result in fp_temp
@@ -685,7 +688,7 @@ string_to_fp:
         lday    #fp_ten
         jsr     load_fpx                ; Set FP1 to 10
         jsr     fmul                    ; Multiply FP0 by 10
-        jmp     @scale_divisor          ; Do it again until D is 0
+        jmp     @scale_divisor          ; Do it again until E is 0
 
 @scale:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
@@ -694,6 +697,7 @@ string_to_fp:
         jmp     fdiv                    ; Divide
 
 @whole:
+        ldy     E                       ; Return buffer read position in Y
         clc                             ; Signal success
         rts
 

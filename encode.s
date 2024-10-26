@@ -12,26 +12,10 @@ MAX_LINE_LENGTH = 240
 ; Make sure Line didn't get too big
 .assert .sizeof(Line) < 256 - MAX_LINE_LENGTH, error
 
-; Encodes a number.
-; FP0 = the number to encode
-; BC SAFE, DE SAFE
+; Encodes zero, which terminates a number, repeated list, or subexpression.
 
-encode_number:
-        lda     #TOKEN_NUM
-        jsr     encode
-        lda     line_pos
-        cmp     #MAX_LINE_LENGTH-.sizeof(Float) ; Check if enough space for Float
-        bcs     @error                  ; Nope; return with carry set
-        ldy     #>line_buffer           ; High byte of line_buffer in Y
-        jsr     store_fp0
-        jmp     advance_lp_sizeof_float
-@error:
-        rts
-
-; Encodes the TOKEN_NO_VALUE token
-
-encode_no_value:
-        lda     #TOKEN_NO_VALUE
+encode_zero:
+        lda     #0
 
 ; Fall through
 

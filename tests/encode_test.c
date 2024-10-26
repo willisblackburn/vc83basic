@@ -31,49 +31,8 @@ void test_encode_byte(void) {
     ASSERT_NE(err, 0);
 }
 
-void test_encode_number(void) {
-
-    const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0 };
-    const char line_data_2[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
-        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
-        TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128 };
-
-    PRINT_TEST_NAME();
-
-    SET_FPX(FP0, POSITIVE, 1, 0);
-    line_pos = offsetof(Line, data);
-    encode_number();
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + sizeof line_data_1);
-
-    // 100
-    SET_FPX(FP0, POSITIVE, 133, 0xC8000000);
-    line_pos = offsetof(Line, data);
-    encode_number();
-    ASSERT_EQ(err, 0);
-
-    // 4112
-    SET_FPX(FP0, POSITIVE, 139, 0x80800000);
-    encode_number();
-    ASSERT_EQ(err, 0);
-
-    // 3.14159
-    SET_FPX(FP0, POSITIVE, 128, 0xC90FCF81);
-    encode_number();
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + sizeof line_data_2);
-
-    // Encode at end of buffer should fail (doesn't matter what FP0 is)
-    line_pos = 252;
-    encode_number();
-    ASSERT_NE(err, 0);
-}
-
 int main(void) {
     initialize_target();
     test_encode_byte();
-    test_encode_number();
     return 0;
 }
