@@ -11,10 +11,10 @@ evaluate_expression:
         rts
 
 evaluate_vectors:
-        .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_operator-1         ; XH_OP
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_operator-1         ; XH_OP
         .word   evaluate_number-1           ; XH_NUM
+        .word   evaluate_variable-1         ; XH_VAR
         .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
@@ -56,6 +56,7 @@ evaluate_unary_operator:
         jmp     push_operator           ; Except push the operator onto the stack
 
 evaluate_paren:
+        inc     line_pos                ; Consume the '('
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
