@@ -9,20 +9,16 @@
 ; Returns carry clear on success, or carry set if either one of the handlers failed (returned carry set) or the
 ; function encountered an invalid expression token (which should not happen).
 
-.assert TOKEN_NO_VALUE = 0, error
-
-.assert XH_VAR = 0, error
+.assert XH_UNARY_OP = 0, error
 .assert XH_OP = 1, error
-.assert XH_UNARY_OP = 2, error
-.assert XH_NUM = 3, error
+.assert XH_NUM = 2, error
+.assert XH_VAR = 3, error
 .assert XH_PAREN = 4, error
 
 decode_expression:
         stax    decode_expression_vector_table_ptr  ; Store the value passed in AX as the vector table
         jmp     @start
 
-@inc_dispatch:
-        inc     line_pos
 @dispatch:
         ldax    decode_expression_vector_table_ptr  ; Remember what vector table we're using
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
@@ -31,45 +27,46 @@ decode_expression:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
         beq     @end                    ; If we're at the end of the expression then stop
-        ldy     #XH_VAR                 ; First handler is VAR
+        and     #$7F                    ; Clear high bit if set
         tax                             ; Store token in X for now
-        and     #$60                    ; Start of variable name
-        bne     @dispatch
-        iny
-        txa
-        and     #TOKEN_OP               ; Binary operator
-        bne     @dispatch
-        iny
-        txa
-        and     #TOKEN_UNARY_OP         ; Unary operator
-        bne     @dispatch
-        iny
-        cpx     #TOKEN_NUM              ; Number
+        sec                             ; Set carry for subtracts to follow
+        ldy     #XH_UNARY_OP            ; Unary operator
+        sbc     #TOKEN_UNARY_OP
+        cmp     #8
+        bcc     @dispatch
+        iny                             ; Binary operator
+        sbc     #(TOKEN_OP - TOKEN_UNARY_OP)
+        cmp     #16
+        bcc     @dispatch
+        iny                             ; Number
+        sbc     #('0' - TOKEN_OP)
+        cmp     #10
+        bcc     @dispatch
+        iny                             ; Variable
+        sbc     #('A' - '0')
+        cmp     #26
+        bcc     @dispatch
+        iny                             ; Subexpression start
+        cmp     #<('(' - 'A')
         beq     @dispatch
-        iny
-        cpx     #TOKEN_PAREN            ; Subexpression start
-        beq     @inc_dispatch
-        sec                             ; None of the above; set carry to indicate failure
+        sec                             ; None of the above; set carry to indicate failure (shouldn't happen...)
 @error:
         rts
 
 @end:
-        inc     line_pos                ; Consume final TOKEN_NO_VALUE
+        inc     line_pos                ; Consume terminating 0
         clc                             ; Success
         rts
 
 ; Decodes a number and returns it in AX.
 
 decode_number:
-        inc     line_pos                ; Advance past number marker token
-        inc     line_pos                ; Increment read position to high byte 
-        ldy     line_pos                ; Load position of high byte into Y
-        inc     line_pos                ; Increment read one position again
-        lda     (line_ptr),y            ; Load the high byte of the number
-        tax                             ; Move into X
-        dey                             ; Decrement Y
-        lda     (line_ptr),y            ; Get the low byte of the number into A
-        rts     
+        ldax    line_ptr
+        ldy     line_pos
+        jsr     read_number             ; May fail with carry set
+        iny                             ; Skip over the 0 that terminated the number
+        sty     line_pos                ; Update line_pos
+        rts
 
 ; Decodes a variable name and set up match_ptr and match_length.
 

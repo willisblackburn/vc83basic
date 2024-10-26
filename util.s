@@ -200,6 +200,49 @@ invoke_indexed_vector:
         pha
         rts                             ; RTS jumps to vector pushed on the stack
 
+; Reads a number from the buffer.
+; If the first character is not a digit, then return an error. Otherwise, read up to the first non-digit.
+; AX = the buffer address (stored in src_ptr)
+; Y = the starting offset
+; Returns the number in AX and the last read position in Y, carry clear if ok, carry set if error
+
+read_number:
+        stax    src_ptr                 ; Store src_ptr
+        sty     B                       ; Store starting position in B so we can read it later
+        lda     #0                      ; Intialize the value to 0
+        tax
+@next:
+        pha                             ; Save A (low byte of value)
+        lda     (src_ptr),y
+        jsr     char_to_digit           ; X SAFE function
+        sta     C                       ; Store the digit value
+        pla                             ; Retrieve the low byte of value
+        bcs     @finish                 ; If there was an error in char_to_digit, stop parsing
+        iny                             ; No error, increment read position
+        jsr     mul10                   ; Multiply the value by 10 (preserves Y)
+        clc
+        adc     C                       ; Add the digit value
+        bcc     @next                   ; If carry clear then next digit
+        inx                             ; Otherwise increment high byte
+        jmp     @next
+
+@finish:
+        cpy     B                       ; Did we parse anything?
+        beq     @error                  ; Nope
+        clc                             ; Clear carry to signal OK
+@error:
+        rts
+
+; Converts the character in A into a digit.
+; Returns the digit in A, carry clear if ok, carry set if error
+; X SAFE, Y SAFE
+
+char_to_digit:
+        sec                             ; Set carry
+        sbc     #'0'                    ; Subtract '0'; maps valid values to range 0-9 and other values to 10-255
+        cmp     #10                     ; Sets carry if it's in the 10-255 range
+        rts
+
 ; Formats a number into buffer. Does not perform any error checking. On exit, X points to the next write position
 ; in buffer (i.e., it is equal to buffer_pos).
 ; AX = the number to format

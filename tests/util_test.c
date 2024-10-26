@@ -195,6 +195,57 @@ void test_invoke_indexed_vector(void) {
     ASSERT_EQ(result, 31415);
 }
 
+void test_char_to_digit(void) {
+    char d;
+
+    PRINT_TEST_NAME();
+
+    d = char_to_digit('0');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(d, 0);
+    d = char_to_digit('9');
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(d, 9);
+    char_to_digit('0'-1);
+    ASSERT_NE(err, 0);
+    char_to_digit('9'+1);
+    ASSERT_NE(err, 0);
+    char_to_digit(' ');
+    ASSERT_NE(err, 0);
+    char_to_digit('A');
+    ASSERT_NE(err, 0);
+    char_to_digit(0);
+    ASSERT_NE(err, 0);
+    char_to_digit(255);
+    ASSERT_NE(err, 0);
+}
+
+void test_read_number(void) {
+    int number;
+
+    PRINT_TEST_NAME();
+
+    number = read_number("10 PRINT X", 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(number, 10);
+    ASSERT_EQ(Y, 2);
+
+    // The function should honor the current read position.
+    number = read_number("1020 PRINT X", 2);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(number, 20);
+    ASSERT_EQ(Y, 4);
+
+    // The function should return carry set if an invalid number.
+    read_number("invalid", 0);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(Y, 0);
+
+    read_number("", 0);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(Y, 0);
+}
+
 void call_format_number(int number, char set_buffer_pos) {
     buffer_pos = set_buffer_pos;
     format_number(number);
@@ -230,6 +281,8 @@ int main(void) {
     test_mul10();
     test_div10();
     test_invoke_indexed_vector();
+    test_char_to_digit();
+    test_read_number();
     test_format_number();
     return 0;
 }
