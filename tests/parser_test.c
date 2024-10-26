@@ -62,59 +62,44 @@ void test_parse_name(void) {
     ASSERT_EQ(buffer_pos, 0);
 }
 
-void test_char_to_digit(void) {
-    char d;
-
-    PRINT_TEST_NAME();
-
-    d = char_to_digit('0');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(d, 0);
-    d = char_to_digit('9');
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(d, 9);
-    char_to_digit('0'-1);
-    ASSERT_NE(err, 0);
-    char_to_digit('9'+1);
-    ASSERT_NE(err, 0);
-    char_to_digit(' ');
-    ASSERT_NE(err, 0);
-    char_to_digit('A');
-    ASSERT_NE(err, 0);
-    char_to_digit(0);
-    ASSERT_NE(err, 0);
-    char_to_digit(255);
-    ASSERT_NE(err, 0);
-}
-
-int call_read_number(const char* s, char set_buffer_pos) {
+void call_parse_number(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
+        char expect_buffer_pos, int line) {
+    fprintf(stderr, "  %s:%d: parse_number(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
     buffer_pos = set_buffer_pos;
-    return read_number();
+    line_pos = offsetof(Line, data);
+    parse_number();
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(match_ptr, line_buffer.data);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
 }
 
-void test_read_number(void) {
-    int number;
+void test_parse_number(void) {
+
+    const char number_10_line_data[] = { '1', '0' };
+    const char number_20_line_data[] = { '2', '0' };
+    const char printx_line_data[] = { 'P', 'R', 'I', 'N', 'T', 'X' | NT_STOP };
+    const char print10_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0' | NT_STOP };
+    const char print10x_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0', 'X' | NT_STOP };
 
     PRINT_TEST_NAME();
 
-    number = call_read_number("10 PRINT X", 0);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(number, 10);
-    ASSERT_EQ(buffer_pos, 2);
+    call_parse_number("10 PRINT X", 0, number_10_line_data, sizeof number_10_line_data, 2, __LINE__);
 
     // The function should honor the current read position.
-    number = call_read_number("1020 PRINT X", 2);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(number, 20);
-    ASSERT_EQ(buffer_pos, 4);
+    call_parse_number("1020 PRINT X", 2, number_20_line_data, sizeof number_20_line_data, 4, __LINE__);
 
     // The function should return carry set if an invalid number.
-    call_read_number("invalid", 0);
+    strcpy(buffer, "invalid");
+    buffer_pos = 0;
+    parse_number();
     ASSERT_NE(err, 0);
     ASSERT_EQ(buffer_pos, 0);
 
-    call_read_number("", 0);
+    strcpy(buffer, "");
+    buffer_pos = 0;
+    parse_number();
     ASSERT_NE(err, 0);
     ASSERT_EQ(buffer_pos, 0);
 }
@@ -135,12 +120,12 @@ void call_parse_expression(const char* s, const char* expect_line_data, size_t e
 
 void test_parse_expression(void) {
     
-    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
-    const char line_data_4[] = { TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
-        TOKEN_OP | OP_MUL, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_1[] = { '1', 0, 0 };
+    const char line_data_2[] = { 'X' | NT_STOP, 0 };
+    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_OP | OP_ADD, '1', 0, 0 };
+    const char line_data_4[] = { '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
+        TOKEN_OP | OP_MUL, 'Y' | NT_STOP, 0 };
+    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, 0 };
 
     PRINT_TEST_NAME();
 
@@ -199,13 +184,13 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 
 void test_parse_directive(void) {
 
-    const char line_data_1[] = { TOKEN_NUM, 0x01, 0x00, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_1[] = { '1', 0, 0 };
+    const char line_data_2[] = { 'X' | NT_STOP, 0 };
     const char line_data_3[] = { 'X' | NT_STOP };
-    const char line_data_4[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_5[] = { 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_6[] = { TOKEN_NUM, 0x0A, 0x00 };
-    const char line_data_7[] = { TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NO_VALUE };
+    const char line_data_4[] = { 'X' | NT_STOP, 0 };
+    const char line_data_5[] = { 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_6[] = { '1', '0', 0 };
+    const char line_data_7[] = { '1', '0', 0 , '2', '0', 0, 0 };
 
     PRINT_TEST_NAME();
 
@@ -237,17 +222,16 @@ void call_parse_statement(const char* s, const char* expect_line_data, size_t ex
 void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_PRINT, TOKEN_NUM, 0x08, 0x00, TOKEN_NO_VALUE };
-    const char line_data_3[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x64, 0x00, TOKEN_NO_VALUE };
-    const char line_data_4[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_5[] = { ST_LIST, TOKEN_NUM, 0x0A, 0x00, TOKEN_NO_VALUE, TOKEN_NUM, 0x14, 0x00,
-        TOKEN_NO_VALUE };
-    const char line_data_6[] = { ST_PRINT, TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x03, 0x00, TOKEN_NO_VALUE,
-        TOKEN_OP | OP_MUL, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_7[] = { ST_ON_GOTO, 'X' | NT_STOP, TOKEN_OP | OP_DIV, TOKEN_NUM, 0x02, 0x00, TOKEN_NO_VALUE,
-        TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NUM, 0x1E, 0x00, TOKEN_NO_VALUE };
-    const char line_data_8[] = { ST_ON_GOSUB, 'X' | NT_STOP, TOKEN_NO_VALUE,
-        TOKEN_NUM, 0x0A, 0x00, TOKEN_NUM, 0x14, 0x00, TOKEN_NUM, 0x1E, 0x00, TOKEN_NO_VALUE };
+    const char line_data_2[] = { ST_PRINT, '8', 0, 0 };
+    const char line_data_3[] = { ST_LET, 'X' | NT_STOP, '1', '0', '0', 0, 0 };
+    const char line_data_4[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_5[] = { ST_LIST, '1', '0', 0, 0, '2', '0', 0, 0 };
+    const char line_data_6[] = { ST_PRINT, '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
+        TOKEN_OP | OP_MUL, 'Y' | NT_STOP, 0 };
+    const char line_data_7[] = { ST_ON_GOTO, 'X' | NT_STOP, TOKEN_OP | OP_DIV, '2', 0, 0,
+        '1', '0', 0, '2', '0', 0, '3', '0', 0, 0 };
+    const char line_data_8[] = { ST_ON_GOSUB, 'X' | NT_STOP, 0,
+        '1', '0', 0, '2', '0', 0, '3', '0', 0, 0 };
 
     PRINT_TEST_NAME();
 
@@ -294,7 +278,7 @@ void test_parse_statement(void) {
 
 void test_parse_line(void) {
 
-    const char line_data_1[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x64, 0x00, TOKEN_NO_VALUE };
+    const char line_data_1[] = { ST_LET, 'X' | NT_STOP, '1', '0', '0', 0, 0 };
     const char line_data_2[] = { ST_RUN };
 
     PRINT_TEST_NAME();
@@ -338,8 +322,7 @@ void test_parse_line(void) {
 int main(void) {
     initialize_target();
     test_parse_name();
-    test_char_to_digit();
-    test_read_number();
+    test_parse_number();
     test_parse_expression();
     test_parse_argument_separator();
     test_parse_directive();
