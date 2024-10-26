@@ -224,11 +224,11 @@ list_repeated_variable:
         rts
 
 list_paren:
+        inc     line_pos                ; Skip over '('
         jsr     add_whitespace
         lda     #'('
         jsr     append_buffer
         ldax    #list_vectors
-        inc     line_pos                ; Skip over '('
         jsr     decode_expression
         lda     #')'
         jsr     append_buffer
