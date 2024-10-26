@@ -45,9 +45,9 @@ void set_match_ptr(const char* name) {
 void test_evaluate_expression(void) {
     int value;
 
-    const char line_data_1[] = { TOKEN_NUM, 0x0A, 0x02, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 'X', 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 'D', 'A', 'T', 'A' | NT_STOP, TOKEN_NO_VALUE };
+    const char line_data_1[] = { '5', '2', '2', 0, 0 };
+    const char line_data_2[] = { 'X', 'Y' | NT_STOP, 0 };
+    const char line_data_3[] = { 'D', 'A', 'T', 'A' | NT_STOP, 0 };
 
     PRINT_TEST_NAME();
 
@@ -89,37 +89,37 @@ void test_evaluate_expression(void) {
 void test_one_op(char op, int expected00, int expected01, int expected10, int expected11) {
 
     int result;
-    char line_data[] = { TOKEN_NUM, 0x00, 0x00, 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data[] = { '0', 0, 0 /* op */, '0', 0, 0 };
 
     DEBUG(op);
 
-    line_data[3] = TOKEN_OP | op;
-    line_data[1] = 0;
-    line_data[5] = 0;
+    line_data[2] = TOKEN_OP | op;
+    line_data[0] = '0';
+    line_data[3] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected00);
 
-    line_data[1] = 0;
-    line_data[5] = 1;
+    line_data[0] = '0';
+    line_data[3] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected01);
 
-    line_data[1] = 1;
-    line_data[5] = 0;
+    line_data[0] = '1';
+    line_data[3] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected10);
 
-    line_data[1] = 1;
-    line_data[5] = 1;
+    line_data[0] = '1';
+    line_data[3] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -130,19 +130,19 @@ void test_one_op(char op, int expected00, int expected01, int expected10, int ex
 void test_one_unary_op(char op, int expected0, int expected1) {
 
     int result;
-    char line_data[] = { 0, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    char line_data[] = { 0 /* op */, '0', 0, 0 };
 
     DEBUG(op);
 
     line_data[0] = TOKEN_UNARY_OP | op;
-    line_data[2] = 0;
+    line_data[1] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
     ASSERT_EQ(result, expected0);
 
-    line_data[2] = 1;
+    line_data[1] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -177,10 +177,10 @@ void test_evaluate_expression_op_precedence(void) {
 
     int result;
 
-    char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
-    char line_data_2[] = { TOKEN_PAREN, TOKEN_NUM, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, TOKEN_NO_VALUE };
+    // 2-1-1 = 0
+    char line_data_1[] = { '2', 0, TOKEN_OP | OP_SUB, '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0 };
+    // 2-(1-1) = 2
+    char line_data_2[] = { '2', 0, TOKEN_OP | OP_SUB, '(', '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0, 0 };
 
     PRINT_TEST_NAME();
 
@@ -196,7 +196,7 @@ void test_evaluate_expression_op_precedence(void) {
     evaluate_expression();
     ASSERT_EQ(err, 0);
     result = pop_value();
-    ASSERT_EQ(result, 1);
+    ASSERT_EQ(result, 2);
 }
 
 int main(void) {
