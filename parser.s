@@ -160,19 +160,6 @@ parse_expression:
 @done:
         rts
 
-pattern_base:
-name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
-        .byte   0
-name_pattern_identifier:
-        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
-        .byte   '0', 10, <(name_pattern_identifier - pattern_base)
-        .byte   '_',  1, <(name_pattern_identifier - pattern_base)
-        .byte   0
-number_pattern:
-        .byte   '0', 10, <(number_pattern - pattern_base)
-        .byte   0
-
 ; Parses a name from the buffer.
 ; Sets the high bit on the last character in line_buffer 
 
@@ -209,6 +196,22 @@ parse_number:
 @error:
         rts
 
+pattern_base:
+name_pattern:
+        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
+        .byte   PATTERN_ERROR
+name_pattern_identifier:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
+        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
+        .byte   PATTERN_OK
+number_pattern:
+        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   PATTERN_ERROR
+number_pattern_2:
+        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   PATTERN_OK
+
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
 ; Copies the text into line_buffer and sets match_ptr. 
 ; Y = the starting state MINUS 3 (will be incremented by 3 prior to being used)
@@ -224,35 +227,28 @@ parse_pattern:
         mva     line_pos, match_ptr     ; Initialize match_ptr to the write position in line_buffer
         mva     #>line_buffer, match_ptr+1  ; High byte of buffer address into match_ptr
         jsr     skip_whitespace
-        lda     buffer_pos              ; Remember the current value of buffer_pos
-        pha
-
 @next_state:
         iny                             ; Move to next state
         iny
         iny
 @match:
-        lda     name_pattern,y          ; Check if first byte is 0
-        beq     @terminal               ; If so then done
+        lda     name_pattern,y          ; Check if first byte has high bit set
+        bmi     @terminal               ; If so then done
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x
-        tax                             ; Save the character in X
         sec                             ; Set carry for subtract
         sbc     name_pattern,y          ; Subtract lower bound
         cmp     name_pattern+1,y        ; Compare with upper bound
         bcs     @next_state             ; Character does not match this state; continue
         lda     name_pattern+2,y        ; Load next state
         tay                             ; Next state into Y
-        txa                             ; Recover buffer character from X
+        lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
         bne     @match
 
 @terminal:
-        pla                             ; Recover the original buffer_pos value
-        cmp     buffer_pos              ; Same?
-        beq     @done                   ; If so then return with carry set
-        clc                             ; Otherwise clear
+        ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
 @done:
         rts
 
