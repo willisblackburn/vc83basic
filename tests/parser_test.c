@@ -77,8 +77,8 @@ void call_parse_number(const char* s, char set_buffer_pos, const char* expect_li
 
 void test_parse_number(void) {
 
-    const char number_10_line_data[] = { '1', '0' };
-    const char number_20_line_data[] = { '2', '0' };
+    const char number_10_line_data[] = { '1', '0', 0 };
+    const char number_20_line_data[] = { '2', '0', 0 };
 
     PRINT_TEST_NAME();
 
