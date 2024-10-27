@@ -227,25 +227,41 @@ parse_parentheses:
         sec                             ; Set carry to indicate error and return
         rts
 
-pattern_base:
-name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
-        .byte   '&', 10, <(name_pattern_op - pattern_base)
-        .byte   '<',  3, <(name_pattern_relational - pattern_base)
-        .byte   0
-name_pattern_identifier:
-        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
-        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
-        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
-        .byte   0
-name_pattern_op:
-        .byte   0
-name_pattern_relational:
-        .byte   '<',  3, <(name_pattern_relational - name_pattern)
-        .byte   0
-number_pattern:
-        .byte   '0', 10, <(number_pattern - pattern_base)
-        .byte   0
+; Parses the unary operators '-' (minus) and NOT.
+
+parse_unary_operator:
+        ldax    #unary_operator_name_table
+        jsr     parse_tokenized_name
+        bcs     @error
+        ora     #TOKEN_UNARY_OP         ; OR in the unary operator token
+        jsr     encode_byte             ; Store the unary minus token
+        bcs     @error
+        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
+@error:
+        rts
+
+; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
+; AX = pointer to the start of the name table
+; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
+; on error.
+
+parse_tokenized_name:
+        jsr     initialize_name_ptr
+parse_tokenized_name_2:
+        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
+        jsr     parse_name              ; Go parse the name; match_ptr set on return
+        bcs     @error
+        mva     match_ptr, line_pos     ; Prepare to overwrite name in line_buffer (referenced by match_ptr) with token
+        jsr     find_name_2             ; Try to find the name in the name table
+        bcs     @error                  ; Not valid
+        tay                             ; Need A again
+        pla                             ; Pop and discard the saved buffer_pos
+        tya                             ; Recover A
+        rts                             ; Return with carry clear        
+
+@error:
+        plsta   buffer_pos              ; Restore buffer_pos
+        rts                             ; Return with carry set
 
 ; Parses a name from the buffer.
 ; Sets the high bit on the last character in line_buffer 
@@ -273,29 +289,6 @@ parse_repeated_name:
 @done:
         rts
 
-; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
-; AX = pointer to the start of the name table
-; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
-; on error.
-
-parse_tokenized_name:
-        jsr     initialize_name_ptr
-parse_tokenized_name_2:
-        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
-        jsr     parse_name              ; Go parse the name; match_ptr set on return
-        bcs     @error
-        mva     match_ptr, line_pos     ; Prepare to overwrite name in line_buffer (referenced by match_ptr) with token
-        jsr     find_name_2             ; Try to find the name in the name table
-        bcs     @error                  ; Not valid
-        tay                             ; Need A again
-        pla                             ; Pop and discard the saved buffer_pos
-        tya                             ; Recover A
-        rts                             ; Return with carry clear        
-
-@error:
-        plsta   buffer_pos              ; Restore buffer_pos
-        rts                             ; Return with carry set
-
 ; Parses a number from the buffer.
 
 parse_number:
@@ -315,18 +308,28 @@ parse_repeated_number:
 @done:
         rts
 
-; Parses the unary operators '-' (minus) and NOT.
-
-parse_unary_operator:
-        ldax    #unary_operator_name_table
-        jsr     parse_tokenized_name
-        bcs     @error
-        ora     #TOKEN_UNARY_OP         ; OR in the unary operator token
-        jsr     encode_byte             ; Store the unary minus token
-        bcs     @error
-        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
-@error:
-        rts
+pattern_base:
+name_pattern:
+        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
+        .byte   '&', 10, <(name_pattern_op - pattern_base)
+        .byte   '<',  3, <(name_pattern_relational - pattern_base)
+        .byte   PATTERN_ERROR
+name_pattern_identifier:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
+        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
+        .byte   PATTERN_OK
+name_pattern_op:
+        .byte   PATTERN_OK
+name_pattern_relational:
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
+        .byte   PATTERN_OK
+number_pattern:
+        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   PATTERN_ERROR
+number_pattern_2:
+        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   PATTERN_OK
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
 ; Copies the text into line_buffer and sets match_ptr. 
@@ -343,35 +346,28 @@ parse_pattern:
         mva     line_pos, match_ptr     ; Initialize match_ptr to the write position in line_buffer
         mva     #>line_buffer, match_ptr+1  ; High byte of buffer address into match_ptr
         jsr     skip_whitespace
-        lda     buffer_pos              ; Remember the current value of buffer_pos
-        pha
-
 @next_state:
         iny                             ; Move to next state
         iny
         iny
 @match:
-        lda     name_pattern,y          ; Check if first byte is 0
-        beq     @terminal               ; If so then done
+        lda     name_pattern,y          ; Check if first byte has high bit set
+        bmi     @terminal               ; If so then done
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x
-        tax                             ; Save the character in X
         sec                             ; Set carry for subtract
         sbc     name_pattern,y          ; Subtract lower bound
         cmp     name_pattern+1,y        ; Compare with upper bound
         bcs     @next_state             ; Character does not match this state; continue
         lda     name_pattern+2,y        ; Load next state
         tay                             ; Next state into Y
-        txa                             ; Recover buffer character from X
+        lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
         bne     @match
 
 @terminal:
-        pla                             ; Recover the original buffer_pos value
-        cmp     buffer_pos              ; Same?
-        beq     @done                   ; If so then return with carry set
-        clc                             ; Otherwise clear
+        ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
 @done:
         rts
 
