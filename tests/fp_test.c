@@ -449,8 +449,7 @@ void test_fp_to_string(void) {
 void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
-    buffer_pos = 0;
-    string_to_fp();
+    string_to_fp(buffer, 0);
     ASSERT_EQ(err, 0);
     ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
 }
@@ -458,10 +457,9 @@ void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigne
 void fail_string_to_fp(const char* string, int line) {
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
-    buffer_pos = 0;
-    string_to_fp();
+    string_to_fp(buffer, 0);
     ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
+    ASSERT_EQ(Y, 0);
 }
 
 void test_string_to_fp(void) {

@@ -167,7 +167,11 @@ _fp_to_string:
 
 _string_to_fp:
 .export _string_to_fp
+        sta     B                       ; Have to shuffle pos to Y
+        jsr     popax                   ; Address of ptr
+        ldy     B      
         jsr     string_to_fp
+        sty     _Y
         jmp     set_err
 
 _normalize:
