@@ -20,3 +20,5 @@ def(ST_INPUT,           3)
 comment Other constants
 
 def(BUFFER_SIZE, 256)
+def(PATTERN_OK, hex(80))
+def(PATTERN_ERROR, hex(81))
