@@ -262,6 +262,40 @@ parse_name:
 @error:
         rts
 
+; Parses a series of names separated by commas.
+
+parse_repeated_name:
+        jsr     parse_name              ; Parse next variable name
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_zero             ; Terminate the repeated list
+@done:
+        rts
+
+; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
+; AX = pointer to the start of the name table
+; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
+; on error.
+
+parse_tokenized_name:
+        jsr     initialize_name_ptr
+parse_tokenized_name_2:
+        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
+        jsr     parse_name              ; Go parse the name; match_ptr set on return
+        bcs     @error
+        mva     match_ptr, line_pos     ; Prepare to overwrite name in line_buffer (referenced by match_ptr) with token
+        jsr     find_name_2             ; Try to find the name in the name table
+        bcs     @error                  ; Not valid
+        tay                             ; Need A again
+        pla                             ; Pop and discard the saved buffer_pos
+        tya                             ; Recover A
+        rts                             ; Return with carry clear        
+
+@error:
+        plsta   buffer_pos              ; Restore buffer_pos
+        rts                             ; Return with carry set
+
 ; Parses a number from the buffer.
 
 parse_number:
@@ -293,29 +327,6 @@ parse_unary_operator:
         jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
 @error:
         rts
-
-; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
-; AX = pointer to the start of the name table
-; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
-; on error.
-
-parse_tokenized_name:
-        jsr     initialize_name_ptr
-parse_tokenized_name_2:
-        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
-        jsr     parse_name              ; Go parse the name; match_ptr set on return
-        bcs     @error
-        mva     match_ptr, line_pos     ; Prepare to overwrite name in line_buffer (referenced by match_ptr) with token
-        jsr     find_name_2             ; Try to find the name in the name table
-        bcs     @error                  ; Not valid
-        tay                             ; Need A again
-        pla                             ; Pop and discard the saved buffer_pos
-        tya                             ; Recover A
-        rts                             ; Return with carry clear        
-
-@error:
-        plsta   buffer_pos              ; Restore buffer_pos
-        rts                             ; Return with carry set
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
 ; Copies the text into line_buffer and sets match_ptr. 
@@ -361,17 +372,6 @@ parse_pattern:
         cmp     buffer_pos              ; Same?
         beq     @done                   ; If so then return with carry set
         clc                             ; Otherwise clear
-@done:
-        rts
-
-; Parses a series of names separated by commas.
-
-parse_repeated_name:
-        jsr     parse_name              ; Parse next variable name
-        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
 @done:
         rts
 
