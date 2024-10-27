@@ -251,27 +251,15 @@ parse_name:
 @error:
         rts
 
-; Parses a number from the buffer.
+; Parses a series of names separated by commas.
 
-parse_number:
-        ldy     #<(number_pattern - pattern_base - 3)
-        jsr     parse_pattern
-        bcs     @error
-        jsr     encode_zero
-@error:
-        rts
-
-; Parses the unary operators '-' (minus) and NOT.
-
-parse_unary_operator:
-        ldax    #unary_operator_name_table
-        jsr     parse_tokenized_name
-        bcs     @error
-        ora     #TOKEN_UNARY_OP         ; OR in the unary operator token
-        jsr     encode_byte             ; Store the unary minus token
-        bcs     @error
-        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
-@error:
+parse_repeated_name:
+        jsr     parse_name              ; Parse next variable name
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_zero             ; Terminate the repeated list
+@done:
         rts
 
 ; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
@@ -295,6 +283,29 @@ parse_tokenized_name:
 @error:
         plsta   buffer_pos              ; Restore buffer_pos
         rts                             ; Return with carry set
+
+; Parses a number from the buffer.
+
+parse_number:
+        ldy     #<(number_pattern - pattern_base - 3)
+        jsr     parse_pattern
+        bcs     @error
+        jsr     encode_zero
+@error:
+        rts
+
+; Parses the unary operators '-' (minus) and NOT.
+
+parse_unary_operator:
+        ldax    #unary_operator_name_table
+        jsr     parse_tokenized_name
+        bcs     @error
+        ora     #TOKEN_UNARY_OP         ; OR in the unary operator token
+        jsr     encode_byte             ; Store the unary minus token
+        bcs     @error
+        jmp     parse_primary_expression    ; Continue and parse the following unary expression, which must exist
+@error:
+        rts
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
 ; Copies the text into line_buffer and sets match_ptr. 
@@ -340,17 +351,6 @@ parse_pattern:
         cmp     buffer_pos              ; Same?
         beq     @done                   ; If so then return with carry set
         clc                             ; Otherwise clear
-@done:
-        rts
-
-; Parses a series of names separated by commas.
-
-parse_repeated_name:
-        jsr     parse_name              ; Parse next variable name
-        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
 @done:
         rts
 
