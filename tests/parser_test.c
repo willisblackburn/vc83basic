@@ -79,9 +79,6 @@ void test_parse_number(void) {
 
     const char number_10_line_data[] = { '1', '0' };
     const char number_20_line_data[] = { '2', '0' };
-    const char printx_line_data[] = { 'P', 'R', 'I', 'N', 'T', 'X' | NT_STOP };
-    const char print10_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0' | NT_STOP };
-    const char print10x_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0', 'X' | NT_STOP };
 
     PRINT_TEST_NAME();
 
