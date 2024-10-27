@@ -159,6 +159,17 @@ parse_name:
 @error:
         rts
 
+; Parses a series of names separated by commas.
+
+parse_repeated_name:
+        jsr     parse_name              ; Parse next variable name
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_zero             ; Terminate the repeated list
+@done:
+        rts
+
 ; Parses a number from the buffer.
 
 parse_number:
@@ -213,17 +224,6 @@ parse_pattern:
         cmp     buffer_pos              ; Same?
         beq     @done                   ; If so then return with carry set
         clc                             ; Otherwise clear
-@done:
-        rts
-
-; Parses a series of names separated by commas.
-
-parse_repeated_name:
-        jsr     parse_name              ; Parse next variable name
-        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
 @done:
         rts
 
