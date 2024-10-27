@@ -283,11 +283,6 @@ _parse_expression:
         jsr     parse_expression
         jmp     set_err
 
-_parse_argument_separator:
-.export _parse_argument_separator
-        jsr     parse_argument_separator
-        jmp     set_err
-
 _parse_name:
 .export _parse_name
         jsr     parse_name
@@ -296,6 +291,11 @@ _parse_name:
 _parse_number:
 .export _parse_number
         jsr     parse_number
+        jmp     set_err
+
+_parse_argument_separator:
+.export _parse_argument_separator
+        jsr     parse_argument_separator
         jmp     set_err
 
 ; program.s

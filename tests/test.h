@@ -120,9 +120,9 @@ void parse_line(void);
 void parse_statement(/* AX */ const char* match_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
-void parse_argument_separator(void);
 void parse_name(void);
 void parse_number(void);
+void parse_argument_separator(void);
 
 // program.s
 void initialize_target(void);
