@@ -40,6 +40,10 @@ decode_expression:
         bcc     @dispatch
         iny                             ; Number
         sbc     #('0' - TOKEN_OP)
+        cmp     #<('.' - '0')
+        beq     @dispatch
+        cmp     #<('-' - '0')
+        beq     @dispatch
         cmp     #10
         bcc     @dispatch
         iny                             ; Variable

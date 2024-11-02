@@ -333,6 +333,7 @@ number_pattern:
         .byte   '-',  1, <(number_pattern_2 - pattern_base)     ; Without following digit is a unary minus
 number_pattern_2:
         .byte   '0', 10, <(number_pattern_3 - pattern_base)
+        .byte   '.',  1, <(number_pattern_3 - pattern_base)
         .byte   PATTERN_ERROR
 number_pattern_3:
         .byte   '0', 10, <(number_pattern_3 - pattern_base)
