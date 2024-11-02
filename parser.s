@@ -13,7 +13,11 @@
 parse_line:
         mva     #0, buffer_pos          ; Initialize the read pointer
         mva     #Line::data, line_pos   ; Initialize write pointer
+        jsr     skip_whitespace
+        ldax    #buffer                 ; Read line number from buffer
+        ldy     buffer_pos
         jsr     string_to_fp            ; Parse line number
+        sty     buffer_pos              ; Initialize buffer_pos to wherever the number ended
         bcs     @no_line_number         ; Line number was provided so store it
         jsr     truncate_fp_to_int      ; Truncate line number to integer
         bcs     @done                   ; Out of range
@@ -156,12 +160,12 @@ parse_repeated_variable:
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
         jsr     parse_argument_separator    ; Try to read a separator
         bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_no_value         ; Terminate the repeated list
+        jsr     encode_zero             ; Terminate the repeated list
 @done:
         rts
 
 ; Parses an argument list of N expressions delimited by commas.
-; All expressions are optional; if we find less than N expressions, encode TOKEN_NO_VALUE up to N.
+; All expressions are optional; if we find less than N expressions, encode 0 up to N.
 ; A = the number of arguments (must be >= 1)
 
 parse_argument_list:
@@ -179,7 +183,7 @@ parse_argument_list:
 ; Fall through; argument_count must be >= 1 since we didn't go to @success.
 
 @parse_failed:
-        jsr     encode_no_value         ; Store "no value" tokens for any remaining arguments
+        jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
         bcs     @error                  ; encode_byte error
         dec     argument_count          ; Done with one "no value"
         bne     @parse_failed           ; Loop if more
@@ -202,7 +206,7 @@ parse_expression:
         jmp     parse_expression        ; Otherwise parse the following expression
 
 @no_operator:
-        jsr     encode_no_value         ; Terminate expression with TOKEN_NO_VALUE
+        jsr     encode_zero             ; Terminate expression with 0
         clc                             ; Signal success
 @error:
         rts
@@ -226,7 +230,6 @@ parse_parentheses:
         jsr     skip_whitespace         ; Skip whitespace and return the next character
         cmp     #'('                    ; Is is a left paren?
         bne     @error                  ; This is not an expression in parentheses
-        lda     #TOKEN_PAREN            ; Encode the paren
         jsr     encode_byte
         inc     buffer_pos              ; Skip over the left paren
         jsr     parse_expression        ; Parse the expression in the parentheses
@@ -239,25 +242,6 @@ parse_parentheses:
     
 @error:
         sec                             ; Set carry to indicate error and return
-        rts
-
-; Parses a number from the buffer.
-
-parse_number:
-        jsr     skip_whitespace
-        jsr     string_to_fp            ; Parse the number
-        bcs     @done
-        jmp     encode_number           ; Will set carry if fail
-@done:
-        rts
-
-parse_repeated_number:
-        jsr     parse_number            ; Parse a first number
-        bcs     @done                   ; If no number then fail
-        jsr     parse_argument_separator
-        bcs     parse_repeated_number   ; Parse another number after the separator
-        jmp     encode_no_value         ; Terminate the repeated list
-@done:
         rts
 
 ; Parses the unary operators '-' (minus) and NOT.
@@ -296,49 +280,106 @@ parse_tokenized_name_2:
         plsta   buffer_pos              ; Restore buffer_pos
         rts                             ; Return with carry set
 
+; Parses a name from the buffer.
+; Sets the high bit on the last character in line_buffer 
+
+parse_name:
+        ldy     #<(name_pattern - pattern_base - 3)
+        jsr     parse_pattern
+        bcs     @error                  ; Failed
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        ora     #NT_STOP                ; Set bit 7
+        sta     line_buffer,x           ; Write back
+@error:
+        rts
+
+; Parses a series of names separated by commas.
+
+parse_repeated_name:
+        jsr     parse_name              ; Parse next variable name
+        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
+        jsr     parse_argument_separator    ; Try to read a separator
+        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
+        jsr     encode_zero             ; Terminate the repeated list
+@done:
+        rts
+
+; Parses a number from the buffer.
+
+parse_number:
+        ldy     #<(number_pattern - pattern_base - 3)
+        jsr     parse_pattern
+        bcs     @error
+        jsr     encode_zero
+@error:
+        rts
+
+parse_repeated_number:
+        jsr     parse_number            ; Parse a first number
+        bcs     @done                   ; If no number then fail
+        jsr     parse_argument_separator
+        bcs     parse_repeated_number   ; Parse another number after the separator
+        jsr     encode_zero             ; Terminate the repeated list
+@done:
+        rts
+
+pattern_base:
 name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
-        .byte   '&', 10, <(name_pattern_op - name_pattern)
-        .byte   '<',  3, <(name_pattern_relational - name_pattern)
-        .byte   NAME_ERROR
+        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
+        .byte   '&', 10, <(name_pattern_op - pattern_base)
+        .byte   '<',  3, <(name_pattern_relational - pattern_base)
+        .byte   PATTERN_ERROR
 name_pattern_identifier:
         .byte   'A', 26, <(name_pattern_identifier - name_pattern)
         .byte   '0', 10, <(name_pattern_identifier - name_pattern)
         .byte   '_',  1, <(name_pattern_identifier - name_pattern)
-        .byte   NAME_OK
+        .byte   PATTERN_OK
 name_pattern_op:
-        .byte   NAME_OK
+        .byte   PATTERN_OK
 name_pattern_relational:
         .byte   '<',  3, <(name_pattern_relational - name_pattern)
-        .byte   NAME_OK
+        .byte   PATTERN_OK
+number_pattern:
+        .byte   '-',  1, <(number_pattern_2 - pattern_base)     ; Without following digit is a unary minus
+number_pattern_2:
+        .byte   '0', 10, <(number_pattern_3 - pattern_base)
+        .byte   PATTERN_ERROR
+number_pattern_3:
+        .byte   '0', 10, <(number_pattern_3 - pattern_base)
+        .byte   '.',  1, <(number_pattern_3 - pattern_base)
+        .byte   'E',  1, <(number_pattern_4 - pattern_base)
+        .byte   PATTERN_OK
+number_pattern_4:
+        .byte   '-',  1, <(number_pattern_5 - pattern_base)     ; Not an operator if immediately after E
+number_pattern_5:
+        .byte   '0', 10, <(number_pattern_5 - pattern_base)
+        .byte   PATTERN_OK
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
-; Copies the text into line_buffer, sets the high bit on the last character, and sets match_ptr. 
+; Copies the text into line_buffer and sets match_ptr. 
+; Y = the starting state MINUS 3 (will be incremented by 3 prior to being used)
 ; Returns carry clear if there was a match at buffer_pos.
-; Returns carry set if the character at buffer_pos didn't match. The patterns are set up so we only fail
-; on the first character, in which case buffer_pos and line_pos will both be unchanged. After the first character, a
-; non-matching character just marks the end of the match.
+; Returns carry set if the character at buffer_pos didn't match.
 ; On return, Y will be left pointing to the state that ended the parse, so a caller can check which one it was.
 ; BC SAFE, DE SAFE
 
 ; buffer must be page-aligned
 .assert <buffer = 0, error
 
-.assert NAME_OK = $80, error
-.assert NAME_ERROR = $81, error
-
-parse_name:
+parse_pattern:
         mva     line_pos, match_ptr     ; Initialize match_ptr to the write position in line_buffer
         mva     #>line_buffer, match_ptr+1  ; High byte of buffer address into match_ptr
         jsr     skip_whitespace
-        ldy     #$FD                    ; Y=0 after three INY
+        ldpha   buffer_pos              ; Save buffer_pos so we can restore if error
 @next_state:
         iny                             ; Move to next state
         iny
         iny
 @match:
         lda     name_pattern,y          ; Check if first byte has high bit set
-        bmi     @terminal               ; If so then treat it like matching a terminal state
+        bmi     @terminal               ; If so then done
         ldx     buffer_pos              ; Handle the character at buffer_pos
         lda     buffer,x
         sec                             ; Set carry for subtract
@@ -346,21 +387,18 @@ parse_name:
         cmp     name_pattern+1,y        ; Compare with upper bound
         bcs     @next_state             ; Character does not match this state; continue
         lda     name_pattern+2,y        ; Load next state
-        bmi     @terminal
         tay                             ; Next state into Y
-        lda     buffer,x
+        lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
         bne     @match
 
 @terminal:
-        lsr     A                       ; Shift bit 0 into carry flag for return
-        bcs     @done                   ; If we're going to fail then don't set the high bit on the last character   
-        ldx     line_pos                ; Get line_buffer write position
-        dex                             ; Back to last character we wrote
-        lda     line_buffer,x
-        ora     #NT_STOP                ; Set bit 7
-        sta     line_buffer,x           ; Write back
+        ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
+        pla                             ; Pop saved value of buffer_pos off the stack
+        bcc     @done                   ; But don't update buffer_pos if the parse succeeded
+        sta     buffer_pos
+        mva     match_ptr, line_pos     ; Restore line_pos to the value we saved earlier 
 @done:
         rts
 

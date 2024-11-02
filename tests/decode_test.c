@@ -21,11 +21,7 @@ void test_decode_byte(void) {
 }
 
 void test_decode_number(void) {
-    const char line_data[] = {
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x48, 133,
-        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,
-        TOKEN_NUM, 0x81, 0xCF, 0x0F, 0x49, 128
-    };
+    const char line_data[] = { '1', '0', '0', 0, '4', '1', '1', '2', 0, '3', '.', '1', '4', '1', '5', '9', 0 };
 
     PRINT_TEST_NAME();
 
@@ -59,12 +55,14 @@ void test_decode_name(void) {
 
 extern void* decode_xh_vectors[];
 
-int var_count;
+int unary_op_count;
 
-void xh_variable(void) {
-    decode_name();
-    ++var_count;
-    ASSERT_EQ(*match_ptr, 'X' | NT_STOP);
+void xh_unary_operator(void) {
+    char op = decode_unary_operator();
+    switch (++unary_op_count) {
+        case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
+        case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
+    }
 }
 
 int op_count;
@@ -79,16 +77,6 @@ void xh_operator(void) {
     }
 }
 
-int unary_op_count;
-
-void xh_unary_operator(void) {
-    char op = decode_unary_operator();
-    switch (++unary_op_count) {
-        case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
-        case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
-    }
-}
-
 int num_count;
 
 void xh_number(void) {
@@ -99,39 +87,48 @@ void xh_number(void) {
     }
 }
 
+int var_count;
+
+void xh_variable(void) {
+    decode_name();
+    ++var_count;
+    ASSERT_EQ(*match_ptr, 'X' | NT_STOP);
+}
+
 int paren_count;
 
 void xh_paren(void) {
     ++paren_count;
-    fprintf(stderr, "**** (\n");
+    decode_byte();
     decode_expression(decode_xh_vectors);
-    fprintf(stderr, "**** )\n");
 }
 
 void* decode_xh_vectors[] = {
-    (char*)xh_variable - 1,
-    (char*)xh_operator - 1,
     (char*)xh_unary_operator - 1,
+    (char*)xh_operator - 1,
     (char*)xh_number - 1,
+    (char*)xh_variable - 1,
     (char*)xh_paren - 1,
 };
 
 void test_decode_expression(void) {
+
+    // 41112+(X/3)*-X
     const char line_data[] = {
-        TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139,  // 4,112
-        TOKEN_OP | OP_ADD,
-        TOKEN_PAREN,
-        'X' | NT_STOP,                  // X
+        '4', '1', '1', '2', 0,
+        TOKEN_OP | OP_ADD,        
+        '(',
+        'X' | NT_STOP,
         TOKEN_OP | OP_DIV,              
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, // 3
-        TOKEN_NO_VALUE,
-        TOKEN_OP | OP_MUL,
+        '3', 0,
+        0,
+        TOKEN_OP | OP_MUL, 
         TOKEN_UNARY_OP | UNARY_OP_MINUS,             
         'X' | NT_STOP,                  // X
         TOKEN_OP | OP_OR,
         TOKEN_UNARY_OP | UNARY_OP_NOT,
-        'X' | NT_STOP,                  // X
-        TOKEN_NO_VALUE
+        'X' | NT_STOP,
+        0
     };
 
     PRINT_TEST_NAME();

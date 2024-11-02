@@ -74,7 +74,6 @@ char decode_unary_operator(void);
 char decode_byte(void);
 
 // encode.s
-void encode_number(void);
 void encode_byte(/* A */ char value);
 
 // expression.s
@@ -97,7 +96,7 @@ void int32_to_fp(void);
 int truncate_fp_to_int(void);
 void truncate_fp_to_int32(void);
 void fp_to_string(void);
-void string_to_fp(void);
+void string_to_fp(const char* ptr, char pos);
 char char_to_digit(/* A */ char c);
 void adjust_exponent(/* X */ char add, /* Y */ char subtract);
 void normalize(void);
@@ -124,8 +123,9 @@ void parse_line(void);
 void parse_statement(/* AX */ const char* match_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
-void parse_argument_separator(void);
 void parse_name(void);
+void parse_number(void);
+void parse_argument_separator(void);
 
 // program.s
 void initialize_target(void);
