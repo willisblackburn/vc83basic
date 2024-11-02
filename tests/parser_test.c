@@ -130,14 +130,15 @@ void call_parse_expression(const char* s, const char* expect_line_data, size_t e
 void test_parse_expression(void) {
     
     const char line_data_1[] = { '1', 0, 0 };
-    const char line_data_2[] = { 'X' | NT_STOP, 0 };
-    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_OP | OP_ADD, '1', 0, 0 };
-    const char line_data_4[] = { '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
+    const char line_data_2[] = { '-', '1', 0, 0 };
+    const char line_data_3[] = { 'X' | NT_STOP, 0 };
+    const char line_data_4[] = { 'X' | NT_STOP, TOKEN_OP | OP_ADD, '1', 0, 0 };
+    const char line_data_5[] = { '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
         TOKEN_OP | OP_MUL, 'Y' | NT_STOP, 0 };
-    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, 0 };
-    const char line_data_6[] = { 'X' | NT_STOP, TOKEN_OP | OP_EQ, '3', 0, TOKEN_OP | OP_OR, 
+    const char line_data_6[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, 0 };
+    const char line_data_7[] = { 'X' | NT_STOP, TOKEN_OP | OP_EQ, '3', 0, TOKEN_OP | OP_OR, 
         'X' | NT_STOP, TOKEN_OP | OP_LE, 'Y' | NT_STOP, 0 };
-    const char line_data_7[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | NT_STOP, TOKEN_OP | OP_EQ, 
+    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | NT_STOP, TOKEN_OP | OP_EQ, 
         '3', 0, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT,
         TOKEN_UNARY_OP | UNARY_OP_MINUS, 'Y' | NT_STOP, 0, 0 };
 
@@ -146,12 +147,13 @@ void test_parse_expression(void) {
     initialize_program();
 
     call_parse_expression("1", line_data_1, sizeof line_data_1, __LINE__);
-    call_parse_expression("X", line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_expression("X+1", line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_expression("(X+3)*Y", line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_expression("-X", line_data_5, sizeof line_data_5, __LINE__);
-    call_parse_expression("X=3 OR X<=Y", line_data_6, sizeof line_data_6, __LINE__);
-    call_parse_expression("NOT (X=3 OR NOT -Y)", line_data_7, sizeof line_data_7, __LINE__);
+    call_parse_expression("-1", line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_expression("X", line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_expression("X+1", line_data_4, sizeof line_data_4, __LINE__);
+    call_parse_expression("(X+3)*Y", line_data_5, sizeof line_data_5, __LINE__);
+    call_parse_expression("-X", line_data_6, sizeof line_data_6, __LINE__);
+    call_parse_expression("X=3 OR X<=Y", line_data_7, sizeof line_data_7, __LINE__);
+    call_parse_expression("NOT (X=3 OR NOT -Y)", line_data_8, sizeof line_data_8, __LINE__);
 }
 
 void test_parse_argument_separator(void) {
