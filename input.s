@@ -3,8 +3,6 @@
 
 ; INPUT statement:
 
-.assert TOKEN_NO_VALUE = 0, error
-
 exec_input:
         lda     #'?'                    ; Prepare to print '?' prompt
         jsr     putch
@@ -15,8 +13,11 @@ exec_input:
         jsr     find_or_add_variable
         bcs     @done
         mvax    name_ptr, variable_ptr  ; Set up target for assign_variable
+        ldax    #buffer                 ; Point to buffer
+        ldy     buffer_pos              ; Starting at buffer_pos
         jsr     string_to_fp            ; Parse the number
         bcs     @done                   ; Failed to read a number
+        sty     buffer_pos              ; Update buffer_pos
         jsr     push_fp0                ; Push FP0 onto the value stack
         jsr     assign_variable         ; Store the value
         ldy     line_pos                ; Peek at the next byte

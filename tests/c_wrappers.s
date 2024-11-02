@@ -77,11 +77,6 @@ _decode_byte:
 
 ; encode.s
 
-_encode_number:
-.export _encode_number
-        jsr     encode_number
-        jmp     set_err
-
 _encode_byte:
 .export _encode_byte
         jsr     encode_byte
@@ -172,7 +167,11 @@ _fp_to_string:
 
 _string_to_fp:
 .export _string_to_fp
+        sta     B                       ; Have to shuffle pos to Y
+        jsr     popax                   ; Address of ptr
+        ldy     B      
         jsr     string_to_fp
+        sty     _Y
         jmp     set_err
 
 _normalize:
@@ -284,14 +283,19 @@ _parse_expression:
         jsr     parse_expression
         jmp     set_err
 
-_parse_argument_separator:
-.export _parse_argument_separator
-        jsr     parse_argument_separator
-        jmp     set_err
-
 _parse_name:
 .export _parse_name
         jsr     parse_name
+        jmp     set_err
+
+_parse_number:
+.export _parse_number
+        jsr     parse_number
+        jmp     set_err
+
+_parse_argument_separator:
+.export _parse_argument_separator
+        jsr     parse_argument_separator
         jmp     set_err
 
 ; program.s
