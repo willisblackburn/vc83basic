@@ -694,7 +694,7 @@ string_to_fp:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
         lday    #fp_temp
         jsr     load_fp0                ; Reload result saved earlier
-        jmp     fdiv                    ; Divide
+        jsr     fdiv                    ; Divide
 
 @whole:
         ldy     E                       ; Return buffer read position in Y
