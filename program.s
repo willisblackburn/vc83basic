@@ -42,6 +42,7 @@ reset_program_state:
         lda     #0                      ; Load zero into A
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
+        mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, psp
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
@@ -175,7 +176,7 @@ insert_or_update_line:
         rts
 
 ; Grows a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
-; not including) himem_ptr, by some amount.
+; not including) string_ptr, by some amount.
 ; This creates a new area of uninitialized memory at the pointer's original address, increasing the memory available
 ; to the section *before* the pointer we moved.
 ; AX = the amount to add to the pointer (the grow_a entry point sets X to 0)
@@ -186,17 +187,17 @@ grow_a:
         ldx     #0                      ; Initialize high byte to 0
 grow:
         stax    DE                      ; Store size in DE
-        clc                             ; Do 16-bit add of size in AX to free_ptr to see if it grows past himem_ptr
+        clc                             ; Do 16-bit add of size in AX to free_ptr to see if it grows past string_ptr
         adc     free_ptr                ; Add low byte
         tax                             ; Low byte into X
         lda     E                       ; Re-load high byte of size from E
         adc     free_ptr+1              ; Add high byte of free_ptr
         bcs     @done                   ; If carry is set after high byte add then address has overflowed
-        cmp     himem_ptr+1             ; Test new high byte of free_ptr
+        cmp     string_ptr+1            ; Test new high byte of free_ptr
         bcc     @continue               ; Less, everything okay, return
         bne     @done                   ; Not equal so greater, return with carry set
         txa                             ; High bytes are equal; compare low bytes
-        cmp     himem_ptr
+        cmp     string_ptr
         bcc     @continue               ; Same logic for low byte
         bne     @done
 @continue:
@@ -233,7 +234,7 @@ shrink:
         rts
 
 ; Adds the value in DE to the pointer identified by Y, and all subsequent pointers up to (but not including)
-; himem_ptr, by some amount. Also sets up src_ptr, dst_ptr, and size for copy.
+; string_ptr, by some amount. Also sets up src_ptr, dst_ptr, and size for copy.
 ; Used by both grow and shrink.
 
 grow_shrink_common:
@@ -263,6 +264,6 @@ grow_shrink_common:
         sta     1,y
         iny
         iny
-        cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
+        cpy     #string_ptr             ; Is Y now pointing at string_ptr?
         bne     @next_ptr               ; Nope, keep going
         rts

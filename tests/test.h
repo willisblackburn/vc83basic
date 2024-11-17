@@ -86,14 +86,13 @@ extern const char statement_name_table[];
 // decode.s
 void decode_expression(/* AX */ void** vector_table_ptr);
 void decode_number(void);
-const char* decode_string(void);
+const String* decode_string(void);
 void decode_name(void);
 char decode_operator(void);
 char decode_unary_operator(void);
 char decode_byte(void);
 
 // encode.s
-void encode_number(void);
 void encode_byte(/* A */ char value);
 
 // expression.s
@@ -118,7 +117,7 @@ void int32_to_fp(void);
 int truncate_fp_to_int(void);
 void truncate_fp_to_int32(void);
 void fp_to_string(void);
-void string_to_fp(void);
+void string_to_fp(const char* ptr, char pos);
 char char_to_digit(/* A */ char c);
 void adjust_exponent(/* X */ char add, /* Y */ char subtract);
 void normalize(void);
@@ -145,8 +144,9 @@ void parse_line(void);
 void parse_statement(/* AX */ const char* match_ptr);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
-void parse_argument_separator(void);
 void parse_name(void);
+void parse_number(void);
+void parse_argument_separator(void);
 
 // program.s
 void initialize_target(void);
@@ -159,8 +159,9 @@ void grow(/* Y */ void* ptr, /* AX */ size_t size);
 void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 
 // string.s
-char read_string(void);
 char load_sy(/* Y */ void* sy, /* AY */ const String* value);
+const String* read_string(const char* ptr, char pos);
+const String* string_alloc(/* A */ char length);
 
 // util.s
 void copy(/* AX */ size_t size);

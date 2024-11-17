@@ -11,17 +11,11 @@ def(NT_RPT_VAR,         hex(11))
 def(NT_NUM,             hex(12))
 def(NT_RPT_NUM,         hex(13))
 def(NT_STATEMENT,       hex(14))
-def(NT_PRINT_EXP,       hex(15))
+def(NT_PEXP,            hex(15))
 def(NT_STOP,            hex(80))
 
 comment Tokenized form constants
 
-def(TOKEN_NO_VALUE,     hex(00))
-def(TOKEN_NUM,          hex(01))
-def(TOKEN_STRING,       hex(02))
-def(TOKEN_PAREN,        hex(03))
-def(TOKEN_TAB,          hex(04)) comment Used in print expressions
-def(TOKEN_EMPTY_SPACE,  hex(05)) comment Used in print expressions
 def(TOKEN_UNARY_OP,     hex(08)) comment OR with OP_UNARY_*
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
 
@@ -71,11 +65,11 @@ def(UNARY_OP_NOT,       1)
 
 comment Expression decode handlers
 
-def(XH_VAR,             0)
+def(XH_UNARY_OP,        0)
 def(XH_OP,              1)
-def(XH_UNARY_OP,        2)
-def(XH_NUM,             3)
-def(XH_STRING,          4)
+def(XH_NUM,             2)
+def(XH_STRING,          3)
+def(XH_VAR,             4)
 def(XH_PAREN,           5)
 
 comment Types
@@ -102,7 +96,8 @@ def(PS_RUNNING,         hex(01))
 comment Other constants
 
 def(BUFFER_SIZE, 256)
-def(NAME_OK, hex(80))
-def(NAME_ERROR, hex(81))
+def(PATTERN_OK, hex(80))
+def(PATTERN_ERROR, hex(81))
 def(PRIMARY_STACK_SIZE, 192)
 def(OP_STACK_SIZE, 16)
+def(STRING_EXTRA, 3)

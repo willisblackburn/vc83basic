@@ -45,24 +45,14 @@ void set_match_ptr(const char* name) {
 void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
                         const Float* expected11) {
 
-    char line_data[] = {
-            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0,   // 0-5
-            0,                                      // 6  
-            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0,   // 7-12
-            TOKEN_NO_VALUE
-        };
-    const Float value_0 = { 0x00000000, 0 };
-    const Float value_1 = { 0x00000000, 127 };
+    char line_data[] = { '0', 0, 0 /* op */, '0', 0, 0 };
     Float value;
 
     DEBUG(op);
 
-    line_data[6] = TOKEN_OP | op;
-
-    // Set the exponent of each operand to either 0 (for value 0) or 127 (for value 1).
-
-    memcpy(line_data + 1, &value_0, sizeof (Float));
-    memcpy(line_data + 8, &value_0, sizeof (Float));
+    line_data[2] = TOKEN_OP | op;
+    line_data[0] = '0';
+    line_data[3] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -70,16 +60,16 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected00->e, expected00->t);
 
-    memcpy(line_data + 1, &value_0, sizeof (Float));
-    memcpy(line_data + 8, &value_1, sizeof (Float));
+    line_data[0] = '0';
+    line_data[3] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected01->e, expected01->t);
 
-    memcpy(line_data + 1, &value_1, sizeof (Float));
-    memcpy(line_data + 8, &value_0, sizeof (Float));
+    line_data[0] = '1';
+    line_data[3] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -87,8 +77,8 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected10->e, expected10->t);
 
-    memcpy(line_data + 1, &value_1, sizeof (Float));
-    memcpy(line_data + 8, &value_1, sizeof (Float));
+    line_data[0] = '1';
+    line_data[3] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -99,20 +89,13 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
 
 void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
 
-    char line_data[] = {
-            0,                                          // 0        
-            TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00,    // 1-7
-            TOKEN_NO_VALUE
-        };
-    const Float value_0 = { 0x00000000, 0 };
-    const Float value_1 = { 0x00000000, 127 };
+    char line_data[] = { 0 /* op */, '0', 0, 0 };
     Float value;
 
     DEBUG(op);
 
     line_data[0] = TOKEN_UNARY_OP | op;
-
-    memcpy(line_data + 2, &value_0, sizeof (Float));
+    line_data[1] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -120,7 +103,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     store_fpx(&FP0, &value);
     ASSERT_FLOAT_EQ(value, expected0->e, expected0->t);
 
-    memcpy(line_data + 2, &value_1, sizeof (Float));
+    line_data[1] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -129,7 +112,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     ASSERT_FLOAT_EQ(value, expected1->e, expected1->t);
 }
 
-void test_evaluate_expression(void) {
+void test_evaluate_expression_op(void) {
     const Float value_0 = { 0x00000000, 0 };
     const Float value_negative_0 = { 0x80000000, 0 };
     const Float value_1 = { 0x00000000, 127 };
@@ -157,22 +140,13 @@ void test_evaluate_expression(void) {
     test_one_unary_op(UNARY_OP_NOT, &value_1, &value_0);
 }
 
-void test_evaluate_expression_precedence(void) {
-
-    const Float value_0 = { 0x00000000, 0 };
-    const Float value_1 = { 0x00000000, 127 };
+void test_evaluate_expression_op_precedence(void) {
     Float value;
 
-    // 0 AND 0 = 0
-    // Equals is higher precedence so result is 0
-    char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_EQ,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE };
-    // (0 AND 0) = 0
-    // Parens make it into 0 = 0 so result is 1
-    char line_data_2[] = { TOKEN_PAREN, TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_OP | OP_AND, 
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE, TOKEN_OP | OP_EQ,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x00, 0x00, TOKEN_NO_VALUE };
+    // 2-1-1 = 0
+    char line_data_1[] = { '2', 0, TOKEN_OP | OP_SUB, '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0 };
+    // 2-(1-1) = 2
+    char line_data_2[] = { '2', 0, TOKEN_OP | OP_SUB, '(', '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0, 0 };
 
     PRINT_TEST_NAME();
 
@@ -190,7 +164,7 @@ void test_evaluate_expression_precedence(void) {
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fpx(&FP0, &value);
-    ASSERT_FLOAT_EQ(value, 127, 0x00000000);
+    ASSERT_FLOAT_EQ(value, 128, 0x00000000);
 }
 
 void test_one_string_comparison(char op, const char* s1, const char* s2, const Float* expected, int line) {
@@ -205,16 +179,16 @@ void test_one_string_comparison(char op, const char* s1, const char* s2, const F
     s2_length = strlen(s2);
 
     i = 0;
-    line_data[i++] = TOKEN_STRING;
-    line_data[i++] = (char)s1_length;
+    line_data[i++] = '"';
     memcpy(line_data + i, s1, s1_length);
     i += s1_length;
+    line_data[i++] = '"';
     line_data[i++] = TOKEN_OP | op;
-    line_data[i++] = TOKEN_STRING;
-    line_data[i++] = (char)s2_length;
+    line_data[i++] = '"';
     memcpy(line_data + i, s2, s2_length);
     i += s2_length;
-    line_data[i++] = TOKEN_NO_VALUE;
+    line_data[i++] = '"';
+    line_data[i++] = 0;
     set_line(0, line_data, i);
 
     evaluate_expression();
@@ -270,8 +244,8 @@ void test_string_comparison(void) {
 int main(void) {
     initialize_target();
     test_stack_alloc_free();
-    test_evaluate_expression();
-    test_evaluate_expression_precedence();
+    test_evaluate_expression_op();
+    test_evaluate_expression_op_precedence();
     test_string_comparison();
     return 0;
 }

@@ -1,38 +1,5 @@
 #include "test.h"
 
-void call_read_string(const char* input, char expect_si, const char* expect_output, char expect_length, int line) {
-    char length;
-    char output_buffer[40];
-    fprintf(stderr, "  %s:%d: read_string(input=\"%s\")\n", __FILE__, line, input);
-    strcpy(buffer, input);
-    src_ptr = buffer;
-    si = 0;
-    memset(output_buffer, 0, sizeof output_buffer);
-    dst_ptr = output_buffer;
-    di = 2;
-    length = read_string();
-    HEXDUMP(output_buffer, length);
-    ASSERT_EQ(length, expect_length);
-    ASSERT_EQ(memcmp(output_buffer + 2 /* di started at 2 */, expect_output, length), 0);
-    ASSERT_EQ(si, expect_si);
-    ASSERT_EQ(di, expect_length + 1 /* length byte */ + 2 /* di started at 2 */);
-    ASSERT_EQ(length, expect_length);
-}
-
-void test_read_string(void) {
-    PRINT_TEST_NAME();
-
-    call_read_string("HELLO", 5, "\x05HELLO", 5, __LINE__);
-    call_read_string("HELLO,WORLD", 5, "\x05HELLO", 5, __LINE__);
-    call_read_string("\"HELLO\"", 7, "\x05HELLO", 5, __LINE__);
-    call_read_string("HELLO\"", 6, "\x06HELLO\"", 6, __LINE__);
-    call_read_string("\"\"", 2, "\x00", 0, __LINE__);
-    call_read_string("\"\",IGNORE", 2, "\x00", 0, __LINE__);
-    call_read_string(",IGNORE", 0, "\x00", 0, __LINE__);
-    call_read_string("REPEATED\"\"CHARS", 15, "\x0FREPEATED\"\"CHARS", 15, __LINE__);
-    call_read_string("\"REPEATED\"\"CHARS\"", 17, "\x0EREPEATED\"CHARS", 14, __LINE__);
-}
-
 void test_load_sy(void) {
 
     const String s = { 5, { 'H', 'E', 'L', 'L', 'O' }};
@@ -58,9 +25,67 @@ void test_load_sy(void) {
     ASSERT_EQ(length, 0);
 }
 
+void test_string_alloc(void) {
+    void* original_string_ptr;
+    const String* s;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    original_string_ptr = string_ptr;
+    s = string_alloc(10);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(s, string_ptr);
+    ASSERT_PTR_EQ(string_ptr, (char*)original_string_ptr - 10 - STRING_EXTRA);
+    ASSERT_EQ(s->length, 10);
+
+    s = string_alloc(20);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(s, string_ptr);
+    ASSERT_PTR_EQ(string_ptr, (char*)original_string_ptr - 10 - STRING_EXTRA - 20 - STRING_EXTRA);
+    ASSERT_EQ(s->length, 20);
+}
+
+void call_read_string(const char* input, const char* expect_string_data, char expect_y, int line) {
+    const String* s;
+    const String* leftover;
+    size_t expect_length = strlen(expect_string_data);
+    fprintf(stderr, "  %s:%d: read_string(input=\"%s\")\n", __FILE__, line, input);
+    strcpy(buffer, input);
+    s = read_string(buffer, 0);
+    // Check the returned string.
+    ASSERT_EQ(err, 0);
+    HEXDUMP(s, sizeof (String) + expect_length);
+    ASSERT_EQ(s->length, expect_length);
+    ASSERT_EQ(memcmp(s->data, expect_string_data, s->length), 0);
+    // Check the leftover string.
+    leftover = (const String*)((const char*)s + STRING_EXTRA + s->length);
+    ASSERT_EQ(leftover->length, 255 - s->length);
+    // Make sure read position returned correctly.
+    ASSERT_EQ(Y, expect_y);
+}
+
+void test_read_string(void) {
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    call_read_string("HELLO", "HELLO", 5, __LINE__);
+    call_read_string("HELLO,WORLD", "HELLO", 5, __LINE__);
+    call_read_string("\"HELLO\"", "HELLO", 7, __LINE__);
+    call_read_string("HELLO\"", "HELLO\"", 6, __LINE__);
+    call_read_string("\"\"", "", 2, __LINE__);
+    call_read_string("\"\",IGNORE", "", 2, __LINE__);
+    call_read_string(",IGNORE", "", 0, __LINE__);
+    call_read_string("REPEATED\"\"CHARS", "REPEATED\"\"CHARS", 15, __LINE__);
+    call_read_string("\"REPEATED\"\"CHARS\"", "REPEATED\"CHARS", 17, __LINE__);
+}
+
 int main(void) {
     initialize_target();
-    test_read_string();
     test_load_sy();
+    test_string_alloc();
+    test_read_string();
     return 0;
 }

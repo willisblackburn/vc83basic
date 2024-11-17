@@ -3,7 +3,6 @@
 
 ; PRINT statement:
 
-.assert TOKEN_NO_VALUE = 0, error
 .assert TYPE_NUM = 0, error
 
 exec_print_number:
@@ -14,9 +13,9 @@ exec_print:
         lda     (line_ptr),y            ; Peek at next character
         beq     @end_line               ; Found TOKEN_NO_VALUE
 @continue:
-        cmp     #TOKEN_EMPTY_SPACE
+        cmp     #';'
         beq     @empty_space
-        cmp     #TOKEN_TAB
+        cmp     #','
         beq     @tab
         jsr     evaluate_expression     ; Leaves value on stack
         bcs     @done

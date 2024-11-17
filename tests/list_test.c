@@ -31,30 +31,29 @@ void call_list_directive(char directive, const char* line_data, size_t line_data
 }
 
 void test_list_directive(void) {
-    const char line_data_1[] = { TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_2[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 'X' | NT_STOP, TOKEN_NO_VALUE, TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139, TOKEN_NO_VALUE };
+
+    const char line_data_1[] = { '4', '1', '1', '2', 0, 0 };
+    const char line_data_2[] = { 'X' | NT_STOP, 0 };
+    const char line_data_3[] = { 'X' | NT_STOP, 0, '4', '1', '1', '2', 0, 0 };
     const char line_data_4[] = { 'X' | NT_STOP };
-    const char line_data_5[] = { 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_6[] = { 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_7[] = { TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128,
-        TOKEN_NO_VALUE, TOKEN_OP | OP_MUL, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_9[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x30, 131, TOKEN_OP | OP_DIV,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x60, 129, TOKEN_NO_VALUE };
-    const char line_data_10[] = { TOKEN_NUM, 0x00, 0x00, 0x00, 0x30, 131, TOKEN_OP | OP_DIV,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x60, 129, TOKEN_NO_VALUE,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_11[] = { 'X' | NT_STOP, TOKEN_OP | OP_LE, TOKEN_NUM, 0x00, 0x00, 0x00, 0x60, 129, TOKEN_OP | OP_OR,
-        'Y' | NT_STOP, TOKEN_OP | OP_EQ, TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 139, TOKEN_NO_VALUE };
-    const char line_data_12[] = { TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_ADD, TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128,
-        TOKEN_NO_VALUE, TOKEN_OP | OP_AND, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_13[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_PAREN, 'X' | NT_STOP, TOKEN_OP | OP_EQ,
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x40, 128, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS,  'Y' | NT_STOP, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_14[] = { TOKEN_STRING, 5, 'H', 'E', 'L', 'L', 'O', TOKEN_NO_VALUE };
-    const char line_data_15[] = { TOKEN_STRING, 17, 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"',
-        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', TOKEN_NO_VALUE };
+    const char line_data_5[] = { 'X' | NT_STOP, 0 };
+    const char line_data_6[] = { 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_7[] = { '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
+        TOKEN_OP | OP_MUL, 'Y' | NT_STOP, 0 };
+    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, 0 };
+    const char line_data_9[] = { '2', '2', 0, TOKEN_OP | OP_DIV, '7', 0, 0 };
+    const char line_data_10[] = { '2', '2', 0, TOKEN_OP | OP_DIV, '7', 0, 0,
+        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | NT_STOP, 0 };
+    const char line_data_11[] = { 'X' | NT_STOP, TOKEN_OP | OP_LE, '7', 0, TOKEN_OP | OP_OR,
+        'Y' | NT_STOP, TOKEN_OP | OP_EQ, '4', '1', '1', '2', 0, 0 };
+    const char line_data_12[] = { '(', 'X' | NT_STOP, TOKEN_OP | OP_ADD, '3', 0, 0,
+        TOKEN_OP | OP_AND, 'Y' | NT_STOP, 0 };
+    const char line_data_13[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | NT_STOP, TOKEN_OP | OP_EQ,
+        '3', 0, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_UNARY_OP | UNARY_OP_MINUS, 
+        'Y' | NT_STOP, 0, 0 };
+    const char line_data_14[] = { '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
+    const char line_data_15[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"',
+        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
@@ -106,14 +105,12 @@ void call_list_statement(const char* line_data, size_t line_data_length, const c
 void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0xFE, 0x7F, 141, TOKEN_NO_VALUE };
-    const char line_data_3[] = { ST_LIST, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NO_VALUE, 
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
-    const char line_data_4[] = { ST_LIST, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_5[] = { ST_LIST, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
-    const char line_data_6[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, TOKEN_NO_VALUE };
-    const char line_data_7[] = { ST_ON_GOTO, 'X' | NT_STOP, TOKEN_NO_VALUE, TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 130, 
-        TOKEN_NUM, 0x00, 0x00, 0x00, 0x20, 131, TOKEN_NO_VALUE };
+    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, '3', '2', '7', '6', '7', 0, 0 };
+    const char line_data_3[] = { ST_LIST, '1', '0', 0, 0, '2', '0', 0, 0 };
+    const char line_data_4[] = { ST_LIST, '1', '0', 0, 0, 0  };
+    const char line_data_5[] = { ST_LIST, 0, 0 };
+    const char line_data_6[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_7[] = { ST_ON_GOTO, 'X' | NT_STOP, 0, '1', '0', 0, '2', '0', 0, 0 };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
@@ -139,11 +136,10 @@ void test_list_statment(void) {
 
 void test_list_line(void) {
 
-    const char line_data_1[] = { 13, ST_PRINT, TOKEN_NUM, 0x00, 0x00, 0x80, 0x00, 135, TOKEN_NO_VALUE,
-        TOKEN_NO_VALUE };
-    const char line_data_2[] = { 13, ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0xFE, 0x7F, 141, TOKEN_NO_VALUE };
-    const char line_data_3[] = { 13, ST_LET, 'X' | NT_STOP, TOKEN_NUM, 0x00, 0x00, 0xFE, 0x7F, 141, TOKEN_NO_VALUE,
-        18, ST_PRINT, 'X' | NT_STOP, TOKEN_NO_VALUE, TOKEN_NO_VALUE };
+    const char line_data_1[] = { 11, ST_PRINT, '2', '5', '7', 0, 0, 0 };
+    const char line_data_2[] = { 13, ST_LET, 'X' | NT_STOP, '3', '2', '7', '6', '7', 0, 0 };
+    const char line_data_3[] = { 13, ST_LET, 'X' | NT_STOP, '3', '2', '7', '6', '7', 0, 0,
+        18, ST_PRINT, 'X' | NT_STOP, 0, 0 };
     const char line_data_end[] = { 5, ST_END };
     
     const char list_1[] = "10 PRINT 257";

@@ -85,10 +85,9 @@ FP1s = FP1+UnpackedFloat::s
 .global decode_byte
 
 ; encode.s
-.global encode_number
 .global encode_operator
 .global encode_unary_operator
-.global encode_no_value
+.global encode_zero
 .global encode_byte
 
 ; expression.s
@@ -155,6 +154,7 @@ FP1s = FP1+UnpackedFloat::s
 .global parse_directive
 .global parse_expression
 .global parse_name
+.global parse_number
 .global parse_argument_separator
 .global skip_whitespace
 
@@ -183,8 +183,9 @@ FP1s = FP1+UnpackedFloat::s
 .global exec_clr
 
 ; string.s
-.global read_string
 .global load_sy, load_s0
+.global read_string
+.global string_alloc
 
 ; tables.s
 .global statement_name_table

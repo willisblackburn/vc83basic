@@ -56,7 +56,7 @@ main:
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
-        jsr     reset_program_state     ; Reset program state before updating program
+        mva     #0, resume_line_ptr+1   ; Clear high byte of resume line_ptr to disable CONT
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
         bcc     @wait_for_input

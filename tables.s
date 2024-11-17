@@ -3,7 +3,7 @@
 statement_name_table:
         .byte   :+ - *, 'E', 'N', 'D' | NT_STOP
 :       .byte   :+ - *, 'R', 'U', 'N' | NT_STOP
-:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, NT_PRINT_EXP
+:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, NT_PEXP
 :       .byte   :+ - *, 'L', 'E', 'T' | NT_STOP, NT_VAR, '=', 1
 :       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | NT_STOP, NT_RPT_VAR
 :       .byte   :+ - *, 'L', 'I', 'S', 'T' | NT_STOP, 2

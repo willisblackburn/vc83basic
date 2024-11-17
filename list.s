@@ -158,7 +158,7 @@ list_argument_type_vectors:
         .word   list_number-1               ; NT_NUM
         .word   list_repeated_number-1      ; NT_RPT_NUM
         .word   list_statement-1            ; NT_STATEMENT
-        .word   list_print_expression-1     ; NT_PRINT_EXP
+        .word   list_print_expression-1     ; NT_PEXP
 
 ; Lists a single directive from the token stream.
 ; A = the directive
@@ -188,7 +188,7 @@ list_directive:
 list_argument_list:
         and     #$07                    ; Isolate the count
         sta     argument_count          ; Re-use argument_count from parser module
-        jsr     decode_byte             ; Check if the next argument is TOKEN_NO_VALUE
+        jsr     decode_byte             ; Check if the next argument is 0
         beq     @no_value               ; If so then don't list
 @next_argument:
         dec     line_pos                ; Back up
@@ -196,7 +196,7 @@ list_argument_list:
 @no_value:
         dec     argument_count          ; Done with one argument
         beq     @done                   ; Finish if no more
-        jsr     decode_byte             ; Check if next argument is TOKEN_NO_VALUE
+        jsr     decode_byte             ; Check if next argument is 0
         beq     @no_value               
         lda     #','                    ; Output argument separator
         jsr     append_buffer
@@ -213,19 +213,13 @@ list_print_expression:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
         beq     @done                   ; Found TOKEN_NO_VALUE
-        cmp     #TOKEN_EMPTY_SPACE
-        beq     @empty_space
-        cmp     #TOKEN_TAB
-        beq     @tab
+        cmp     #';'
+        beq     @output
+        cmp     #','
+        beq     @output
         jsr     list_expression         ; Not empty space or tab; must be expression
         jmp     @next
 
-@tab:
-        lda     #','                    ; It's a tab
-        bne     @output                 ; Unconditional
-
-@empty_space:
-        lda     #';'
 @output:
         jsr     append_buffer
         inc     line_pos
@@ -234,35 +228,30 @@ list_print_expression:
 @done:
         rts
 
-; Following logic depends on TOKEN_NO_VALUE being 0
-.assert TOKEN_NO_VALUE = 0, error
-
 list_vectors:
-        .word   list_variable-1         ; XH_VAR
-        .word   list_operator-1         ; XH_OP
         .word   list_unary_operator-1   ; XH_UNARY_OP
+        .word   list_operator-1         ; XH_OP
         .word   list_number-1           ; XH_NUM
         .word   list_string-1           ; XH_STRING
+        .word   list_variable-1         ; XH_VAR
         .word   list_paren-1            ; XH_PAREN
 
 list_expression:
         ldax    #list_vectors
         jmp     decode_expression
 
-list_variable:
-        jsr     decode_name             ; Set up match_ptr
-        jmp     list_name
+list_unary_operator:
+        jsr     add_whitespace
+        jsr     decode_unary_operator
+        tay         
+        ldax    #unary_operator_name_table
+        jmp     list_tokenized_name
 
-loop_list_repeated_variable:
-        lda     #','                    ; Write ',' to output
-        jsr     append_buffer
-list_repeated_variable:
-        jsr     list_variable           ; List one variable
-        ldy     line_pos                ; Peek next byte
-        lda     (line_ptr),y
-        bne     loop_list_repeated_variable ; Not TOKEN_NO_VALUE so keep going
-        inc     line_pos                ; Skip over TOKEN_NO_VALUE
-        rts
+list_operator:
+        jsr     decode_operator
+        tay         
+        ldax    #operator_name_table
+        jmp     list_tokenized_name
 
 list_number:
         jsr     add_whitespace
@@ -283,20 +272,23 @@ list_repeated_number:
         clc                             ; Signal success
         rts
 
-list_operator:
-        jsr     decode_operator
-        tay         
-        ldax    #operator_name_table
-        jmp     list_tokenized_name
+list_variable:
+        jsr     decode_name             ; Set up match_ptr
+        jmp     list_name
 
-list_unary_operator:
-        jsr     add_whitespace
-        jsr     decode_unary_operator
-        tay         
-        ldax    #unary_operator_name_table
-        jmp     list_tokenized_name
+loop_list_repeated_variable:
+        lda     #','                    ; Write ',' to output
+        jsr     append_buffer
+list_repeated_variable:
+        jsr     list_variable           ; List one variable
+        ldy     line_pos                ; Peek next byte
+        lda     (line_ptr),y
+        bne     loop_list_repeated_variable ; Not 0 so keep going
+        inc     line_pos                ; Skip over 0
+        rts
 
 list_paren:
+        inc     line_pos                ; Skip over '('
         jsr     add_whitespace
         lda     #'('
         jsr     append_buffer

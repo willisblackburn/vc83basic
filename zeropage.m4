@@ -40,10 +40,6 @@ word(dst_ptr, void*)
 comment Size for memory operations
 word(size, size_t)
 
-comment Positions relative to src_ptr and dst_ptr
-byte(si)
-byte(di)
-
 comment Pointer to the table of vectors used by invoke_indexed_vector
 word(vector_table_ptr, void**)
 
@@ -62,6 +58,9 @@ word(variable_name_table_ptr, char*)
 
 comment The start of free space past the heap; initialized to heap_ptr
 word(free_ptr, void*)
+
+comment The start of the string space, and the address of the most-recently-allocated string
+word(string_ptr, String*)
 
 comment The address of "high memory" that will not be touched by the interpreter
 word(himem_ptr, void*)
@@ -91,7 +90,7 @@ comment Pointer to the next name table entry
 word(next_name_ptr, char*)
 
 comment Pointer to name terminated with a character with the high bit set
-word(match_ptr, char*)
+word(match_ptr, const char*)
 
 comment Length of the name referred to by match_ptr
 byte(match_length)
