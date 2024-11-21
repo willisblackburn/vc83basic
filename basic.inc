@@ -186,6 +186,7 @@ FP1s = FP1+UnpackedFloat::s
 .global load_sy, load_s0
 .global read_string
 .global string_alloc
+.global compact
 
 ; tables.s
 .global statement_name_table

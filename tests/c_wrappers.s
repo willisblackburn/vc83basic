@@ -383,6 +383,10 @@ _string_alloc:
         jsr     string_alloc
         jmp     set_err
 
+_compact:
+.export _compact
+        jmp     compact
+
 ; util.s
 
 _copy:

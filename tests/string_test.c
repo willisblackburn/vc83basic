@@ -82,10 +82,34 @@ void test_read_string(void) {
     call_read_string("\"REPEATED\"\"CHARS\"", "REPEATED\"CHARS", 17, __LINE__);
 }
 
+void test_compact(void) {
+    const String* s;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Sanity check before we get on with the test.
+    ASSERT_PTR_EQ(string_ptr, himem_ptr);
+
+    // No strings exist. Calling compact should do nothing.
+
+    compact();
+    ASSERT_PTR_EQ(string_ptr, himem_ptr);
+
+    // Allocate one string but no variables. Should collect the space.
+
+    s = string_alloc(10);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 13);
+    compact();
+    ASSERT_PTR_EQ(string_ptr, himem_ptr);
+}
+
 int main(void) {
     initialize_target();
     test_load_sy();
     test_string_alloc();
     test_read_string();
+    test_compact();
     return 0;
 }

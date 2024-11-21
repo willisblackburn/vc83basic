@@ -162,6 +162,7 @@ void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 char load_sy(/* Y */ void* sy, /* AY */ const String* value);
 const String* read_string(const char* ptr, char pos);
 const String* string_alloc(/* A */ char length);
+void compact(void);
 
 // util.s
 void copy(/* AX */ size_t size);
