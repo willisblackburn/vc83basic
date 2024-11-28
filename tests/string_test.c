@@ -1,5 +1,19 @@
 #include "test.h"
 
+void add_string_variable_with_name(const char* name, const String* value) {
+    strcpy(buffer, name);
+    buffer_pos = 0;
+    line_pos = 0;
+    parse_name();
+    ASSERT_EQ(err, 0);
+    find_name(variable_name_table_ptr);
+    ASSERT_NE(err, 0);
+    add_variable(sizeof (String*));
+    // Now name_ptr points to the data allocated for the new variable, so we can cast and assign through it.
+    *((const String**)name_ptr) = value;
+    ASSERT_EQ(err, 0);
+}
+
 void test_load_sy(void) {
 
     const String s = { 5, { 'H', 'E', 'L', 'L', 'O' }};
@@ -84,6 +98,7 @@ void test_read_string(void) {
 
 void test_compact(void) {
     const String* s;
+    size_t offset;
 
     PRINT_TEST_NAME();
 
@@ -93,16 +108,63 @@ void test_compact(void) {
     ASSERT_PTR_EQ(string_ptr, himem_ptr);
 
     // No strings exist. Calling compact should do nothing.
-
     compact();
     ASSERT_PTR_EQ(string_ptr, himem_ptr);
 
     // Allocate one string but no variables. Should collect the space.
-
-    s = string_alloc(10);
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 13);
+    string_alloc(10);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3);
     compact();
     ASSERT_PTR_EQ(string_ptr, himem_ptr);
+
+    // Same thing but two allocations.
+    string_alloc(10);
+    ASSERT_EQ(err, 0);
+    string_alloc(120);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3 - 120 - 3);
+    compact();
+    ASSERT_PTR_EQ(string_ptr, himem_ptr);
+
+    // Between the two allocations, allocate another string and assign it to a variable.
+    string_alloc(10);
+    ASSERT_EQ(err, 0);
+    s = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(s->data, "HELLO", 5);
+    add_string_variable_with_name("A$", s);
+    string_alloc(120);
+    ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3 - 5 - 3 - 120 - 3);
+    compact();
+    // Only the "HELLO" string should remain.
+    
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - 3);
+    ASSERT_EQ(string_ptr->length, 5);
+    ASSERT_EQ(memcmp(string_ptr->data, "HELLO", 5), 0);
+
+    // Try some large strings.
+    // Populate the string with values from 0 to 255 to verify they're copied correctly.
+    string_alloc(255);
+    ASSERT_EQ(err, 0);
+    s = string_alloc(255);
+    ASSERT_EQ(err, 0);
+    for (offset = 0; offset < 255; offset++) {
+        s->data[offset] = (char)offset;
+    }
+    add_string_variable_with_name("B$", s);
+    string_alloc(10);
+    ASSERT_EQ(err, 0);
+    string_alloc(10);
+    ASSERT_EQ(err, 0);
+    compact();
+    // string_ptr should point to B$.
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - 3 - 255 - 3);
+    ASSERT_EQ(string_ptr->length, 255);
+    ASSERT_EQ(string_ptr->data[0], 0);
+    ASSERT_EQ(string_ptr->data[1], 1);
+    ASSERT_EQ(string_ptr->data[255], 255);
 }
 
 int main(void) {

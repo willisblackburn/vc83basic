@@ -158,13 +158,11 @@ compact:
 @clear_next:
         jsr     set_src_ptr_next_string ; Move src_ptr past relocation address and to next string
 @clear_next_2:
-        ldax src_ptr
         debug $01
         jsr     check_src_ptr
         debug $02
         bcs     @mark                   ; No more to clear
         jsr     set_src_ptr_relocation_address
-        ldax src_ptr
         debug $03
         lda     #0
         sta     (src_ptr),y             ; Set to 0
@@ -181,8 +179,10 @@ compact:
         debug $11
         bcs     @calculate
         jsr     find_variable_data
-        bne     @mark_next              ; Not a string; move on to the next one
+        debug $12
+        beq     @mark_next              ; Not a string; move on to the next one
         jsr     set_src_ptr_relocation_address  ; Add length to src_ptr; Y points to relocation address
+        lda     #1
         sta     (src_ptr),y             ; Store 1 into the relocation address field.
         bne     @mark_next
 
@@ -196,30 +196,36 @@ compact:
 @calculate_next:
         jsr     set_src_ptr_next_string ; Move src_ptr past relocation address and to next string
 @calculate_next_2:
-        ldax src_ptr
         debug $21
         jsr     check_src_ptr
         debug $22
         bcs     @update                 ; No more strings
         jsr     set_src_ptr_relocation_address
-        ldax src_ptr
         debug $23
         lda     (src_ptr),y             ; Marked?
         beq     @calculate_next         ; Nope, move on
         lda     dst_ptr                 ; Save current value of dst_ptr into relocation address
         sta     (src_ptr),y
-        lda     dst_ptr+1
         iny
+        lda     dst_ptr+1
         sta     (src_ptr),y
         txa                             ; Length is still in X from the call to set_src_ptr_relocation_address
         jsr     add_dst_ptr             ; Add to dst_ptr
         lda     #STRING_EXTRA
         jsr     add_dst_ptr             ; Allow for string overhead
+        debug $24
         jmp     @calculate_next
 
 ; Phase 4: Update string variables to point to the new addresses.
 
 @update:
+        sec                             ; Subtract free_ptr from dst_ptr to get size of string space
+        lda     dst_ptr
+        sbc     free_ptr
+        pha                             ; Save size on stack; we'll use it later
+        lda     dst_ptr+1
+        sbc     free_ptr+1
+        pha
         debug $30
         ldax    variable_name_table_ptr ; Prepare to scan variables
         jsr     initialize_name_ptr
@@ -228,7 +234,7 @@ compact:
         debug $31
         bcs     @relocate
         jsr     find_variable_data
-        bne     @update_next            ; Not a string; move on to the next one
+        beq     @update_next            ; Not a string; move on to the next one
         jsr     set_src_ptr_relocation_address  ; Add length to src_ptr; Y points to relocation address
         lda     (src_ptr),y             ; Copy address from relocation address to variable data
         sta     (name_ptr),y
@@ -238,6 +244,10 @@ compact:
         jmp     @update_next
 
 ; Phase 5: Move each still-referenced string down to its relocation address.
+; For each string we take one of two paths. If it's marked, we call copy to move its length byte and data, which
+; will leave src_ptr pointing to its relocation address. If it's not marked, we just add the length plus one to
+; src_ptr, which also leaves src_ptr pointing to the relocation address. We don't need to actually copy the
+; relocation address itself, as it's not needed after this phase.
 
 @relocate:
         debug $40
@@ -249,18 +259,23 @@ compact:
         jsr     check_src_ptr
         debug $41
         bcs     @shift                  ; No more strings
+        mvaa    src_ptr, BC             ; Save the src_ptr value in BC so we can get it back later for copy
         jsr     set_src_ptr_relocation_address
         lda     (src_ptr),y             ; Marked?
         beq     @relocate_next          ; Nope, move on
         sta     dst_ptr                 ; Save relocation address into dst_ptr
         iny
         lda     (src_ptr),y
+        sta     dst_ptr+1
+        mvaa    BC, src_ptr             ; Recover src_ptr from BC
+        mva     #0, size+1              ; Initialize high byte of size to 0
         inx                             ; Length is still in X; add 1 to account for length byte
-        txa                             ; Low byte of size
+        stx     size                    ; It's the low byte of size
         bne     @no_size_rollover       ; Was not 0 so adding 1 didn't cause rollover
-        inx                             ; Did rollover, so A is 0, and make high byte 1
+        inc     size+1                  ; Did rollover, so increment high byte
 @no_size_rollover:
-        jsr     copy                    ; Copy AX bytes from src_ptr to dst_ptr
+        debug $42
+        jsr     copy_size               ; Copy from src_ptr to dst_ptr
         jmp     @relocate_next
 
 ; Phase 6: All the strings have been relocated to free_ptr.
@@ -270,14 +285,8 @@ compact:
 ; string_ptr = himem_ptr - (dst_ptr - free_ptr)
 
 @shift:
+        plstaa  size                    ; Recover size we calculated earlier
         debug $50
-        sec                             ; Prepare for subtract
-        lda     dst_ptr
-        sbc     free_ptr
-        sta     size
-        lda     dst_ptr+1
-        sbc     free_ptr+1
-        sta     size+1
         sec                             ; Prepare for second subtract
         lda     himem_ptr
         sbc     size
@@ -333,6 +342,12 @@ check_src_ptr:
 @done:
         rts
 
+; Adds 2 bytes to src_ptr to move past the relocation address and to the next string.
+
+set_src_ptr_next_string:
+        lda     #STRING_EXTRA - 2       ; Subtract 1 for string length and 1 more because carry will be set
+        bne     add_src_ptr_plus_one
+
 ; Adds the length of the string referenced by src_ptr plus one to src_ptr, so that src_ptr points to
 ; the relocation address. Returns the string length in X and 0 in Y.
 
@@ -340,12 +355,6 @@ set_src_ptr_relocation_address:
         ldy     #0
         lda     (src_ptr),y             ; Load length first
         tax                             ; Move into X in case someone wants it later
-        jmp     add_src_ptr_plus_one
-
-; Adds 2 bytes to src_ptr to move past the relocation address and to the next string.
-
-set_src_ptr_next_string:
-        lda     #STRING_EXTRA - 2       ; Subtract 1 for string length and 1 again because carry will be set
 
 ; Fall through
 
