@@ -145,37 +145,6 @@ int invoke_indexed_vector(/* AX */ void* vectors, /* Y */ char index);
 int read_number(const char* ptr, char pos);
 void format_number(/* AX */ int number);
 
-// Common functions and definitions used in tests
-
-void hexdump(const char* name, const char* data, size_t length) {
-    unsigned i, j;
-    const char* p;
-    fprintf(stderr, "        %s ($%04X):\n", name, data);
-    for (i = 0; i < length; i += j) {
-        fprintf(stderr, "        %04X %04X  ", i, data + i);
-        p = data + i;
-        for (j = 0; j < 16; j++, p++) {
-            if (i + j < length) fprintf(stderr, "%02X ", *p);
-            else fprintf(stderr, "   ");
-        }
-        fprintf(stderr, " ");
-        p = data + i;
-        for (j = 0; j < 16; j++, p++) {
-            if (i + j < length) fputc(isprint(*p) ? *p : '.', stderr);
-            else fputc(' ', stderr);
-        }
-        printf("\n");
-    }
-}
-
-void set_line(int line, const char* data, size_t length) {
-    line_buffer.number = line;
-    line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
-    memcpy(line_buffer.data, data, length);
-    line_ptr = &line_buffer;
-    line_pos = (char)offsetof(Line, data);
-}
-
 #define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
 
 #define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
@@ -229,5 +198,49 @@ void set_line(int line, const char* data, size_t length) {
     ASSERT_EQ(value.e, e_value); \
     ASSERT_EQ(value.t, t_value); \
 } while (0)
+
+// Common functions and definitions used in tests
+
+void hexdump(const char* name, const char* data, size_t length) {
+    unsigned i, j;
+    const char* p;
+    fprintf(stderr, "        %s ($%04X):\n", name, data);
+    for (i = 0; i < length; i += j) {
+        fprintf(stderr, "        %04X %04X  ", i, data + i);
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            if (i + j < length) fprintf(stderr, "%02X ", *p);
+            else fprintf(stderr, "   ");
+        }
+        fprintf(stderr, " ");
+        p = data + i;
+        for (j = 0; j < 16; j++, p++) {
+            if (i + j < length) fputc(isprint(*p) ? *p : '.', stderr);
+            else fputc(' ', stderr);
+        }
+        printf("\n");
+    }
+}
+
+void set_line(int line, const char* data, size_t length) {
+    line_buffer.number = line;
+    line_buffer.next_line_offset = (char)(length + offsetof(Line, data));
+    memcpy(line_buffer.data, data, length);
+    line_ptr = &line_buffer;
+    line_pos = (char)offsetof(Line, data);
+}
+
+void parse_and_decode_name(const char* name) {
+    // Parse given name, then decodes it from line_buffer, in order to set up match_ptr, match_lenght, and high bit
+    // on final character.
+    strcpy(buffer, name);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
+    parse_name();
+    ASSERT_EQ(err, 0);
+    line_ptr = &line_buffer;
+    line_pos = offsetof(Line, data);
+    decode_name();
+}
 
 #endif
