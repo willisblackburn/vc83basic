@@ -1,11 +1,7 @@
 #include "test.h"
 
 void add_variable_with_name(const char* name) {
-    strcpy(buffer, name);
-    buffer_pos = 0;
-    line_pos = 0;
-    parse_name();
-    ASSERT_EQ(err, 0);
+    parse_and_decode_name(name);
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     add_variable(2);
