@@ -110,6 +110,35 @@ int read_number(const char* ptr, char pos);
 char char_to_digit(/* A */ char c);
 void format_number(/* AX */ int number);
 
+#define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
+
+#define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
+
+#define ASSERT(x) do { fprintf(stderr, "  %s:%u: assert %s: ", __FILE__, __LINE__, #x); assert(x); fputs("OK\n", stderr); } while (0)
+#define ASSERT_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s (%ld, $%lX) %s %s (%ld, $%lX): ", __FILE__, __LINE__, #a, (long)(a), (long)(a), #op, #b, (long)(b), (long)(b)); assert((a) op (b)); fputs("OK\n", stderr); } while (0)
+#define ASSERT_EQ(a, b) ASSERT_OP(a, b, ==)
+#define ASSERT_NE(a, b) ASSERT_OP(a, b, !=)
+#define ASSERT_LT(a, b) ASSERT_OP(a, b, <)
+#define ASSERT_LE(a, b) ASSERT_OP(a, b, <=)
+#define ASSERT_GT(a, b) ASSERT_OP(a, b, >)
+#define ASSERT_GE(a, b) ASSERT_OP(a, b, >=)
+#define ASSERT_PTR_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s %s ($%04X): ", __FILE__, __LINE__, #a, (a), #op, #b, (b)); assert((void*)(a) op (void*)(b)); fputs("OK\n", stderr); } while (0)
+#define ASSERT_PTR_EQ(a, b) ASSERT_PTR_OP(a, b, ==)
+#define ASSERT_PTR_NE(a, b) ASSERT_PTR_OP(a, b, !=)
+#define ASSERT_PTR_LT(a, b) ASSERT_PTR_OP(a, b, <)
+#define ASSERT_PTR_LE(a, b) ASSERT_PTR_OP(a, b, <=)
+#define ASSERT_PTR_GT(a, b) ASSERT_PTR_OP(a, b, >)
+#define ASSERT_PTR_GE(a, b) ASSERT_PTR_OP(a, b, >=)
+#define ASSERT_STRING_EQ(a, b)  do { fprintf(stderr, "  %s:%u: assert \"%s\" == \"%s\": ", __FILE__, __LINE__, (a), (b)); assert(strcmp((a), (b)) == 0); fputs("OK\n", stderr); } while (0)
+#define ASSERT_MEMORY_EQ(a, b, length)  do { fprintf(stderr, "  %s:%u: assert %u byte(s) memory equals:\n", __FILE__, __LINE__, (length)); HEXDUMP(a, length); HEXDUMP(b, length); assert(memcmp((a), (b), (length)) == 0); fputs("OK\n", stderr); } while (0)
+#define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s NULL: ", __FILE__, __LINE__, #a, (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
+#define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
+#define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
+
+#define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
+
+#define HERE() fprintf(stderr, "%s:%d\n", __FILE__, __LINE__)
+
 // Common functions and definitions used in tests
 
 void hexdump(const char* name, const char* data, size_t length) {
@@ -141,33 +170,17 @@ void set_line(int line, const char* data, size_t length) {
     line_pos = (char)offsetof(Line, data);
 }
 
-#define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
-
-#define PRINT_TEST_NAME() fprintf(stderr, "%s:\n", __func__);
-
-#define ASSERT(x) do { fprintf(stderr, "  %s:%u: assert %s: ", __FILE__, __LINE__, #x); assert(x); fputs("OK\n", stderr); } while (0)
-#define ASSERT_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s (%ld, $%lX) %s %s (%ld, $%lX): ", __FILE__, __LINE__, #a, (long)(a), (long)(a), #op, #b, (long)(b), (long)(b)); assert((a) op (b)); fputs("OK\n", stderr); } while (0)
-#define ASSERT_EQ(a, b) ASSERT_OP(a, b, ==)
-#define ASSERT_NE(a, b) ASSERT_OP(a, b, !=)
-#define ASSERT_LT(a, b) ASSERT_OP(a, b, <)
-#define ASSERT_LE(a, b) ASSERT_OP(a, b, <=)
-#define ASSERT_GT(a, b) ASSERT_OP(a, b, >)
-#define ASSERT_GE(a, b) ASSERT_OP(a, b, >=)
-#define ASSERT_PTR_OP(a, b, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s %s ($%04X): ", __FILE__, __LINE__, #a, (a), #op, #b, (b)); assert((void*)(a) op (void*)(b)); fputs("OK\n", stderr); } while (0)
-#define ASSERT_PTR_EQ(a, b) ASSERT_PTR_OP(a, b, ==)
-#define ASSERT_PTR_NE(a, b) ASSERT_PTR_OP(a, b, !=)
-#define ASSERT_PTR_LT(a, b) ASSERT_PTR_OP(a, b, <)
-#define ASSERT_PTR_LE(a, b) ASSERT_PTR_OP(a, b, <=)
-#define ASSERT_PTR_GT(a, b) ASSERT_PTR_OP(a, b, >)
-#define ASSERT_PTR_GE(a, b) ASSERT_PTR_OP(a, b, >=)
-#define ASSERT_STRING_EQ(a, b)  do { fprintf(stderr, "  %s:%u: assert \"%s\" == \"%s\": ", __FILE__, __LINE__, (a), (b)); assert(strcmp((a), (b)) == 0); fputs("OK\n", stderr); } while (0)
-#define ASSERT_MEMORY_EQ(a, b, length)  do { fprintf(stderr, "  %s:%u: assert %u byte(s) memory equals:\n", __FILE__, __LINE__, (length)); HEXDUMP(a, length); HEXDUMP(b, length); assert(memcmp((a), (b), (length)) == 0); fputs("OK\n", stderr); } while (0)
-#define ASSERT_IS_OR_IS_NOT_NULL(a, s, op) do { fprintf(stderr, "  %s:%u: assert %s ($%04X) %s NULL: ", __FILE__, __LINE__, #a, (a), s); assert((a) op NULL); fputs("OK\n", stderr); } while (0)
-#define ASSERT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is", ==)
-#define ASSERT_NOT_NULL(a) ASSERT_IS_OR_IS_NOT_NULL(a, "is not", !=)
-
-#define DEBUG(x) fprintf(stderr, #x "=%d\n", (x))
-
-#define HERE() fprintf(stderr, "%s:%d\n", __FILE__, __LINE__)
+void parse_and_decode_name(const char* name) {
+    // Parse given name, then decodes it from line_buffer, in order to set up match_ptr, match_lenght, and high bit
+    // on final character.
+    strcpy(buffer, name);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
+    parse_name();
+    ASSERT_EQ(err, 0);
+    line_ptr = &line_buffer;
+    line_pos = offsetof(Line, data);
+    decode_name();
+}
 
 #endif
