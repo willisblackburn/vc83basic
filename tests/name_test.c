@@ -43,22 +43,11 @@ void test_advance_name_ptr(void) {
     ASSERT_NE(err, 0);
 }
 
-void call_parse_name(const char* name) {
-    // Parse given name to set match_ptr and high bit on final character.
-    // Also sets match_length, which would normally be set in decode_name.
-    strcpy(buffer, name);
-    buffer_pos = 0;
-    line_pos = 0;
-    parse_name();
-    ASSERT_EQ(err, 0);
-    match_length = strlen(name);
-}
-
 void call_find_name(const char* name, const char* name_table, char expect_index,
     const char* expect_name_ptr, int line) {        
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
-    call_parse_name(name);
+    parse_and_decode_name(name);
     HEXDUMP(name_table, 32);
     index = find_name(name_table);
     ASSERT_EQ(err, 0);
@@ -70,7 +59,7 @@ void call_find_name_fail(const char* name, const char* name_table, char expect_i
     const char* expect_name_ptr, int line) {
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
-    call_parse_name(name);
+    parse_and_decode_name(name);
     HEXDUMP(name_table, 32);
     index = find_name(name_table);
     ASSERT_NE(err, 0);
