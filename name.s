@@ -129,6 +129,7 @@ find_or_add_variable:
 ; name_index = the number of names currently in the table (also left by find_name)
 ; Returns carry clear on success or carry set on failure.
 ; On return, updates name_ptr to point to the data following the new name, as if found by find_name.
+
 add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
         ldy     name_index              ; Check if too many variables already
