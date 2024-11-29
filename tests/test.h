@@ -40,7 +40,7 @@ typedef struct Value {
             Float number_value;
         } number;
         struct {
-            char* string_ptr;
+            String* string_ptr_value;
         } string;
     };
 } Value;
