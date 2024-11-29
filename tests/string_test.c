@@ -110,7 +110,7 @@ void test_compact(void) {
     // Allocate one string but no variables. Should collect the space.
     string_alloc(10);
     ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - STRING_EXTRA);
     compact();
     ASSERT_PTR_EQ(string_ptr, himem_ptr);
 
@@ -119,7 +119,7 @@ void test_compact(void) {
     ASSERT_EQ(err, 0);
     string_alloc(120);
     ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3 - 120 - 3);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - STRING_EXTRA - 120 - STRING_EXTRA);
     compact();
     ASSERT_PTR_EQ(string_ptr, himem_ptr);
 
@@ -132,14 +132,14 @@ void test_compact(void) {
     add_string_variable_with_name("A$", s);
     string_alloc(120);
     ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 3 - 5 - 3 - 120 - 3);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - STRING_EXTRA - 5 - STRING_EXTRA - 120 - STRING_EXTRA);
 
     parse_and_decode_name("A$");
     find_name(variable_name_table_ptr);
     ASSERT_EQ(err, 0);
     compact();
     // Only the "HELLO" string should remain.
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - 3);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA);
     // Check A$
     parse_and_decode_name("A$");
     find_name(variable_name_table_ptr);
@@ -164,7 +164,7 @@ void test_compact(void) {
     ASSERT_EQ(err, 0);
     compact();
     // string_ptr should point to B$.
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - 3 - 255 - 3);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA - 255 - STRING_EXTRA);
     // Check A$
     parse_and_decode_name("A$");
     find_name(variable_name_table_ptr);
@@ -223,6 +223,9 @@ void test_string_alloc_retry(void) {
     s = *(const String**)name_ptr;
     ASSERT_EQ(s->length, 5);
     ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
+
+    // string_pointer should point to a 100-byte string followed by a 5-byte string.
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA - 100 - STRING_EXTRA);
 }
 
 int main(void) {
