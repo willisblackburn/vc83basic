@@ -200,7 +200,6 @@ FP1s = FP1+UnpackedFloat::s
 .global reverse_copy, reverse_copy_size
 .global clear_memory, clear_memory_size
 .global invoke_indexed_vector
-.global advance_lp_sizeof_float, advance_lp
 
 ; target/*
 .global startup, initialize_target, readline, write, putch, newline
