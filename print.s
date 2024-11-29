@@ -11,7 +11,7 @@ exec_print_number:
 exec_print:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
-        beq     @end_line               ; Found TOKEN_NO_VALUE
+        beq     @end_line               ; Found 0
 @continue:
         cmp     #';'
         beq     @empty_space
