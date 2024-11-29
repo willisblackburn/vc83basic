@@ -171,6 +171,7 @@ compact:
         jsr     initialize_name_ptr
 @mark_next:
         jsr     advance_name_ptr
+        ldax name_ptr
         bcs     @calculate
         jsr     find_variable_data
         beq     @mark_next              ; Not a string; move on to the next one
@@ -205,15 +206,25 @@ compact:
         jmp     @calculate_next
 
 ; Phase 4: Update string variables to point to the new addresses.
+; After calculating relocation addresses, dst_ptr now points to an address one byte beyond the last string,
+; so the size of the string space is dst_ptr - free_ptr, and the new value of string_ptr is himem_ptr minus that size:
+; string_ptr = himem_ptr - (dst_ptr - free_ptr). Store new string_ptr value in BC.
 
 @update:
         sec                             ; Subtract free_ptr from dst_ptr to get size of string space
         lda     dst_ptr
         sbc     free_ptr
-        pha                             ; Save size on stack; we'll use it later
+        sta     size                    ; Save in size for now
         lda     dst_ptr+1
         sbc     free_ptr+1
-        pha
+        sta     size+1
+        sec                             ; Subtract size from himem_ptr to get the new string_ptr value
+        lda     himem_ptr
+        sbc     size
+        sta     B                       ; Store in BC
+        lda     himem_ptr+1
+        sbc     size+1
+        sta     C
         ldax    variable_name_table_ptr ; Prepare to scan variables
         jsr     initialize_name_ptr
 @update_next:
@@ -222,10 +233,22 @@ compact:
         jsr     find_variable_data
         beq     @update_next            ; Not a string; move on to the next one
         jsr     set_src_ptr_relocation_address  ; Add length to src_ptr; Y points to relocation address
-        lda     (src_ptr),y             ; Copy address from relocation address to variable data
-        sta     (name_ptr),y
-        iny
+        sec                             ; Do relocation address - free_ptr + new string_ptr and into variable address
         lda     (src_ptr),y
+        sbc     free_ptr
+        pha                             ; Save low byte onto stack
+        iny                             ; Y=1
+        lda     (src_ptr),y
+        sbc     free_ptr+1
+        tax                             ; Save high byte in X
+        clc                             ; Now add the new string_ptr in BC to get the final address
+        pla                             ; Get back low byte
+        adc     B
+        dey                             ; Y=0
+        sta     (name_ptr),y
+        txa                             ; Get back high byte
+        adc     C
+        iny                             ; Y=1
         sta     (name_ptr),y
         jmp     @update_next
 
@@ -243,7 +266,7 @@ compact:
 @relocate_next_2:        
         jsr     check_src_ptr
         bcs     @shift                  ; No more strings
-        mvaa    src_ptr, BC             ; Save the src_ptr value in BC so we can get it back later for copy
+        mvaa    src_ptr, DE             ; Save the src_ptr value in DE so we can get it back later for copy
         jsr     set_src_ptr_relocation_address
         lda     (src_ptr),y             ; Marked?
         beq     @relocate_next          ; Nope, move on
@@ -251,7 +274,7 @@ compact:
         iny
         lda     (src_ptr),y
         sta     dst_ptr+1
-        mvaa    BC, src_ptr             ; Recover src_ptr from BC
+        mvaa    DE, src_ptr             ; Recover src_ptr from DE
         mva     #0, size+1              ; Initialize high byte of size to 0
         inx                             ; Length is still in X; add 1 to account for length byte
         stx     size                    ; It's the low byte of size
@@ -262,22 +285,18 @@ compact:
         jmp     @relocate_next
 
 ; Phase 6: All the strings have been relocated to free_ptr.
-; Calculate the new value of string_ptr and copy all the data up to that address.
-; After calling copy, dst_ptr now points to an address one byte beyond the last string, so the size of the
-; string space is dst_ptr - free_ptr, and the new value of string_ptr is himem_ptr minus that size.
-; string_ptr = himem_ptr - (dst_ptr - free_ptr)
+; The new value of string_ptr is in BC. Subtract it from himem_ptr to get the size to copy.
 
 @shift:
-        plstaa  size                    ; Recover size we calculated earlier
-        sec                             ; Prepare for second subtract
+        sec                             ; Do himem_ptr - BC and store in size
         lda     himem_ptr
-        sbc     size
-        sta     string_ptr              ; New value of string_ptr
-        sta     dst_ptr                 ; And destination of copy
+        sbc     B
+        sta     size
         lda     himem_ptr+1
-        sbc     size+1
-        sta     string_ptr+1
-        sta     dst_ptr+1
+        sbc     C
+        sta     size+1
+        mvax    BC, string_ptr          ; Set up new string_ptr
+        stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
         jsr     copy_size
         rts                             ; All done!
