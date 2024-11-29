@@ -4,9 +4,9 @@
 ; primary_stack must be page-aligned
 .assert <primary_stack = 0, error
 
-; We depend on being able to increment an index to go from type to value.
-.assert Value::type = 0, error
-.assert Value::number_value = 1, error
+; We depend on the values being at offset 0.
+.assert Value::number_value = 0, error
+.assert Value::string_value_ptr = 0, error
 
 evaluate_expression:
         ldax    #evaluate_vectors
@@ -35,7 +35,6 @@ evaluate_variable:
         tax                             ; Stack position into X to set type
         lda     #TYPE_NUM               ; Set type of value on stack
         sta     primary_stack+Value::type,x
-        inx                             ; Write value to next byte
         txa                             ; Use as low byte of copy address
         ldx     #>primary_stack         ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
@@ -301,7 +300,6 @@ push_fpx:
         tay                             ; Stack offset into Y
         lda     #TYPE_NUM               ; Assign the number type
         sta     primary_stack+Value::type,y
-        iny
         tya                             ; Low byte of store address
         ldy     #>primary_stack         ; Segment of stack
         jsr     store_fpx               ; Store FPx in the AY address
@@ -319,7 +317,6 @@ pop_fpx:
         ldy     psp                     ; Load stack pointer into Y to use as offset
         lda     #.sizeof(Value)         ; Free space for float
         jsr     stack_free
-        iny                             ; Increment past the type byte
         tya                             ; Back in A to use as pointer
         ldy     #>primary_stack         ; Segment of stack
         jsr     load_fpx                ; Load value into FPx
