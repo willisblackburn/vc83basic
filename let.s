@@ -28,7 +28,6 @@ assign_variable:
         ldx     primary_stack+Value::type,y ; Get the type of the value on the stack
         cpx     variable_type           ; Compare vs. variable type
         bne     @error                  ; Value and variable are different types
-        iny                             ; Skip past the type
         tya                             ; Becomes low byte of source address
         ldy     type_size_table,x       ; Replace Y with the size of the type
         ldx     #>primary_stack         ; Segment of stack

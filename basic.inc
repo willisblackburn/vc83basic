@@ -29,7 +29,6 @@
 .endstruct
 
 .struct Value
-    type .res 1
     .union
         .struct
             number_value .res .sizeof(Float)
@@ -38,6 +37,7 @@
             string_value_ptr .res 2
         .endstruct
     .endunion
+    type .res 1
 .endstruct
 
 ; Zero Page
