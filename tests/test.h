@@ -33,19 +33,6 @@ typedef struct String {
     char data[];
 } String;
 
-typedef struct Value {
-    char type;
-    union {
-        struct {
-            Float number_value;
-        } number;
-        struct {
-            String* string_ptr_value;
-        } string;
-    };
-} Value;
-
-
 // Zero Page
 
 #include "../zeropage.h"
