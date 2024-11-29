@@ -28,13 +28,14 @@ initialize_program:
 ; BC SAFE
 
 reset_program_state:
-        lda     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get free_ptr
-        clc
-        adc     #1
-        sta     free_ptr
-        lda     variable_name_table_ptr+1
-        adc     #0
-        sta     free_ptr+1
+        ldx     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get free_ptr
+        ldy     variable_name_table_ptr+1
+        inx
+        stx     free_ptr
+        bne     @skip_iny
+        iny
+@skip_iny:
+        sty     free_ptr+1
         lda     #0                      ; Load zero into A
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
