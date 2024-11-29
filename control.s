@@ -47,7 +47,7 @@ exec_on:
 @loop:
         ldy     line_pos
         lda     (line_ptr),y            ; Peek at next character
-        beq     @not_found              ; If it's TOKEN_NO_VLAUE, nothing matched; continue
+        beq     @not_found              ; If it's 0, nothing matched; continue
         jsr     decode_number           ; Get the next line number into AX
         dec     on_value                ; Decrement the "ON" value
         bne     @loop                   ; If not zero then keep looking
