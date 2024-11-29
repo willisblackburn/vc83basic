@@ -212,7 +212,7 @@ list_print_expression:
 @next:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
-        beq     @done                   ; Found TOKEN_NO_VALUE
+        beq     @done                   ; Found 0
         cmp     #';'
         beq     @output
         cmp     #','
@@ -267,8 +267,8 @@ list_repeated_number:
         jsr     list_number             ; List one number
         ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
-        bne     loop_list_repeated_number   ; Not TOKEN_NO_VALUE so keep going
-        inc     line_pos                ; Skip over TOKEN_NO_VALUE
+        bne     loop_list_repeated_number   ; Not 0 so keep going
+        inc     line_pos                ; Skip over 0
         clc                             ; Signal success
         rts
 
