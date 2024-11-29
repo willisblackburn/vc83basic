@@ -184,7 +184,7 @@ void test_compact(void) {
 }
 
 void test_string_alloc_retry(void) {
-    const String* s1;
+    const String* s;
     const String* s2;
 
     PRINT_TEST_NAME();
@@ -199,11 +199,30 @@ void test_string_alloc_retry(void) {
     // Allocate two 100-byte strings. The second one should force a GC of the first one and wind up at the same
     // address.
 
-    s1 = string_alloc(100);
+    s = string_alloc(100);
     ASSERT_EQ(err, 0);
     s2 = string_alloc(100);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(s1, s2);
+    ASSERT_EQ(s, s2);
+
+    // Make sure small string survives after allocation failure.
+    // HELLO$ will be allocated after surviving 100-byte string from above. Then compact will have to collect the
+    // 100-byte string to make way for the new 100-byte string.
+
+    s = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(s->data, "HELLO", 5);
+    add_string_variable_with_name("HELLO$", s);
+    s2 = string_alloc(100);
+    ASSERT_EQ(err, 0);
+
+    // Check HELLO$
+    parse_and_decode_name("HELLO$");
+    find_name(variable_name_table_ptr);
+    ASSERT_EQ(err, 0);
+    s = *(const String**)name_ptr;
+    ASSERT_EQ(s->length, 5);
+    ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
 }
 
 int main(void) {
