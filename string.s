@@ -102,10 +102,28 @@ read_string:
 ; Allocates space for a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in AX.
-; BC SAFE, DE SAFE
+; BC SAFE
 
 string_alloc:
-        pha                             ; Save the original length
+        pha                             ; Push the requested size in case we have to retry
+        jsr     @try_string_alloc
+        bcc     @success                ; If it worked then great, return
+        jsr     compact                 ; Try to compact the heap
+        pla                             ; Recover size for retry
+        jsr     @try_string_alloc
+        bcc     @success_2
+@error:
+        sec                             ; Sometimes @error is reached from below when carry is clear
+        rts
+
+@success:
+        pla                             ; Drop the length we saved on the stack
+@success_2:
+        ldax    string_ptr              ; Return pointer in AX
+        rts
+
+@try_string_alloc:
+        sta     size                    ; Store length in size for updating length byte later
         ldx     #0                      ; Initialize high byte of block length to 0
         clc
         adc     #STRING_EXTRA           ; Add 3 bytes to length: 1 byte for length, 2 bytes for GC relocation pointer
@@ -120,7 +138,6 @@ string_alloc:
         eor     #$FF
         adc     string_ptr+1
         tax                             ; Store high byte of proposed value in X
-        pla                             ; Recover length from stack
         cpx     free_ptr+1              ; Compare high byte vs. free_ptr
         bcc     @error                  ; New string_ptr high byte < free_ptr; it's definitely an error
         bne     @string_ptr_ok          ; If it's greater then it's definitely okay
@@ -129,14 +146,10 @@ string_alloc:
 @string_ptr_ok:
         sty     string_ptr              ; Proposed string_ptr >= free_ptr; go update it
         stx     string_ptr+1
-        ldy     #0                      ; Offset of length
-        sta     (string_ptr),y          ; Set the length
-        ldax    string_ptr              ; Return pointer in AX
+        lda     size                    ; Recover size
+        ldy     #0                      ; Offset of length        
+        sta     (string_ptr),y          ; Set the length of the allocated string
         clc                             ; Signal success
-        rts
-
-@error:
-        sec
         rts
 
 ; Compacts the string space.
@@ -144,6 +157,7 @@ string_alloc:
 ; address. The algorithm uses two bytes after the end of each string to store its relocation address. The
 ; string_alloc function allocates 3 (STACK_EXTRA) extra bytes to accommodate the length of the string and the two-byte
 ; relocation address.
+; BC SAFE
 
 ; Logic depends on being able to add string length + 3 to get to next string.
 .assert STRING_EXTRA = 3, error
@@ -208,7 +222,7 @@ compact:
 ; Phase 4: Update string variables to point to the new addresses.
 ; After calculating relocation addresses, dst_ptr now points to an address one byte beyond the last string,
 ; so the size of the string space is dst_ptr - free_ptr, and the new value of string_ptr is himem_ptr minus that size:
-; string_ptr = himem_ptr - (dst_ptr - free_ptr). Store new string_ptr value in BC.
+; string_ptr = himem_ptr - (dst_ptr - free_ptr). Store new string_ptr value in DE.
 
 @update:
         sec                             ; Subtract free_ptr from dst_ptr to get size of string space
@@ -221,10 +235,10 @@ compact:
         sec                             ; Subtract size from himem_ptr to get the new string_ptr value
         lda     himem_ptr
         sbc     size
-        sta     B                       ; Store in BC
+        sta     D                       ; Store in DE
         lda     himem_ptr+1
         sbc     size+1
-        sta     C
+        sta     E
         ldax    variable_name_table_ptr ; Prepare to scan variables
         jsr     initialize_name_ptr
 @update_next:
@@ -241,13 +255,13 @@ compact:
         lda     (src_ptr),y
         sbc     free_ptr+1
         tax                             ; Save high byte in X
-        clc                             ; Now add the new string_ptr in BC to get the final address
+        clc                             ; Now add the new string_ptr in DE to get the final address
         pla                             ; Get back low byte
-        adc     B
+        adc     D
         dey                             ; Y=0
         sta     (name_ptr),y
         txa                             ; Get back high byte
-        adc     C
+        adc     E
         iny                             ; Y=1
         sta     (name_ptr),y
         jmp     @update_next
@@ -266,7 +280,6 @@ compact:
 @relocate_next_2:        
         jsr     check_src_ptr
         bcs     @shift                  ; No more strings
-        mvaa    src_ptr, DE             ; Save the src_ptr value in DE so we can get it back later for copy
         jsr     set_src_ptr_relocation_address
         lda     (src_ptr),y             ; Marked?
         beq     @relocate_next          ; Nope, move on
@@ -274,7 +287,22 @@ compact:
         iny
         lda     (src_ptr),y
         sta     dst_ptr+1
-        mvaa    DE, src_ptr             ; Recover src_ptr from DE
+
+; src_ptr now points to the relocation address, so subtract the length (still in X) and 1 (length byte) to recover
+; the original value:
+;     src_ptr = src_ptr - X - 1
+; We can't subtract X, though, so we need to express this as an operation starting with X:
+;     src_ptr = -X - 1 + src_ptr
+; EOR of X with $FF generates -X - 1, so just add src_ptr to that. Decrement the high byte if carry set.
+
+        txa
+        eor     #$FF
+        clc
+        adc     src_ptr                 ; Conceptually this is: SEC, LDA src_ptr, SBC X, if carry clear DEC high byte
+        sta     src_ptr
+        bcs     @skip_dec
+        dec     src_ptr+1
+@skip_dec:
         mva     #0, size+1              ; Initialize high byte of size to 0
         inx                             ; Length is still in X; add 1 to account for length byte
         stx     size                    ; It's the low byte of size
@@ -285,17 +313,17 @@ compact:
         jmp     @relocate_next
 
 ; Phase 6: All the strings have been relocated to free_ptr.
-; The new value of string_ptr is in BC. Subtract it from himem_ptr to get the size to copy.
+; The new value of string_ptr is in DE. Subtract it from himem_ptr to get the size to copy.
 
 @shift:
-        sec                             ; Do himem_ptr - BC and store in size
+        sec                             ; Do himem_ptr - DE and store in size
         lda     himem_ptr
-        sbc     B
+        sbc     D
         sta     size
         lda     himem_ptr+1
-        sbc     C
+        sbc     E
         sta     size+1
-        mvax    BC, string_ptr          ; Set up new string_ptr
+        mvax    DE, string_ptr          ; Set up new string_ptr
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
         jsr     copy_size

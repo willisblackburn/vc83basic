@@ -183,11 +183,35 @@ void test_compact(void) {
     ASSERT_EQ(s->data[255], 255);
 }
 
+void test_string_alloc_retry(void) {
+    const String* s1;
+    const String* s2;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Set string_ptr and himem_ptr to be free_ptr plus 200. This permits just 200 bytes for strings, which the test
+    // will exhaust unless the collector is able to reclaim the space I've allocated for strings but not used.
+
+    string_ptr = himem_ptr = (char*)free_ptr + 200;
+
+    // Allocate two 100-byte strings. The second one should force a GC of the first one and wind up at the same
+    // address.
+
+    s1 = string_alloc(100);
+    ASSERT_EQ(err, 0);
+    s2 = string_alloc(100);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(s1, s2);
+}
+
 int main(void) {
     initialize_target();
     test_load_sy();
     test_string_alloc();
     test_read_string();
     test_compact();
+    test_string_alloc_retry();
     return 0;
 }
