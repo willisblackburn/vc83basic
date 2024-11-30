@@ -60,16 +60,16 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        inc     op_stack_size           ; Pop the open paren (even if evaluate_expression failed)
+        inc     op_stack_pos            ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
-        ldx     op_stack_size
+        ldx     op_stack_pos
         beq     @done                   ; If already zero then fail
         dex                             ; Grow down
         sta     op_stack,x              ; Store operator
-        stx     op_stack_size           ; Update stack pointer
+        stx     op_stack_pos            ; Update stack pointer
         clc                             ; Success
 @done:
         rts
@@ -82,14 +82,14 @@ push_operator:
 process_operators:
         sta     min_precedence          ; Store the minimum precedence
 @next:
-        ldx     op_stack_size           ; Get operator stack position
+        ldx     op_stack_pos            ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
         clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
-        inc     op_stack_size           ; Move stack position to next operator
+        inc     op_stack_pos            ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
@@ -185,7 +185,7 @@ push_value:
         rts
 
 pop_value: 
-        ldy     stack_size              ; Load stack pointer into Y to use as offset
+        ldy     stack_pos               ; Load stack pointer into Y to use as offset
         lda     #2                      ; Free two bytes (retains Y)
         jsr     stack_free
         lda     stack,y                 ; Load low byte into A
@@ -199,10 +199,10 @@ pop_value:
 
 stack_alloc:
         clc
-        sbc     stack_size              ; Do A - stack_size - 1
+        sbc     stack_pos               ; Do A - stack_pos - 1
         bcs     @done                   ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
-        sta     stack_size              ; Update the stack pointer
+        sta     stack_pos               ; Update the stack pointer
         tax                             ; Transfer to X to use as pointer
 @done:
         rts
@@ -213,6 +213,6 @@ stack_alloc:
 
 stack_free:
         clc
-        adc     stack_size              ; Add stack pointer to whatever value was passed in
-        sta     stack_size              ; Save stack pointer back
+        adc     stack_pos               ; Add stack pointer to whatever value was passed in
+        sta     stack_pos               ; Save stack pointer back
         rts
