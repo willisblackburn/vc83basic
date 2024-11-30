@@ -85,7 +85,7 @@ exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
         jsr     decode_name             ; Get the name (now in match_ptr)
-        ldx     stack_size              ; Get stack pointer to store name
+        ldx     stack_pos               ; Get stack pointer to store name
         lda     match_ptr               ; Store pointer to variable name
         sta     stack+Control::variable_name_ptr,x
         lda     match_ptr+1
@@ -97,14 +97,14 @@ exec_for:
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
         jsr     pop_fp0                 ; Get the evaluated value
-        lda     stack_size              ; Stack pointer
+        lda     stack_pos               ; Stack pointer
         clc
         adc     #Control::end_value     ; Add the offset of the end value
         ldy     #>stack                 ; Segment of stack
         jsr     store_fp0               ; Store FP0 there
         lday    #fp_one
         jsr     load_fp0
-        lda     stack_size              ; Stack pointer again
+        lda     stack_pos               ; Stack pointer again
         clc
         adc     #Control::step_value    ; Add the offset of the step value
         ldy     #>stack
@@ -120,7 +120,7 @@ exec_next:
         bcs     @error
         mvax    name_ptr, variable_ptr  ; Set up target for assign_variable later
         jsr     pop_fp0                 ; Variable value is now in FP0
-        ldx     stack_size              ; Load stack position
+        ldx     stack_pos               ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
@@ -131,7 +131,7 @@ exec_next:
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
-        lda     stack_size              ; Get stack position again
+        lda     stack_pos               ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
         ldy     #>stack                 ; Segment of stack
         ldx     #FP1                    ; Load step into FP1
@@ -139,7 +139,7 @@ exec_next:
         jsr     fadd                    ; Add the step value to the variable value from before
         jsr     push_fp0                ; Push back onto stack
         jsr     assign_variable         ; Assign stack value to variable_ptr set up earlier
-        lda     stack_size              ; Get stack position again
+        lda     stack_pos               ; Get stack position again
         clc
         adc     #Control::end_value     ; Calculate address of end value (carry will be clear)
         ldy     #>stack
@@ -149,7 +149,7 @@ exec_next:
         bcc     @return_to_for          ; Current value < end value so continue
         bne     exec_pop                ; If not equal then value > end value so stop; else continue
 @return_to_for:
-        ldx     stack_size              ; Get stack pointer once again
+        ldx     stack_pos               ; Get stack pointer once again
         lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
         lda     stack+Control::next_line_ptr+1,x
@@ -163,7 +163,7 @@ exec_next:
 
 exec_pop:
         sec                             ; Set carry so can return error if csp = 0
-        ldx     stack_size              ; Check stack pointer
+        ldx     stack_pos               ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
         beq     @done                   ; Yep
         lda     #.sizeof(Control)       ; Free the control record
