@@ -179,7 +179,7 @@ grow:
         bne     @done
 @continue:
         jsr     grow_shrink_common
-        jsr     reverse_copy_size       ; Copy data up to the higher address
+        jsr     reverse_copy            ; Copy data up to the higher address
         clc                             ; Success
 @done:
         rts
@@ -206,7 +206,7 @@ shrink:
         inc     E
 @skip_increment:
         jsr     grow_shrink_common
-        jsr     copy_size
+        jsr     copy
         clc
         rts
 
@@ -227,10 +227,10 @@ grow_shrink_common:
         sec                             ; Knowing src_ptr we can calculate number of bytes to move
         lda     free_ptr
         sbc     src_ptr
-        sta     size                    ; Store low byte of size
+        pha                             ; Store low byte of size
         lda     free_ptr+1      
         sbc     src_ptr+1      
-        sta     size+1                  ; High byte of length in size+1
+        pha                             ; High byte of size
 @next_ptr:
         clc
         lda     0,y                     ; Do the same thing only without setting src_ptr and dest_ptr
@@ -243,4 +243,5 @@ grow_shrink_common:
         iny
         cpy     #himem_ptr              ; Is Y now pointing at himem_ptr?
         bne     @next_ptr               ; Nope, keep going
+        plax                            ; Load AX with size to prepare for call to copy
         rts
