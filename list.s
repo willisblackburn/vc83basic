@@ -215,8 +215,17 @@ list_operator:
 
 list_number:
         jsr     add_whitespace
-        jsr     decode_number           ; Decode the number
-        jsr     fp_to_string            ; Format into buffer
+        ldy     line_pos
+@next:
+        lda     (line_ptr),y            ; Load next character
+        beq     @done                   ; If 0 then finished
+        jsr     append_buffer           ; Else output
+        iny
+        jmp     @next
+
+@done:
+        iny                             ; Skip terminator
+        sty     line_pos                ; Update line_pos
         clc                             ; Signal success
         rts
 
