@@ -29,7 +29,7 @@ parse_line:
         jsr     parse_statement         ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
 @blank_line:
-        mva     line_pos, line_buffer+Line::next_line_offset  ; Write position is next statement offset
+        mva     line_pos, line_buffer+Line::next_line_offset    ; Write position is next statement offset
         ldx     buffer_pos
         lda     buffer,x                ; Verify the line ends as expected
         clc

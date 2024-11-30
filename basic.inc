@@ -46,7 +46,7 @@ FP1s = FP1+UnpackedFloat::s
 .global buffer
 .global line_buffer
 .global op_stack
-.global primary_stack
+.global stack
 
 ; Functions
 

@@ -46,10 +46,10 @@ unary_operator_name_table:
 ; We index this by the operator index divided by 2.
 
 operator_precedence_table:
-        .byte   PR_ADD          ; +, -
-        .byte   PR_MUL          ; *, /
-        .byte   PR_POW          ; ^, &
-        .byte   PR_RELATIONAL   ; =, <>
-        .byte   PR_RELATIONAL   ; <=, <
-        .byte   PR_RELATIONAL   ; >=, >
-        .byte   PR_LOGICAL      ; AND, OR
+        .byte   PR_ADD                  ; +, -
+        .byte   PR_MUL                  ; *, /
+        .byte   PR_POW                  ; ^, &
+        .byte   PR_RELATIONAL           ; =, <>
+        .byte   PR_RELATIONAL           ; <=, <
+        .byte   PR_RELATIONAL           ; >=, >
+        .byte   PR_LOGICAL              ; AND, OR
