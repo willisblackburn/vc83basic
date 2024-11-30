@@ -303,13 +303,14 @@ compact:
         bcs     @skip_dec
         dec     src_ptr+1
 @skip_dec:
-        mva     #0, size+1              ; Initialize high byte of size to 0
         inx                             ; Length is still in X; add 1 to account for length byte
-        stx     size                    ; It's the low byte of size
-        bne     @no_size_rollover       ; Was not 0 so adding 1 didn't cause rollover
-        inc     size+1                  ; Did rollover, so increment high byte
-@no_size_rollover:
-        jsr     copy_size               ; Copy from src_ptr to dst_ptr
+        txa                             ; Size low byte into A
+        ldx     #0                      ; Initialize high byte to 0
+        tay                             ; This effctively tests A = 0
+        bne     @skip_inx               ; Size didn't roll over to 0 so no need to increment high byte
+        inx
+@skip_inx:
+        jsr     copy                    ; Copy from src_ptr to dst_ptr
         jmp     @relocate_next
 
 ; Phase 6: All the strings have been relocated to free_ptr.
@@ -319,14 +320,15 @@ compact:
         sec                             ; Do himem_ptr - DE and store in size
         lda     himem_ptr
         sbc     D
-        sta     size
+        pha                             ; Save for call to copy
         lda     himem_ptr+1
         sbc     E
-        sta     size+1
+        pha
         mvax    DE, string_ptr          ; Set up new string_ptr
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
-        jsr     copy_size
+        plax                            ; Get the size we pushed earlier
+        jsr     copy
         rts                             ; All done!
 
 ; Rebases name_ptr so it points to the variable data.

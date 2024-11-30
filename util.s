@@ -10,7 +10,6 @@
 ; size = number of bytes to copy
 ; Alternate entry points:
 ; copy_a accepts a size < 256 bytes in A.
-; copy_size uses the size already stored in size.
 ; BC SAFE, DE SAFE
 
 copy_y_from:
@@ -19,11 +18,8 @@ copy_y_from:
 copy_a:
         ldx     #0
 copy:
-        stax    size                    ; Length into size
-copy_size:
-        lda     size+1                  ; Number of blocks
-        tax                             ; Keep in X
-        ora     size                    ; Check for size = 0
+        stax    size                    ; Length into size; X will be the number of 256-byte blocks to copy
+        ora     size+1                  ; Check for size = 0
         beq     @done                   ; Just skip everything
         lda     #0                      ; Low byte of #256
         sec
@@ -71,15 +67,12 @@ copy_size:
 ; dst_ptr = destination (must be <=src_ptr if overlapping)
 ; size = number of bytes to copy
 ; Alternate entry points:
-; reverse_copy_size uses the size already stored in size.
 ; BC SAFE, DE SAFE
 
 reverse_copy:
         stax    size                    ; Length into size
-reverse_copy_size:
-        ldx     size+1                  ; Number of 256-byte blocks we will move
-        txa                             ; Move src_ptr and dst_ptr up the remainder block
-        clc
+        txa                             ; X is the number of 256-byte blocks to move;
+        clc                             ; Move src_ptr and dst_ptr up to the remainder block
         adc     src_ptr+1
         sta     src_ptr+1
         txa
