@@ -135,7 +135,7 @@ copy_fp0_fp1:
 ; Copies the significand of FP0 to another register.
 ; X = either #FP1t, #FP2, or #FP3
 
-copy_significand:
+copy_fp0_significand:
         lda     FP0t
         sta     0,x
         lda     FP0t+1
@@ -260,7 +260,7 @@ shift_left_from_carry:
 
 mul10_significand:
         ldx     #FP1t
-        jsr     copy_significand
+        jsr     copy_fp0_significand
         jsr     shift_left              ; *2
         bcs     @overflow
         jsr     shift_left_from_carry   ; *4
@@ -938,7 +938,7 @@ fmul:
         ldx     #FP2                    ; Clear the extended significand of FP0
         jsr     clear_significand
         ldx     #FP3                    ; FP3 holds the original significand
-        jsr     copy_significand
+        jsr     copy_fp0_significand
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
@@ -1017,7 +1017,7 @@ fdiv:
 
 @initalize:
         ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
-        jsr     copy_significand
+        jsr     copy_fp0_significand
         mva     #0, FP3                 ; Extended significand will be in FP3 instead of usual FP2
         mva     #BIAS, C                ; C keeps track of how much bias to add
 
