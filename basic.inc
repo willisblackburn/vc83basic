@@ -64,8 +64,8 @@ BUFFER_SIZE = 256
 .global statement_name_table
 
 ; util.s
-.global copy, copy_a, copy_size
-.global reverse_copy, reverse_copy_size
+.global copy, copy_a
+.global reverse_copy
 .global mul10, div10
 
 ; init.s
