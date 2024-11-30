@@ -92,10 +92,10 @@ comment The vector table pointer that was passed into decode_expression
 word(decode_expression_vector_table_ptr, void*)
 
 comment Op stack position; points to last-used position and initialized to OP_STACK_SIZE
-byte(osp)
+byte(op_stack_size)
 
-comment Primary stack position; same behavior as osp but initialized to PRIMARY_STACK_SIZE
-byte(psp)
+comment Primary stack position; same behavior as op_stack_size but initialized to PRIMARY_STACK_SIZE
+byte(stack_size)
 
 comment Minimum operator precedence used in process_operators
 byte(min_precedence)

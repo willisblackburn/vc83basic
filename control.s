@@ -24,7 +24,7 @@ exec_gosub_line_number:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @done                   ; Stack overflow
         lda     #0                      ; Set variable field to an invalid pointer
-        sta     primary_stack+Control::variable_name_ptr+1,x
+        sta     stack+Control::variable_name_ptr+1,x
         jsr     find_line_2             ; Find the line (already in line_number)
         bcs     @done
 @done:
@@ -67,11 +67,11 @@ exec_return:
         jsr     exec_pop                ; RETURN is just POP except we do something with the popped value
         bcs     @done
         sec                             ; If we take this next branch then carry will be set to signal error
-        lda     primary_stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
+        lda     stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
         bne     @done                   ; Variable was not GOSUB signal
-        lda     primary_stack+Control::next_line_ptr,x
+        lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
-        lda     primary_stack+Control::next_line_ptr+1,x
+        lda     stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
         clc                             ; Signal success
 @done:
@@ -83,11 +83,11 @@ exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
         jsr     decode_name             ; Get the name (now in match_ptr)
-        ldx     psp                     ; Get stack pointer to store name
+        ldx     stack_size              ; Get stack pointer to store name
         lda     match_ptr               ; Store pointer to variable name
-        sta     primary_stack+Control::variable_name_ptr,x
+        sta     stack+Control::variable_name_ptr,x
         lda     match_ptr+1
-        sta     primary_stack+Control::variable_name_ptr+1,x
+        sta     stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
         mvax    name_ptr, variable_ptr
@@ -96,14 +96,14 @@ exec_for:
         jsr     assign_variable         ; Assign starting value
         jsr     evaluate_expression     ; End value
         jsr     pop_value               ; Get the evaluated value
-        ldy     psp                     ; Get stack pointer to store end value
-        sta     primary_stack+Control::end_value,y
+        ldy     stack_size              ; Get stack pointer to store end value
+        sta     stack+Control::end_value,y
         txa
-        sta     primary_stack+Control::end_value+1,y
+        sta     stack+Control::end_value+1,y
         lda     #1                      ; Set step value to 1
-        sta     primary_stack+Control::step_value,y
+        sta     stack+Control::step_value,y
         lda     #0                      ; High byte is 0
-        sta     primary_stack+Control::step_value+1,y
+        sta     stack+Control::step_value+1,y
 @error:
         rts
 
@@ -111,41 +111,41 @@ exec_for:
 
 exec_next:
         jsr     decode_name             ; Sets match_ptr
-        ldx     psp                     ; Load stack position
+        ldx     stack_size              ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         beq     @error                  ; If so then fail
         sec                             ; Set carry in case this next check fails
-        lda     primary_stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
+        lda     stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
         sta     name_ptr
-        lda     primary_stack+Control::variable_name_ptr+1,x
+        lda     stack+Control::variable_name_ptr+1,x
         beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
         jsr     find_or_add_variable    ; Should not fail since variable is already initialized from FOR
         bcs     @error                  ; Just in case...
-        ldx     psp                     ; Load stack position
+        ldx     stack_size              ; Load stack position
         ldy     #0                      ; Use Y to index variable value
         clc
-        lda     primary_stack+Control::step_value,x   ; Get low byte of step value
+        lda     stack+Control::step_value,x ; Get low byte of step value
         adc     (name_ptr),y            ; Add to variable value
         sta     (name_ptr),y            ; Store back
         sta     C                       ; Store in C also, to use in comparison
         iny                             ; Increment to add high byte
-        lda     primary_stack+Control::step_value+1,x 
+        lda     stack+Control::step_value+1,x 
         adc     (name_ptr),y
         sta     (name_ptr),y
-        cmp     primary_stack+Control::end_value+1,x    ; Compare high byte to end value
+        cmp     stack+Control::end_value+1,x    ; Compare high byte to end value
         bcc     @return_to_for          ; Value high byte < end, keep going
         bne     exec_pop                ; Value high byte > end, stop
         lda     C                       ; Load value low byte back from C
-        cmp     primary_stack+Control::end_value,x      ; Compare low byte to end value
+        cmp     stack+Control::end_value,x      ; Compare low byte to end value
         bcc     @return_to_for          ; Value low byte < end, keep going
         bne     exec_pop                ; Value high byte > end, stop
 @return_to_for:
-        lda     primary_stack+Control::next_line_ptr,x
+        lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
-        lda     primary_stack+Control::next_line_ptr+1,x
+        lda     stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
         clc                             ; Signal success
         rts                            
@@ -159,7 +159,7 @@ exec_next:
 
 exec_pop:
         sec                             ; Set carry so can return error if csp = 0
-        ldx     psp                     ; Check stack pointer
+        ldx     stack_size              ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
         beq     @done                   ; Yep
         lda     #.sizeof(Control)       ; Free the control record
@@ -177,8 +177,8 @@ push_next_line_ptr:
         jsr     stack_alloc
         bcs     @done                   ; Stack overflow
         lda     next_line_ptr           ; Store next_line_ptr on stack
-        sta     primary_stack+Control::next_line_ptr,x
+        sta     stack+Control::next_line_ptr,x
         lda     next_line_ptr+1
-        sta     primary_stack+Control::next_line_ptr+1,x
+        sta     stack+Control::next_line_ptr+1,x
 @done:
         rts
