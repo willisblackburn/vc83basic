@@ -23,8 +23,8 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        lda     psp                     ; Get stack pointer
-        ldx     #>primary_stack         ; Segment of stack
+        lda     stack_size              ; Get stack pointer
+        ldx     #>stack                 ; Segment of stack
         ldy     #.sizeof(Float)
         jsr     copy_y_from             ; Copy from stack into variable data
         lda     #.sizeof(Float)         ; Discard from stack
