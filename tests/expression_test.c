@@ -7,24 +7,24 @@ void test_stack_alloc_free(void) {
 
     initialize_program();
 
-    ASSERT_EQ(osp, OP_STACK_SIZE);
-    ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
+    ASSERT_EQ(op_stack_size, OP_STACK_SIZE);
+    ASSERT_EQ(stack_size, PRIMARY_STACK_SIZE);
 
     p = stack_alloc(2);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
-    ASSERT_EQ(p, psp);
+    ASSERT_EQ(stack_size, PRIMARY_STACK_SIZE - 2);
+    ASSERT_EQ(p, stack_size);
 
     p = stack_alloc(64);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2 - 64);
-    ASSERT_EQ(p, psp);
+    ASSERT_EQ(stack_size, PRIMARY_STACK_SIZE - 2 - 64);
+    ASSERT_EQ(p, stack_size);
 
     stack_free(64);
-    ASSERT_EQ(psp, PRIMARY_STACK_SIZE - 2);
+    ASSERT_EQ(stack_size, PRIMARY_STACK_SIZE - 2);
 
     stack_free(2);
-    ASSERT_EQ(psp, PRIMARY_STACK_SIZE);
+    ASSERT_EQ(stack_size, PRIMARY_STACK_SIZE);
 
     // Test overflow; no matter what PRIMARY_STACK_SIZE is, allocating 96 three times should overflow
     stack_alloc(96);
