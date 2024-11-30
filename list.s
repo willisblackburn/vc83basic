@@ -203,8 +203,17 @@ list_operator:
 
 list_number:
         jsr     add_whitespace
-        jsr     decode_number           ; Decode the number
-        jsr     format_number           ; Send it right to format_number
+        ldy     line_pos
+@next:
+        lda     (line_ptr),y            ; Load next character
+        beq     @done                   ; If 0 then finished
+        jsr     append_buffer           ; Else output
+        iny
+        jmp     @next
+
+@done:
+        iny                             ; Skip terminator
+        sty     line_pos                ; Update line_pos
         clc                             ; Signal success
         rts
 
