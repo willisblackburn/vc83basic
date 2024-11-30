@@ -255,8 +255,17 @@ list_operator:
 
 list_number:
         jsr     add_whitespace
-        jsr     decode_number           ; Decode the number
-        jsr     fp_to_string            ; Format into buffer
+        ldy     line_pos
+@next:
+        lda     (line_ptr),y            ; Load next character
+        beq     @done                   ; If 0 then finished
+        jsr     append_buffer           ; Else output
+        iny
+        jmp     @next
+
+@done:
+        iny                             ; Skip terminator
+        sty     line_pos                ; Update line_pos
         clc                             ; Signal success
         rts
 
@@ -301,25 +310,20 @@ list_paren:
 
 list_string:
         jsr     add_whitespace
-        jsr     decode_string           ; Returns string address in AX
-        jsr     load_s0
-        sta     D                       ; Length in D
-        ldy     #0                      ; Start at offset 0
-        lda     #'"'                    ; Start by writing a quote
-@append_quote:
-        jsr     append_buffer
-@next_character:
-        cpy     D                       ; If Y is equal to length then done
-        beq     @done
-        lda     (S0),y                  ; Get next string character
-        iny
-        jsr     append_buffer           ; Write the character to the buffer
-        cmp     #'"'
-        beq     @append_quote           ; If it was '#' then also write a second quote
-        bne     @next_character         ; Otherwise just continue with next character
-@done:
+        ldy     line_pos
         lda     #'"'
-        jsr     append_buffer
+@append:
+        jsr     append_buffer           ; We know the first character is a double quote so just output that
+@next:
+        iny
+        lda     (line_ptr),y            ; Next character
+        jsr     append_buffer           ; Write it
+        cmp     #'"'                    ; Quote?
+        bne     @next                   ; No, keep going
+        iny                             ; Check if the next one is also a double quote
+        cmp     (line_ptr),y
+        beq     @append                 ; Yes, keep going
+        sty     line_pos                ; line_pos points to one past the final quote
         clc                             ; Signal success
         rts
 
