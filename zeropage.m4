@@ -96,6 +96,9 @@ byte(match_length)
 comment The type of the name referred to by match_ptr
 byte(name_type)
 
+comment The number of dimensions after the name
+byte(name_arity)
+
 comment Index of name in name table
 byte(name_index)
 
@@ -104,6 +107,9 @@ word(variable_ptr, void*)
 
 comment The type of variable being assigned
 byte(variable_type)
+
+comment The number of dimensions after the variable being assigned
+byte(variable_arity)
 
 comment Whether the program is not running, running, stopped, or awaiting reset.
 byte(program_state)

@@ -3,6 +3,7 @@ TARGETS = sim6502 apple2
 TEST_TARGET = sim6502
 
 COMMON_SOURCES = \
+    array.s \
 	control.s \
 	decode.s \
 	encode.s \

@@ -63,6 +63,9 @@ FP1s = FP1+UnpackedFloat::s
 
 ; Functions
 
+; array.s
+.global exec_dim
+
 ; control.s
 .global exec_goto
 .global exec_on_goto

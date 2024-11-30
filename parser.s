@@ -375,8 +375,12 @@ name_pattern_identifier:
         .byte   '0', 10, <(name_pattern_identifier - name_pattern)
         .byte   '_',  1, <(name_pattern_identifier - name_pattern)
         .byte   '$',  1, <(name_pattern_string_suffix - name_pattern)
+        .byte   '(',  1, <(name_pattern_array_suffix - name_pattern)
         .byte   PATTERN_OK
 name_pattern_string_suffix:
+        .byte   '(',  1, <(name_pattern_array_suffix - name_pattern)
+        .byte   PATTERN_OK
+name_pattern_array_suffix:
         .byte   PATTERN_OK
 name_pattern_op:
         .byte   PATTERN_OK

@@ -20,6 +20,7 @@ statement_name_table:
 :       .byte   :+ - *, 'I', 'F' | NT_STOP, 1, 'T', 'H', 'E', 'N', NT_STATEMENT
 :       .byte   :+ - *, 'N', 'E', 'W' | NT_STOP
 :       .byte   :+ - *, 'C', 'L', 'R' | NT_STOP
+:       .byte   :+ - *, 'D', 'I', 'M' | NT_STOP, NT_VAR
 :       .byte   0
 
 operator_name_table:
