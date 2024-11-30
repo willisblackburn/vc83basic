@@ -8,10 +8,10 @@ void test_initalize_program(void) {
     ASSERT_EQ(next_line_ptr, program_ptr);
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + 2); // +1 for next statement offset +1 for END token
     ASSERT_EQ(next_line_ptr->number, -1);
-    ASSERT_EQ((char*)variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 2);
+    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 2);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_EQ((void*)free_ptr, (void*)(variable_name_table_ptr + 1)); // Variable name table is empty with terminating 0
-    ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1); // Variable name table is empty with terminating 0
+    ASSERT_PTR_LT(free_ptr, himem_ptr);
 }
 
 void test_reset_next_line_ptr(void) {
@@ -32,7 +32,7 @@ void test_advance_next_line_ptr(void) {
     // Calling advance_next_line_ptr on the empty program should advance next_line_ptr to variable_name_table_ptr.
     initialize_program();
     advance_next_line_ptr();
-    ASSERT_EQ((void*)next_line_ptr, (void*)variable_name_table_ptr);
+    ASSERT_PTR_EQ(next_line_ptr, variable_name_table_ptr);
 
     // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
     // Note that we're charging into unallocated memory here, but that's okay since we own memory space
@@ -40,10 +40,10 @@ void test_advance_next_line_ptr(void) {
     initialize_program();
     next_line_ptr->next_line_offset = 10;
     advance_next_line_ptr();
-    ASSERT_EQ((char*)next_line_ptr, (char*)program_ptr + 10);
+    ASSERT_PTR_EQ(next_line_ptr, (char*)program_ptr + 10);
     next_line_ptr->next_line_offset = 250;
     advance_next_line_ptr();
-    ASSERT_EQ((char*)next_line_ptr, (char*)program_ptr + 10 + 250);
+    ASSERT_PTR_EQ(next_line_ptr, (char*)program_ptr + 10 + 250);
 }
 
 void test_grow(void) {
