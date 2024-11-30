@@ -46,14 +46,14 @@ list_line:
         lda     (line_ptr),y
         jsr     int_to_fp
         jsr     fp_to_string            ; Format into buffer
-        mva     #Line::data, next_line_pos    ; Initialize read position to start of data (skip over next statement offset)
+        mva     #Line::data, next_line_pos  ; Initialize read position to start of data (skip next statement offset)
         bne     @first_statement        ; Unconditionally skip over code to write separator
 
 @next_statement:
         lda     #':'
         jsr     append_buffer
 @first_statement:
-        mva     next_line_pos, line_pos       ; Move to start of next statement
+        mva     next_line_pos, line_pos ; Move to start of next statement
         jsr     decode_byte             ; Read next statement offset
         sta     next_line_pos           ; Store in next_line_pos
         jsr     list_statement

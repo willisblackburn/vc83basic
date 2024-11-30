@@ -25,7 +25,7 @@ buffer: .res BUFFER_SIZE
 line_buffer: .res BUFFER_SIZE
 
 ; Primary stack
-primary_stack: .res PRIMARY_STACK_SIZE
+stack: .res PRIMARY_STACK_SIZE
 ; Operator stack
 op_stack: .res OP_STACK_SIZE
 

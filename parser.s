@@ -40,12 +40,12 @@ parse_line:
         jsr     parse_statement         ; Leaves the parsed statement in line_buffer and sets/clears carry
         bcs     @done                   ; Parse failed
         lda     line_pos                ; Write position is next statement offset
-        ldx     statement_line_pos            ; Store at start of statement
+        ldx     statement_line_pos      ; Store at start of statement
         sta     line_buffer,x
         jsr     parse_statement_separator
         bcs     @next_statement
 @blank_line:
-        mva     line_pos, line_buffer+Line::next_line_offset  ; Write position is next line offset
+        mva     line_pos, line_buffer+Line::next_line_offset    ; Write position is next line offset
         ldx     buffer_pos
         lda     buffer,x                ; Verify the line ends with 0 as expected
         clc
