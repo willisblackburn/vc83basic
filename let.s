@@ -24,7 +24,7 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        ldy     stack_size              ; Get stack pointer
+        ldy     stack_pos               ; Get stack pointer
         ldx     stack+Value::type,y     ; Get the type of the value on the stack
         cpx     variable_type           ; Compare vs. variable type
         bne     @error                  ; Value and variable are different types
