@@ -677,10 +677,9 @@ string_to_fp:
         lda     D                       ; Test number of digits
         bmi     @whole                  ; If negative or zero then no decimal point or no digits after it
         beq     @whole
-        lday    #fp_temp
-        jsr     store_fp0               ; Hold FP0 result in fp_temp
+        phzp    FP0, .sizeof(UnpackedFloat)     ; Hold FP0 result on stack
         lday    #fp_ten
-        jsr     load_fpx                ; Set FP0 to 10 (X is still FP0 from before)
+        jsr     load_fp0                ; Set FP0 to 10
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
@@ -692,8 +691,7 @@ string_to_fp:
 
 @scale:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
-        lday    #fp_temp
-        jsr     load_fp0                ; Reload result saved earlier
+        plzp    FP0, .sizeof(UnpackedFloat)     ; Reload result saved earlier
         jsr     fdiv                    ; Divide
 
 @whole:
