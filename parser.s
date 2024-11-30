@@ -268,7 +268,7 @@ parse_tokenized_name_2:
 ; Sets the high bit on the last character in line_buffer 
 
 parse_name:
-        ldy     #<(name_pattern - pattern_base - 3)
+        ldy     #<(name_pattern - name_pattern - 3)
         jsr     parse_pattern
         bcs     @error                  ; Failed
         ldx     line_pos                ; Get line_buffer write position
@@ -293,7 +293,7 @@ parse_repeated_name:
 ; Parses a number from the buffer.
 
 parse_number:
-        ldy     #<(number_pattern - pattern_base - 3)
+        ldy     #<(number_pattern - name_pattern - 3)
         jsr     parse_pattern
         bcs     @error
         jsr     encode_zero
@@ -309,11 +309,10 @@ parse_repeated_number:
 @done:
         rts
 
-pattern_base:
 name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
-        .byte   '&', 10, <(name_pattern_op - pattern_base)
-        .byte   '<',  3, <(name_pattern_relational - pattern_base)
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '&', 10, <(name_pattern_op - name_pattern)
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
         .byte   PATTERN_ERROR
 name_pattern_identifier:
         .byte   'A', 26, <(name_pattern_identifier - name_pattern)
@@ -326,10 +325,10 @@ name_pattern_relational:
         .byte   '<',  3, <(name_pattern_relational - name_pattern)
         .byte   PATTERN_OK
 number_pattern:
-        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
         .byte   PATTERN_ERROR
 number_pattern_2:
-        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
         .byte   PATTERN_OK
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
