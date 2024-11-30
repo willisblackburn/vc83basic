@@ -31,8 +31,6 @@ var(FP1, .sizeof(UnpackedFloat), UnpackedFloat)
 var(FP2, .sizeof(UnpackedFloat::t), unsigned long)
 var(FP3, .sizeof(UnpackedFloat::t), unsigned long)
 
-var(fp_temp, .sizeof(Float), Float)
-
 comment Source and destination pointers for memory opreations
 word(src_ptr, void*)
 word(dst_ptr, void*)
