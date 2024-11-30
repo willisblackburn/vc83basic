@@ -181,9 +181,20 @@ list_expression:
         lda     (line_ptr),y            ; Peek at the next byte
         cmp     #'A'                    ; Does it look like a name?
         bcs     list_variable           ; It's a variable
-        jsr     add_whitespace
-        jsr     decode_number           ; It must be a number; decode it (return value in AX)
-        jmp     format_number           ; Send it right to format_number
+        jsr     add_whitespace          ; Otherwise it's a number
+        ldy     line_pos
+@next:
+        lda     (line_ptr),y            ; Load next character
+        beq     @done                   ; If 0 then finished
+        jsr     append_buffer           ; Else output
+        iny
+        jmp     @next
+
+@done:
+        iny                             ; Skip terminator
+        sty     line_pos                ; Update line_pos
+        clc                             ; Signal success
+        rts
 
 list_variable:
         jsr     decode_name             ; Set up match_ptr
