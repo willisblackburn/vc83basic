@@ -946,7 +946,7 @@ fmul:
         ror     FP1t+2
         ror     FP1t+1
         ror     FP1t
-        bcc     @skip                   ; FP1 LSB was 0 so don't need to add anything
+        bcc     @skip_add               ; FP1 LSB was 0 so don't need to add anything
         clc                             ; Add significand in FP3 to FP2 (TODO: try to use add_significands)      
         lda     FP2
         adc     FP3
@@ -960,7 +960,7 @@ fmul:
         lda     FP2+3
         adc     FP3+3                   ; This will never overflow because high bit of FP2 will always be zero
         sta     FP2+3
-@skip:
+@skip_add:
         ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit
         ror     FP2+2
         ror     FP2+1
