@@ -43,8 +43,8 @@ reset_program_state:
         lda     #0                      ; Load zero into A
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        mva     #OP_STACK_SIZE, osp     ; Initialize stack positions
-        mva     #PRIMARY_STACK_SIZE, psp
+        mva     #OP_STACK_SIZE, op_stack_size   ; Initialize stack positions
+        mva     #PRIMARY_STACK_SIZE, stack_size
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
         rts
 
