@@ -135,7 +135,7 @@ parse_expression:
 ; Sets the high bit on the last character in line_buffer 
 
 parse_name:
-        ldy     #<(name_pattern - pattern_base - 3)
+        ldy     #<(name_pattern - name_pattern - 3)
         jsr     parse_pattern
         bcs     @error                  ; Failed
         ldx     line_pos                ; Get line_buffer write position
@@ -160,16 +160,15 @@ parse_repeated_name:
 ; Parses a number from the buffer.
 
 parse_number:
-        ldy     #<(number_pattern - pattern_base - 3)
+        ldy     #<(number_pattern - name_pattern - 3)
         jsr     parse_pattern
         bcs     @error
         jsr     encode_zero
 @error:
         rts
 
-pattern_base:
 name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - pattern_base)
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
         .byte   PATTERN_ERROR
 name_pattern_identifier:
         .byte   'A', 26, <(name_pattern_identifier - name_pattern)
@@ -177,10 +176,10 @@ name_pattern_identifier:
         .byte   '_',  1, <(name_pattern_identifier - name_pattern)
         .byte   PATTERN_OK
 number_pattern:
-        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
         .byte   PATTERN_ERROR
 number_pattern_2:
-        .byte   '0', 10, <(number_pattern_2 - pattern_base)
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
         .byte   PATTERN_OK
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
