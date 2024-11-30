@@ -21,7 +21,7 @@ DE = D
 .global buffer
 .global line_buffer
 .global op_stack
-.global primary_stack
+.global stack
 
 ; Functions
 
