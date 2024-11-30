@@ -19,7 +19,7 @@ exec_print:
         beq     @tab
         jsr     evaluate_expression     ; Leaves value on stack
         bcs     @done
-        ldx     stack_size              ; Get the current stack pointer
+        ldx     stack_pos               ; Get the current stack pointer
         lda     stack+Value::type,x     ; Get the type of the variable
         beq     exec_print_number
         jsr     pop_string

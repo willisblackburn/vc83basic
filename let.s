@@ -23,7 +23,7 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        ldx     stack_size              ; Get stack pointer
+        ldx     stack_pos               ; Get stack pointer
         txa                             ; Becomes low byte of source address
         ldx     #>stack                 ; Segment of stack
         ldy     #.sizeof(Float)
