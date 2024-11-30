@@ -8,8 +8,8 @@ void test_initalize_program(void) {
     ASSERT_EQ(line_ptr, program_ptr);
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_EQ((void*)free_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
-    ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
+    ASSERT_PTR_EQ(free_ptr, program_ptr + 1); // sizeof *program_ptr == size of the line header
+    ASSERT_PTR_LT(free_ptr, himem_ptr);
 }
 
 void test_reset_line_ptr(void) {
@@ -30,7 +30,7 @@ void test_advance_line_ptr(void) {
     // Calling advance_line_ptr on the empty program should advance line_ptr to free_ptr.
     initialize_program();
     advance_line_ptr();
-    ASSERT_EQ((void*)line_ptr, (void*)free_ptr);
+    ASSERT_PTR_EQ(line_ptr, free_ptr);
 
     // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
     // Note that we're charging into unallocated memory here, but that's okay since we own memory space
@@ -38,10 +38,10 @@ void test_advance_line_ptr(void) {
     initialize_program();
     line_ptr->next_line_offset = 10;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10);
+    ASSERT_PTR_EQ(line_ptr, (char*)program_ptr + 10);
     line_ptr->next_line_offset = 250;
     advance_line_ptr();
-    ASSERT_EQ((char*)line_ptr, (char*)program_ptr + 10 + 250);
+    ASSERT_PTR_EQ(line_ptr, (char*)program_ptr + 10 + 250);
 }
 
 void test_grow(void) {
