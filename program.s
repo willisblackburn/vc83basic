@@ -9,8 +9,8 @@
 .assert PS_STOPPED = 0, error
 
 ; Initializes a new program.
-; Clears the program, all variables, and the heap. Sets the run state to stopped. Does not set next_line_ptr since the
-; program is not running.
+; Clears the program, all variables, and the string heap. Sets the run state to stopped.
+; Does not set next_line_ptr since the program is not running.
 ; Inserts an empty zero-length line -1 into the program space.
 
 initialize_program:
@@ -26,7 +26,7 @@ initialize_program:
 ; Fall through to reset_program_state
 
 ; Clears the runtime state of the program.
-; Clears all variables and the heap. The run state and next_line_ptr remain unchanged, so this can be called
+; Clears all variables and the string heap. The run state and next_line_ptr remain unchanged, so this can be called
 ; while the program is running.
 ; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
