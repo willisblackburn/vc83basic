@@ -173,8 +173,8 @@ FP1s = FP1+UnpackedFloat::s
 .global operator_precedence_table
 
 ; util.s
-.global copy, copy_a, copy_size, copy_y_from
-.global reverse_copy, reverse_copy_size
+.global copy, copy_a, copy_y_from
+.global reverse_copy
 .global clear_memory, clear_memory_size
 .global invoke_indexed_vector
 
