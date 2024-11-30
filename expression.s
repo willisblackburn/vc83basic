@@ -60,16 +60,16 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        inc     osp                     ; Pop the open paren (even if evaluate_expression failed)
+        inc     op_stack_size           ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
-        ldx     osp
+        ldx     op_stack_size
         beq     @done                   ; If already zero then fail
         dex                             ; Grow down
         sta     op_stack,x              ; Store operator
-        stx     osp                     ; Update stack pointer
+        stx     op_stack_size           ; Update stack pointer
         clc                             ; Success
 @done:
         rts
@@ -82,14 +82,14 @@ push_operator:
 process_operators:
         sta     min_precedence          ; Store the minimum precedence
 @next:
-        ldx     osp                     ; Get operator stack position
+        ldx     op_stack_size           ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
         clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
-        inc     osp                     ; Move stack position to next operator
+        inc     op_stack_size           ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
@@ -231,19 +231,19 @@ push_value:
         jsr     stack_alloc
         bcs     @done                   ; Fail if overflow
         lda     B                       ; Save low byte
-        sta     primary_stack,x
+        sta     stack,x
         lda     C                       ; Store high byte
-        sta     primary_stack+1,x
+        sta     stack+1,x
         clc                             ; Signal success
 @done:
         rts
 
 pop_value: 
-        ldy     psp                     ; Load stack pointer into Y to use as offset
+        ldy     stack_size              ; Load stack pointer into Y to use as offset
         lda     #2                      ; Free two bytes (retains Y)
         jsr     stack_free
-        lda     primary_stack,y         ; Load low byte into A
-        ldx     primary_stack+1,y       ; Load high byte into X
+        lda     stack,y                 ; Load low byte into A
+        ldx     stack+1,y               ; Load high byte into X
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
@@ -253,10 +253,10 @@ pop_value:
 
 stack_alloc:
         clc
-        sbc     psp                     ; Do A - psp - 1
+        sbc     stack_size              ; Do A - stack_size - 1
         bcs     @done                   ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
-        sta     psp                     ; Update the stack pointer
+        sta     stack_size              ; Update the stack pointer
         tax                             ; Transfer to X to use as pointer
 @done:
         rts
@@ -267,8 +267,8 @@ stack_alloc:
 
 stack_free:
         clc
-        adc     psp                     ; Add stack pointer to whatever value was passed in
-        sta     psp                     ; Save stack pointer back
+        adc     stack_size              ; Add stack pointer to whatever value was passed in
+        sta     stack_size              ; Save stack pointer back
         rts
 
 op_and:
