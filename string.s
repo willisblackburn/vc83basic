@@ -108,7 +108,7 @@ string_alloc:
         pha                             ; Push the requested size in case we have to retry
         jsr     @try_string_alloc
         bcc     @success                ; If it worked then great, return
-        jsr     compact                 ; Try to compact the heap
+        jsr     compact                 ; Try to compact the string heap
         pla                             ; Recover size for retry
         jsr     @try_string_alloc
         bcc     @success_2
