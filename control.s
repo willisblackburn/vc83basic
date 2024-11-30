@@ -83,7 +83,7 @@ exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
         jsr     decode_name             ; Get the name (now in match_ptr)
-        ldx     stack_size              ; Get stack pointer to store name
+        ldx     stack_pos               ; Get stack pointer to store name
         lda     match_ptr               ; Store pointer to variable name
         sta     stack+Control::variable_name_ptr,x
         lda     match_ptr+1
@@ -96,7 +96,7 @@ exec_for:
         jsr     assign_variable         ; Assign starting value
         jsr     evaluate_expression     ; End value
         jsr     pop_value               ; Get the evaluated value
-        ldy     stack_size              ; Get stack pointer to store end value
+        ldy     stack_pos               ; Get stack pointer to store end value
         sta     stack+Control::end_value,y
         txa
         sta     stack+Control::end_value+1,y
@@ -111,7 +111,7 @@ exec_for:
 
 exec_next:
         jsr     decode_name             ; Sets match_ptr
-        ldx     stack_size              ; Load stack position
+        ldx     stack_pos               ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         beq     @error                  ; If so then fail
         sec                             ; Set carry in case this next check fails
@@ -124,7 +124,7 @@ exec_next:
         bcs     @error
         jsr     find_or_add_variable    ; Should not fail since variable is already initialized from FOR
         bcs     @error                  ; Just in case...
-        ldx     stack_size              ; Load stack position
+        ldx     stack_pos               ; Load stack position
         ldy     #0                      ; Use Y to index variable value
         clc
         lda     stack+Control::step_value,x ; Get low byte of step value
@@ -159,7 +159,7 @@ exec_next:
 
 exec_pop:
         sec                             ; Set carry so can return error if csp = 0
-        ldx     stack_size              ; Check stack pointer
+        ldx     stack_pos               ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
         beq     @done                   ; Yep
         lda     #.sizeof(Control)       ; Free the control record
