@@ -1,8 +1,8 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; primary_stack must be page-aligned
-.assert <primary_stack = 0, error
+; stack must be page-aligned
+.assert <stack = 0, error
 
 evaluate_expression:
         ldax    #evaluate_vectors
@@ -27,7 +27,7 @@ evaluate_variable:
         lda     #.sizeof(Float)         ; Make space on the stack
         jsr     stack_alloc
         bcs     @error
-        ldx     #>primary_stack         ; Segment of stack
+        ldx     #>stack                 ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
         ldax    name_ptr                ; Copy from variable data
         ldy     #.sizeof(Float)
@@ -65,16 +65,16 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        inc     osp                     ; Pop the open paren (even if evaluate_expression failed)
+        inc     op_stack_size           ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
-        ldx     osp
+        ldx     op_stack_size
         beq     @done                   ; If already zero then fail
         dex                             ; Grow down
         sta     op_stack,x              ; Store operator
-        stx     osp                     ; Update stack pointer
+        stx     op_stack_size           ; Update stack pointer
         clc                             ; Success
 @done:
         rts
@@ -87,14 +87,14 @@ push_operator:
 process_operators:
         sta     min_precedence          ; Store the minimum precedence
 @next:
-        ldx     osp                     ; Get operator stack position
+        ldx     op_stack_size           ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
         clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
-        inc     osp                     ; Move stack position to next operator
+        inc     op_stack_size           ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
@@ -241,7 +241,7 @@ push_fpx:
         lda     #.sizeof(Float)         ; Allocate enough space for a float on the stack
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         jsr     store_fpx               ; Store FPx in the AY address
         clc                             ; Signal success
 @done:
@@ -254,11 +254,11 @@ push_fpx:
 pop_fp0:
         ldx     #FP0
 pop_fpx: 
-        ldy     psp                     ; Load stack pointer into Y to use as offset
+        ldy     stack_size              ; Load stack pointer into Y to use as offset
         lda     #.sizeof(Float)         ; Free space for float
         jsr     stack_free
         tya                             ; Previous position back in A to use as pointer
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         jsr     load_fpx                ; Load value into FPx
         rts
 
@@ -269,10 +269,10 @@ pop_fpx:
 
 stack_alloc:
         clc
-        sbc     psp                     ; Do A - psp - 1
+        sbc     stack_size              ; Do A - stack_size - 1
         bcs     @done                   ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
-        sta     psp                     ; Update the stack pointer
+        sta     stack_size              ; Update the stack pointer
 @done:
         rts
 
@@ -282,8 +282,8 @@ stack_alloc:
 
 stack_free:
         clc
-        adc     psp                     ; Add stack pointer to whatever value was passed in
-        sta     psp                     ; Save stack pointer back
+        adc     stack_size              ; Add stack pointer to whatever value was passed in
+        sta     stack_size              ; Save stack pointer back
         rts
 
 op_and:
