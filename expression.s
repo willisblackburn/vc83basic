@@ -1,8 +1,8 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; primary_stack must be page-aligned
-.assert <primary_stack = 0, error
+; stack must be page-aligned
+.assert <stack = 0, error
 
 ; We depend on the values being at offset 0.
 .assert Value::number_value = 0, error
@@ -34,11 +34,11 @@ evaluate_variable:
         bcs     @error
         tay                             ; Stack position into Y to set type
         lda     name_type               ; Set type of value on stack
-        sta     primary_stack+Value::type,y
+        sta     stack+Value::type,y
         tax                             ; Move the type into X
         tya                             ; Use as low byte of copy address
         ldy     type_size_table,x       ; Replace Y with the size of the type
-        ldx     #>primary_stack         ; Segment of stack
+        ldx     #>stack                 ; Segment of stack
         stax    dst_ptr                 ; Copy to stack
         ldax    name_ptr                ; Copy from variable data
         jsr     copy_y_from
@@ -75,7 +75,7 @@ evaluate_paren:
         lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        inc     osp                     ; Pop the open paren (even if evaluate_expression failed)
+        inc     op_stack_size           ; Pop the open paren (even if evaluate_expression failed)
         rts
 
 evaluate_string:
@@ -84,11 +84,11 @@ evaluate_string:
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
-        ldx     osp
+        ldx     op_stack_size
         beq     @done                   ; If already zero then fail
         dex                             ; Grow down
         sta     op_stack,x              ; Store operator
-        stx     osp                     ; Update stack pointer
+        stx     op_stack_size           ; Update stack pointer
         clc                             ; Success
 @done:
         rts
@@ -101,14 +101,14 @@ push_operator:
 process_operators:
         sta     min_precedence          ; Store the minimum precedence
 @next:
-        ldx     osp                     ; Get operator stack position
+        ldx     op_stack_size           ; Get operator stack position
         cpx     #OP_STACK_SIZE          ; Stack exhausted?
         clc                             ; Clear carry to signal success in case we take BEQ to @done
         beq     @done                   ; If so then done
         lda     op_stack,x              ; Get whatever operator it is
         cmp     min_precedence          ; Compare with minimum precedence
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
-        inc     osp                     ; Move stack position to next operator
+        inc     op_stack_size           ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
         tay                             ; Index in jump table
         ldax    #operator_vectors
@@ -261,9 +261,9 @@ op_gt:
 ; If carry is set, then Z will be also be set if the values are equal or clear if they are not.
 
 compare_values:
-        ldy     psp                     ; Get stack pointer
-        lda     primary_stack+Value::type,y                 ; Type of first argument
-        cmp     primary_stack+.sizeof(Value)+Value::type,y  ; Type of second argument
+        ldy     stack_size              ; Get stack pointer
+        lda     stack+Value::type,y                 ; Type of first argument
+        cmp     stack+.sizeof(Value)+Value::type,y  ; Type of second argument
         beq     @same_types
         rts                                                 ; Return early if the types differ
     
@@ -336,9 +336,9 @@ push_fpx:
         bcs     @done                   ; Fail if overflow
         tay                             ; Stack offset into Y
         lda     #TYPE_NUM               ; Assign the number type
-        sta     primary_stack+Value::type,y
+        sta     stack+Value::type,y
         tya                             ; Low byte of store address
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         jsr     store_fpx               ; Store FPx in the AY address
         clc                             ; Signal success
 @done:
@@ -353,14 +353,14 @@ push_fpx:
 pop_fp0:
         ldx     #FP0
 pop_fpx: 
-        ldy     psp                     ; Load stack pointer into Y to use as offset
+        ldy     stack_size              ; Load stack pointer into Y to use as offset
         sec                             ; Set carry in case type check fails
-        lda     primary_stack+Value::type,y
+        lda     stack+Value::type,y
         bne     @error
         lda     #.sizeof(Value)         ; Free space for float
         jsr     stack_free
         tya                             ; Back in A to use as pointer
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         jsr     load_fpx                ; Load value into FPx
         clc                             ; Success
 @error:
@@ -376,11 +376,11 @@ push_string:
         bcs     push_string_error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
-        sta     primary_stack+Value::type,y
+        sta     stack+Value::type,y
         lda     B                       ; Recover low byte of string address
-        sta     primary_stack+Value::string_value_ptr,y     ; Save low and high byte of string address
+        sta     stack+Value::string_value_ptr,y     ; Save low and high byte of string address
         lda     C                       ; High byte
-        sta     primary_stack+Value::string_value_ptr+1,y   ; Carry still clear for return
+        sta     stack+Value::string_value_ptr+1,y   ; Carry still clear for return
 push_string_error:
         rts
 
@@ -388,11 +388,11 @@ push_string_error:
 ; BC SAFE, DE SAFE
 
 pop_string:
-        ldy     psp                     ; Load original stack pointer to Y
+        ldy     stack_size              ; Load original stack pointer to Y
         lda     #.sizeof(Value)
         jsr     stack_free
-        lda     primary_stack+Value::string_value_ptr,y     ; Return with address in AX
-        ldx     primary_stack+Value::string_value_ptr+1,y
+        lda     stack+Value::string_value_ptr,y     ; Return with address in AX
+        ldx     stack+Value::string_value_ptr+1,y
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
@@ -402,10 +402,10 @@ pop_string:
 
 stack_alloc:
         clc
-        sbc     psp                     ; Do A - psp - 1
+        sbc     stack_size              ; Do A - stack_size - 1
         bcs     @done                   ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
-        sta     psp                     ; Update the stack pointer
+        sta     stack_size              ; Update the stack pointer
 @done:
         rts
 
@@ -415,8 +415,8 @@ stack_alloc:
 
 stack_free:
         clc
-        adc     psp                     ; Add stack pointer to whatever value was passed in
-        sta     psp                     ; Save stack pointer back
+        adc     stack_size              ; Add stack pointer to whatever value was passed in
+        sta     stack_size              ; Save stack pointer back
         rts
 
 op_and:

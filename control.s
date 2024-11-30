@@ -1,8 +1,8 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; primary_stack must be page-aligned
-.assert <primary_stack = 0, error
+; stack must be page-aligned
+.assert <stack = 0, error
 
 ; GOTO statement:
 
@@ -27,7 +27,7 @@ exec_gosub_line_number:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @done                   ; Stack overflow
         lda     #0                      ; Set variable field to an invalid pointer
-        sta     primary_stack+Control::variable_name_ptr+1,x
+        sta     stack+Control::variable_name_ptr+1,x
         jsr     find_line_2             ; Find the line (already in line_number)
         bcs     @done
 @done:
@@ -70,13 +70,13 @@ exec_return:
         jsr     exec_pop                ; RETURN is just POP except we do something with the popped value
         bcs     @done
         sec                             ; If we take this next branch then carry will be set to signal error
-        lda     primary_stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
+        lda     stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
         bne     @done                   ; Variable was not GOSUB signal
-        lda     primary_stack+Control::next_line_ptr,x
+        lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
-        lda     primary_stack+Control::next_line_ptr+1,x
+        lda     stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
-        lda     primary_stack+Control::next_line_pos,x
+        lda     stack+Control::next_line_pos,x
         sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
 @done:
@@ -94,11 +94,11 @@ exec_for:
         lda     name_type               ; No string variables please
         bne     @error
         sta     variable_type           ; While we have the type in A, save in variable_type
-        ldx     psp                     ; Get stack pointer to store name
+        ldx     stack_size              ; Get stack pointer to store name
         lda     match_ptr               ; Store pointer to variable name
-        sta     primary_stack+Control::variable_name_ptr,x
+        sta     stack+Control::variable_name_ptr,x
         lda     match_ptr+1
-        sta     primary_stack+Control::variable_name_ptr+1,x
+        sta     stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
         mvax    name_ptr, variable_ptr
@@ -107,16 +107,16 @@ exec_for:
         jsr     evaluate_expression     ; End value
         jsr     pop_fp0                 ; Get the evaluated value
         bcs     @error
-        lda     psp                     ; Stack pointer
+        lda     stack_size              ; Stack pointer
         adc     #Control::end_value     ; Add the offset of the end value; carry is clear
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         jsr     store_fp0               ; Store FP0 there
         lday    #fp_one
         jsr     load_fp0
-        lda     psp                     ; Stack pointer again
+        lda     stack_size              ; Stack pointer again
         clc
         adc     #Control::step_value    ; Add the offset of the step value
-        ldy     #>primary_stack
+        ldy     #>stack
         jsr     store_fp0               ; Store the step value
         clc
 @error:
@@ -131,41 +131,41 @@ exec_next:
         mva     name_type, variable_type
         jsr     pop_fp0                 ; Variable value is now in FP0
         bcs     @error
-        ldx     psp                     ; Load stack position
+        ldx     stack_size              ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
-        lda     primary_stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
+        lda     stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
         sta     name_ptr
-        lda     primary_stack+Control::variable_name_ptr+1,x
+        lda     stack+Control::variable_name_ptr+1,x
         beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
-        lda     psp                     ; Get stack position again
+        lda     stack_size              ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
-        ldy     #>primary_stack         ; Segment of stack
+        ldy     #>stack                 ; Segment of stack
         ldx     #FP1                    ; Load step into FP1
         jsr     load_fpx
         jsr     fadd                    ; Add the step value to the variable value from before
         jsr     push_fp0                ; Push back onto stack
         jsr     assign_variable         ; Assign stack value to variable_ptr set up earlier
-        lda     psp                     ; Get stack position again
+        lda     stack_size              ; Get stack position again
         clc
         adc     #Control::end_value     ; Calculate address of end value (carry will be clear)
-        ldy     #>primary_stack
+        ldy     #>stack
         ldx     #FP1                    ; Load end value into FP1
         jsr     load_fpx        
         jsr     fcmp                    ; Compare the current value (still in FP0) with the end value
         bcc     @return_to_for          ; Current value < end value so continue
         bne     exec_pop                ; If not equal then value > end value so stop; else continue
 @return_to_for:
-        ldx     psp                     ; Get stack pointer once again
-        lda     primary_stack+Control::next_line_ptr,x
+        ldx     stack_size              ; Get stack pointer once again
+        lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
-        lda     primary_stack+Control::next_line_ptr+1,x
+        lda     stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
-        lda     primary_stack+Control::next_line_pos,x
+        lda     stack+Control::next_line_pos,x
         sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
 @error:
@@ -176,7 +176,7 @@ exec_next:
 
 exec_pop:
         sec                             ; Set carry so can return error if csp = 0
-        ldx     psp                     ; Check stack pointer
+        ldx     stack_size              ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
         beq     @done                   ; Yep
         lda     #.sizeof(Control)       ; Free the control record
@@ -207,11 +207,11 @@ push_next_line_ptr:
         bcs     @done                   ; Stack overflow
         tax                             ; Stack pointer into X to use as index
         lda     next_line_ptr           ; Store next_line_ptr on stack
-        sta     primary_stack+Control::next_line_ptr,x
+        sta     stack+Control::next_line_ptr,x
         lda     next_line_ptr+1
-        sta     primary_stack+Control::next_line_ptr+1,x
+        sta     stack+Control::next_line_ptr+1,x
         lda     next_line_pos
-        sta     primary_stack+Control::next_line_pos,x
+        sta     stack+Control::next_line_pos,x
         txa                             ; Move stack pointer back to A
 @done:
         rts

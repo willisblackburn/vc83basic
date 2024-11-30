@@ -15,6 +15,6 @@ line_buffer: .res BUFFER_SIZE
 .assert PRIMARY_STACK_SIZE + OP_STACK_SIZE = 208, error
 
 ; Primary stack
-primary_stack := $300
+stack := $300
 ; Operator stack
 op_stack := $300 + PRIMARY_STACK_SIZE
