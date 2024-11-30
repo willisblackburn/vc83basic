@@ -28,7 +28,6 @@ decode_expression:
         lda     (line_ptr),y
         beq     @end                    ; If we're at the end of the expression then stop
         and     #$7F                    ; Clear high bit if set
-        tax                             ; Store token in X for now
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
         sbc     #TOKEN_UNARY_OP
