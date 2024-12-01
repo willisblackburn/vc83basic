@@ -67,7 +67,7 @@ comment Expression decode handlers
 
 def(XH_UNARY_OP,        0)
 def(XH_OP,              1)
-def(XH_NUM,             2)
+def(XH_NUMBER,          2)
 def(XH_STRING,          3)
 def(XH_VAR,             4)
 def(XH_PAREN,           5)
