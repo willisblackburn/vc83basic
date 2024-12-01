@@ -231,7 +231,7 @@ list_print_expression:
 list_vectors:
         .word   list_unary_operator-1   ; XH_UNARY_OP
         .word   list_operator-1         ; XH_OP
-        .word   list_number-1           ; XH_NUM
+        .word   list_number-1           ; XH_NUMBER
         .word   list_string-1           ; XH_STRING
         .word   list_variable-1         ; XH_VAR
         .word   list_paren-1            ; XH_PAREN
