@@ -230,7 +230,7 @@ void call_parse_statement(const char* s, const char* expect_line_data, size_t ex
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_statement(statement_name_table);
+    parse_statement();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
@@ -278,7 +278,7 @@ void test_parse_statement(void) {
     strcpy(buffer, "PRINTX");
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_statement(statement_name_table);
+    parse_statement();
     ASSERT_NE(err, 0);
     ASSERT_EQ(buffer_pos, 0);
 }
