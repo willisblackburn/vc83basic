@@ -142,7 +142,7 @@ void test_add_variable(void) {
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
 
     // add_variable is used after find_name, which sets up name_ptr.
-    // The call_find_name_fail function sets match_ptr.
+    // The call_find_name_fail function sets decode_name_ptr.
     call_find_name_fail("X", variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
     add_variable(2);
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));

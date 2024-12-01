@@ -4,7 +4,7 @@
 ; LET statement:
 
 exec_let:
-        jsr     decode_name             ; Sets match_ptr and match_length
+        jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
         jsr     find_or_add_variable
         bcs     @error
 
