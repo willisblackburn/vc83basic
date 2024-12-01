@@ -100,8 +100,8 @@ parse_statement:
 parse_argument_type_vectors:
         .word   parse_variable-1            ; NT_VAR
         .word   parse_repeated_variable-1   ; NT_RPT_VAR
-        .word   parse_number-1              ; NT_NUM
-        .word   parse_repeated_number-1     ; NT_RPT_NUM
+        .word   parse_number-1              ; NT_NUMBER
+        .word   parse_repeated_number-1     ; NT_RPT_NUMBER
         .word   parse_statement-1           ; NT_STATEMENT
 
 ; Parses a single directive.
