@@ -77,7 +77,7 @@ void add_variable(size_t data_size);
 
 // parser.s
 void parse_line(void);
-void parse_statement(/* AX */ const char* match_ptr);
+void parse_statement(void);
 void parse_directive(/* A */ char directive);
 void parse_expression(void);
 void parse_name(void);
