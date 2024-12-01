@@ -33,7 +33,7 @@ evaluate_variable:
         jsr     stack_alloc
         bcs     @error
         tay                             ; Stack position into Y to set type
-        lda     name_type               ; Set type of value on stack
+        lda     decode_name_type        ; Set type of value on stack
         sta     stack+Value::type,y
         tax                             ; Move the type into X
         tya                             ; Use as low byte of copy address

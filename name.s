@@ -5,7 +5,7 @@
 ; Each name table entry consists of a length (one byte if in the range 0-127, otherwise two bytes, high byte first),
 ; followed by a name, followed by any number of extra data bytes. The last byte of the name must have bit 7 set.
 ; AX = pointer to the first entry in the name table; saved into next_name_ptr
-; match_ptr = pointer to the name to match
+; decode_name_ptr = pointer to the name to match
 ; Returns carry clear if the name matched and carry set if it didn't match any name.
 ; On match, updates name_ptr to point to the data following matched name, and returns the index of the matched name
 ; in A.
@@ -25,7 +25,7 @@ find_name_2:
         rts
 
 ; Matches a name found in the input buffer with characters from the name table entry.
-; match_ptr = pointer to the name to match
+; decode_name_ptr = pointer to the name to match
 ; name_ptr = pointer to the name within the name table entry that we're going to match
 ; Returns carry clear if the sequence matched. Y will be left set to the length of the matched name.
 ; Returns carry set if no match.
@@ -36,13 +36,13 @@ match_name:
 @next:
         lda     (name_ptr),y            ; Load next byte from name table entry
         bmi     @last                   ; This is the last character
-        cmp     (match_ptr),y           ; Compare to the source name
+        cmp     (decode_name_ptr),y     ; Compare to the source name
         bne     @no_match               ; If not match then fail; if we get past this point then we're still matching
         iny
         bne     @next
 
 @last:
-        cmp     (match_ptr),y           ; One last compare
+        cmp     (decode_name_ptr),y     ; One last compare
         bne     @no_match
         iny                             ; Account for matching last character
         clc                             ; Signal success
@@ -106,8 +106,8 @@ advance_rebase_name_ptr_done:
         rts
 
 ; Finds a variable, or adds it.
-; match_ptr = pointer to the variable name
-; match_length = the length of the variable
+; decode_name_ptr = pointer to the variable name
+; decode_name_length = the length of the variable
 ; Returns carry clear if find_name or add_variable succeeded, or carry set on error.
 
 find_or_add_variable:
@@ -117,15 +117,15 @@ find_or_add_variable:
         rts                             ; Return success
 
 @not_found:
-        ldx     name_type
+        ldx     decode_name_type
         lda     type_size_table,x
         ldx     #0
 
 ; Fall through
 
 ; Extends the variable name table by adding a new name.
-; The new name consists of the characters defined by match_ptr and match_length. These are both set in decode_name.
-; The name must already end in a character with the high bit set.
+; The new name consists of the characters defined by decode_name_ptr and decode_name_length.
+; These are both set in decode_name. The name must already end in a character with the high bit set.
 ; AX = the number of data bytes to allocate after the name
 ; name_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
 ; name_index = the number of names currently in the table (also left by find_name)
@@ -136,7 +136,7 @@ add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
         ldy     name_index              ; Check if too many variables already
         bmi     @error                  ; variable_count >= 128
-        adc     match_length            ; Add match_length plus 1 (carry) to get total size to allocate
+        adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Park length low byte in B
         bcc     @skip_inx               ; No carry; don't need to increment high byte
         inx
@@ -176,7 +176,7 @@ add_variable:
         jsr     rebase_name_ptr         ; Add Y to name_ptr
         ldy     #0                      ; Start copying name at offset 0
 @copy_next_character:
-        lda     (match_ptr),y           ; Get name character
+        lda     (decode_name_ptr),y     ; Get name character
         sta     (name_ptr),y            ; Store into name table
         bmi     @copy_last
         iny

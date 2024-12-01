@@ -4,7 +4,7 @@
 ; LET statement:
 
 exec_let:
-        jsr     decode_name             ; Sets match_ptr and match_length
+        jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
         jsr     find_or_add_variable
         bcs     @error
 
@@ -12,7 +12,7 @@ exec_let:
 ; Store it in variable_ptr because we might need name_ptr when parsing the right hand value.
 
         mvax    name_ptr, variable_ptr
-        mva     name_type, variable_type
+        mva     decode_name_type, variable_type
         jsr     evaluate_expression
         jmp     assign_variable
 
