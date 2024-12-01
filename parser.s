@@ -127,7 +127,7 @@ parse_argument_type_vectors:
 .assert NT_VAR = $10, error
 
 ; Number of bytes of parser state to save, starting with name_ptr
-PARSER_STATE_BYTES = 9
+PARSER_STATE_BYTES = 10
 
 parse_directive:
         tay                             ; Keep in Y while using A to save state
