@@ -33,13 +33,13 @@ void test_stack_alloc_free(void) {
     ASSERT_NE(err, 0);
 }
 
-void set_match_ptr(const char* name) {
-    // Parse given name to set match_ptr and high bit on final character.
-    // Also sets match_length, which would normally be set in decode_name.
+void set_decode_name_ptr(const char* name) {
+    // Parse given name to set decode_name_ptr and high bit on final character.
+    // Also sets decode_name_length, which would normally be set in decode_name.
     strcpy(buffer, name);
-    match_ptr = buffer;
-    match_length = strlen(buffer);
-    buffer[match_length - 1] |= NT_STOP;
+    decode_name_ptr = buffer;
+    decode_name_length = strlen(buffer);
+    buffer[decode_name_length - 1] |= NT_STOP;
 }
 
 void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
