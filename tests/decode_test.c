@@ -67,12 +67,12 @@ void test_decode_name(void) {
     set_line(0, line_data, sizeof line_data);
 
     decode_name();
-    ASSERT_EQ(match_ptr, line_buffer.data);
-    ASSERT_EQ(match_length, 1);
+    ASSERT_EQ(decode_name_ptr, line_buffer.data);
+    ASSERT_EQ(decode_name_length, 1);
 
     decode_name();
-    ASSERT_EQ(match_ptr, line_buffer.data + 1);
-    ASSERT_EQ(match_length, 6);
+    ASSERT_EQ(decode_name_ptr, line_buffer.data + 1);
+    ASSERT_EQ(decode_name_length, 6);
 }
 
 extern void* decode_xh_vectors[];
@@ -119,7 +119,7 @@ int var_count;
 void xh_variable(void) {
     decode_name();
     ++var_count;
-    ASSERT_EQ(*match_ptr, 'X' | NT_STOP);
+    ASSERT_EQ(*decode_name_ptr, 'X' | NT_STOP);
 }
 
 int paren_count;

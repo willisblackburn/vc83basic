@@ -89,20 +89,20 @@ exec_return:
 exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
-        jsr     decode_name             ; Get the name (now in match_ptr)
+        jsr     decode_name             ; Get the name (now in decode_name_ptr)
         sec                             ; Set carry for error return if type check goes wrong
-        lda     name_type               ; No string variables please
+        lda     decode_name_type        ; No string variables please
         bne     @error
         sta     variable_type           ; While we have the type in A, save in variable_type
         ldx     stack_pos               ; Get stack pointer to store name
-        lda     match_ptr               ; Store pointer to variable name
+        lda     decode_name_ptr         ; Store pointer to variable name
         sta     stack+Control::variable_name_ptr,x
-        lda     match_ptr+1
+        lda     decode_name_ptr+1
         sta     stack+Control::variable_name_ptr+1,x
         jsr     find_or_add_variable
         bcs     @error                  ; No space for variable
         mvax    name_ptr, variable_ptr
-        jsr     evaluate_expression     ; Start value (may clobber match_ptr)
+        jsr     evaluate_expression     ; Start value (may clobber decode_name_ptr)
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
         jsr     pop_fp0                 ; Get the evaluated value
@@ -125,10 +125,10 @@ exec_for:
 ; NEXT statement:
 
 exec_next:
-        jsr     evaluate_variable       ; Evaluates the variable after next; sets match_ptr
+        jsr     evaluate_variable       ; Evaluates the variable after next; sets decode_name_ptr
         bcs     @error
         mvax    name_ptr, variable_ptr  ; Set up target for assign_variable later
-        mva     name_type, variable_type
+        mva     decode_name_type, variable_type
         jsr     pop_fp0                 ; Variable value is now in FP0
         bcs     @error
         ldx     stack_pos               ; Load stack position

@@ -89,41 +89,41 @@ decode_string:
         sty     line_pos
         rts
 
-; Decodes a variable name and set up match_ptr, match_length, and name_type.
+; Decodes a variable name and set up decode_name_ptr, decode_name_length, and decode_name_type.
 ; BC SAFE, DE SAFE
 
 .assert TYPE_NUMBER = 0, error
 .assert TYPE_STRING = 1, error
 
 decode_name:
-        lda     line_pos                ; Add line_pos to line_ptr to get match_ptr
+        lda     line_pos                ; Add line_pos to line_ptr to get decode_name_ptr
         clc
         adc     line_ptr
-        sta     match_ptr
+        sta     decode_name_ptr
         lda     line_ptr+1
-        adc     #0                      ; Will leave carry clear since match_ptr calculation should not roll over
-        sta     match_ptr+1
+        adc     #0                      ; Will leave carry clear since decode_name_ptr calculation should not roll over
+        sta     decode_name_ptr+1
         ldy     #0                      ; Search for the end of the name starting at position 0
 @next:
-        lda     (match_ptr),y
+        lda     (decode_name_ptr),y
         bmi     @last
         iny
         bne     @next
 
 @last:
         iny                             ; Account for last character
-        sty     match_length
+        sty     decode_name_length
         tya                             ; Add to line_pos; carry should be clear
         adc     line_pos
         sta     line_pos                ; Update line_pos
         ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
-        lda     (match_ptr),y
+        lda     (decode_name_ptr),y
         cmp     #'$' | NT_STOP          ; If it's there, it will have the high bit set
         bne     @not_string
         inx                             ; It was a string; change the type
 @not_string:
-        stx     name_type               ; Remember the type
+        stx     decode_name_type        ; Remember the type
         rts
 
 decode_operator:
