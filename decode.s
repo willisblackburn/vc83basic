@@ -92,7 +92,7 @@ decode_string:
 ; Decodes a variable name and set up match_ptr, match_length, and name_type.
 ; BC SAFE, DE SAFE
 
-.assert TYPE_NUM = 0, error
+.assert TYPE_NUMBER = 0, error
 .assert TYPE_STRING = 1, error
 
 decode_name:
@@ -116,7 +116,7 @@ decode_name:
         tya                             ; Add to line_pos; carry should be clear
         adc     line_pos
         sta     line_pos                ; Update line_pos
-        ldx     #TYPE_NUM               ; Variable is a number unless we learn otherwise
+        ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
         lda     (match_ptr),y
         cmp     #'$' | NT_STOP          ; If it's there, it will have the high bit set

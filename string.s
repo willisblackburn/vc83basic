@@ -334,7 +334,7 @@ compact:
 ; Rebases name_ptr so it points to the variable data.
 ; Returns the type of variable in A.
 
-.assert TYPE_NUM = 0, error
+.assert TYPE_NUMBER = 0, error
 .assert TYPE_STRING = 1, error
 
 find_variable_data:
@@ -343,7 +343,7 @@ find_variable_data:
         iny
         lda     (name_ptr),y
         bpl     @next
-        ldx     #TYPE_NUM
+        ldx     #TYPE_NUMBER
         cmp     #'$' | NT_STOP          ; Was it a string?
         bne     @not_string
         inx                             ; It was a string; change the type

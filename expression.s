@@ -335,7 +335,7 @@ push_fpx:
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
         tay                             ; Stack offset into Y
-        lda     #TYPE_NUM               ; Assign the number type
+        lda     #TYPE_NUMBER            ; Assign the number type
         sta     stack+Value::type,y
         tya                             ; Low byte of store address
         ldy     #>stack                 ; Segment of stack
@@ -348,7 +348,7 @@ push_fpx:
 ; well-formed expressions.
 ; FP0/1 = the value to push
 
-.assert TYPE_NUM = 0, error
+.assert TYPE_NUMBER = 0, error
 
 pop_fp0:
         ldx     #FP0
