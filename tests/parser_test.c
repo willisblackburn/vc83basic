@@ -231,12 +231,12 @@ void test_parse_directive(void) {
     call_parse_directive("X", NT_VAR, line_data_3, sizeof line_data_3, __LINE__);
     call_parse_directive("X", NT_RPT_VAR, line_data_4, sizeof line_data_4, __LINE__);
     call_parse_directive("X,Y", NT_RPT_VAR, line_data_5, sizeof line_data_5, __LINE__);
-    call_parse_directive("10", NT_NUM, line_data_6, sizeof line_data_6, __LINE__);
-    call_parse_directive("10,20", NT_RPT_NUM, line_data_7, sizeof line_data_7, __LINE__);
-    call_parse_directive("X", NT_PEXP, line_data_8, sizeof line_data_8, __LINE__);
-    call_parse_directive("X,1", NT_PEXP, line_data_9, sizeof line_data_9, __LINE__);
-    call_parse_directive("X;1", NT_PEXP, line_data_10, sizeof line_data_10, __LINE__);
-    call_parse_directive(",,X;1,Y;", NT_PEXP, line_data_11, sizeof line_data_11, __LINE__);
+    call_parse_directive("10", NT_NUMBER, line_data_6, sizeof line_data_6, __LINE__);
+    call_parse_directive("10,20", NT_RPT_NUMBER, line_data_7, sizeof line_data_7, __LINE__);
+    call_parse_directive("X", NT_PRINT_EXP, line_data_8, sizeof line_data_8, __LINE__);
+    call_parse_directive("X,1", NT_PRINT_EXP, line_data_9, sizeof line_data_9, __LINE__);
+    call_parse_directive("X;1", NT_PRINT_EXP, line_data_10, sizeof line_data_10, __LINE__);
+    call_parse_directive(",,X;1,Y;", NT_PRINT_EXP, line_data_11, sizeof line_data_11, __LINE__);
 }
 
 void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
