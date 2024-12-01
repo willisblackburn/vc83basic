@@ -11,7 +11,7 @@
 
 .assert XH_UNARY_OP = 0, error
 .assert XH_OP = 1, error
-.assert XH_NUM = 2, error
+.assert XH_NUMBER = 2, error
 .assert XH_VAR = 3, error
 .assert XH_PAREN = 4, error
 
