@@ -20,7 +20,7 @@ evaluate_expression:
 evaluate_vectors:
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
         .word   evaluate_operator-1         ; XH_OP
-        .word   evaluate_number-1           ; XH_NUM
+        .word   evaluate_number-1           ; XH_NUMBER
         .word   evaluate_string-1           ; XH_STRING
         .word   evaluate_variable-1         ; XH_VAR
         .word   evaluate_paren-1            ; XH_PAREN
