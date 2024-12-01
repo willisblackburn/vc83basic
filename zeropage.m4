@@ -84,14 +84,17 @@ word(name_ptr, char*)
 comment Pointer to the next name table entry
 word(next_name_ptr, char*)
 
-comment Pointer to name terminated with a character with the high bit set
-word(match_ptr, const char*)
-
-comment Length of the name referred to by match_ptr
-byte(match_length)
-
 comment Index of name in name table
 byte(name_index)
+
+comment Pointer to name decoded from line
+word(decode_name_ptr, const char*)
+
+comment Length of the name referred to by decode_name_ptr
+byte(decode_name_length)
+
+comment The type of the name referred to by decode_name_ptr
+byte(decode_name_type)
 
 comment Pointer to a variable within the variable value set by a statement like LET, INPUT, and READ
 word(variable_ptr, void*)
