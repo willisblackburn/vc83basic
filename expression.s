@@ -33,7 +33,7 @@ evaluate_variable:
         jsr     stack_alloc
         bcs     @error
         tax                             ; Stack position into X to set type
-        lda     #TYPE_NUM               ; Set type of value on stack
+        lda     #TYPE_NUMBER            ; Set type of value on stack
         sta     stack+Value::type,x
         txa                             ; Use as low byte of copy address
         ldx     #>stack                 ; Segment of stack
@@ -298,7 +298,7 @@ push_fpx:
         jsr     stack_alloc             ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
         tay                             ; Stack offset into Y
-        lda     #TYPE_NUM               ; Assign the number type
+        lda     #TYPE_NUMBER            ; Assign the number type
         sta     stack+Value::type,y
         tya                             ; Low byte of store address
         ldy     #>stack                 ; Segment of stack

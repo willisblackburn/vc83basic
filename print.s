@@ -3,7 +3,7 @@
 
 ; PRINT statement:
 
-.assert TYPE_NUM = 0, error
+.assert TYPE_NUMBER = 0, error
 
 exec_print_number:
         jsr     pop_fp0                 ; Get the value
