@@ -67,7 +67,7 @@ void test_evaluate_expression(void) {
 
     // Create a new variable and give it a value.
 
-    set_match_ptr("DATA");
+    set_decode_name_ptr("DATA");
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
     add_variable(2);
