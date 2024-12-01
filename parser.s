@@ -182,7 +182,7 @@ number_pattern_2:
         .byte   PATTERN_OK
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
-; Copies the text into line_buffer and sets match_ptr. 
+; Copies the text into line_buffer and sets decode_name_ptr. 
 ; Y = the starting state MINUS 3 (will be incremented by 3 prior to being used)
 ; Returns carry clear if there was a match at buffer_pos.
 ; Returns carry set if the character at buffer_pos didn't match.
@@ -193,8 +193,8 @@ number_pattern_2:
 .assert <buffer = 0, error
 
 parse_pattern:
-        mva     line_pos, match_ptr     ; Initialize match_ptr to the write position in line_buffer
-        mva     #>line_buffer, match_ptr+1  ; High byte of buffer address into match_ptr
+        mva     line_pos, decode_name_ptr           ; Initialize decode_name_ptr to the write position in line_buffer
+        mva     #>line_buffer, decode_name_ptr+1    ; High byte of buffer address into decode_name_ptr
         jsr     skip_whitespace
 @next_state:
         iny                             ; Move to next state
