@@ -8,10 +8,10 @@ comment Name table definitions
 
 def(NT_VAR,             hex(10))
 def(NT_RPT_VAR,         hex(11))
-def(NT_NUM,             hex(12))
-def(NT_RPT_NUM,         hex(13))
+def(NT_NUMBER,          hex(12))
+def(NT_RPT_NUMBER,      hex(13))
 def(NT_STATEMENT,       hex(14))
-def(NT_PEXP,            hex(15))
+def(NT_PRINT_EXP,       hex(15))
 def(NT_STOP,            hex(80))
 
 comment Tokenized form constants

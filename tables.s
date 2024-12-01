@@ -3,16 +3,16 @@
 statement_name_table:
         .byte   :+ - *, 'E', 'N', 'D' | NT_STOP
 :       .byte   :+ - *, 'R', 'U', 'N' | NT_STOP
-:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, NT_PEXP
+:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, NT_PRINT_EXP
 :       .byte   :+ - *, 'L', 'E', 'T' | NT_STOP, NT_VAR, '=', 1
 :       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | NT_STOP, NT_RPT_VAR
 :       .byte   :+ - *, 'L', 'I', 'S', 'T' | NT_STOP, 2
-:       .byte   :+ - *, 'G', 'O', 'T', 'O' | NT_STOP, NT_NUM
-:       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | NT_STOP, NT_NUM
+:       .byte   :+ - *, 'G', 'O', 'T', 'O' | NT_STOP, NT_NUMBER
+:       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | NT_STOP, NT_NUMBER
 :       .byte   :+ - *, 'R', 'E', 'T', 'U', 'R', 'N' | NT_STOP
 :       .byte   :+ - *, 'P', 'O', 'P' | NT_STOP
-:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'T', 'O', NT_RPT_NUM
-:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUM
+:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'T', 'O', NT_RPT_NUMBER
+:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUMBER
 :       .byte   :+ - *, 'F', 'O', 'R' | NT_STOP, NT_VAR, '=', 1, 'T', 'O', 1
 :       .byte   :+ - *, 'N', 'E', 'X', 'T' | NT_STOP, NT_VAR
 :       .byte   :+ - *, 'S', 'T', 'O', 'P' | NT_STOP

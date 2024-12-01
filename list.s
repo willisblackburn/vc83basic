@@ -155,10 +155,10 @@ list_name:
 list_argument_type_vectors:
         .word   list_variable-1             ; NT_VAR
         .word   list_repeated_variable-1    ; NT_RPT_VAR
-        .word   list_number-1               ; NT_NUM
-        .word   list_repeated_number-1      ; NT_RPT_NUM
+        .word   list_number-1               ; NT_NUMBER
+        .word   list_repeated_number-1      ; NT_RPT_NUMBER
         .word   list_statement-1            ; NT_STATEMENT
-        .word   list_print_expression-1     ; NT_PEXP
+        .word   list_print_expression-1     ; NT_PRINT_EXP
 
 ; Lists a single directive from the token stream.
 ; A = the directive
