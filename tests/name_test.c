@@ -133,7 +133,7 @@ void test_find_name_operators(void) {
 }
 
 void test_add_variable(void) {
-    const char num_init_value[] = { TYPE_NUM, 0, 0, 0, 0, 0 };
+    const char num_init_value[] = { TYPE_NUMBER, 0, 0, 0, 0, 0 };
 
     PRINT_TEST_NAME();
 

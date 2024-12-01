@@ -57,5 +57,5 @@ operator_precedence_table:
         .byte   PR_LOGICAL              ; AND, OR
 
 type_size_table:
-        .byte .sizeof(Float)            ; TYPE_NUM
+        .byte .sizeof(Float)            ; TYPE_NUMBER
         .byte 2                         ; TYPE_STRING
