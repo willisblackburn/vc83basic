@@ -46,7 +46,7 @@ parse_line:
 parse_statement:
         jsr     parse_name
         bcs     @error
-        mva     match_ptr, line_pos     ; match_ptr is pointing to name within line_buffer; back up line_pos to start
+        mva     decode_name_ptr, line_pos   ; match_ptr is pointing to name within line_buffer; back up line_pos to start
         ldax    #statement_name_table
         jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error

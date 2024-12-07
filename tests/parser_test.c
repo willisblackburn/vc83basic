@@ -198,7 +198,7 @@ void test_parse_statement(void) {
     strcpy(buffer, "PRINT 8 9");
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_statement(statement_name_table);
+    parse_statement();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, 8);
     ASSERT_EQ(line_pos, offsetof(Line, data) + sizeof line_data_2);
