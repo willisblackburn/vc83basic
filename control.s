@@ -84,7 +84,7 @@ exec_return:
 
 ; FOR statement:
 
-.assert TYPE_NUMBER = 0, error
+.assert TYPE_NUMBER = $00, error
 
 exec_for:
         jsr     push_next_line_ptr      ; Save return address

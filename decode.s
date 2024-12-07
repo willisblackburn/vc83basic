@@ -92,9 +92,9 @@ decode_string:
 ; Decodes a variable name and set up decode_name_ptr, decode_name_length, and decode_name_type.
 ; BC SAFE, DE SAFE
 
-.assert TYPE_NUMBER = 0, error
-.assert TYPE_STRING = 1, error
-.assert TYPE_STRING = 0x80, error
+.assert TYPE_NUMBER = $00, error
+.assert TYPE_STRING = $01, error
+.assert TYPE_STRING = $80, error
 
 decode_name:
         lda     line_pos                ; Add line_pos to line_ptr to get decode_name_ptr

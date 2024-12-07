@@ -348,7 +348,7 @@ push_fpx:
 ; well-formed expressions.
 ; FP0/1 = the value to push
 
-.assert TYPE_NUMBER = 0, error
+.assert TYPE_NUMBER = $00, error
 
 pop_fp0:
         ldx     #FP0
