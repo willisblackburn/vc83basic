@@ -334,8 +334,8 @@ compact:
 ; Rebases name_ptr so it points to the variable data.
 ; Returns the type of variable in A.
 
-.assert TYPE_NUMBER = 0, error
-.assert TYPE_STRING = 1, error
+.assert TYPE_NUMBER = $00, error
+.assert TYPE_STRING = $01, error
 
 find_variable_data:
         ldy     #$FF                    ; Scan forward to find the end of the name

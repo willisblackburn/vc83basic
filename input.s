@@ -3,7 +3,7 @@
 
 ; INPUT statement:
 
-.assert TYPE_NUMBER = 0, error
+.assert TYPE_NUMBER = $00, error
 
 exec_input:
         lda     #'?'                    ; Prepare to print '?' prompt
