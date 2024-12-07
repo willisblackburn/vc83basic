@@ -144,6 +144,7 @@ void test_parse_expression(void) {
     const char line_data_9[] = { '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
     const char line_data_10[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
+    const char line_data_11[] = { 'A', '$' | NT_STOP, TOKEN_OP | OP_CONCAT, '"', 'A', 'B', 'C', '"', 0 };
 
     PRINT_TEST_NAME();
 
@@ -159,6 +160,7 @@ void test_parse_expression(void) {
     call_parse_expression("NOT (X=3 OR NOT -Y)", line_data_8, sizeof line_data_8, __LINE__);
     call_parse_expression("\"HELLO\"", line_data_9, sizeof line_data_9, __LINE__);
     call_parse_expression("\"BUG OR \"\"FEATURE?\"\"\"", line_data_10, sizeof line_data_10, __LINE__);
+    call_parse_expression("A$ & \"ABC\"", line_data_11, sizeof line_data_11, __LINE__);
 }
 
 void test_parse_argument_separator(void) {
