@@ -94,7 +94,7 @@ decode_string:
 
 .assert TYPE_NUMBER = $00, error
 .assert TYPE_STRING = $01, error
-.assert TYPE_STRING = $80, error
+.assert TYPE_ARRAY = $80, error
 
 decode_name:
         lda     line_pos                ; Add line_pos to line_ptr to get decode_name_ptr
@@ -120,17 +120,16 @@ decode_name:
         ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '('
         lda     (decode_name_ptr),y
-        cmp     #'('| NT_STOP
+        cmp     #'(' | NT_STOP          ; Last character will always have high bit set
         bne     @not_array
         ldx     #TYPE_ARRAY
-
-
-
-
+        dey                             ; Back up again in order to check for '$'
         lda     (decode_name_ptr),y
-        cmp     #'$' | NT_STOP          ; If it's there, it will have the high bit set
+        eor     #NT_STOP                ; Pretend that this was the last character
+@not_array:
+        cmp     #'$' | NT_STOP          ; Check if it's a string
         bne     @not_string
-        inx                             ; It was a string; change the type
+        inx                             ; It was a string; all we have to is increment
 @not_string:
         stx     decode_name_type        ; Remember the type
         rts
