@@ -151,6 +151,10 @@ parse_directive:
 parse_variable:
         jsr     parse_name              ; Parse the variable name
         cpy     #<(name_pattern_op - name_pattern)  ; Make sure it was a name not an operator
+        bcs     @error                  ; Was an operator
+
+
+@done:
         rts                             ; CPY sets carry correctly for return
 
 ; Parses a series of names separated by commas.
@@ -316,7 +320,7 @@ parse_tokenized_name_2:
         rts                             ; Return with carry set
 
 ; Parses a name from the buffer.
-; Sets the high bit on the last character in line_buffer 
+; Sets the high bit on the last character in line_buffer
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)

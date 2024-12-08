@@ -7,22 +7,18 @@ statement ::= _ (
     | ... )
 
 # ASSERT value [, error-message]
-assert_statement ::= 'ASSERT' opt_expression_2
+assert_statement ::= 'ASSERT' arguments_2
 
 # DATA text
-data_statement ::= 'DATA' repeated_data
-
-repeated_data ::= data (_ ',' data)*
-
-data ::= number | string
+data_statement ::= 'DATA' text
 
 # DIM A$(100)
 # DIM A$(100,100)
 # DIM A$(100,100,100)
-dim_statement ::= 'DIM' var _ '(' expression (_ ',' expression (_ ',' expression)?)? _ ')' 
+dim_statement ::= 'DIM' var
 
 # FOR var = start-value TO end-value STEP step-value
-for_statement ::= 'FOR' var _ '=' expression_1 _ 'TO' expression_1 step?
+for_statement ::= 'FOR' var _ '=' expression _ 'TO' expression step?
 
 step ::= _ 'STEP' expression
 
@@ -33,10 +29,10 @@ goto_statement ::= 'GOTO'? number
 input_statement ::= 'INPUT' channel prompt repeated_var 
 
 # LET var = value
-let_statement ::= 'LET'? var _ '=' expression_1
+let_statement ::= 'LET'? var _ '=' expression
 
 # LIST start-line-number, end-line-number
-list_statement ::= 'LIST' opt_expression_2 
+list_statement ::= 'LIST' arguments_2 
 
 # ON value GOTO line-number [, line_number] ...
 on_goto_statement ::= 'ON' expression1 _ 'GOTO' repeated_number
@@ -50,17 +46,11 @@ read_statement ::= 'READ' repeated_var
 # REM text
 rem_statement ::= 'REM' text
 
-expression_1 = expression
+arguments_1 = expression?
 
-expression_2 = expression _ ',' expression
+arguments_2 = (expression (_ ',' expression)?)?
 
-expression_3 = expression _ ',' expression _ ',' expression
-
-opt_expression_1 = expression?
-
-opt_expression_2 = (expression (_ ',' expression)?)?
-
-opt_expression_3 = (expression (_ ',' expression (_ ',' expression)?)?)?
+arguments_3 = (expression (_ ',' expression (_ ',' expression)?)?)?
 
 print_expression ::= print_op* expression (print_op+ print_expression)?
 
@@ -78,12 +68,12 @@ function ::= _ (
     | ... )
 
 # LEN(string-value)
-len_function ::= 'LEN' _ '(' expression_1 _ ')'
+len_function ::= 'LEN' _ '(' arguments_1 _ ')'
 
 # MAX(value, value)
 # MIN(value, value)
-max_function ::= 'MAX' _ '(' expression_2 _ ')'
-min_function ::= 'MIN' _ '(' expression_2 _ ')'
+max_function ::= 'MAX' _ '(' arguments_2 _ ')'
+min_function ::= 'MIN' _ '(' arguments_2 _ ')'
 
 op ::= _ ('<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '&' | 'AND' | 'OR')
 
@@ -95,7 +85,10 @@ repeated_number = number (_ ',' number)*
 
 repeated_var = var (_ ',' var)*
 
-var ::= _ letter (letter | digit | '_')* '$'? '('?
+# Note no space allowed before open paren
+var ::= var_name ('(' expression (',' expression)* ')')?
+
+var_name ::= _ letter (letter | digit | '_')* '$'?
 
 number ::= _ sign? digit+ ('.' digit*)? ('E' sign? digit+)
 

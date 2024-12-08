@@ -8,7 +8,7 @@
 exec_dim:
         jsr     decode_name             ; Get the name and type
         clc
-        lda     name_type               ; See if it's an array name
+        lda     decode_name_type        ; See if it's an array name
         bpl     @done                   ; Nope; nothing to do
 
 @done:
