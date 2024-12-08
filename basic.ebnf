@@ -6,57 +6,59 @@ statement ::= _ (
     | let_statement
     | ... )
 
-# ASSERT value [, error-message]
+/* ASSERT value [, error-message] */
 assert_statement ::= 'ASSERT' arguments_2
 
-# DATA text
+/* DATA text */
 data_statement ::= 'DATA' text
 
-# DIM A$(100)
-# DIM A$(100,100)
-# DIM A$(100,100,100)
+/* DIM A$(100) */
+/* DIM A$(100,100) */
+/* DIM A$(100,100,100) */
 dim_statement ::= 'DIM' var
 
-# FOR var = start-value TO end-value STEP step-value
+/* FOR var = start-value TO end-value STEP step-value */
 for_statement ::= 'FOR' var _ '=' expression _ 'TO' expression step?
 
 step ::= _ 'STEP' expression
 
-# GOTO line-number
+/* GOTO line-number */
 goto_statement ::= 'GOTO'? number
 
-# INPUT [# channel] [prompt ;] var [, var] ...
+/* INPUT [# channel] [prompt ;] var [, var] ... */
 input_statement ::= 'INPUT' channel prompt repeated_var 
 
-# LET var = value
+/* LET var = value */
 let_statement ::= 'LET'? var _ '=' expression
 
-# LIST start-line-number, end-line-number
+/* LIST start-line-number, end-line-number */
 list_statement ::= 'LIST' arguments_2 
 
-# ON value GOTO line-number [, line_number] ...
+/* ON value GOTO line-number [, line_number] ... */
 on_goto_statement ::= 'ON' expression1 _ 'GOTO' repeated_number
 
-# PRINT print-value
+/* PRINT print-value */
 print_statement ::= 'PRINT' channel print_expression
-
-# READ var [, var] ...
-read_statement ::= 'READ' repeated_var
-
-# REM text
-rem_statement ::= 'REM' text
-
-arguments_1 = expression?
-
-arguments_2 = (expression (_ ',' expression)?)?
-
-arguments_3 = (expression (_ ',' expression (_ ',' expression)?)?)?
 
 print_expression ::= print_op* expression (print_op+ print_expression)?
 
-expression = primary_expression (op expression)?
+print_op ::= _ (',' | ';')
 
-primary_expression = number | string | var
+/* READ var [, var] ... */
+read_statement ::= 'READ' repeated_var
+
+/* REM text */
+rem_statement ::= 'REM' text
+
+arguments_1 ::= expression?
+
+arguments_2 ::= (expression (_ ',' expression)?)?
+
+arguments_3 ::= (expression (_ ',' expression (_ ',' expression)?)?)?
+
+expression ::= primary_expression (op expression)?
+
+primary_expression ::= number | string | var
     | function
     | _ '(' expression _ ')'
     | unary_op primary_expression
@@ -67,11 +69,11 @@ function ::= _ (
     | min_function
     | ... )
 
-# LEN(string-value)
+/* LEN(string-value) */
 len_function ::= 'LEN' _ '(' arguments_1 _ ')'
 
-# MAX(value, value)
-# MIN(value, value)
+/* MAX(value, value) */
+/* MIN(value, value) */
 max_function ::= 'MAX' _ '(' arguments_2 _ ')'
 min_function ::= 'MIN' _ '(' arguments_2 _ ')'
 
@@ -79,13 +81,11 @@ op ::= _ ('<=' | '>=' | '<>' | '<' | '>' | '=' | '+' | '-' | '*' | '/' | '^' | '
 
 unary_op ::= _ ('-' | 'NOT')
 
-print_op ::= _ (',' | ';')
+repeated_number ::= number (_ ',' number)*
 
-repeated_number = number (_ ',' number)*
+repeated_var ::= var (_ ',' var)*
 
-repeated_var = var (_ ',' var)*
-
-# Note no space allowed before open paren
+/* Note no space allowed before open paren */
 var ::= var_name ('(' expression (',' expression)* ')')?
 
 var_name ::= _ letter (letter | digit | '_')* '$'?
