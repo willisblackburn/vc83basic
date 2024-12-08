@@ -280,7 +280,7 @@ parse_tokenized_name_2:
         rts                             ; Return with carry set
 
 ; Parses a name from the buffer.
-; Sets the high bit on the last character in line_buffer 
+; Sets the high bit on the last character in line_buffer, which is also returned (with the high bit set) in A.
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
