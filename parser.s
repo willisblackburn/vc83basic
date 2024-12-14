@@ -134,9 +134,19 @@ parse_directive:
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        tya                             ; Recover the directive again
+        sty     argument_count          ; Remember the number of arguments we want
         jsr     parse_argument_list
-        jmp     @pop_parser_state
+        bcs     @pop_parser_state       ; Error parsing arguments
+        lda     argument_count
+        beq     @pop_parser_state       ; Parsed all arguments; carry must be clear here because BCS above
+        sec                             ; If next condition met, return failure
+        bmi     @pop_parser_state       ; Parsed too many arguments
+@next_missing_argument:
+        jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
+        bcs     @pop_parser_state       ; encode_byte error
+        dec     argument_count          ; Done with one "no value"
+        bne     @next_missing_argument  ; Loop if more
+        beq     @pop_parser_state       ; Otherwise done; carry will be clear because BCS above
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
@@ -163,33 +173,24 @@ parse_repeated_variable:
 @done:
         rts
 
-; Parses an argument list of N expressions delimited by commas.
-; All expressions are optional; if we find less than N expressions, encode 0 up to N.
-; A = the number of arguments (must be >= 1)
+; Parses a list of arguments separated by commas.
+; Decrements argument_count for each argument read, which the caller can check, if it cares.
+; Zero-length argument lists are okay, but if we find a comma, there has to be a following argument.
 
 parse_argument_list:
-        and     #$07                    ; Bottom 3 bits are number of arguments to read (>0)
-        sta     argument_count
-@next:
-        jsr     parse_expression        ; Parse the argument expression
-        bcs     @parse_failed
-@value:
-        dec     argument_count          ; One argument done
-        beq     @success                ; All done parsing arguments
-        jsr     parse_argument_separator    ; Look for argument separator
-        bcs     @next                   ; Found separator so continue parsing
-
-; Fall through; argument_count must be >= 1 since we didn't go to @success.
-
-@parse_failed:
-        jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
-        bcs     @error                  ; encode_byte error
-        dec     argument_count          ; Done with one "no value"
-        bne     @parse_failed           ; Loop if more
-@success:
-        clc                             ; Signal no error
-@error:
+        jsr     parse_expression        ; Parse the first argument
+        bcc     @next                   ; Found one argument; continue
+        clc                             ; Otherwise return success
         rts
+
+@next:
+        dec     argument_count          ; One argument done
+        jsr     parse_argument_separator    ; Look for argument separator
+        bcc     @done                   ; No separator; return
+        jsr     parse_expression        ; Parse the argument following the separator
+        bcc     @next                   ; Failing to parse an argument just means we reached the end
+@done:
+        rts                             ; Accurately returns carry set on failure, clear on success
 
 ; Parses and tokenizes a expression.
 
