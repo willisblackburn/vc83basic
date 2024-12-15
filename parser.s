@@ -143,7 +143,9 @@ parse_directive:
 
 parse_variable:
         jsr     parse_name              ; Parse the variable name
+        bcs     @done
         cpy     #<(name_pattern_op - name_pattern)  ; Make sure it was a name not an operator
+@done:
         rts                             ; CPY sets carry correctly for return
 
 ; Parses a series of names separated by commas.
@@ -204,7 +206,7 @@ parse_primary_expression:
         bcc     @done
         jsr     parse_unary_operator
         bcc     @done
-        jsr     parse_name              ; Try to parse a variable name
+        jsr     parse_variable          ; Try to parse a variable name
 @done:
         rts
 
