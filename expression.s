@@ -162,8 +162,8 @@ op_pow:
 
 op_concat:
         jsr     pop_string              ; Get the second string
-        ldy     #S1
-        jsr     load_sy                 ; Load into S1
+        ldx     #S1
+        jsr     load_sx                 ; Load into S1
         sta     C                       ; Length of second string in C 
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
@@ -195,8 +195,8 @@ op_concat:
 
 compare_string_values:
         jsr     pop_string              ; Get second string
-        ldy     #S1
-        jsr     load_sy                 ; Second string into S1
+        ldx     #S1
+        jsr     load_sx                 ; Second string into S1
         sta     C                       ; Length of second string in C
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
@@ -384,15 +384,15 @@ push_string:
 push_string_error:
         rts
 
-; Pops the string value from the stack and returns the address in AX.
+; Pops the string value from the stack and returns the address in AY.
 ; BC SAFE, DE SAFE
 
 pop_string:
-        ldy     stack_pos               ; Load original stack pointer to Y
+        ldx     stack_pos               ; Load original stack pointer to Y
         lda     #.sizeof(Value)
         jsr     stack_free
-        lda     stack+Value::string_value_ptr,y     ; Return with address in AX
-        ldx     stack+Value::string_value_ptr+1,y
+        lda     stack+Value::string_value_ptr,x     ; Return with address in AX
+        ldy     stack+Value::string_value_ptr+1,x
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.

@@ -183,7 +183,7 @@ FP1s = FP1+UnpackedFloat::s
 .global exec_clr
 
 ; string.s
-.global load_sy, load_s0
+.global load_sx, load_s0
 .global read_string
 .global string_alloc
 .global compact

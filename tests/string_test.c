@@ -10,7 +10,7 @@ void add_string_variable_with_name(const char* name, const String* value) {
     ASSERT_EQ(err, 0);
 }
 
-void test_load_sy(void) {
+void test_load_sx(void) {
 
     const String s = { 5, { 'H', 'E', 'L', 'L', 'O' }};
     char length;
@@ -20,18 +20,18 @@ void test_load_sy(void) {
     S0 = NULL;
     S1 = NULL;
 
-    length = load_sy(&S0, &s);
+    length = load_sx(&S0, &s);
     ASSERT_PTR_EQ(S0, &s.data);
     ASSERT_EQ(length, s.length);
     ASSERT_NULL(S1);
 
-    length = load_sy(&S1, &s);
+    length = load_sx(&S1, &s);
     ASSERT_PTR_EQ(S1, &s.data);
     ASSERT_EQ(length, s.length);
 
     // Test the null case
 
-    length = load_sy(&S0, NULL);
+    length = load_sx(&S0, NULL);
     ASSERT_EQ(length, 0);
 }
 
@@ -230,7 +230,7 @@ void test_string_alloc_retry(void) {
 
 int main(void) {
     initialize_target();
-    test_load_sy();
+    test_load_sx();
     test_string_alloc();
     test_read_string();
     test_compact();

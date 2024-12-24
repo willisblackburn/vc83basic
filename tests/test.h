@@ -146,7 +146,7 @@ void grow(/* Y */ void* ptr, /* AX */ size_t size);
 void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 
 // string.s
-char load_sy(/* Y */ void* sy, /* AY */ const String* value);
+char load_sx(/* Y */ void* sy, /* AY */ const String* value);
 const String* read_string(const char* ptr, char pos);
 const String* string_alloc(/* A */ char length);
 void compact(void);
