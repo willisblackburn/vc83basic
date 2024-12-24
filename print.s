@@ -53,9 +53,9 @@ print_number:
         ldx     buffer_pos              ; Load length (including the length byte)
         dex                             ; Length is one less than buffer_pos
         stx     buffer                  ; Store the length in the first character of buffer; it is now a string
-        ldax    #buffer                 ; Load the address in AX and fall through to print_string
+        lday    #buffer                 ; Load the address in AY and fall through to print_string
 
-; Prints the string pointed to by AX to the standard output.
+; Prints the string pointed to by AY to the standard output.
 ; DE SAFE
 
 print_string:

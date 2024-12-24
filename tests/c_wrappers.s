@@ -361,13 +361,13 @@ _shrink:
 
 ; string.s
 
-_load_sy:
-.export _load_sy
+_load_sx:
+.export _load_sx
         stax    BC                      ; value pointer
         jsr     popax                   ; sy pointer
-        tay
-        ldax    BC
-        jmp     load_sy
+        tax
+        lday    BC
+        jmp     load_sx
 
 _read_string:
 .export _read_string
