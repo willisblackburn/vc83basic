@@ -250,8 +250,7 @@ push_fp0:
 @done:
         rts
 
-; Pops a value from the stack into an FP register. Never fails, since we can trust the parser to only tokenize
-; well-formed expressions.
+; Pops a value from the stack into an FP register.
 
 pop_fp0:
         ldy     stack_pos               ; Load stack pointer into Y to use as offset
