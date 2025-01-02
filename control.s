@@ -109,7 +109,7 @@ exec_for:
         bcs     @error
         lda     stack_pos               ; Stack pointer
         adc     #Control::end_value     ; Add the offset of the end value; carry is clear
-        ldy     #>stack                 ; Segment of stack
+        ldy     #>stack                 ; Stack page
         jsr     store_fp0               ; Store FP0 there
         lday    #fp_one
         jsr     load_fp0
@@ -144,9 +144,7 @@ exec_next:
         bcs     @error
         lda     stack_pos               ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
-        ldy     #>stack                 ; Segment of stack
-        ldx     #FP1                    ; Load step into FP1
-        jsr     load_fpx
+        ldy     #>stack                 ; Stack page
         jsr     fadd                    ; Add the step value to the variable value from before
         jsr     push_fp0                ; Push back onto stack
         jsr     assign_variable         ; Assign stack value to variable_ptr set up earlier
@@ -154,8 +152,6 @@ exec_next:
         clc
         adc     #Control::end_value     ; Calculate address of end value (carry will be clear)
         ldy     #>stack
-        ldx     #FP1                    ; Load end value into FP1
-        jsr     load_fpx        
         jsr     fcmp                    ; Compare the current value (still in FP0) with the end value
         bcc     @return_to_for          ; Current value < end value so continue
         bne     exec_pop                ; If not equal then value > end value so stop; else continue

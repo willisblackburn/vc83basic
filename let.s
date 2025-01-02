@@ -30,10 +30,9 @@ assign_variable:
         bne     @error                  ; Value and variable are different types
         tya                             ; Becomes low byte of source address
         ldy     type_size_table,x       ; Replace Y with the size of the type
-        ldx     #>stack                 ; Segment of stack
+        ldx     #>stack                 ; Stack page
         jsr     copy_y_from             ; Copy from stack into variable data
-        lda     #.sizeof(Value)         ; Discard from stack
-        jsr     stack_free
+        jsr     stack_free_value
         clc                             ; Success
         rts
 
