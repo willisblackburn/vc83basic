@@ -5,21 +5,21 @@ typedef struct LoadStoreTestCase {
     UnpackedFloat u;
 } LoadStoreTestCase;
 
-LoadStoreTestCase load_store_test_cases[] = {
-    { { 0x00000000, 0 }, { 0x00000000, 1, POSITIVE } },
+const LoadStoreTestCase load_store_test_cases[] = {
+    { { 0x00000000,   0 }, { 0x00000000,   1, POSITIVE } },
     { { 0x00000000, 127 }, { 0x80000000, 127, POSITIVE } },
     { { 0x7FFFFFFE, 157 }, { 0xFFFFFFFE, 157, POSITIVE } },
     { { 0x80000000, 158 }, { 0x80000000, 158, NEGATIVE } },
     { { 0x08442211, 127 }, { 0x88442211, 127, POSITIVE } },
     // Smallest possible normalized exponent
-    { { 0x00000000, 1 }, { 0x80000000, 1, POSITIVE } },
+    { { 0x00000000,   1 }, { 0x80000000,   1, POSITIVE } },
     // Subnormal
-    { { 0x00000400, 0 }, { 0x00000400, 1, POSITIVE } },
+    { { 0x00000400,   0 }, { 0x00000400,   1, POSITIVE } },
 };
 
 void test_load_fpx(void) {
     Float value;
-    LoadStoreTestCase* test_case;
+    const LoadStoreTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
@@ -38,7 +38,7 @@ void test_load_fpx(void) {
 
 void test_store_fpx(void) {
     Float value;
-    LoadStoreTestCase* test_case;
+    const LoadStoreTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
@@ -97,7 +97,7 @@ void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
     ASSERT_EQ(err, 0);
-    ASSERT_FLOAT_EQ(FP0, expect_e, expect_t);
+    ASSERT_FPX_EQ(FP0, s, expect_e, expect_t);
 }
 
 void test_normalize(void) {
@@ -131,7 +131,7 @@ typedef struct IntConversionTestCase {
     UnpackedFloat u;
 } IntConversionTestCase;
 
-IntConversionTestCase int_conversion_test_cases[] = {
+const IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 127, POSITIVE } },
     { 32767, { 0xFFFE0000, 141, POSITIVE } },
@@ -140,7 +140,7 @@ IntConversionTestCase int_conversion_test_cases[] = {
 };
 
 void test_int_to_fp(void) {
-    IntConversionTestCase* test_case;
+    const IntConversionTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
@@ -154,7 +154,7 @@ void test_int_to_fp(void) {
 }
 
 void test_truncate_fp_to_int(void) {
-    IntConversionTestCase* test_case;
+    const IntConversionTestCase* test_case;
     int i;
     int value;
 
@@ -176,7 +176,7 @@ typedef struct Int32ConversionTestCase {
     UnpackedFloat u;
 } Int32ConversionTestCase;
 
-Int32ConversionTestCase int32_conversion_test_cases[] = {
+const Int32ConversionTestCase int32_conversion_test_cases[] = {
     { 0, { 0x00000000, 1, POSITIVE } },
     { 1, { 0x80000000, 127, POSITIVE } },
     { 2147483647UL, { 0xFFFFFFFE, 157, POSITIVE } },
@@ -186,7 +186,7 @@ Int32ConversionTestCase int32_conversion_test_cases[] = {
 };
 
 void test_int32_to_fp(void) {
-    Int32ConversionTestCase* test_case;
+    const Int32ConversionTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
@@ -201,7 +201,7 @@ void test_int32_to_fp(void) {
 }
 
 void test_truncate_fp_to_int32(void) {
-    Int32ConversionTestCase* test_case;
+    const Int32ConversionTestCase* test_case;
     int i;
 
     PRINT_TEST_NAME();
@@ -217,158 +217,184 @@ void test_truncate_fp_to_int32(void) {
     }
 }
 
-#define CALL_FP(f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t) \
-            call_fp(#f, f, s_0, e_0, t_0, s_1, e_1, t_1, expect_s, expect_e, expect_t, __LINE__)
+typedef struct OperationTestCase {
+    Float arg0;
+    Float arg1;
+    Float result;
+} OperationTestCase;
 
-void call_fp(const char* f_name, void (*f)(void), char s_0, char e_0, unsigned long t_0,
-                    char s_1, char e_1, unsigned long t_1,
-                    char expect_s, char expect_e, unsigned long expect_t, int line) {
-    SET_FPX(FP0, s_0, e_0, t_0);
-    SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  %s:%d: %s(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line, f_name,
-            t_0, e_0, s_0, t_1, e_1, s_1);
-    f();
-    ASSERT_EQ(err, 0);
-    ASSERT_FPX_EQ(FP0, expect_s, expect_e, expect_t);
+void test_operation(const char* f_name, void (*f)(void), const OperationTestCase* test_cases, size_t count) {
+    const OperationTestCase* test_case;
+    int i;
+    Float result;
+
+    for (i = 0; i < count; i++) {
+        test_case = test_cases + i;
+        fprintf(stderr, "  %s:%d %s(t=%08LX e=%02X, t=%08LX e=%02X)\n", __FILE__, __LINE__, f_name,
+            test_case->arg0.t, test_case->arg0.e, test_case->arg1.t, test_case->arg1.e);
+        load_fpx(&FP0, &test_case->arg0);
+        load_fpx(&FP1, &test_case->arg1);
+        f();
+        ASSERT_EQ(err, 0);
+        store_fpx(&FP0, &result);
+        ASSERT_FLOAT_EQ(result, test_case->result.e, test_case->result.t);
+    }    
 }
 
-void test_fadd(void) {
-    PRINT_TEST_NAME();
+#define TEST_OPERATION(f) \
+    void test_##f(void) { \
+        PRINT_TEST_NAME(); \
+        test_operation(#f, f, f##_test_cases, sizeof f##_test_cases / sizeof *f##_test_cases); \
+    }
 
+const OperationTestCase fadd_test_cases[] = {
     // 0 + 0
-    CALL_FP(fadd, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    { { 0x00000000,   0 }, { 0x00000000,   0 }, { 0x00000000,   0 } },
     // 1 + 1
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
+    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 128 } },
     // 0.5 + 0.5
-    CALL_FP(fadd, POSITIVE, 126, 0x80000000, POSITIVE, 126, 0x80000000, POSITIVE, 127, 0x80000000);
-    // -1 + (-1
-    CALL_FP(fadd, NEGATIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, NEGATIVE, 128, 0x80000000);
+    { { 0x00000000, 126 }, { 0x00000000, 126 }, { 0x00000000, 127 } },
+    // -1 + (-1)
+    { { 0x80000000, 127 }, { 0x80000000, 127 }, { 0x80000000, 128 } },
     // 1 + (-1)
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, POSITIVE, 1, 0);
+    { { 0x00000000, 127 }, { 0x80000000, 127 }, { 0x00000000,   0 } },
     // -2 + 1
-    CALL_FP(fadd, NEGATIVE, 128, 0x80000000, POSITIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000);
+    { { 0x80000000, 128 }, { 0x00000000, 127 }, { 0x80000000, 127 } },
     // 1 + (-2)
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, NEGATIVE, 128, 0x80000000, NEGATIVE, 127, 0x80000000);
+    { { 0x00000000, 127 }, { 0x80000000, 128 }, { 0x80000000, 127 } },
     // -1 + 2
-    CALL_FP(fadd, NEGATIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x80000000, 127 }, { 0x00000000, 128 }, { 0x00000000, 127 } },
     // 2 + (-1)
-    CALL_FP(fadd, POSITIVE, 128, 0x80000000, NEGATIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x00000000, 128 }, { 0x80000000, 127 }, { 0x00000000, 127 } },
     // 1 + 0.0001220703125
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 114, 0x80000000, POSITIVE, 127, 0x80040000);
+    { { 0x00000000, 127 }, { 0x00000000, 114 }, { 0x00040000, 127 } },
     // 1 + 3.14159
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0xC90FCF81, POSITIVE, 129, 0x8487E7C1);
+    { { 0x00000000, 127 }, { 0x490FCF81, 128 }, { 0x0487E7C1, 129 } },
     // 1 + 0.00000000046566128730
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 96, 0x80000000, POSITIVE, 127, 0x80000001);
+    { { 0x00000000, 127 }, { 0x00000000,  96 }, { 0x00000001, 127 } },
     // 1 + 0.00000000011641532182 (should round down)
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 94, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x00000000, 127 }, { 0x00000000,  94 }, { 0x00000000, 127 } },
     // 1 + 0.00000000023283064365 (should round up)
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 95, 0x80000000, POSITIVE, 127, 0x80000001);
+    { { 0x00000000, 127 }, { 0x00000000,  95 }, { 0x00000001, 127 } },
     // 1 + 0.00000000034924596547 (should round up)
-    CALL_FP(fadd, POSITIVE, 127, 0x80000000, POSITIVE, 95, 0xC0000000, POSITIVE, 127, 0x80000001);
-}
+    { { 0x00000000, 127 }, { 0x40000000,  95 }, { 0x00000001, 127 } },
+};
 
-void test_fsub(void) {
-    PRINT_TEST_NAME();
+TEST_OPERATION(fadd);
 
-    // fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
+// fsub just delegates to fadd, so we just have to verify that the sign is changed correctly.
 
+const OperationTestCase fsub_test_cases[] = {
     // 0 - 0
-    CALL_FP(fsub, POSITIVE, 1, 0, POSITIVE, 1, 0, POSITIVE, 1, 0);
+    { { 0x00000000,   0 }, { 0x00000000,   0 }, { 0x00000000,   0 } },
     // 1 - 1
-    CALL_FP(fsub, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000,   0 } },
     // -1 - (-1)
-    CALL_FP(fsub, NEGATIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 1, 0);
+    { { 0x80000000, 128 }, { 0x80000000, 128 }, { 0x00000000,   0 } },
     // 1 - (-1)
-    CALL_FP(fsub, POSITIVE, 128, 0x80000000, NEGATIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
-}
+    { { 0x00000000, 128 }, { 0x80000000, 128 }, { 0x00000000, 129 } },
+};
 
-void test_fmul(void) {
-    PRINT_TEST_NAME();
+TEST_OPERATION(fsub);
 
+const OperationTestCase fmul_test_cases[] = {
     // 0 * 0
-    CALL_FP(fmul, POSITIVE, 0, 0, POSITIVE, 0, 0, POSITIVE, 0, 0);
+    { { 0x00000000,   0 }, { 0x00000000,   0 }, { 0x00000000,   0 } },
     // 1 * 1
-    CALL_FP(fmul, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 127 } },
     // 1 * -1
-    CALL_FP(fmul, POSITIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000);
+    { { 0x00000000, 127 }, { 0x80000000, 127 }, { 0x80000000, 127 } },
     // -1 * 1
-    CALL_FP(fmul, NEGATIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000);
+    { { 0x80000000, 127 }, { 0x00000000, 127 }, { 0x80000000, 127 } },
     // -1 * -1
-    CALL_FP(fmul, NEGATIVE, 127, 0x80000000, NEGATIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x80000000, 127 }, { 0x80000000, 127 }, { 0x00000000, 127 } },
     // 2 * 2
-    CALL_FP(fmul, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000);
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 129 } },
     // 0.5 * 0.5
-    CALL_FP(fmul, POSITIVE, 126, 0x80000000, POSITIVE, 126, 0x80000000, POSITIVE, 125, 0x80000000);
+    { { 0x00000000, 126 }, { 0x00000000, 126 }, { 0x00000000, 125 } },
     // 10 * 10
-    CALL_FP(fmul, POSITIVE, 130, 0xA0000000, POSITIVE, 130, 0xA0000000, POSITIVE, 133, 0xC8000000);
+    { { 0x20000000, 130 }, { 0x20000000, 130 }, { 0x48000000, 133 } },
     // 100 * 10
-    CALL_FP(fmul, POSITIVE, 133, 0xC8000000, POSITIVE, 130, 0xA0000000, POSITIVE, 136, 0xFA000000);
+    { { 0x48000000, 133 }, { 0x20000000, 130 }, { 0x7A000000, 136 } },
     // 1000 * 10
-    CALL_FP(fmul, POSITIVE, 136, 0xFA000000, POSITIVE, 130, 0xA0000000, POSITIVE, 140, 0x9C400000);
+    { { 0x7A000000, 136 }, { 0x20000000, 130 }, { 0x1C400000, 140 } },
     // 10000 * 10
-    CALL_FP(fmul, POSITIVE, 140, 0x9C400000, POSITIVE, 130, 0xA0000000, POSITIVE, 143, 0xC3500000);
+    { { 0x1C400000, 140 }, { 0x20000000, 130 }, { 0x43500000, 143 } },
     // 3.14159 * 100000
-    CALL_FP(fmul, POSITIVE, 128, 0xC90FCF81, POSITIVE, 143, 0xC3500000, POSITIVE, 145, 0x9965E000);
+    { { 0x490FCF81, 128 }, { 0x43500000, 143 }, { 0x1965E000, 145 } },
     // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -126)
-    CALL_FP(fmul, POSITIVE, 56, 0x80000000, POSITIVE, 56, 0x80000000, POSITIVE, 1, 0x00008000);
-}
+    { { 0x00000000,  56 }, { 0x00000000,  56 }, { 0x00008000,   0 } },
+};
 
-void test_fdiv(void) {
-    PRINT_TEST_NAME();
+TEST_OPERATION(fmul);
 
+const OperationTestCase fdiv_test_cases[] = {
     // 1 / 1
-    CALL_FP(fdiv, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 127 } },
     // 2 / 1
-    CALL_FP(fdiv, POSITIVE, 128, 0x80000000, POSITIVE, 127, 0x80000000, POSITIVE, 128, 0x80000000);
+    { { 0x00000000, 128 }, { 0x00000000, 127 }, { 0x00000000, 128 } },
     // 2 / 2
-    CALL_FP(fdiv, POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000000, POSITIVE, 127, 0x80000000);
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 127 } },
     // 100 / 10
-    CALL_FP(fdiv, POSITIVE, 133, 0xC8000000, POSITIVE, 130, 0xA0000000, POSITIVE, 130, 0xA0000000);
+    { { 0x48000000, 133 }, { 0x20000000, 130 }, { 0x20000000, 130 } },
     // 1000 / 10
-    CALL_FP(fdiv, POSITIVE, 136, 0xFA000000, POSITIVE, 130, 0xA0000000, POSITIVE, 133, 0xC8000000);
+    { { 0x7A000000, 136 }, { 0x20000000, 130 }, { 0x48000000, 133 } },
     // 10000 / 10
-    CALL_FP(fdiv, POSITIVE, 140, 0x9C400000, POSITIVE, 130, 0xA0000000, POSITIVE, 136, 0xFA000000);
-    // 100000 / 1
-    CALL_FP(fdiv, POSITIVE, 143, 0xC3500000, POSITIVE, 130, 0xA0000000, POSITIVE, 140, 0x9C400000);
+    { { 0x1C400000, 140 }, { 0x20000000, 130 }, { 0x7A000000, 136 } },
+    // 100000 / 10
+    { { 0x43500000, 143 }, { 0x20000000, 130 }, { 0x1C400000, 140 } },
     // 1 / 1.025
-    CALL_FP(fdiv, POSITIVE, 127, 0x80000000, POSITIVE, 127, 0x83333333, POSITIVE, 126, 0xF9C18F9C);
+    { { 0x00000000, 127 }, { 0x03333333, 127 }, { 0x79C18F9C, 126 } },
     // 314159 / 100000
-    CALL_FP(fdiv, POSITIVE, 145, 0x9965E000, POSITIVE, 143, 0xC3500000, POSITIVE, 128, 0xC90FCF81);
-}
+    { { 0x1965E000, 145 }, { 0x43500000, 143 }, { 0x490FCF81, 128 } },
+};
 
-void call_fcmp(char s_0, char e_0, unsigned long t_0, char s_1, char e_1, unsigned long t_1,
-                       int expect_result, int line) {
+TEST_OPERATION(fdiv);
+
+typedef struct ComparisonTestCase {
+    Float arg0;
+    Float arg1;
     int result;
-    SET_FPX(FP0, s_0, e_0, t_0);
-    SET_FPX(FP1, s_1, e_1, t_1);
-    fprintf(stderr, "  %s:%d: fcmp(t=%08LX e=%02X s=%02X, t=%08LX e=%02X s=%02X)\n", __FILE__, line,
-            t_0, e_0, s_0, t_1, e_1, s_1);
-    result = fcmp();
-    ASSERT_EQ(result, expect_result);
-}
+} ComparisonTestCase;
 
-void test_fcmp(void) {
-    PRINT_TEST_NAME();
-
+const ComparisonTestCase comparison_test_cases[] = {
     // TODO: fix! Exponent for subnormal cases should be 1.
     // 0 <=> 0
-    call_fcmp(POSITIVE, 0, 0, POSITIVE, 0, 0, 0, __LINE__);
+    { { 0x00000000,   0 }, { 0x00000000,   0 },  0 },
     // 1 <=> 0
-    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 0, 0, 1, __LINE__);
+    { { 0x00000000, 128 }, { 0x00000000,   0 },  1 },
     // 0 <=> 1
-    call_fcmp(POSITIVE, 0, 0, POSITIVE, 128, 0x80000000, -1, __LINE__);
+    { { 0x00000000,   0 }, { 0x00000000, 128 }, -1 },
     // 2 <=> 1
-    call_fcmp(POSITIVE, 129, 0x80000000, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    { { 0x00000000, 129 }, { 0x00000000, 128 },  1 },
     // 1 <=> 2
-    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 129, 0x80000000, -1, __LINE__);
+    { { 0x00000000, 128 }, { 0x00000000, 129 }, -1 },
     // 1+e <=> 1
-    call_fcmp(POSITIVE, 128, 0x80000001, POSITIVE, 128, 0x80000000, 1, __LINE__);
+    { { 0x00000001, 128 }, { 0x00000000, 128 },  1 },
     // 1 <=> 1+e
-    call_fcmp(POSITIVE, 128, 0x80000000, POSITIVE, 128, 0x80000001, -1, __LINE__);
+    { { 0x00000000, 128 }, { 0x00000001, 128 }, -1 },
     // 2^126 <=> 1+e
-    call_fcmp(POSITIVE, 254, 0x80000000, POSITIVE, 128, 0x80000001, 1, __LINE__);
+    { { 0x00000000, 254 }, { 0x00000001, 128 },  1 },
     // 1+e <=> 2^126
-    call_fcmp(POSITIVE, 128, 0x80000001, POSITIVE, 254, 0x80000000, -1, __LINE__);
+    { { 0x00000001, 128 }, { 0x00000000, 254 }, -1 },
+};
+
+void test_fcmp(void) {
+    const ComparisonTestCase* test_case;
+    int i;
+    int result;
+
+    PRINT_TEST_NAME();
+
+    for (i = 0; i < sizeof comparison_test_cases / sizeof *comparison_test_cases; i++) {
+        test_case = comparison_test_cases + i;
+        fprintf(stderr, "  %s:%d: fcmp(t=%08LX e=%02X, t=%08LX e=%02X)\n", __FILE__, __LINE__,
+                test_case->arg0.t, test_case->arg0.e, test_case->arg1.t, test_case->arg1.e);
+        load_fpx(&FP0, &test_case->arg0);
+        load_fpx(&FP1, &test_case->arg1);
+        result = fcmp();
+        ASSERT_EQ(result, test_case->result);
+    }
 }
 
 void test_char_to_digit(void) {

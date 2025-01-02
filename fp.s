@@ -4,14 +4,14 @@
 ; Floating Point Math Routines
 ;
 ; Format is single-precision with 40-bit extended significand (5 bytes):
-; eeeeeeee stttttt tttttttt tttttttt tttttttt
+; stttttt tttttttt tttttttt tttttttt eeeeeeee
 ;
+; s = sign
+; t = fractional part of significand, 31 bits, lowest byte first
 ; e = exponent, 8 bits, excess-127 (MSB is inverted)
 ;     If e = 0 and s = 0 then value = 0
 ;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
-;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
-; s = sign
-; t = fractional part of significand, 31 bits, lowest byte first
+;     If e >= 1 then actual exponent is e-127 and actual significand is 1+t (implied 1. before t)
 ;
 ; In this module:
 ; Both B and C are used by the normalize function. B holds the rounding byte. C holds the high byte of the exponent.
@@ -866,7 +866,7 @@ fadd:
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
         bcc     swap_fadd               ; If borrow then FP0e is larger, so swap and try again
         bmi     @return_larger          ; Exponent difference >127 so addition has no effect
-        tax                             ; Exponent different is in X and is >=0
+        tax                             ; Exponent difference is in X and is >=0
 
 ; FP0 exponent is less than FP1 exponent, so shift FP0 significand right X places to align binary points.
 
