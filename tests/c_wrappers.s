@@ -109,21 +109,17 @@ _stack_free:
 
 ; fp.s
 
-_load_fpx:
-.export _load_fpx
-        stax    BC                      ; value pointer
-        jsr     popax                   ; fpx pointer
-        tax
-        lday    BC
-        jmp     load_fpx
+_load_fp0:
+.export _load_fp0
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     load_fp0
 
-_store_fpx:
-.export _store_fpx
-        stax    BC                      ; value pointer
-        jsr     popax                   ; fpx pointer
-        tax
-        lday    BC
-        jmp     store_fpx
+_store_fp0:
+.export _store_fp0
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     store_fp0
 
 _swap_fp0_fp1:
 .export _swap_fp0_fp1
@@ -181,21 +177,29 @@ _normalize:
 
 _fadd:
 .export _fadd
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
         jsr     fadd
         jmp     set_err
 
 _fsub:
 .export _fsub
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
         jsr     fsub
         jmp     set_err
 
 _fmul:
 .export _fmul
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
         jsr     fmul
         jmp     set_err
 
 _fdiv:
 .export _fdiv
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
         jsr     fdiv
         jmp     set_err
 
@@ -211,8 +215,10 @@ _fneg:
 
 _fcmp:
 .export _fcmp
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
         jsr     fcmp
-        bcc     @less                   ; Carry cleawr means borrow so A < B
+        bcc     @less                   ; Carry clear means borrow so A < B
         beq     @equal
         ldax    #1
         rts
