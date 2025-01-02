@@ -25,10 +25,9 @@ assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
         ldx     stack_pos               ; Get stack pointer
         txa                             ; Becomes low byte of source address
-        ldx     #>stack                 ; Segment of stack
+        ldx     #>stack                 ; Stack page
         ldy     #.sizeof(Float)
         jsr     copy_y_from             ; Copy from stack into variable data
-        lda     #.sizeof(Value)         ; Discard from stack
-        jsr     stack_free
+        jsr     stack_free_value
         clc                             ; Success
         rts

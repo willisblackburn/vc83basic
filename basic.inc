@@ -94,19 +94,19 @@ FP1s = FP1+UnpackedFloat::s
 .global evaluate_expression
 .global evaluate_variable
 .global call_binary_operator
-.global push_fpx, push_fp0, pop_fpx, pop_fp0
+.global push_fp0, pop_fp0
 .global push_string, pop_string
-.global stack_alloc
-.global stack_free
+.global stack_alloc, stack_alloc_value
+.global stack_free, stack_free_value
 
 ; fp.s
 .global fp_one, fp_ten
-.global load_fpx, load_fp0
-.global store_fpx, store_fp0
+.global load_fp0
+.global store_fp0
 .global swap_fp0_fp1
 .global copy_fp0_fp1
-.global fpx_is_zero, fp0_is_zero
-.global clear_fpx, clear_fp0
+.global fp0_is_zero, fp1_is_zero
+.global clear_fp0
 .global int_to_fp, int32_to_fp
 .global truncate_fp_to_int, truncate_fp_to_int32
 .global fp_to_string
