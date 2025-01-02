@@ -40,6 +40,9 @@ fp_ten: .byte $00, $00, $00, $20, 130
 .assert Float::t = 0, error
 .assert Float::e = 4, error
 
+load_fp1:
+        ldx     #FP1
+        bne     load_fpx
 load_fp0:
         ldx     #FP0
 load_fpx:
@@ -74,13 +77,11 @@ load_fpx:
         sta     UnpackedFloat::e,x      ; Store exponent
         rts
 
-; Stores the value in FP0 or FP1 as a Float value in memory.
+; Stores the value in FP0 as a Float value in memory.
 ; AY = destination address
-; X = either #FP0 or #FP1
 
 store_fp0:
         ldx     #FP0
-store_fpx:
         stay    BC                      ; FP value address into BC
         ldy     #0                      ; Start with low byte of significand
         lda     UnpackedFloat::t,x
@@ -135,7 +136,7 @@ copy_fp0_fp1:
 ; Copies the significand of FP0 to another register.
 ; X = either #FP1t, #FP2, or #FP3
 
-copy_fp0_significand:
+copy_significand_fp0_fpx:
         lda     FP0t
         sta     0,x
         lda     FP0t+1
@@ -146,12 +147,10 @@ copy_fp0_significand:
         sta     3,x
         rts
 
-; Sets either FP0 or FP1 to zero.
-; X = either #FP0 or #FP1
+; Sets FP0 to zero.
 
 clear_fp0:
         ldx     #FP0
-clear_fpx:
         lda     #0
         sta     UnpackedFloat::e,x
         sta     UnpackedFloat::s,x
@@ -162,7 +161,7 @@ clear_fpx:
 ; X = either #FP0t, #FP1t, #FP2, or #FP3
 ; Returns 0 in A.
 
-clear_significand:
+clear_significand_fpx:
         lda     #0
         sta     0,x
         sta     1,x
@@ -174,6 +173,9 @@ clear_significand:
 ; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
 ; X = either #FP0 or #FP1
 
+fp1_is_zero:
+        ldx     #FP1
+        bne     fpx_is_zero
 fp0_is_zero:
         ldx     #FP0
 fpx_is_zero:
@@ -260,7 +262,7 @@ shift_left_from_carry:
 
 mul10_significand:
         ldx     #FP1t
-        jsr     copy_fp0_significand
+        jsr     copy_significand_fp0_fpx
         jsr     shift_left              ; *2
         bcs     @overflow
         jsr     shift_left_from_carry   ; *4
@@ -401,27 +403,19 @@ fp_to_string:
 
 @scale_up:
         lday    #fp_ten
-        ldx     #FP1
-        jsr     load_fpx
         jsr     fmul                    ; Multiply FP0 by 10
         dec     E                       ; Have to divide by 10 to get back to original number
 @maybe_scale_up:
         lday    #string_min             ; Load minimum value
-        ldx     #FP1                    ; Into FP1
-        jsr     load_fpx
         jsr     fcmp                    ; Carry clear (borrow set) means FP0 < FP1 so we have to scale up
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
 @scale_down:
         lday    #fp_ten
-        ldx     #FP1
-        jsr     load_fpx
         jsr     fdiv                    ; Divide FP0 by 10
         inc     E                       ; Have to multiply by 10 to get back to original number
 @maybe_scale_down:
         lday    #string_max             ; Load maximum value
-        ldx     #FP1                    ; Into FP1
-        jsr     load_fpx
         jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
         bcs     @scale_down
         jsr     truncate_fp_to_int32    ; Make into a 32-bit integer
@@ -683,16 +677,14 @@ string_to_fp:
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
         beq     @scale
-        ldx     #FP1
         lday    #fp_ten
-        jsr     load_fpx                ; Set FP1 to 10
         jsr     fmul                    ; Multiply FP0 by 10
         jmp     @scale_divisor          ; Do it again until E is 0
 
 @scale:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
         plzp    FP0, .sizeof(UnpackedFloat)     ; Reload result saved earlier
-        jsr     fdiv                    ; Divide
+        jsr     fdiv_fp1                ; Divide
 
 @whole:
         ldy     E                       ; Return buffer read position in Y
@@ -837,7 +829,7 @@ normalize:
         asl     B                       ; Shift rounding register high bit into carry
         bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
         ldx     #FP1t
-        jsr     clear_significand
+        jsr     clear_significand_fpx
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
         beq     @done                   ; If the value written to FP2 was 0 then all done
@@ -849,14 +841,12 @@ normalize:
         clc                             ; Signal success
         rts
 
-swap_fadd:
-        jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
-
-; Fall through
-
-; Performs FP0 + FP1, leaving the sum in FP0 and possibly modifying FP1.
+; Adds the value referenced by the pointer AY to FP0, leaving the sum in FP0 and possibly modifying FP1.
+; AY = pointer to the value
 
 fadd:
+        jsr     load_fp1
+fadd_fp1:
         mva     #0, B                   ; Initialize the rounding register to 0
         sta     C                       ; Clear the extended exponent register
         sta     FP2                     ; Also clear FP0 extended significand
@@ -864,7 +854,7 @@ fadd:
         sec
         sbc     FP0e                    ; Compare exponents: FP1e - FP0e
         beq     @equal_exponents        ; Exponents are equal, just go ahead to addition
-        bcc     swap_fadd               ; If borrow then FP0e is larger, so swap and try again
+        bcc     @swap                   ; If borrow then FP0e is larger, so swap and try again
         bmi     @return_larger          ; Exponent difference >127 so addition has no effect
         tax                             ; Exponent difference is in X and is >=0
 
@@ -902,29 +892,34 @@ fadd:
 @finish:
         jmp     normalize               ; Normalize result and return
 
+@swap:
+        jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
+        jmp     fadd_fp1
+
 ; The difference between exponents is >127, so just return the larger number (identified by N flag).
 
 @return_larger:
-        bmi     @finish                 ; A was larger so just return
         jsr     swap_fp0_fp1            ; Otherwise swap
         jmp     @finish
 
-; Subtract FP1 from FP0.
-; Simply negates the sign of FP1 and forward to fadd.
+; Subtracts the value referenced by the pointer AY from FP0.
+; AY = pointer to the value
 
 fsub:
+        jsr     load_fp1
         lda     FP1s
         eor     #$80
         sta     FP1s
-        jmp     fadd
+        jmp     fadd_fp1
 
-; Multiplies FP0 and FP1, leaving the normalized result in FP0.
+; Multiplies FP0 by the value referenced by the pointer AY, leaving the normalized result in FP0.
+; AY = pointer to the value
 
 fmul:
+        jsr     load_fp1
         jsr     fp0_is_zero             ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
-        ldx     #FP1
-        jsr     fpx_is_zero             ; Test FP1
+        jsr     fp1_is_zero             ; Test FP1
         bne     @do_multiply
 @return_zero:
         jsr     clear_fp0               ; Return zero
@@ -936,9 +931,9 @@ fmul:
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
         ldx     #FP2                    ; Clear the extended significand of FP0
-        jsr     clear_significand
+        jsr     clear_significand_fpx
         ldx     #FP3                    ; FP3 holds the original significand
-        jsr     copy_fp0_significand
+        jsr     copy_significand_fp0_fpx
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
@@ -999,9 +994,12 @@ fmul:
         sta     FP0s
         jmp     normalize               ; Normalize and return
 
-; Divides FP0 by the value in FP1, returning the quotient in FP0.
+; Divides FP0 by the value referenced by the pointer AY, returning the quotient in FP0.
+; AY = pointer to the value
 
 fdiv:
+        jsr     load_fp1
+fdiv_fp1:
         jsr     fp0_is_zero             ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
         ldx     #FP1
@@ -1017,7 +1015,7 @@ fdiv:
 
 @initalize:
         ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
-        jsr     copy_fp0_significand
+        jsr     copy_significand_fp0_fpx
         mva     #0, FP3                 ; Extended significand will be in FP3 instead of usual FP2
         mva     #BIAS, C                ; C keeps track of how much bias to add
 
@@ -1115,11 +1113,13 @@ fneg:
         sta     FP0s
         rts
 
-; Compares FP0 with FP1.
+; Compares FP0 with the value referenced by the pointer AY.
 ; Returns flags in the same manner as the CMP instruction: zero flag is set if numbers are equal and carry set if
 ; FP0 >= FP1 (or carry clear if FP0 < FP1).
+; AY = pointer to the value
 
 fcmp:
+        jsr     load_fp1        
         lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
         cmp     FP0s                    ; Subtract sign of FP0
         beq     @same_sign              ; If same sign then continue

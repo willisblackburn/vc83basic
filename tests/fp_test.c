@@ -17,7 +17,7 @@ const LoadStoreTestCase load_store_test_cases[] = {
     { { 0x00000400,   0 }, { 0x00000400,   1, POSITIVE } },
 };
 
-void test_load_fpx(void) {
+void test_load_fp0(void) {
     Float value;
     const LoadStoreTestCase* test_case;
     int i;
@@ -26,17 +26,15 @@ void test_load_fpx(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: load_fpx(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
+        fprintf(stderr, "  %s:%d: load_fp0(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
                 test_case->f.t, test_case->f.e);
         SET_FLOAT(value, test_case->f.e, test_case->f.t);
-        load_fpx(&FP0, &value);
+        load_fp0(&value);
         ASSERT_FPX_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-        load_fpx(&FP1, &value);
-        ASSERT_FPX_EQ(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
-void test_store_fpx(void) {
+void test_store_fp0(void) {
     Float value;
     const LoadStoreTestCase* test_case;
     int i;
@@ -48,10 +46,7 @@ void test_store_fpx(void) {
         fprintf(stderr, "  %s:%d: store_fpx(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FPX(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
-        store_fpx(&FP0, &value);
-        ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
-        SET_FPX(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
-        store_fpx(&FP1, &value);
+        store_fp0(&value);
         ASSERT_FLOAT_EQ(value, test_case->f.e, test_case->f.t);
     }
 }
@@ -223,7 +218,7 @@ typedef struct OperationTestCase {
     Float result;
 } OperationTestCase;
 
-void test_operation(const char* f_name, void (*f)(void), const OperationTestCase* test_cases, size_t count) {
+void test_operation(const char* f_name, void (*f)(const Float*), const OperationTestCase* test_cases, size_t count) {
     const OperationTestCase* test_case;
     int i;
     Float result;
@@ -232,11 +227,10 @@ void test_operation(const char* f_name, void (*f)(void), const OperationTestCase
         test_case = test_cases + i;
         fprintf(stderr, "  %s:%d %s(t=%08LX e=%02X, t=%08LX e=%02X)\n", __FILE__, __LINE__, f_name,
             test_case->arg0.t, test_case->arg0.e, test_case->arg1.t, test_case->arg1.e);
-        load_fpx(&FP0, &test_case->arg0);
-        load_fpx(&FP1, &test_case->arg1);
-        f();
+        load_fp0(&test_case->arg0);
+        f(&test_case->arg1);
         ASSERT_EQ(err, 0);
-        store_fpx(&FP0, &result);
+        store_fp0(&result);
         ASSERT_FLOAT_EQ(result, test_case->result.e, test_case->result.t);
     }    
 }
@@ -390,9 +384,8 @@ void test_fcmp(void) {
         test_case = comparison_test_cases + i;
         fprintf(stderr, "  %s:%d: fcmp(t=%08LX e=%02X, t=%08LX e=%02X)\n", __FILE__, __LINE__,
                 test_case->arg0.t, test_case->arg0.e, test_case->arg1.t, test_case->arg1.e);
-        load_fpx(&FP0, &test_case->arg0);
-        load_fpx(&FP1, &test_case->arg1);
-        result = fcmp();
+        load_fp0(&test_case->arg0);
+        result = fcmp(&test_case->arg1);
         ASSERT_EQ(result, test_case->result);
     }
 }
@@ -529,8 +522,8 @@ void test_string_to_fp(void) {
 
 int main(void) {
     initialize_target();
-    test_load_fpx();
-    test_store_fpx();
+    test_load_fp0();
+    test_store_fp0();
     test_swap_fp0_fp1();
     test_adjust_exponent();
     test_normalize();

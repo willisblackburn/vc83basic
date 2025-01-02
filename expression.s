@@ -24,10 +24,9 @@ evaluate_variable:
         jsr     decode_name
         jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
-        lda     #.sizeof(Float)         ; Make space on the stack
-        jsr     stack_alloc
+        jsr     stack_alloc_value
         bcs     @error
-        ldx     #>stack                 ; Segment of stack
+        ldx     #>stack                 ; Stack page
         stax    dst_ptr                 ; Copy to stack
         ldax    name_ptr                ; Copy from variable data
         ldy     #.sizeof(Float)
@@ -195,13 +194,18 @@ compare_values:
 ; Take the two values from the top of the stack and invoke a binary operator.
 ; The operator handler address -1 is passed in XA (note least-significant byte is in X).
 ; Given an expression like 3/2, we will push 3 onto the stack, then 2, so 2 is at top of stack, and therefore the
-; value we pop first goes into FP1, then the other info FP0.
+; value we pop second goes into FP0, and the value we pop first is the argument.
 
 call_binary_operator:
         phax                            ; Push operator handler address -1 onto the stack so we can RTS to it
-        ldx     #FP1
-        jsr     pop_fpx                 ; Top value into FP1
-        jsr     pop_fp0                 ; Next value into FP0
+        ldpha   stack_pos               ; Push current stack pointer so we can later use it as the argument
+        jsr     stack_free_value
+        bcs     @error
+        jsr     pop_fp0                 ; Second value into FP0
+        bcs     @error
+        pla                             ; Get stack address of first value
+        ldy     #>stack                 ; Stack page
+@error:
         rts                             ; This does JMP to the operator handler
 
 ; Invokes a binary operator and pushes the result back.
@@ -221,9 +225,11 @@ unary_op_not:
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
 
-; Push the value in an FP register onto the value stack.
-; X = #FP0 or #FP1 (the _fp0 entry points set this to FP0)
-; FP0/1 = the value to push
+@error:
+        rts
+
+; Push the value in FP0 onto the value stack.
+; FP0 = the value to push
 ; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
 ; BC SAFE, DE SAFE
 
@@ -236,30 +242,23 @@ push_value_1:
         jsr     load_fp0
 
 push_fp0:
-        ldx     #FP0
-push_fpx:
-        lda     #.sizeof(Float)         ; Allocate enough space for a float on the stack
-        jsr     stack_alloc             ; Returns with A set to the offset
+        jsr     stack_alloc_value       ; Returns with A set to the offset
         bcs     @done                   ; Fail if overflow
-        ldy     #>stack                 ; Segment of stack
-        jsr     store_fpx               ; Store FPx in the AY address
+        ldy     #>stack                 ; Stack page
+        jsr     store_fp0               ; Store FP0 in the AY address
         clc                             ; Signal success
 @done:
         rts
 
 ; Pops a value from the stack into an FP register. Never fails, since we can trust the parser to only tokenize
 ; well-formed expressions.
-; FP0/1 = the value to push
 
 pop_fp0:
-        ldx     #FP0
-pop_fpx: 
         ldy     stack_pos               ; Load stack pointer into Y to use as offset
-        lda     #.sizeof(Float)         ; Free space for float
-        jsr     stack_free
-        tya                             ; Previous position back in A to use as pointer
-        ldy     #>stack                 ; Segment of stack
-        jsr     load_fpx                ; Load value into FPx
+        jsr     stack_free_value
+        tya                             ; Back in A to use as pointer
+        ldy     #>stack                 ; Stack page
+        jsr     load_fp0                ; Load value into FP0
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
@@ -267,6 +266,8 @@ pop_fpx:
 ; Returns carry clear on success and the new stack pointer in A, or carry set on error.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
+stack_alloc_value:
+        lda     #.sizeof(Float)
 stack_alloc:
         clc
         sbc     stack_pos               ; Do A - stack_pos - 1
@@ -280,6 +281,8 @@ stack_alloc:
 ; No error checking; the caller must know for sure that there is something on the stack that can be removed.
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
+stack_free_value:
+        lda     #.sizeof(Float)
 stack_free:
         clc
         adc     stack_pos               ; Add stack pointer to whatever value was passed in
