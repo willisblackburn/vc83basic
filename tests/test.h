@@ -88,8 +88,8 @@ void encode_number(void);
 void encode_byte(/* A */ char value);
 
 // fp.s
-void load_fpx(/* X */ UnpackedFloat* fpx, /* AY */ const Float* value);
-void store_fpx(/* X */ const UnpackedFloat* fpx, /* AY */ Float* value);
+void load_fp0(/* AY */ const Float* value);
+void store_fp0(/* AY */ Float* value);
 void swap_fp0_fp1(void);
 void int_to_fp(/* AX */ int value);
 void int32_to_fp(void);
@@ -100,12 +100,12 @@ void string_to_fp(const char* ptr, char pos);
 char char_to_digit(/* A */ char c);
 void adjust_exponent(/* X */ char add, /* Y */ char subtract);
 void normalize(void);
-void fadd(void);
-void fsub(void);
-void fmul(void);
-void fdiv(void);
+void fadd(/* AY */ const Float* value);
+void fsub(/* AY */ const Float* value);
+void fmul(/* AY */ const Float* value);
+void fdiv(/* AY */ const Float* value);
 void fneg(void);
-int fcmp(void);
+int fcmp(/* AY */ const Float* value);
 
 // list.s
 void list_line(void);

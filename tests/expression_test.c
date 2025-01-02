@@ -48,7 +48,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected00->e, expected00->t);
 
     line_data[0] = '0';
@@ -56,7 +56,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected01->e, expected01->t);
 
     line_data[0] = '1';
@@ -65,7 +65,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected10->e, expected10->t);
 
     line_data[0] = '1';
@@ -74,7 +74,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected11->e, expected11->t);
 }
 
@@ -91,7 +91,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected0->e, expected0->t);
 
     line_data[1] = '1';
@@ -99,7 +99,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, expected1->e, expected1->t);
 }
 
@@ -147,14 +147,14 @@ void test_evaluate_expression_op_precedence(void) {
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, 0, 0x00000000);
 
     set_line(0, line_data_2, sizeof line_data_2);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
-    store_fpx(&FP0, &value);
+    store_fp0(&value);
     ASSERT_FLOAT_EQ(value, 128, 0x00000000);
 }
 
