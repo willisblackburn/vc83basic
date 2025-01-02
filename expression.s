@@ -367,7 +367,7 @@ pop_fp0:
 push_string:
         stax    BC                      ; Store string address in BC
         jsr     stack_alloc_value
-        bcs     push_string_error   
+        bcs     @error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
         sta     stack+Value::type,y
@@ -375,7 +375,7 @@ push_string:
         sta     stack+Value::string_value_ptr,y     ; Save low and high byte of string address
         lda     C                       ; High byte
         sta     stack+Value::string_value_ptr+1,y   ; Carry still clear for return
-push_string_error:
+@error:
         rts
 
 ; Pops the string value from the stack and returns the address in AY.
