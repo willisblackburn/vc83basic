@@ -88,7 +88,7 @@ FP1s = FP1+UnpackedFloat::s
 .global store_fp0
 .global swap_fp0_fp1
 .global copy_fp0_fp1
-.global fp0_is_zero, fp1_is_zero
+.global fp0_is_zero
 .global clear_fp0
 .global int_to_fp, int32_to_fp
 .global truncate_fp_to_int, truncate_fp_to_int32
