@@ -254,21 +254,27 @@ compare_values:
 
 call_binary_operator:
         phax                            ; Push operator handler address -1 onto the stack so we can RTS to it
-        ldpha   stack_pos               ; Push current stack pointer so we can later use it as the argument
-        jsr     stack_free_value
-        bcs     @error
+        lda     #TYPE_NUMBER            ; Make sure that the first value is a number
+        jsr     stack_free_value_with_type
+        bcs     @error                  ; Type didn't match
+        txa                             ; Original value of stack_pos, returned in X
+        pha                             ; Save on stack
         jsr     pop_fp0                 ; Second value into FP0
-        bcs     @error
         pla                             ; Get stack address of first value
         ldy     #>stack                 ; Stack page
+        bcc     @done                   ; If pop_fp0 succeeded them jump straight to RTS
 @error:
-        rts                             ; This does JMP to the operator handler
+        pla                             ; Remove the operator handler address from the stack
+        pla
+@done:
+        rts                             ; If PLAs not skipped, this does JMP to the operator handler, else return
 
 ; Invokes a binary operator and pushes the result back.
 
 call_binary_operator_push:
         jsr     call_binary_operator
-        jmp     push_fp0
+        bcc     push_fp0                ; If successful then push FP0 back, else fail
+        rts
 
 unary_op_minus:
         jsr     pop_fp0                 ; Get value at top of stack
@@ -313,13 +319,10 @@ push_fp0:
 ; Pops a value from the stack into an FP register.
 
 pop_fp0:
-        ldy     stack_pos               ; Load stack pointer into Y to use as offset
-        jsr     stack_free_value
-        bcs     @error
-        sec                             ; Set carry in case type check fails
-        lda     stack+Value::type,y
-        bne     @error
-        tya                             ; Back in A to use as pointer
+        lda     #TYPE_NUMBER            ; Make sure it's a number
+        jsr     stack_free_value_with_type
+        bcs     @error                  ; Wrong type
+        txa                             ; Original stack position into A to use as low byte of pointer
         ldy     #>stack                 ; Stack page
         jsr     load_fp0                ; Load value into FP0
         clc                             ; Signal success
@@ -347,10 +350,10 @@ push_string:
 ; BC SAFE, DE SAFE
 
 pop_string:
-        ldx     stack_pos               ; Load original stack pointer to Y
-        jsr     stack_free_value
+        lda     #TYPE_STRING            ; Make sure it's a string
+        jsr     stack_free_value_with_type          ; Even if it's not a string, load the address unconditionally
         lda     stack+Value::string_value_ptr,x     ; Return with address in AX
-        ldy     stack+Value::string_value_ptr+1,x
+        ldy     stack+Value::string_value_ptr+1,x   
         rts
 
 ; Allocate space on the stack by moving the stack pointer down by some number of bytes.
@@ -379,6 +382,19 @@ stack_free:
         clc
         adc     stack_pos               ; Add stack pointer to whatever value was passed in
         sta     stack_pos               ; Save stack pointer back
+        rts                             ; Carry should be clear here because stack should not underflow
+
+; Frees the space used on the stack by one value and checks the type of that value.
+; A = the type to check
+; On success, carry will be clear and X will point to the previous value of stack_pos (where the freed value was).
+; On error, carry set will be set.
+; Y SAFE, BC SAFE, DE SAFE
+
+stack_free_value_with_type:
+        ldx     stack_pos               ; Get stack pointer
+        cmp     stack+Value::type,x     ; Test the type
+        beq     stack_free_value        ; Type check succeeded so remove value from stack
+        sec                             ; Return error
         rts
 
 op_and:

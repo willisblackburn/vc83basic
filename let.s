@@ -23,11 +23,13 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        ldx     stack_pos               ; Get stack pointer
+        lda     #TYPE_NUMBER            ; Make sure it's a number
+        jsr     stack_free_value_with_type
+        bcs     @error
         txa                             ; Becomes low byte of source address
         ldx     #>stack                 ; Stack page
         ldy     #.sizeof(Float)
         jsr     copy_y_from             ; Copy from stack into variable data
-        jsr     stack_free_value
         clc                             ; Success
+@error:
         rts
