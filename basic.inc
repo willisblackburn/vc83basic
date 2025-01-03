@@ -100,7 +100,7 @@ FP1s = FP1+UnpackedFloat::s
 .global push_fp0, pop_fp0
 .global push_string, pop_string
 .global stack_alloc, stack_alloc_value
-.global stack_free, stack_free_value
+.global stack_free, stack_free_value, stack_free_value_with_type
 
 ; fp.s
 .global fp_one, fp_ten
