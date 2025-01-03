@@ -24,18 +24,14 @@ exec_let:
 
 assign_variable:
         mvax    variable_ptr, dst_ptr   ; Copy into variable data
-        ldy     stack_pos               ; Get stack pointer
-        ldx     stack+Value::type,y     ; Get the type of the value on the stack
-        cpx     variable_type           ; Compare vs. variable type
-        bne     @error                  ; Value and variable are different types
-        tya                             ; Becomes low byte of source address
+        lda     variable_type           ; Load the variable type
+        tax                             ; While we're here, load the size of the variable type into Y
         ldy     type_size_table,x       ; Replace Y with the size of the type
+        jsr     stack_free_value_with_type
+        bcs     @error
+        txa                             ; Becomes low byte of source address
         ldx     #>stack                 ; Stack page
         jsr     copy_y_from             ; Copy from stack into variable data
-        jsr     stack_free_value
         clc                             ; Success
-        rts
-
 @error:
-        sec
         rts
