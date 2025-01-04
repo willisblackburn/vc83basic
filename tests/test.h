@@ -174,26 +174,21 @@ int invoke_indexed_vector(/* AX */ void* vectors, /* Y */ char index);
 #define POSITIVE ((char)0x00)
 #define NEGATIVE ((char)0x80)
 
-#define SET_FPX(fpx, s_value, e_value, t_value) do { \
+#define SET_FPX_FIELDS(fpx, s_value, e_value, t_value) do { \
     fpx.s = (s_value); \
     fpx.e = (e_value); \
     fpx.t = (t_value); \
 } while (0)
 
-#define ASSERT_FPX_EQ(fpx, s_value, e_value, t_value) do { \
+#define ASSERT_FPX_FIELDS_EQ(fpx, s_value, e_value, t_value) do { \
     ASSERT_EQ(fpx.s, s_value); \
     ASSERT_EQ(fpx.e, e_value); \
     ASSERT_EQ(fpx.t, t_value); \
 } while (0)
 
-#define SET_FLOAT(value, e_value, t_value) do { \
-    value.e = (e_value); \
-    value.t = (t_value); \
-} while (0)
-
-#define ASSERT_FLOAT_EQ(value, e_value, t_value) do { \
-    ASSERT_EQ(value.e, e_value); \
-    ASSERT_EQ(value.t, t_value); \
+#define ASSERT_FLOAT_EQ(a, b) do { \
+    ASSERT_EQ((a).e, (b).e); \
+    ASSERT_EQ((a).t, (b).t); \
 } while (0)
 
 // Common functions and definitions used in tests
