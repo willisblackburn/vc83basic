@@ -49,7 +49,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected00->e, expected00->t);
+    ASSERT_FLOAT_EQ(value, *expected00);
 
     line_data[0] = '0';
     line_data[3] = '1';
@@ -57,7 +57,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     evaluate_expression();
     ASSERT_EQ(err, 0);
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected01->e, expected01->t);
+    ASSERT_FLOAT_EQ(value, *expected01);
 
     line_data[0] = '1';
     line_data[3] = '0';
@@ -66,7 +66,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected10->e, expected10->t);
+    ASSERT_FLOAT_EQ(value, *expected10);
 
     line_data[0] = '1';
     line_data[3] = '1';
@@ -75,7 +75,7 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected11->e, expected11->t);
+    ASSERT_FLOAT_EQ(value, *expected11);
 }
 
 void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
@@ -92,7 +92,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected0->e, expected0->t);
+    ASSERT_FLOAT_EQ(value, *expected0);
 
     line_data[1] = '1';
     set_line(0, line_data, sizeof line_data);
@@ -100,7 +100,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected1->e, expected1->t);
+    ASSERT_FLOAT_EQ(value, *expected1);
 }
 
 void test_evaluate_expression_op(void) {
@@ -136,8 +136,10 @@ void test_evaluate_expression_op_precedence(void) {
 
     // 2-1-1 = 0
     char line_data_1[] = { '2', 0, TOKEN_OP | OP_SUB, '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0 };
+    Float result_1 = { 0x00000000, 0 };
     // 2-(1-1) = 2
     char line_data_2[] = { '2', 0, TOKEN_OP | OP_SUB, '(', '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0, 0 };
+    Float result_2 = { 0x00000000, 128 };
 
     PRINT_TEST_NAME();
 
@@ -148,14 +150,14 @@ void test_evaluate_expression_op_precedence(void) {
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, 0, 0x00000000);
+    ASSERT_FLOAT_EQ(value, result_1);
 
     set_line(0, line_data_2, sizeof line_data_2);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, 128, 0x00000000);
+    ASSERT_FLOAT_EQ(value, result_2);
 }
 
 void test_one_string_comparison(char op, const char* s1, const char* s2, const Float* expected, int line) {
@@ -186,7 +188,7 @@ void test_one_string_comparison(char op, const char* s1, const char* s2, const F
     ASSERT_EQ(err, 0);
     pop_fp0();
     store_fp0(&value);
-    ASSERT_FLOAT_EQ(value, expected->e, expected->t);
+    ASSERT_FLOAT_EQ(value, *expected);
 }
 
 void test_string_comparison(void) {
