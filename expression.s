@@ -11,10 +11,10 @@
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
-        bcs     @done                   ; Expression evaluation failed
+        bcs     @error                  ; Expression evaluation failed
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
         jsr     process_operators       ; May fail with carry set
-@done:
+@error:
         rts
 
 evaluate_vectors:
