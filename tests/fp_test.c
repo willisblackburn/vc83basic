@@ -153,6 +153,9 @@ void test_truncate_fp_to_int(void) {
     const IntConversionTestCase* test_case;
     int i;
     int result;
+    Float less_than_one = { 0x00000000, 126 };
+    Float too_large = { 0x00000000, 143 };
+    Float much_too_large = { 0x00000000, 196 };
 
     PRINT_TEST_NAME();
 
@@ -165,6 +168,22 @@ void test_truncate_fp_to_int(void) {
         ASSERT_EQ(err, 0);
         ASSERT_EQ(result, test_case->int_value);
     }
+
+    // Some unusual cases.
+
+    // If floating point value is less than 1, then output is zero.
+    load_fp0(&less_than_one);
+    result = truncate_fp_to_int();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(result, 0);
+
+    // If floating point value is >=2^16, the function should return error.
+    load_fp0(&too_large);
+    result = truncate_fp_to_int();
+    ASSERT_NE(err, 0);
+    load_fp0(&much_too_large);
+    result = truncate_fp_to_int();
+    ASSERT_NE(err, 0);
 }
 
 typedef struct Int32ConversionTestCase {

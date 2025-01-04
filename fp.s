@@ -332,6 +332,7 @@ int_to_fp_common:
 truncate_fp_to_int:
         lda     #143                    ; Target exponent is 15, but int_to_fp_common requires target+1
         jsr     truncate_fp_to_int_common
+        bcs     @error                  ; Value was too large
         lda     FP0s                    ; Was float value negative?
         bpl     @positive
         sec                             ; Necessary for negate_significand_16
@@ -340,6 +341,7 @@ truncate_fp_to_int:
         lda     FP0t+2                  ; Load return value into AX
         ldx     FP0t+3
         clc                             ; Signal success
+@error:
         rts
 
 ; Truncates the FP value to a 32-bit integer and leaves it in the FP0 significand field.
@@ -356,9 +358,9 @@ truncate_fp_to_int32:
 ; A = the target exponent value *plus one* (with bias)
 
 truncate_fp_to_int_common:
-        eor     #$FF                    ; A = (-target) - 1
+        eor     #$FF                    ; A = (-(target+1)) - 1
         sec                             ; Set carry to ADC completes the two's complement operation
-        adc     FP0e                    ; A = exponent - target
+        adc     FP0e                    ; A = exponent - (target+1)
         tay                             ; A = -(number of shifts) - 1, so we pre-increment and check for 0
         bcc     @decrement              ; If we borrowed to subtract target+1, then E < target+1 or E <= target; ok!
         rts                             ; Otherwise return with carry set
