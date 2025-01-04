@@ -255,10 +255,6 @@ push_fp0:
 pop_fp0:
         ldy     stack_pos               ; Load stack pointer into Y to use as offset
         jsr     stack_free_value
-        bcs     @error
-        sec                             ; Set carry in case type check fails
-        lda     stack+Value::type,y
-        bne     @error
         tya                             ; Back in A to use as pointer
         ldy     #>stack                 ; Stack page
         jsr     load_fp0                ; Load value into FP0
