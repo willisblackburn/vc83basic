@@ -1,0 +1,11 @@
+source [file join [file dirname [info script]] common.expinc]
+spawn_basic
+
+test {
+DIM A$(2)
+LET A$(1) = 10
+LET A$(2) = 20
+PRINT A$(1),A$(2)
+} {
+10     20
+}
