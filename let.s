@@ -5,13 +5,12 @@
 
 exec_let:
         jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
-        phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
-        jsr     evaluate_expression     ; Value is now on the evaluation stack
-        plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
-        bcs     @error
         jsr     find_or_add_variable
-        bcs     @error
+        ldphaa  name_ptr                ; Remember name_ptr
         jsr     evaluate_expression     ; Value is in AX
+        tay                             ; Hold low byte of result while we recover name_ptr
+        plstaa  name_ptr                ; Recover name_ptr
+        tya                             ; Restore low byte of result
         jmp     assign_variable
 
 @error:
