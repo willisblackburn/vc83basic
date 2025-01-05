@@ -3,14 +3,22 @@ ifelse(
 .include "basic.inc"
 .zeropage
 define(`var', ``$1: .res $2
-.export _$1 = $1'') define(`comment', `;')
+.export _$1 = $1'')
+define(`comment', `;')
+define(`block', `')
     ',
     OUTPUT, `inc', `
-define(`var', ``.globalzp $1'') define(`comment', `;')
+define(`var', ``.globalzp $1'')
+define(`comment', `;')
+define(`block', `$1 = $2
+$1_SIZE = $3 - $2
+.assert $3 - $2 = $4, error')
     ',
     OUTPUT, `h', `
 define(`var', ``extern $3 $1;
-#pragma zpsym("$1")'') define(`comment', `//')
+#pragma zpsym("$1")'')
+define(`comment', `//')
+define(`block', `')
     ')
 
 define(`byte', `var($1, 1, char)')
@@ -71,6 +79,9 @@ byte(line_pos)
 
 comment The line number sought by find_line
 word(line_number, int)
+
+comment PARSER_STATE is the set of zero page values we save when recursively parsing expressions
+block(PARSER_STATE, name_ptr, variable_ptr, 9)
 
 comment Pointer to current name table entry
 word(name_ptr, char*)

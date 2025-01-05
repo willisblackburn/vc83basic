@@ -108,12 +108,9 @@ parse_argument_type_vectors:
 ; Make sure NT_VAR is the first typed directive
 .assert NT_VAR = $10, error
 
-; Number of bytes of parser state to save, starting with name_ptr
-PARSER_STATE_BYTES = 8
-
 parse_directive:
         tay                             ; Keep in Y while using A to save state
-        phzp    name_ptr, PARSER_STATE_BYTES
+        phzp    PARSER_STATE, PARSER_STATE_SIZE
         tya                             ; Recover directive from Y
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
@@ -138,7 +135,7 @@ parse_directive:
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 @pop_parser_state:
-        plzp    name_ptr, PARSER_STATE_BYTES
+        plzp    PARSER_STATE, PARSER_STATE_SIZE
         rts
 
 parse_variable:
