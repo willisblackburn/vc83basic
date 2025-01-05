@@ -14,8 +14,6 @@ exec_input:
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
         bcs     @done
-        mvax    name_ptr, variable_ptr  ; Set up target for assign_variable
-        mva     decode_name_type, variable_type
         bne     @string
         ldax    #buffer                 ; Point to buffer
         ldy     buffer_pos              ; Starting at buffer_pos

@@ -90,7 +90,7 @@ comment The line number sought by find_line
 word(line_number, int)
 
 comment PARSER_STATE is the set of zero page values we save when recursively parsing expressions
-block(PARSER_STATE, name_ptr, variable_ptr, 9)
+block(PARSER_STATE, name_ptr, program_state, 9)
 
 comment Pointer to current name table entry
 word(name_ptr, char*)
@@ -101,6 +101,9 @@ word(next_name_ptr, char*)
 comment Index of name in name table
 byte(name_index)
 
+comment DECODE_NAME_STATE is the set of zero page fields that describe a name decoded from a program line
+block(DECODE_NAME_STATE, decode_name_ptr, program_state, 4)
+
 comment Pointer to name decoded from line
 word(decode_name_ptr, const char*)
 
@@ -109,12 +112,6 @@ byte(decode_name_length)
 
 comment The type of the name referred to by decode_name_ptr
 byte(decode_name_type)
-
-comment Pointer to a variable within the variable value set by a statement like LET, INPUT, and READ
-word(variable_ptr, void*)
-
-comment The type of variable being assigned
-byte(variable_type)
 
 comment Whether the program is not running, running, stopped, or awaiting reset.
 byte(program_state)
