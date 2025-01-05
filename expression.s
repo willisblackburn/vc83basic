@@ -27,6 +27,7 @@ evaluate_vectors:
 
 evaluate_variable:
         jsr     decode_name
+evaluate_decoded_variable:
         jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
         jsr     stack_alloc_value
