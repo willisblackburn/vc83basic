@@ -12,7 +12,6 @@ exec_input:
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
         bcs     @done
-        mvax    name_ptr, variable_ptr
         ldax    #buffer
         ldy     buffer_pos
         jsr     read_number
