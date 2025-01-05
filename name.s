@@ -138,6 +138,7 @@ add_variable:
         bne     @skip_inx_2             ; Didn't roll over so don't need to INX
         inx
 @skip_inx_2:
+        sec                             ; Set carry in case this next check fails
         txa                             ; Test high byte again
         bmi     @error                  ; If high bit is already set then length is too large to encode
 @single_byte_encoding:
@@ -177,8 +178,5 @@ add_variable:
         iny                             ; Last character
         jsr     rebase_name_ptr         ; Make name_ptr point past end of data
         clc                             ; Signal success
-        rts
-
 @error:
-        sec                             ; Signal error
         rts
