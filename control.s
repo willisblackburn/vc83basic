@@ -127,15 +127,14 @@ exec_for:
 ; NEXT statement:
 
 exec_next:
-        jsr     evaluate_variable       ; Evaluates the variable after next; sets decode_name_ptr and name_ptr
-        bcs     @error
-        jsr     pop_fp0                 ; Variable value is now in FP0
-        bcs     @error
+
+; Decode the variable name and see if it matches the one at the top of the stack.
+
+        jsr     decode_name             ; Sets decode_name_ptr
         ldx     stack_pos               ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
-        mvaa    name_ptr, BC            ; Save name_ptr so we can use it to update variable after addition
         lda     stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
         sta     name_ptr
         lda     stack+Control::variable_name_ptr+1,x
@@ -143,7 +142,10 @@ exec_next:
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
-        mvaa    BC, name_ptr            ; Recover name_ptr
+        jsr     evaluate_decoded_variable   ; Continue with evaluation of variable decoded above
+        bcs     @error
+        jsr     pop_fp0                 ; Variable value is now in FP0
+        bcs     @error
         lda     stack_pos               ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
         ldy     #>stack                 ; Stack page
