@@ -113,7 +113,7 @@ string_alloc:
         jsr     @try_string_alloc
         bcc     @success_2
 @error:
-        sec                             ; Sometimes @error is reached from below when carry is clear
+        sec                             ; Sometimes @error is reached from BCC so have to set carry
         rts
 
 @success:
