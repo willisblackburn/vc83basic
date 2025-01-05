@@ -31,9 +31,10 @@ exec_dim:
         lda     (line_ptr),y            ; Peek at next character
         bne     @next                   ; Keep decoding more dimensions
         jsr     truncate_fp_to_int
-        debug $00
         bcs     @done                   ; Value was too large
+        sec                             ; Set carry in case next check fails
         bmi     @done                   ; Value was negative
+        
         
 
         
