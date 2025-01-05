@@ -90,12 +90,15 @@ exec_for:
         sta     stack+Control::variable_name_ptr,x
         lda     decode_name_ptr+1
         sta     stack+Control::variable_name_ptr+1,x
-        jsr     find_or_add_variable
-        bcs     @error                  ; No space for variable
-        mvax    name_ptr, variable_ptr
+        phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
         jsr     evaluate_expression     ; Start value (may clobber decode_name_ptr)
+        plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
+        bcs     @error
+        jsr     find_or_add_variable
+        bcs     @error
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
+        bcs     @error
         jsr     pop_fp0                 ; Get the evaluated value
         bcs     @error
         lda     stack_pos               ; Stack pointer
@@ -116,14 +119,14 @@ exec_for:
 ; NEXT statement:
 
 exec_next:
-        jsr     evaluate_variable       ; Evaluates the variable after next; sets decode_name_ptr
+        jsr     evaluate_variable       ; Evaluates the variable after next; sets decode_name_ptr and name_ptr
         bcs     @error
-        mvax    name_ptr, variable_ptr  ; Set up target for assign_variable later
         jsr     pop_fp0                 ; Variable value is now in FP0
         ldx     stack_pos               ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
         sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
+        mvaa    name_ptr, BC            ; Save name_ptr so we can use it to update variable after addition
         lda     stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
         sta     name_ptr
         lda     stack+Control::variable_name_ptr+1,x
@@ -131,12 +134,13 @@ exec_next:
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
         bcs     @error
+        mvaa    BC, name_ptr            ; Recover name_ptr
         lda     stack_pos               ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
         ldy     #>stack                 ; Stack page
         jsr     fadd                    ; Add the step value to the variable value from before
         jsr     push_fp0                ; Push back onto stack
-        jsr     assign_variable         ; Assign stack value to variable_ptr set up earlier
+        jsr     assign_variable         ; Assign stack value to name_ptr set up earlier
         lda     stack_pos               ; Get stack position again
         clc
         adc     #Control::end_value     ; Calculate address of end value (carry will be clear)
