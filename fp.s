@@ -1018,7 +1018,7 @@ fdiv_fp1:
 @initalize:
         ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
         jsr     copy_significand_fp0_fpx
-        mva     #0, FP3                 ; Extended significand will be in FP3 instead of usual FP2
+        mva     #0, D                   ; Extended significand of FP2 will be in D
         mva     #BIAS, C                ; C keeps track of how much bias to add
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
@@ -1058,7 +1058,7 @@ fdiv_fp1:
         mva     #0, FP2                 ; Clear FP2, which normalize will use as the extended significand
         jmp     normalize               ; Normalize and return
 
-; Compare the dividend in FP2 (plus the low byte of FP3) to the divisor FP1.
+; Compare the dividend in FP2 (plus the low byte of D) to the divisor FP1.
 ; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
 ; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
 ; initialized to 1, then it will loop 8 times.
@@ -1068,10 +1068,10 @@ fdiv_fp1:
         rol     FP2+1
         rol     FP2+2
         rol     FP2+3
-        rol     FP3
+        rol     D
 @divide_skip_shift:
         sec                             ; If FP2 is >0 then divisor FP1 <= dividend FP2 so we want carry to be set
-        lda     FP3                     ; Dividend extended significand
+        lda     D                       ; Dividend extended significand
         bne     @compare_done
         lda     FP2+3
         cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FP2
@@ -1098,9 +1098,9 @@ fdiv_fp1:
         lda     FP2+3
         sbc     FP1t+3
         sta     FP2+3
-        lda     FP3                     ; Possibly have to borrow from extended significand
+        lda     D                       ; Possibly have to borrow from extended significand
         sbc     #0                      ; SBC #0 will always leave carry set
-        sta     FP3
+        sta     D
 @skip_subtract:
         rol     B                       ; Roll the carry left into quotient
         bcc     @divide                 ; Continue if 1 bit has not emerged from B
