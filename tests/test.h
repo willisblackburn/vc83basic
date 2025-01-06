@@ -62,6 +62,10 @@ extern char FP1e;
 #pragma zpsym ("FP1e")
 extern char FP1s;
 #pragma zpsym ("FP1s")
+extern int S0;
+#pragma zpsym ("S0")
+extern int S1;
+#pragma zpsym ("S1")
 
 extern char buffer[];
 extern Line line_buffer;

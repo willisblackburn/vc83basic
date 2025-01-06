@@ -54,6 +54,9 @@ FP1t = FP1+UnpackedFloat::t
 FP1e = FP1+UnpackedFloat::e
 FP1s = FP1+UnpackedFloat::s
 
+S0 = FP2
+S1 = FP2+2
+
 ; Data
 
 .global buffer

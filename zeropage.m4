@@ -142,7 +142,3 @@ byte(resume_line_pos)
 comment Tracks how many characters have been printed so tabs work correctly.
 comment Is reset to 0 by printing the banner message and/or READY.
 byte(print_column)
-
-comment Temporary string pointers
-word(S0, char*)
-word(S1, char*)

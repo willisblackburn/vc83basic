@@ -30,6 +30,7 @@ _err: .res 1
 .export _BC = BC, _DE = DE
 .export _FP0t = FP0t, _FP0e = FP0e, _FP0s = FP0s
 .export _FP1t = FP1t, _FP1e = FP1e, _FP1s = FP1s
+.export _S0 = S0, _S1 = S1
 
 .export _buffer = buffer
 .export _line_buffer = line_buffer
