@@ -934,28 +934,28 @@ fmul:
 
         ldx     #FP2                    ; Clear the extended significand of FP0
         jsr     clear_significand_fpx
-        ldx     #FP3                    ; FP3 holds the original significand
-        jsr     copy_significand_fp0_fpx
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
-        lsr     FP1t+3                  ; Shift FP1 significand right              
-        ror     FP1t+2
-        ror     FP1t+1
-        ror     FP1t
-        bcc     @skip_add               ; FP1 LSB was 0 so don't need to add anything
-        clc                             ; Add significand in FP3 to FP2 (TODO: try to use add_significands)      
+        lda     FP0t                    ; Test the least significant bit of FP0
+        lsr     A                       ; Shift into carry
+        ; lsr     FP1t+3                  ; Shift FP1 significand right              
+        ; ror     FP1t+2
+        ; ror     FP1t+1
+        ; ror     FP1t
+        bcc     @skip_add               ; FP0 LSB was 0 so don't need to add anything
+        clc                             ; Add significand in FP1 to FP2
         lda     FP2
-        adc     FP3
+        adc     FP1
         sta     FP2
         lda     FP2+1
-        adc     FP3+1
+        adc     FP1+1
         sta     FP2+1
         lda     FP2+2
-        adc     FP3+2
+        adc     FP1+2
         sta     FP2+2
         lda     FP2+3
-        adc     FP3+3                   ; This will never overflow because high bit of FP2 will always be zero
+        adc     FP1+3                   ; This will never overflow because high bit of FP2 will always be zero
         sta     FP2+3
 @skip_add:
         ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit
