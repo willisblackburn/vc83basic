@@ -1099,9 +1099,8 @@ fdiv_fp1:
         sbc     FP1t+3
         sta     FP2+3
         lda     FP3                     ; Possibly have to borrow from extended significand
-        sbc     #0
+        sbc     #0                      ; SBC #0 will always leave carry set
         sta     FP3
-        sec                             ; Set carry so we roll 1 bit into quotient
 @skip_subtract:
         rol     B                       ; Roll the carry left into quotient
         bcc     @divide                 ; Continue if 1 bit has not emerged from B
