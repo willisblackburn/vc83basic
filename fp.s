@@ -134,7 +134,7 @@ copy_fp0_fp1:
         ldx     #FP1t
 
 ; Copies the significand of FP0 to another register.
-; X = either #FP1t, #FP2, or #FP3
+; X = either #FP1t, #FP2
 
 copy_significand_fp0_fpx:
         lda     FP0t
@@ -157,8 +157,8 @@ clear_fp0:
 
 ; Fall through
 
-; Clears the significand of FP0 or FP1, or FP2 or FP3.
-; X = either #FP0t, #FP1t, #FP2, or #FP3
+; Clears the significand of FP0 or FP1, or FP2.
+; X = either #FP0t, #FP1t, #FP2
 ; Returns 0 in A.
 
 clear_significand_fpx:
