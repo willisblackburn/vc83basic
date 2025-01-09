@@ -162,8 +162,7 @@ op_pow:
 
 op_concat:
         jsr     pop_string              ; Get the second string
-        ldx     #S1
-        jsr     load_sx                 ; Load into S1
+        jsr     load_s1                 ; Load into S1
         sta     C                       ; Length of second string in C 
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
@@ -195,8 +194,7 @@ op_concat:
 
 compare_string_values:
         jsr     pop_string              ; Get second string
-        ldx     #S1
-        jsr     load_sx                 ; Second string into S1
+        jsr     load_s1                 ; Second string into S1
         sta     C                       ; Length of second string in C
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
