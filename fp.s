@@ -134,7 +134,7 @@ copy_fp0_fp1:
         ldx     #FP1t
 
 ; Copies the significand of FP0 to another register.
-; X = either #FP1t, #FP2
+; X = either #FP1t, #FPX
 
 copy_significand_fp0_fp:
         lda     FP0t
@@ -157,8 +157,8 @@ clear_fp0:
 
 ; Fall through
 
-; Clears the significand of FP0 or FP1, or FP2.
-; X = either #FP0t, #FP1t, #FP2
+; Clears the significand of FP0 or FP1, or FPX.
+; X = either #FP0t, #FP1t, #FPX
 ; Returns 0 in A.
 
 clear_significand_fp:
@@ -206,8 +206,8 @@ negate_significand_16:
         sbc     FP0t+3
         sta     FP0t+3
         lda     #0
-        sbc     FP2
-        sta     FP2
+        sbc     FPX
+        sta     FPX
         rts
 
 ; Adds the significands of FP0 and FP1.
@@ -228,9 +228,9 @@ add_significands_with_carry:
         lda     FP0t+3
         adc     FP1t+3
         sta     FP0t+3
-        lda     FP2                     ; Extended significand
+        lda     FPX                     ; Extended significand
         adc     #0                      ; Extended significand of FP1 is always 0
-        sta     FP2
+        sta     FPX
         rts
 
 ; Utility function to shift the FP0 significand right by one bit.
@@ -318,13 +318,13 @@ int32_to_fp:
         lda     #158                    ; Starting exponent = 31
 
 ; Performs the part of integer to float conversion common to 16- and 32-bit cases:
-; clear B, C, and FP2, and normalize.
+; clear B, C, and FPX, and normalize.
 
 int_to_fp_common:
         sta     FP0e                    ; Starting exponent
         mva     #0, C                   ; Set exponent high byte to 0
         sta     B                       ; Set round register to 0
-        sta     FP2                     ; Clear low byte of extended significand
+        sta     FPX                     ; Clear low byte of extended significand
         jmp     normalize     
 
 ; Truncates the FP value to a 16-bit integer and returns it in AX.
@@ -730,7 +730,7 @@ adjust_exponent:
 ; Invoked from normalize when the significand doesn't fit into 32 bits.
 
 shift_right_normalize:
-        lsr     FP2                     ; Shift FP2 right
+        lsr     FPX                     ; Shift FPX right
         jsr     shift_right_from_carry  ; Shift the remaining 32 bits; output in carry
         ror     B                       ; Rotate carry into rounding register
         inc     FP0e                    ; Increase exponent
@@ -743,7 +743,7 @@ shift_right_normalize:
 ; until the most-significant bit is 1. The normalize function acts on the 40-bit FP0 extended significand and
 ; normalizes to the 32-bit FP0 significand.
 ; Normalization handles several different cases:
-;   * If FP2 (the high byte of the 40-bit significand) has a value (if the significand is >=2),
+;   * If FPX (the high byte of the 40-bit significand) has a value (if the significand is >=2),
 ;   then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
 ;   addition or subtraction overflowed the 32-bit significand.
 ;   * If the biased exponent is <-31, then return zero. This is an underflow condition; we cannot bring the exponent
@@ -763,9 +763,9 @@ shift_right_normalize:
 
 normalize:
 
-; First check if there are any bits set in the low byte of FP2, indicating the significand is >= 2.
+; First check if there are any bits set in the low byte of FPX, indicating the significand is >= 2.
 
-        lda     FP2                     ; Check first extension byte
+        lda     FPX                     ; Check first extension byte
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
@@ -834,8 +834,8 @@ normalize:
         jsr     clear_significand_fp
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
-        beq     @done                   ; If the value written to FP2 was 0 then all done
-        sec                             ; Only 1 bit can possibly in FP2, so don't need to shift FP2
+        beq     @done                   ; If the value written to FPX was 0 then all done
+        sec                             ; Only 1 bit can possibly in FPX, so don't need to shift FPX
         jsr     shift_right_from_carry  ; Otherwise have to shift right again
         inc     FP0e                    ; Increase exponent
 
@@ -851,7 +851,7 @@ fadd:
 fadd_fp1:
         mva     #0, B                   ; Initialize the rounding register to 0
         sta     C                       ; Clear the extended exponent register
-        sta     FP2                     ; Also clear FP0 extended significand
+        sta     FPX                     ; Also clear FP0 extended significand
         lda     FP1e                    ; FP1 exponent
         sec
         sbc     FP0e                    ; Compare exponents: FP1e - FP0e
@@ -932,7 +932,7 @@ fmul:
 
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
-        ldx     #FP2                    ; Clear the extended significand of FP0
+        ldx     #FPX                    ; Clear the extended significand of FP0
         jsr     clear_significand_fp
         ldy     #32                     ; 32 multiplication cycles
 
@@ -940,24 +940,24 @@ fmul:
         lda     FP0t                    ; Test the least significant bit of FP0
         lsr     A                       ; Shift into carry
         bcc     @skip_add               ; FP0 LSB was 0 so don't need to add anything
-        clc                             ; Add significand in FP1 to FP2
-        lda     FP2
+        clc                             ; Add significand in FP1 to FPX
+        lda     FPX
         adc     FP1
-        sta     FP2
-        lda     FP2+1
+        sta     FPX
+        lda     FPX+1
         adc     FP1+1
-        sta     FP2+1
-        lda     FP2+2
+        sta     FPX+1
+        lda     FPX+2
         adc     FP1+2
-        sta     FP2+2
-        lda     FP2+3
-        adc     FP1+3                   ; This will never overflow because high bit of FP2 will always be zero
-        sta     FP2+3
+        sta     FPX+2
+        lda     FPX+3
+        adc     FP1+3                   ; This will never overflow because high bit of FPX will always be zero
+        sta     FPX+3
 @skip_add:
-        ror     FP2+3                   ; 64-bit right shift; rotate moves carry from add into high bit
-        ror     FP2+2
-        ror     FP2+1
-        ror     FP2
+        ror     FPX+3                   ; 64-bit right shift; rotate moves carry from add into high bit
+        ror     FPX+2
+        ror     FPX+1
+        ror     FPX
         ror     FP0t+3
         ror     FP0t+2
         ror     FP0t+1
@@ -965,21 +965,21 @@ fmul:
         dey                             ; Done with one cycle
         bne     @next_bit
 
-; The 64-bit product in FP0t and FP2 is in the range 0 to almost 4, and the binary point is between
+; The 64-bit product in FP0t and FPX is in the range 0 to almost 4, and the binary point is between
 ; bits 61 and 62 (assuming MSB is 63). Use byte copy to shift it 32 places into FP0t with the next-lower byte in
 ; the rounding register.
 
         lda     FP0t+3                  ; Bits 24-31 go into rounding register
         sta     B
-        lda     FP2+3
+        lda     FPX+3
         sta     FP0t+3
-        lda     FP2+2
+        lda     FPX+2
         sta     FP0t+2
-        lda     FP2+1
+        lda     FPX+1
         sta     FP0t+1
-        lda     FP2
+        lda     FPX
         sta     FP0t
-        mva     #0, FP2                 ; Clear extended significand
+        mva     #0, FPX                 ; Clear extended significand
 
 ; Calculate exponent and sign.
 
@@ -1011,9 +1011,9 @@ fdiv_fp1:
         rts
 
 @initalize:
-        ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
+        ldx     #FPX                    ; Copy significand into FPX so we can use FP0 to build quotient
         jsr     copy_significand_fp0_fp
-        mva     #0, D                   ; Extended significand of FP2 will be in D
+        mva     #0, D                   ; Extended significand of FPX will be in D
         mva     #BIAS, C                ; C keeps track of how much bias to add
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
@@ -1050,49 +1050,49 @@ fdiv_fp1:
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
         sta     FP0s
-        mva     #0, FP2                 ; Clear FP2, which normalize will use as the extended significand
+        mva     #0, FPX                 ; Clear FPX, which normalize will use as the extended significand
         jmp     normalize               ; Normalize and return
 
-; Compare the dividend in FP2 (plus the low byte of D) to the divisor FP1.
+; Compare the dividend in FPX (plus the low byte of D) to the divisor FP1.
 ; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
 ; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
 ; initialized to 1, then it will loop 8 times.
 
 @divide:
-        asl     FP2                     ; Shift dividend left one bit
-        rol     FP2+1
-        rol     FP2+2
-        rol     FP2+3
+        asl     FPX                     ; Shift dividend left one bit
+        rol     FPX+1
+        rol     FPX+2
+        rol     FPX+3
         rol     D
 @divide_skip_shift:
-        sec                             ; If FP2 is >0 then divisor FP1 <= dividend FP2 so we want carry to be set
+        sec                             ; If FPX is >0 then divisor FP1 <= dividend FPX so we want carry to be set
         lda     D                       ; Dividend extended significand
         bne     @compare_done
-        lda     FP2+3
-        cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FP2
+        lda     FPX+3
+        cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FPX
         bne     @compare_done           ; If not equal then result is in carry; if equal then check next byte, etc.
-        lda     FP2+2
+        lda     FPX+2
         cmp     FP1t+2
         bne     @compare_done
-        lda     FP2+1
+        lda     FPX+1
         cmp     FP1t+1
         bne     @compare_done
-        lda     FP2
+        lda     FPX
         cmp     FP1t
 @compare_done:
         bcc     @skip_subtract          ; If carry clear (borrow set) then divisor > dividend; don't subtract
-        lda     FP2
+        lda     FPX
         sbc     FP1t
-        sta     FP2
-        lda     FP2+1
+        sta     FPX
+        lda     FPX+1
         sbc     FP1t+1
-        sta     FP2+1
-        lda     FP2+2
+        sta     FPX+1
+        lda     FPX+2
         sbc     FP1t+2
-        sta     FP2+2
-        lda     FP2+3
+        sta     FPX+2
+        lda     FPX+3
         sbc     FP1t+3
-        sta     FP2+3
+        sta     FPX+3
         lda     D                       ; Possibly have to borrow from extended significand
         sbc     #0                      ; SBC #0 will always leave carry set
         sta     D
