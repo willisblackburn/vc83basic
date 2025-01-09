@@ -131,6 +131,12 @@ _load_fp0:
         ldy     B
         jmp     load_fp0
 
+_load_fp1:
+.export _load_fp1
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     load_fp1
+
 _store_fp0:
 .export _store_fp0
         stx     B                       ; Move argument in AX to AY
@@ -368,13 +374,17 @@ _shrink:
 
 ; string.s
 
-_load_sx:
-.export _load_sx
-        stax    BC                      ; value pointer
-        jsr     popax                   ; sy pointer
-        tax
-        lday    BC
-        jmp     load_sx
+_load_s0:
+.export _load_s0
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     load_s0
+
+_load_s1:
+.export _load_s1
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     load_s1
 
 _read_string:
 .export _read_string

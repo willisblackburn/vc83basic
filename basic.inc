@@ -109,7 +109,7 @@ S1 = FP2+2
 
 ; fp.s
 .global fp_one, fp_ten
-.global load_fp0
+.global load_fp0, load_fp1
 .global store_fp0
 .global swap_fp0_fp1
 .global copy_fp0_fp1
@@ -191,7 +191,7 @@ S1 = FP2+2
 .global exec_clr
 
 ; string.s
-.global load_sx, load_s0
+.global load_s0, load_s1
 .global read_string
 .global string_alloc
 .global compact

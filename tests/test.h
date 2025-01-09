@@ -101,6 +101,7 @@ void encode_byte(/* A */ char value);
 
 // fp.s
 void load_fp0(/* AY */ const Float* value);
+void load_fp1(/* AY */ const Float* value);
 void store_fp0(/* AY */ Float* value);
 void swap_fp0_fp1(void);
 void int_to_fp(/* AX */ int value);
@@ -150,7 +151,8 @@ void grow(/* Y */ void* ptr, /* AX */ size_t size);
 void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 
 // string.s
-char load_sx(/* Y */ void* sy, /* AY */ const String* value);
+char load_s0(/* AY */ const String* value);
+char load_s1(/* AY */ const String* value);
 const String* read_string(const char* ptr, char pos);
 const String* string_alloc(/* A */ char length);
 void compact(void);
