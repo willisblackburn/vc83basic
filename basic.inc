@@ -87,7 +87,7 @@ FP1s = FP1+UnpackedFloat::s
 
 ; fp.s
 .global fp_one, fp_ten
-.global load_fp0
+.global load_fp0, load_fp1
 .global store_fp0
 .global swap_fp0_fp1
 .global copy_fp0_fp1
