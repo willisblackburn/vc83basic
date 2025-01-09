@@ -1,6 +1,6 @@
 #include "test.h"
 
-void test_load_sx(void) {
+void test_load_s(void) {
 
     const String s = { 5, { 'H', 'E', 'L', 'L', 'O' }};
     char length;
@@ -10,18 +10,18 @@ void test_load_sx(void) {
     S0 = NULL;
     S1 = NULL;
 
-    length = load_sx(&S0, &s);
+    length = load_s0(&s);
     ASSERT_PTR_EQ(S0, &s.data);
     ASSERT_EQ(length, s.length);
     ASSERT_NULL(S1);
 
-    length = load_sx(&S1, &s);
+    length = load_s1(&s);
     ASSERT_PTR_EQ(S1, &s.data);
     ASSERT_EQ(length, s.length);
 
     // Test the null case
 
-    length = load_sx(&S0, NULL);
+    length = load_s0(NULL);
     ASSERT_EQ(length, 0);
 }
 
@@ -84,7 +84,7 @@ void test_read_string(void) {
 
 int main(void) {
     initialize_target();
-    test_load_sx();
+    test_load_s();
     test_string_alloc();
     test_read_string();
     return 0;

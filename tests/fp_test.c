@@ -17,8 +17,7 @@ const LoadStoreTestCase load_store_test_cases[] = {
     { { 0x00000400,   0 }, { 0x00000400,   1, POSITIVE } },
 };
 
-void test_load_fp0(void) {
-    Float value;
+void test_load_fp(void) {
     const LoadStoreTestCase* test_case;
     int i;
 
@@ -30,6 +29,8 @@ void test_load_fp0(void) {
                 test_case->f.t, test_case->f.e);
         load_fp0(&test_case->f);
         ASSERT_FP_FIELDS_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        load_fp1(&test_case->f);
+        ASSERT_FP_FIELDS_EQ(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
@@ -546,7 +547,7 @@ void test_string_to_fp(void) {
 
 int main(void) {
     initialize_target();
-    test_load_fp0();
+    test_load_fp();
     test_store_fp0();
     test_swap_fp0_fp1();
     test_adjust_exponent();

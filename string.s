@@ -2,14 +2,17 @@
 .include "basic.inc"
 
 ; Loads a string into one of the two S registers.
-; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or the
-; register identified by X for load_sx.
+; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or S1
+; for load_s1.
 ; AY = a pointer to the string to load
 ; BC SAFE
 
+load_s1:
+        ldx     #S1
+        bne     load_s        
 load_s0:
         ldx     #S0
-load_sx:
+load_s:
         stay    DE                      ; DE is a temporary pointer
         sty     1,x                     ; Store high byte of string address
         tay                             ; Move low byte into Y since I'm about to clobber A
