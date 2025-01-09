@@ -115,6 +115,12 @@ _load_fp0:
         ldy     B
         jmp     load_fp0
 
+_load_fp1:
+.export _load_fp1
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     load_fp1
+
 _store_fp0:
 .export _store_fp0
         stx     B                       ; Move argument in AX to AY

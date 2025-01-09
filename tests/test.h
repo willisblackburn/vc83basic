@@ -89,6 +89,7 @@ void encode_byte(/* A */ char value);
 
 // fp.s
 void load_fp0(/* AY */ const Float* value);
+void load_fp1(/* AY */ const Float* value);
 void store_fp0(/* AY */ Float* value);
 void swap_fp0_fp1(void);
 void int_to_fp(/* AX */ int value);
