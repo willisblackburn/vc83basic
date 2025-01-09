@@ -42,10 +42,10 @@ fp_ten: .byte $00, $00, $00, $20, 130
 
 load_fp1:
         ldx     #FP1
-        bne     load_fpx
+        bne     load_fp
 load_fp0:
         ldx     #FP0
-load_fpx:
+load_fp:
         stay    BC                      ; FP value address into BC
         ldy     #0                      ; Start with low byte of significand
         lda     (BC),y
@@ -136,7 +136,7 @@ copy_fp0_fp1:
 ; Copies the significand of FP0 to another register.
 ; X = either #FP1t, #FP2
 
-copy_significand_fp0_fpx:
+copy_significand_fp0_fp:
         lda     FP0t
         sta     0,x
         lda     FP0t+1
@@ -161,7 +161,7 @@ clear_fp0:
 ; X = either #FP0t, #FP1t, #FP2
 ; Returns 0 in A.
 
-clear_significand_fpx:
+clear_significand_fp:
         lda     #0
         sta     0,x
         sta     1,x
@@ -175,10 +175,10 @@ clear_significand_fpx:
 
 fp1_is_zero:
         ldx     #FP1
-        bne     fpx_is_zero
+        bne     fp_is_zero
 fp0_is_zero:
         ldx     #FP0
-fpx_is_zero:
+fp_is_zero:
         lda     UnpackedFloat::t,x      ; OR all the significand bytes together
         ora     UnpackedFloat::t+1,x
         ora     UnpackedFloat::t+2,x
@@ -262,7 +262,7 @@ shift_left_from_carry:
 
 mul10_significand:
         ldx     #FP1t
-        jsr     copy_significand_fp0_fpx
+        jsr     copy_significand_fp0_fp
         jsr     shift_left              ; *2
         bcs     @overflow
         jsr     shift_left_from_carry   ; *4
@@ -831,7 +831,7 @@ normalize:
         asl     B                       ; Shift rounding register high bit into carry
         bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
         ldx     #FP1t
-        jsr     clear_significand_fpx
+        jsr     clear_significand_fp
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
         beq     @done                   ; If the value written to FP2 was 0 then all done
@@ -933,7 +933,7 @@ fmul:
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
         ldx     #FP2                    ; Clear the extended significand of FP0
-        jsr     clear_significand_fpx
+        jsr     clear_significand_fp
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
@@ -1000,8 +1000,7 @@ fdiv:
 fdiv_fp1:
         jsr     fp0_is_zero             ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
-        ldx     #FP1
-        jsr     fpx_is_zero             ; Test FP1
+        jsr     fp1_is_zero             ; Test FP1
         bne     @initalize
         sec                             ; Error if FP1 is zero
         rts
@@ -1013,7 +1012,7 @@ fdiv_fp1:
 
 @initalize:
         ldx     #FP2                    ; Copy significand into FP2 so we can use FP0 to build quotient
-        jsr     copy_significand_fp0_fpx
+        jsr     copy_significand_fp0_fp
         mva     #0, D                   ; Extended significand of FP2 will be in D
         mva     #BIAS, C                ; C keeps track of how much bias to add
 

@@ -177,16 +177,16 @@ void format_number(/* AX */ int number);
 #define POSITIVE ((char)0x00)
 #define NEGATIVE ((char)0x80)
 
-#define SET_FPX_FIELDS(fpx, s_value, e_value, t_value) do { \
-    fpx.s = (s_value); \
-    fpx.e = (e_value); \
-    fpx.t = (t_value); \
+#define SET_FP_FIELDS(fp, s_value, e_value, t_value) do { \
+    fp.s = (s_value); \
+    fp.e = (e_value); \
+    fp.t = (t_value); \
 } while (0)
 
-#define ASSERT_FPX_FIELDS_EQ(fpx, s_value, e_value, t_value) do { \
-    ASSERT_EQ(fpx.s, s_value); \
-    ASSERT_EQ(fpx.e, e_value); \
-    ASSERT_EQ(fpx.t, t_value); \
+#define ASSERT_FP_FIELDS_EQ(fp, s_value, e_value, t_value) do { \
+    ASSERT_EQ(fp.s, s_value); \
+    ASSERT_EQ(fp.e, e_value); \
+    ASSERT_EQ(fp.t, t_value); \
 } while (0)
 
 #define ASSERT_FLOAT_EQ(a, b) do { \
