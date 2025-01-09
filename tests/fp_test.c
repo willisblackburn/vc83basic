@@ -29,7 +29,7 @@ void test_load_fp0(void) {
         fprintf(stderr, "  %s:%d: load_fp0(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
                 test_case->f.t, test_case->f.e);
         load_fp0(&test_case->f);
-        ASSERT_FPX_FIELDS_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        ASSERT_FP_FIELDS_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
     }
 }
 
@@ -44,7 +44,7 @@ void test_store_fp0(void) {
         test_case = load_store_test_cases + i;
         fprintf(stderr, "  %s:%d: store_fp0(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
-        SET_FPX_FIELDS(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
+        SET_FP_FIELDS(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fp0(&value);
         ASSERT_FLOAT_EQ(value, test_case->f);
     }
@@ -52,32 +52,32 @@ void test_store_fp0(void) {
 
 void test_swap_fp0_fp1(void) {
     PRINT_TEST_NAME();
-    SET_FPX_FIELDS(FP0, POSITIVE, 2, 12345678L);
-    SET_FPX_FIELDS(FP1, NEGATIVE, 1, 1418858818L);
+    SET_FP_FIELDS(FP0, POSITIVE, 2, 12345678L);
+    SET_FP_FIELDS(FP1, NEGATIVE, 1, 1418858818L);
     swap_fp0_fp1();
-    ASSERT_FPX_FIELDS_EQ(FP0, NEGATIVE, 1, 1418858818L);
-    ASSERT_FPX_FIELDS_EQ(FP1, POSITIVE, 2, 12345678L);
+    ASSERT_FP_FIELDS_EQ(FP0, NEGATIVE, 1, 1418858818L);
+    ASSERT_FP_FIELDS_EQ(FP1, POSITIVE, 2, 12345678L);
 }
 
 void test_adjust_exponent(void) {
     PRINT_TEST_NAME();
-    SET_FPX_FIELDS(FP0, POSITIVE, 0, 0);
+    SET_FP_FIELDS(FP0, POSITIVE, 0, 0);
     adjust_exponent(0, 0);
-    ASSERT_FPX_FIELDS_EQ(FP0, POSITIVE, 0, 0);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 0, 0);
     ASSERT_EQ(C, 0);
     adjust_exponent(1, 0);
-    ASSERT_FPX_FIELDS_EQ(FP0, POSITIVE, 1, 0);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 1, 0);
     ASSERT_EQ(C, 0);
     adjust_exponent(0, 1);
-    ASSERT_FPX_FIELDS_EQ(FP0, POSITIVE, 0, 0);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 0, 0);
     ASSERT_EQ(C, 0);
-    SET_FPX_FIELDS(FP0, POSITIVE, 192, 0);
+    SET_FP_FIELDS(FP0, POSITIVE, 192, 0);
     adjust_exponent(192, 0);
-    ASSERT_FPX_FIELDS_EQ(FP0, POSITIVE, 128, 0);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 128, 0);
     ASSERT_EQ(C, 1);
-    SET_FPX_FIELDS(FP0, POSITIVE, 0, 0);
+    SET_FP_FIELDS(FP0, POSITIVE, 0, 0);
     adjust_exponent(0, 192);
-    ASSERT_FPX_FIELDS_EQ(FP0, POSITIVE, 64, 0);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 64, 0);
     ASSERT_EQ(C, 255);
 }
 
@@ -91,7 +91,7 @@ void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
     ASSERT_EQ(err, 0);
-    ASSERT_FPX_FIELDS_EQ(FP0, s, expect_e, expect_t);
+    ASSERT_FP_FIELDS_EQ(FP0, s, expect_e, expect_t);
 }
 
 void test_normalize(void) {
@@ -210,7 +210,7 @@ void test_int32_to_fp(void) {
     for (i = 0; i < sizeof int32_conversion_test_cases / sizeof *int32_conversion_test_cases; i++) {
         test_case = int32_conversion_test_cases + i;
         fprintf(stderr, "  %s:%d: int32_to_fp(%lu)\n", __FILE__, __LINE__, test_case->int32_value);
-        SET_FPX_FIELDS(FP0, POSITIVE, 0, test_case->int32_value);
+        SET_FP_FIELDS(FP0, POSITIVE, 0, test_case->int32_value);
         int32_to_fp();
         store_fp0(&result);
         ASSERT_FLOAT_EQ(result, test_case->float_value);
@@ -441,7 +441,7 @@ void test_char_to_digit(void) {
 
 void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
     fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X s=%02X)\n", __FILE__, line, t, e, s);
-    SET_FPX_FIELDS(FP0, s, e, t);
+    SET_FP_FIELDS(FP0, s, e, t);
     buffer_pos = 0;
     fp_to_string();
     buffer[buffer_pos] = '\0';
@@ -494,7 +494,7 @@ void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigne
     strcpy(buffer, string);
     string_to_fp(buffer, 0);
     ASSERT_EQ(err, 0);
-    ASSERT_FPX_FIELDS_EQ(FP0, expect_s, expect_e, expect_t);
+    ASSERT_FP_FIELDS_EQ(FP0, expect_s, expect_e, expect_t);
 }
 
 void fail_string_to_fp(const char* string, int line) {
