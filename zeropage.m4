@@ -36,7 +36,7 @@ byte(E)
 
 var(FP0, .sizeof(UnpackedFloat), UnpackedFloat)
 var(FP1, .sizeof(UnpackedFloat), UnpackedFloat)
-var(FP2, .sizeof(UnpackedFloat::t), unsigned long)
+var(FPX, .sizeof(UnpackedFloat::t), unsigned long)
 
 comment Source and destination pointers for memory opreations
 word(src_ptr, void*)

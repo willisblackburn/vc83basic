@@ -86,7 +86,7 @@ void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
                            char expect_e, unsigned long expect_t, int line) {
     FP0s = s;
     FP0e = e;
-    FP2 = x;
+    FPX = x;
     FP0t = t;
     B = b;
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
