@@ -14,7 +14,8 @@ exec_input:
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
         bcs     @done
-        bne     @string
+        lda     decode_name_type        ; Is it a number or a string?
+        bne     @string                 ; It's a string
         ldax    #buffer                 ; Point to buffer
         ldy     buffer_pos              ; Starting at buffer_pos
         jsr     string_to_fp            ; Parse the number
