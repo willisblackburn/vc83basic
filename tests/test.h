@@ -224,8 +224,8 @@ void set_line(int line, const char* data, size_t length) {
 }
 
 void parse_and_decode_name(const char* name) {
-    // Parse given name, then decodes it from line_buffer, in order to set up decode_name_ptr, match_lenght, and high bit
-    // on final character.
+    // Parse given name, then decodes it from line_buffer, in order to set up decode_name_ptr, match_length,
+    // and high bit on final character.
     strcpy(buffer, name);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);

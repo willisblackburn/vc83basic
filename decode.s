@@ -68,7 +68,6 @@ decode_number:
         ldax    line_ptr
         ldy     line_pos
         jsr     string_to_fp            ; May fail with carry set
-        iny                             ; Skip over the 0 that terminated the number
         sty     line_pos                ; Update line_pos
         rts
 

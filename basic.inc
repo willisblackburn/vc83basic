@@ -71,8 +71,6 @@ FP1s = FP1+UnpackedFloat::s
 .global decode_byte
 
 ; encode.s
-.global encode_operator
-.global encode_unary_operator
 .global encode_zero
 .global encode_byte
 
@@ -117,7 +115,6 @@ FP1s = FP1+UnpackedFloat::s
 .global exec_list
 .global list_line
 .global list_statement
-.global list_name
 .global list_directive
 
 ; main.s
