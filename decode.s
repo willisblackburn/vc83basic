@@ -71,7 +71,6 @@ decode_number:
         ldax    line_ptr
         ldy     line_pos
         jsr     string_to_fp            ; May fail with carry set
-        iny                             ; Skip over the 0 that terminated the number
         sty     line_pos                ; Update line_pos
         rts
 
@@ -119,7 +118,7 @@ decode_name:
         ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
         lda     (decode_name_ptr),y
-        cmp     #'$' | NT_STOP          ; If it's there, it will have the high bit set
+        cmp     #'$' | EOT              ; If it's there, it will have the high bit set
         bne     @not_string
         inx                             ; It was a string; change the type
 @not_string:
