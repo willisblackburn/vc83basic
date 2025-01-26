@@ -131,26 +131,13 @@ parse_expression:
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
-        jsr     parse_pattern
-        bcs     @error                  ; Failed
-        ldx     line_pos                ; Get line_buffer write position
-        dex                             ; Back to last character we wrote
-        lda     line_buffer,x
-        ora     #NT_STOP                ; Set bit 7
-        sta     line_buffer,x           ; Write back
-@error:
-        rts
+        jmp     parse_pattern
 
 ; Parses a number from the buffer.
 
 parse_number:
         ldy     #<(number_pattern - name_pattern - 3)
-        jsr     parse_pattern
-        bcs     @error
-        lda     #0                      ; Encode terminating byte
-        jsr     encode_byte
-@error:
-        rts
+        jmp     parse_pattern
 
 name_pattern:
         .byte   'A', 26, <(name_pattern_identifier - name_pattern)
@@ -182,6 +169,7 @@ parse_pattern:
         mva     line_pos, decode_name_ptr           ; Initialize decode_name_ptr to the write position in line_buffer
         mva     #>line_buffer, decode_name_ptr+1    ; High byte of buffer address into decode_name_ptr
         jsr     skip_whitespace
+        ldpha   buffer_pos              ; Save buffer_pos so we can restore if error
 @next_state:
         iny                             ; Move to next state
         iny
@@ -204,7 +192,21 @@ parse_pattern:
 
 @terminal:
         ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
-@done:
+        pla                             ; Pop saved value of buffer_pos off the stack
+        bcs     @error
+
+; Set the EOT bit on most recently encoded byte.
+
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        ora     #EOT                    ; Set bit 7
+        sta     line_buffer,x           ; Write back
+        rts
+
+@error:
+        sta     buffer_pos              ; Restore buffer_pos from stack
+        mva     decode_name_ptr, line_pos   ; Restore line_pos to the value we saved earlier 
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.

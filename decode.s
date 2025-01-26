@@ -5,6 +5,7 @@
 ; For all functions, line_pos is the read position in line_ptr.
 
 ; Decodes a number and returns it in AX.
+; DE SAFE
 
 decode_number:
         ldax    line_ptr
