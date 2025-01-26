@@ -6,15 +6,15 @@ void set_decode_name_ptr(const char* name) {
     strcpy(buffer, name);
     decode_name_ptr = buffer;
     decode_name_length = strlen(buffer);
-    buffer[decode_name_length - 1] |= NT_STOP;
+    buffer[decode_name_length - 1] |= EOT;
 }
 
 void test_evaluate_expression(void) {
     int value;
 
-    const char line_data_1[] = { '5', '2', '2', 0 };
-    const char line_data_2[] = { 'X', 'Y' | NT_STOP };
-    const char line_data_3[] = { 'D', 'A', 'T', 'A' | NT_STOP };
+    const char line_data_1[] = { '5', '2', '2' | EOT };
+    const char line_data_2[] = { 'X', 'Y' | EOT };
+    const char line_data_3[] = { 'D', 'A', 'T', 'A' | EOT };
 
     PRINT_TEST_NAME();
 

@@ -58,12 +58,12 @@ decode_expression:
         rts
 
 ; Decodes a number and returns it in AX.
+; DE SAFE
 
 decode_number:
         ldax    line_ptr
         ldy     line_pos
         jsr     read_number             ; May fail with carry set
-        iny                             ; Skip over the 0 that terminated the number
         sty     line_pos                ; Update line_pos
         rts
 

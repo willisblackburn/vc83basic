@@ -8,7 +8,6 @@ comment Name table definitions
 
 def(NT_VAR,             hex(10))
 def(NT_RPT_VAR,         hex(11))
-def(NT_STOP,            hex(80))
 
 comment Tokenized form constants
 
@@ -50,6 +49,7 @@ def(PS_RUNNING,         hex(01))
 
 comment Other constants
 
+def(EOT, hex(80))
 def(BUFFER_SIZE, 256)
 def(PATTERN_OK, hex(80))
 def(PATTERN_ERROR, hex(81))
