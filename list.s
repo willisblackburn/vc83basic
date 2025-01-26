@@ -105,41 +105,39 @@ list_tokenized_name:
         dec     name_index
         bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
 @not_found:
-        mvax    name_ptr, decode_name_ptr   ; Copy into decode_name_ptr
+        ldax    name_ptr                ; Output from name_ptr
+        ldy     #0                      ; Start at offset 0
 
 ; Fall through
 
-; Outputs a name.
-; Does NOT add whitespace; callers must add (or not).
-; decode_name_ptr = pointer to the start of the name (note decode_name_length is not required)
-; On return, Y will be set to the length of the name.
+; Output text from the line up to EOT.
+; AX = the source pointer
+; Y = the offset from the source pointer
+; Returns the new offset in Y.
 
-list_name:
-        ldy     #$FF                    ; Y=0 after INY
-@next:
-        iny
-        bne     @not_initial_alpha
-        lda     (decode_name_ptr),y     ; Check first character of name to see if we need to add whitespace
+list_characters_to_eot:
+        stax    src_ptr
+        lda     (src_ptr),y             ; Check first character to see if we need to add whitespace
         and     #$7F                    ; Clear high bit if it's set
         cmp     #'A'
-        bcc     @not_initial_alpha
+        bcc     @next
         jsr     add_whitespace
-@not_initial_alpha:
-        lda     (decode_name_ptr),y
+@next:
+        lda     (src_ptr),y
         bmi     @last
         jsr     append_buffer
-        bne     @next
-
-@last:
         iny
+        bne     @next
+@last:
+        iny                             ; Increment position past the last character
         and     #$7F                    ; Clear high bit
-        clc                             ; This will cause expression decode handlers to return success
+        clc                             ; Signal success for the benefit of callers who JMP here
         jmp     append_buffer
 
 list_argument_type_vectors:
-        .word   list_variable-1             ; NT_VAR
+        .word   list_literal-1              ; NT_VAR
         .word   list_repeated_variable-1    ; NT_RPT_VAR
-        .word   list_number-1               ; NT_NUMBER
+        .word   list_literal-1              ; NT_NUMBER
         .word   list_repeated_number-1      ; NT_RPT_NUMBER
 
 ; Lists a single directive from the token stream.
@@ -190,8 +188,8 @@ list_argument_list:
 list_vectors:
         .word   list_unary_operator-1   ; XH_UNARY_OP
         .word   list_operator-1         ; XH_OP
-        .word   list_number-1           ; XH_NUMBER
-        .word   list_variable-1         ; XH_VAR
+        .word   list_literal-1          ; XH_NUMBER
+        .word   list_literal-1          ; XH_VAR
         .word   list_paren-1            ; XH_PAREN
 
 list_expression:
@@ -211,27 +209,19 @@ list_operator:
         ldax    #operator_name_table
         jmp     list_tokenized_name
 
-list_number:
+list_literal:
         jsr     add_whitespace
+        ldax    line_ptr
         ldy     line_pos
-@next:
-        lda     (line_ptr),y            ; Load next character
-        beq     @done                   ; If 0 then finished
-        jsr     append_buffer           ; Else output
-        iny
-        jmp     @next
-
-@done:
-        iny                             ; Skip terminator
+        jsr     list_characters_to_eot
         sty     line_pos                ; Update line_pos
-        clc                             ; Signal success
         rts
 
 loop_list_repeated_number:
         lda     #','                    ; Write ',' to output
         jsr     append_buffer
 list_repeated_number:
-        jsr     list_number             ; List one number
+        jsr     list_literal            ; List one number
         ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_number   ; Not 0 so keep going
@@ -239,15 +229,11 @@ list_repeated_number:
         clc                             ; Signal success
         rts
 
-list_variable:
-        jsr     decode_name             ; Set up decode_name_ptr
-        jmp     list_name
-
 loop_list_repeated_variable:
         lda     #','                    ; Write ',' to output
         jsr     append_buffer
 list_repeated_variable:
-        jsr     list_variable           ; List one variable
+        jsr     list_literal            ; List one variable
         ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
         bne     loop_list_repeated_variable ; Not 0 so keep going
