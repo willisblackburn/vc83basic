@@ -14,9 +14,9 @@ void test_initialize_name_ptr(void) {
 
 void test_advance_name_ptr(void) {
 
-    const char name_table_data[] = { 6, 'L', 'I', 'S', 'T' | NT_STOP, 1, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
-        'T', 'O' | NT_STOP, 1 };
-    const char name_table_data_2[] = { 4, 'R', 'U', 'N' | NT_STOP, 0 };
+    const char name_table_data[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
+        'T', 'O' | EOT, 1 };
+    const char name_table_data_2[] = { 4, 'R', 'U', 'N' | EOT, 0 };
     static char large_name_table[541];
 
     PRINT_TEST_NAME();
@@ -28,7 +28,7 @@ void test_advance_name_ptr(void) {
     // Add a large 520-byte variable
     large_name_table[16] = 0x82; // length high byte with high bit set
     large_name_table[17] = 0x08; // length low byte
-    large_name_table[18] = 'X' | NT_STOP;
+    large_name_table[18] = 'X' | EOT;
     // Next variable will be at offset 16 + 520 = 536
     memcpy(large_name_table + 536, name_table_data_2, sizeof name_table_data_2);
 
@@ -82,18 +82,18 @@ void call_find_name_fail(const char* name, const char* name_table, char expect_i
 
 void test_find_name(void) {
 
-    const char name_table_1[] = { 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 0 };
-    const char name_table_2[] = { 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 'X' | NT_STOP, 0 };
-    const char name_table_3[] = { 1, 'X' | NT_STOP, 6, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 0 };
-    const char name_table_4[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
-        'T', 'O' | NT_STOP, 1, 0 };
-    const char name_table_5[] = { 6, 'L', 'I', 'S', 'T' | NT_STOP, 1, 10, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1, 
-        'T', 'O' | NT_STOP, 1, 0 };
-    const char name_table_6[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 0 };
-    const char name_table_7[] = { 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | NT_STOP, 0 };
-    const char name_table_8[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | NT_STOP, 0 };
-    const char name_table_9[] = { 5, 'P', 'R', 'I', 'N' | NT_STOP, 0 };
-    const char name_table_10[] = { 5, 'L', 'I', 'S', 'T' | NT_STOP, 5, 'P', 'R', 'I', 'N' | NT_STOP, 0 };
+    const char name_table_1[] = { 6, 'P', 'R', 'I', 'N', 'T' | EOT, 0 };
+    const char name_table_2[] = { 6, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 'X' | EOT, 0 };
+    const char name_table_3[] = { 1, 'X' | EOT, 6, 'P', 'R', 'I', 'N', 'T' | EOT, 0 };
+    const char name_table_4[] = { 5, 'L', 'I', 'S', 'T' | EOT, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
+        'T', 'O' | EOT, 1, 0 };
+    const char name_table_5[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
+        'T', 'O' | EOT, 1, 0 };
+    const char name_table_6[] = { 5, 'L', 'I', 'S', 'T' | EOT, 0 };
+    const char name_table_7[] = { 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | EOT, 0 };
+    const char name_table_8[] = { 5, 'L', 'I', 'S', 'T' | EOT, 8, 'P', 'R', 'I', 'N', 'T', 'E', 'R' | EOT, 0 };
+    const char name_table_9[] = { 5, 'P', 'R', 'I', 'N' | EOT, 0 };
+    const char name_table_10[] = { 5, 'L', 'I', 'S', 'T' | EOT, 5, 'P', 'R', 'I', 'N' | EOT, 0 };
 
     PRINT_TEST_NAME();
 
@@ -119,9 +119,9 @@ void test_find_name(void) {
 
 void test_find_name_operators(void) {
 
-    const char name_table_1[] = { 3, '>', '=' | NT_STOP, 0 };
-    const char name_table_2[] = { 2, '>' | NT_STOP, 3, '>', '=' | NT_STOP, 0 };
-    const char name_table_3[] = { 2, '=' | NT_STOP, 3, '>', '=' | NT_STOP, 2, '>' | NT_STOP, 0 };
+    const char name_table_1[] = { 3, '>', '=' | EOT, 0 };
+    const char name_table_2[] = { 2, '>' | EOT, 3, '>', '=' | EOT, 0 };
+    const char name_table_3[] = { 2, '=' | EOT, 3, '>', '=' | EOT, 2, '>' | EOT, 0 };
 
     PRINT_TEST_NAME();
 
@@ -148,7 +148,7 @@ void test_add_variable(void) {
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
     ASSERT_EQ(variable_name_table_ptr[0], 4); // length
-    ASSERT_EQ(variable_name_table_ptr[1], 'X' | NT_STOP);
+    ASSERT_EQ(variable_name_table_ptr[1], 'X' | EOT);
     ASSERT_EQ(variable_name_table_ptr[2], 0); // 2 data bytes
     ASSERT_EQ(variable_name_table_ptr[3], 0);
     ASSERT_EQ(variable_name_table_ptr[4], 0); // end of variable name table
@@ -166,7 +166,7 @@ void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[4], 0x82); // length (515) high byte with high bit set
     ASSERT_EQ(variable_name_table_ptr[5], 0x03); // length low byte
     ASSERT_EQ(variable_name_table_ptr[6], 'A');
-    ASSERT_EQ(variable_name_table_ptr[7], 'B' | NT_STOP);
+    ASSERT_EQ(variable_name_table_ptr[7], 'B' | EOT);
     ASSERT_EQ(variable_name_table_ptr[8], 0); // data bytes
     ASSERT_EQ(variable_name_table_ptr[519], 0); // end of variable name table
     ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 4 + 4);

@@ -22,7 +22,7 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     int value;
-    const char line_data[] = { '0', 0, '2', '5', '6', 0, '7', '6', '9', 0 };
+    const char line_data[] = { '0' | EOT, '2', '5', '6' | EOT, '7', '6', '9' | EOT };
 
     PRINT_TEST_NAME();
 
@@ -39,7 +39,7 @@ void test_decode_number(void) {
 }
 
 void test_decode_name(void) {
-    const char line_data[] = {  'X' | NT_STOP, 'T', 'H', 'I', 'N', 'G', '3' | NT_STOP };
+    const char line_data[] = {  'X' | EOT, 'T', 'H', 'I', 'N', 'G', '3' | EOT };
 
     PRINT_TEST_NAME();
 
@@ -93,7 +93,7 @@ int var_count;
 void xh_variable(void) {
     decode_name();
     ++var_count;
-    ASSERT_EQ(*decode_name_ptr, 'X' | NT_STOP);
+    ASSERT_EQ(*decode_name_ptr, 'X' | EOT);
 }
 
 int paren_count;
@@ -116,19 +116,19 @@ void test_decode_expression(void) {
 
     // 4112+(X/3)*-X
     const char line_data[] = {
-        '4', '1', '1', '2', 0,
+        '4', '1', '1', '2' | EOT,
         TOKEN_OP | OP_ADD,        
         '(',
-        'X' | NT_STOP,
+        'X' | EOT,
         TOKEN_OP | OP_DIV,              
-        '3', 0,
+        '3' | EOT,
         0,
         TOKEN_OP | OP_MUL, 
         TOKEN_UNARY_OP | UNARY_OP_MINUS,             
-        'X' | NT_STOP,                  // X
+        'X' | EOT,                  // X
         TOKEN_OP | OP_OR,
         TOKEN_UNARY_OP | UNARY_OP_NOT,
-        'X' | NT_STOP,
+        'X' | EOT,
         0
     };
 
