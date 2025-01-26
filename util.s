@@ -205,26 +205,35 @@ read_number:
         stax    src_ptr                 ; Store src_ptr
         sty     B                       ; Store starting position in B so we can read it later
         lda     #0                      ; Intialize the value to 0
-        tax
-@next:
-        pha                             ; Save A (low byte of value)
+        sta     C                       ; Keep the low byte of the result in C
+        tax                             ; X is the high byte
+        dey                             ; Negate the next instruction
+@next_character:
+        iny                             ; Increment the read position
         lda     (src_ptr),y
+        and     #$7F                    ; Clear EOT bit if set
         jsr     char_to_digit           ; X SAFE function
-        sta     C                       ; Store the digit value
-        pla                             ; Retrieve the low byte of value
         bcs     @finish                 ; If there was an error in char_to_digit, stop parsing
-        iny                             ; No error, increment read position
+        pha                             ; Save the digit on the stack
+        lda     C                       ; Load low byte; result is now in AX
         jsr     mul10                   ; Multiply the value by 10 (preserves Y)
+        sta     C                       ; High byte back to C
+        pla                             ; Get digit back into A
         clc
         adc     C                       ; Add the digit value
-        bcc     @next                   ; If carry clear then next digit
+        sta     C                       ; Store back in C
+        bcc     @check_eot              ; If carry clear then done with this digit
         inx                             ; Otherwise increment high byte
-        jmp     @next
+@check_eot:
+        lda     (src_ptr),y             ; Reload the original character
+        bpl     @next_character         ; If EOT not set then carry on
+        iny                             ; Move past the character with the EOT bit set
 
 @finish:
         cpy     B                       ; Did we parse anything?
         beq     @error                  ; Nope
         clc                             ; Clear carry to signal OK
+        lda     C                       ; Load low byte of result from C
 @error:
         rts
 
