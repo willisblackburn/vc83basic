@@ -63,6 +63,7 @@ read_string:
 @next:
         ldy     B                       ; Read offset
         lda     (src_ptr),y             ; Get next source character
+        and     #$7F                    ; Remove EOT bit if set
         beq     @finish                 ; Was zero, definitely finished
         cmp     D                       ; Was it the terminator?
         bne     @not_terminator         ; Nope
@@ -70,7 +71,7 @@ read_string:
         bne     @finish                 ; Nope; we're finished
         inc     B                       ; Always skip over this quote
         iny                             ; Increment Y in order to check the next character
-        cmp     (src_ptr),y             ; Is it also a double quote?
+        cmp     (src_ptr),y             ; Check second double quote (if present cannot have EOT set)
         bne     @finish                 ; Nope, just finish; B points to character after double quote
 @not_terminator:
         ldy     C                       ; Write offset
