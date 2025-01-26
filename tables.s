@@ -1,47 +1,47 @@
 .include "basic.inc"
 
 statement_name_table:
-        .byte   :+ - *, 'E', 'N', 'D' | NT_STOP
-:       .byte   :+ - *, 'R', 'U', 'N' | NT_STOP
-:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | NT_STOP, 1
-:       .byte   :+ - *, 'L', 'E', 'T' | NT_STOP, NT_VAR, '=', 1
-:       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | NT_STOP, NT_RPT_VAR
-:       .byte   :+ - *, 'L', 'I', 'S', 'T' | NT_STOP, 2
-:       .byte   :+ - *, 'G', 'O', 'T', 'O' | NT_STOP, NT_NUMBER
-:       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | NT_STOP, NT_NUMBER
-:       .byte   :+ - *, 'R', 'E', 'T', 'U', 'R', 'N' | NT_STOP
-:       .byte   :+ - *, 'P', 'O', 'P' | NT_STOP
-:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'T', 'O', NT_RPT_NUMBER
-:       .byte   :+ - *, 'O', 'N' | NT_STOP, 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUMBER
-:       .byte   :+ - *, 'F', 'O', 'R' | NT_STOP, NT_VAR, '=', 1, 'T', 'O', 1
-:       .byte   :+ - *, 'N', 'E', 'X', 'T' | NT_STOP, NT_VAR
-:       .byte   :+ - *, 'S', 'T', 'O', 'P' | NT_STOP
-:       .byte   :+ - *, 'C', 'O', 'N', 'T' | NT_STOP
-:       .byte   :+ - *, 'I', 'F' | NT_STOP, 1, 'T', 'H', 'E', 'N', NT_STATEMENT
-:       .byte   :+ - *, 'N', 'E', 'W' | NT_STOP
-:       .byte   :+ - *, 'C', 'L', 'R' | NT_STOP
+        .byte   :+ - *, 'E', 'N', 'D' | EOT
+:       .byte   :+ - *, 'R', 'U', 'N' | EOT
+:       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | EOT, 1
+:       .byte   :+ - *, 'L', 'E', 'T' | EOT, NT_VAR, '=', 1
+:       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | EOT, NT_RPT_VAR
+:       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT, 2
+:       .byte   :+ - *, 'G', 'O', 'T', 'O' | EOT, NT_NUMBER
+:       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | EOT, NT_NUMBER
+:       .byte   :+ - *, 'R', 'E', 'T', 'U', 'R', 'N' | EOT
+:       .byte   :+ - *, 'P', 'O', 'P' | EOT
+:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'T', 'O', NT_RPT_NUMBER
+:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUMBER
+:       .byte   :+ - *, 'F', 'O', 'R' | EOT, NT_VAR, '=', 1, 'T', 'O', 1
+:       .byte   :+ - *, 'N', 'E', 'X', 'T' | EOT, NT_VAR
+:       .byte   :+ - *, 'S', 'T', 'O', 'P' | EOT
+:       .byte   :+ - *, 'C', 'O', 'N', 'T' | EOT
+:       .byte   :+ - *, 'I', 'F' | EOT, 1, 'T', 'H', 'E', 'N', NT_STATEMENT
+:       .byte   :+ - *, 'N', 'E', 'W' | EOT
+:       .byte   :+ - *, 'C', 'L', 'R' | EOT
 :       .byte   0
 
 operator_name_table:
-        .byte   :+ - *, '+' | NT_STOP
-:       .byte   :+ - *, '-' | NT_STOP
-:       .byte   :+ - *, '*' | NT_STOP
-:       .byte   :+ - *, '/' | NT_STOP
-:       .byte   :+ - *, '^' | NT_STOP
-:       .byte   :+ - *, '&' | NT_STOP
-:       .byte   :+ - *, '=' | NT_STOP
-:       .byte   :+ - *, '<' | NT_STOP
-:       .byte   :+ - *, '>' | NT_STOP
-:       .byte   :+ - *, '<', '>' | NT_STOP
-:       .byte   :+ - *, '<', '=' | NT_STOP
-:       .byte   :+ - *, '>', '=' | NT_STOP
-:       .byte   :+ - *, 'A', 'N', 'D' | NT_STOP
-:       .byte   :+ - *, 'O', 'R' | NT_STOP
+        .byte   :+ - *, '+' | EOT
+:       .byte   :+ - *, '-' | EOT
+:       .byte   :+ - *, '*' | EOT
+:       .byte   :+ - *, '/' | EOT
+:       .byte   :+ - *, '^' | EOT
+:       .byte   :+ - *, '&' | EOT
+:       .byte   :+ - *, '=' | EOT
+:       .byte   :+ - *, '<' | EOT
+:       .byte   :+ - *, '>' | EOT
+:       .byte   :+ - *, '<', '>' | EOT
+:       .byte   :+ - *, '<', '=' | EOT
+:       .byte   :+ - *, '>', '=' | EOT
+:       .byte   :+ - *, 'A', 'N', 'D' | EOT
+:       .byte   :+ - *, 'O', 'R' | EOT
 :       .byte   0
 
 unary_operator_name_table:
-        .byte   :+ - *, '-' | NT_STOP
-:       .byte   :+ - *, 'N', 'O', 'T' | NT_STOP
+        .byte   :+ - *, '-' | EOT
+:       .byte   :+ - *, 'N', 'O', 'T' | EOT
 :       .byte   0
 
 ; Operator precedence table

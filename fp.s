@@ -600,7 +600,8 @@ output_y_zeros:
         rts
 
 ; Converts a string from the buffer into an FP number in FP0.
-; If the first character is not a number or a +/-, then return an error. Otherwise, read up to the first non-digit.
+; If the first character is not a number or a '-', then return an error. Otherwise, read up to the first non-digit or
+; until a character with the EOT bit set.
 ; The caller should skip whitespace (if necessary) before calling this function.
 ; AX = the buffer address (stored in src_ptr)
 ; Y = the starting offset
@@ -612,19 +613,20 @@ string_to_fp:
         jsr     clear_fp0               ; Reset to zero (including sign)
         mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
         lda     (src_ptr),y
-        cmp     #'-'                    ; Check if it's negative
+        cmp     #'-'                    ; Check if it's negative; note that '-' will never have EOT set
         bne     @not_negative
         ror     FP0s                    ; If equal then carry will have been set; roll into sign
 @next_character:
         iny                             ; Skip past negative sign
 @not_negative:
         lda     (src_ptr),y             ; Get the next character
+        and     #$7F                    ; Clear EOT bit if set
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
         lda     D                       ; Check if we've already seen a decimal
         bpl     @err_multiple_decimals
         mva     #0, D                   ; Set D to 0 to count digits after '.'
-        beq     @next_character         ; Unconditional
+        beq     @check_eot              ; Unconditional
 
 @not_decimal_point:
         cmp     #'E'                    ; Is it 'E'?
@@ -645,13 +647,13 @@ string_to_fp:
         inc     D                       ; Increment digits after '.'
         adc     FP0t                    ; Add digit to LSB (carry will be clear)
         sta     FP0t
-        bcc     @next_character         ; If no carry then next character
+        bcc     @check_eot              ; If no carry then next character
         inc     FP0t+1                  ; Otherwise increment next byte
-        bne     @next_character         ; etc,
+        bne     @check_eot              ; etc,
         inc     FP0t+2
-        bne     @next_character
+        bne     @check_eot
         inc     FP0t+3
-        bne     @next_character         ; If the last byte wrapped to zero then overflow
+        bne     @check_eot              ; If the last byte wrapped to zero then overflow
 
 @err_multiple_decimals:
 @err_overflow:
@@ -659,6 +661,11 @@ string_to_fp:
         ldy     E                       ; Reset position to start for return
         sec                             ; Signal error
         rts
+
+@check_eot:
+        lda     (src_ptr),y             ; Reload the original character
+        bpl     @next_character         ; If EOT not set then carry on
+        iny                             ; EOT was set to increment past this character
 
 @not_digit:
         lda     D                       ; Has D changed at all?

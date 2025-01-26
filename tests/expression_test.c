@@ -36,14 +36,14 @@ void test_stack_alloc_free(void) {
 void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
                         const Float* expected11) {
 
-    char line_data[] = { '0', 0, 0 /* op */, '0', 0, 0 };
+    char line_data[] = { '0' | EOT, 0 /* op */, '0' | EOT, 0 };
     Float value;
 
     DEBUG(op);
 
-    line_data[2] = TOKEN_OP | op;
-    line_data[0] = '0';
-    line_data[3] = '0';
+    line_data[1] = TOKEN_OP | op;
+    line_data[0] = '0' | EOT;
+    line_data[2] = '0' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -51,16 +51,16 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected00);
 
-    line_data[0] = '0';
-    line_data[3] = '1';
+    line_data[0] = '0' | EOT;
+    line_data[2] = '1' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected01);
 
-    line_data[0] = '1';
-    line_data[3] = '0';
+    line_data[0] = '1' | EOT;
+    line_data[2] = '0' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -68,8 +68,8 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected10);
 
-    line_data[0] = '1';
-    line_data[3] = '1';
+    line_data[0] = '1' | EOT;
+    line_data[2] = '1' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -80,13 +80,13 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
 
 void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
 
-    char line_data[] = { 0 /* op */, '0', 0, 0 };
+    char line_data[] = { 0 /* op */, '0' | EOT, 0 };
     Float value;
 
     DEBUG(op);
 
     line_data[0] = TOKEN_UNARY_OP | op;
-    line_data[1] = '0';
+    line_data[1] = '0' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -94,7 +94,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected0);
 
-    line_data[1] = '1';
+    line_data[1] = '1' | EOT;
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -135,10 +135,10 @@ void test_evaluate_expression_op_precedence(void) {
     Float value;
 
     // 2-1-1 = 0
-    char line_data_1[] = { '2', 0, TOKEN_OP | OP_SUB, '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0 };
+    char line_data_1[] = { '2' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, 0 };
     Float result_1 = { 0x00000000, 0 };
     // 2-(1-1) = 2
-    char line_data_2[] = { '2', 0, TOKEN_OP | OP_SUB, '(', '1', 0, TOKEN_OP | OP_SUB, '1', 0, 0, 0 };
+    char line_data_2[] = { '2' | EOT, TOKEN_OP | OP_SUB, '(', '1' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, 0, 0 };
     Float result_2 = { 0x00000000, 128 };
 
     PRINT_TEST_NAME();

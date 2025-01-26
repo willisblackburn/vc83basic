@@ -104,9 +104,9 @@ void test_grow(void) {
 void test_shrink(void) {
 
     const char variable_name_table_data[] = { 
-        4, 'A' | NT_STOP, 0x10, 0x11, 
-        4, 'B' | NT_STOP, 0x12, 0x13,
-        8, 'X', 'Y' | NT_STOP, 0x14, 0x15, 0x16, 0x17, 0x18,
+        4, 'A' | EOT, 0x10, 0x11, 
+        4, 'B' | EOT, 0x12, 0x13,
+        8, 'X', 'Y' | EOT, 0x14, 0x15, 0x16, 0x17, 0x18,
         0 };
 
     // To test shrink, we first grow some sections, write some data to them, then make sure that data is
