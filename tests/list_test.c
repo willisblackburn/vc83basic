@@ -28,12 +28,12 @@ void call_list_directive(char directive, const char* line_data, size_t line_data
 
 void test_list_directive(void) {
 
-    const char line_data_1[] = { '4', '1', '1', '2', 0 };
-    const char line_data_2[] = { 'X' | NT_STOP };
-    const char line_data_3[] = { 'X' | NT_STOP, '4', '1', '1', '2', 0 };
-    const char line_data_4[] = { 'X' | NT_STOP };
-    const char line_data_5[] = { 'X' | NT_STOP, 0 };
-    const char line_data_6[] = { 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_1[] = { '4', '1', '1', '2' | EOT };
+    const char line_data_2[] = { 'X' | EOT };
+    const char line_data_3[] = { 'X' | EOT, '4', '1', '1', '2' | EOT };
+    const char line_data_4[] = { 'X' | EOT };
+    const char line_data_5[] = { 'X' | EOT, 0 };
+    const char line_data_6[] = { 'X' | EOT, 'Y' | EOT, 0 };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
@@ -67,11 +67,11 @@ void call_list_statement(const char* line_data, size_t line_data_length, const c
 void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, '3', '2', '7', '6', '7', 0 };
-    const char line_data_3[] = { ST_LIST, '1', '0', 0, '2', '0', 0 };
-    const char line_data_4[] = { ST_LIST, '1', '0', 0, 0  };
+    const char line_data_2[] = { ST_LET, 'X' | EOT, '3', '2', '7', '6', '7' | EOT };
+    const char line_data_3[] = { ST_LIST, '1', '0' | EOT, '2', '0' | EOT };
+    const char line_data_4[] = { ST_LIST, '1', '0' | EOT, 0  };
     const char line_data_5[] = { ST_LIST, 0, 0 };
-    const char line_data_6[] = { ST_INPUT, 'X' | NT_STOP, 'Y' | NT_STOP, 0 };
+    const char line_data_6[] = { ST_INPUT, 'X' | EOT, 'Y' | EOT, 0 };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
@@ -95,8 +95,8 @@ void test_list_statment(void) {
 
 void test_list_line(void) {
 
-    const char line_data_1[] = { ST_PRINT, '2', '5', '7', 0 };
-    const char line_data_2[] = { ST_LET, 'X' | NT_STOP, '3', '2', '7', '6', '7', 0 };
+    const char line_data_1[] = { ST_PRINT, '2', '5', '7' | EOT };
+    const char line_data_2[] = { ST_LET, 'X' | EOT, '3', '2', '7', '6', '7' | EOT };
     
     const char list_1[] = "10 PRINT 257";
     const char list_2[] = "400 LET X=32767";
@@ -120,7 +120,7 @@ void test_list_line(void) {
 
     // Test that list_line returns carry set when at the last line (or any negative-numbered line):
 
-    set_line(-1, line_data_2, 0);
+    set_line(-1, line_data_2, sizeof line_data_2);
     list_line();
     ASSERT_NE(err, 0);
 }

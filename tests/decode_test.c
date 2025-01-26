@@ -22,7 +22,7 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     int value;
-    const char line_data[] = { '0', 0, '2', '5', '6', 0, '7', '6', '9', 0 };
+    const char line_data[] = { '0' | EOT, '2', '5', '6' | EOT, '7', '6', '9' | EOT };
 
     PRINT_TEST_NAME();
 
@@ -39,7 +39,7 @@ void test_decode_number(void) {
 }
 
 void test_decode_name(void) {
-    const char line_data[] = {  'X' | NT_STOP, 'T', 'H', 'I', 'N', 'G', '3' | NT_STOP };
+    const char line_data[] = {  'X' | EOT, 'T', 'H', 'I', 'N', 'G', '3' | EOT };
 
     PRINT_TEST_NAME();
 

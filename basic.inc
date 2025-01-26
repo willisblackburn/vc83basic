@@ -46,7 +46,6 @@ DE = D
 .global exec_list
 .global list_line
 .global list_statement
-.global list_name
 .global list_directive
 
 ; main.s
