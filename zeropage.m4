@@ -106,7 +106,7 @@ word(decode_name_ptr, const char*)
 comment Length of the name referred to by decode_name_ptr
 byte(decode_name_length)
 
-comment Whether the program is not running, running, stopped, or awaiting reset.
+comment Whether the program is not running, running, stopped, or awaiting reset
 byte(program_state)
 
 comment The vector table pointer that was passed into decode_expression
