@@ -5,20 +5,24 @@ ifelse(
 define(`var', ``$1: .res $2
 .export _$1 = $1'')
 define(`comment', `;')
-define(`block', `')
+define(`block', ``$1 = *
+$1_SIZE = $1_END - $1
+.assert $1_SIZE = $2, error'')
+define(`endblock', ``$1_END = *'')
     ',
     OUTPUT, `inc', `
 define(`var', ``.globalzp $1'')
 define(`comment', `;')
-define(`block', `$1 = $2
-$1_SIZE = $3 - $2
-.assert $3 - $2 = $4, error')
+define(`block', ``.globalzp $1
+.globalzp $1_SIZE'')
+define(`endblock', `')
     ',
     OUTPUT, `h', `
 define(`var', ``extern $3 $1;
 #pragma zpsym("$1")'')
 define(`comment', `//')
 define(`block', `')
+define(`endblock', `')
     ')
 
 define(`byte', `var($1, 1, char)')
@@ -69,7 +73,7 @@ comment The line number sought by find_line
 word(line_number, int)
 
 comment PARSER_STATE is the set of zero page values we save when recursively parsing expressions
-block(PARSER_STATE, name_ptr, program_state, 8)
+block(PARSER_STATE, 8)
 
 comment Pointer to current name table entry
 word(name_ptr, char*)
@@ -81,10 +85,13 @@ comment Index of name in name table
 byte(name_index)
 
 comment DECODE_NAME_STATE is the set of zero page fields that describe a name decoded from a program line
-block(DECODE_NAME_STATE, decode_name_ptr, program_state, 3)
+block(DECODE_NAME_STATE, 3)
 
 comment Pointer to name decoded from line
 word(decode_name_ptr, const char*)
 
 comment Length of the name referred to by decode_name_ptr
 byte(decode_name_length)
+
+endblock(DECODE_NAME_STATE)
+endblock(PARSER_STATE)
