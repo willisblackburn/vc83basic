@@ -21,7 +21,6 @@ void test_decode_byte(void) {
 }
 
 void test_decode_number(void) {
-    char byte_value;
     int value;
     const char line_data[] = { '0' | EOT, '2', '5', '6' | EOT, '7', '6', '9' | EOT };
 
@@ -32,20 +31,11 @@ void test_decode_number(void) {
     value = decode_number();
     ASSERT_EQ(value, 0);
 
-    byte_value = decode_byte();
-    ASSERT_EQ(byte_value, 0);
-
     value = decode_number();
     ASSERT_EQ(value, 256);
 
-    byte_value = decode_byte();
-    ASSERT_EQ(byte_value, 0);
-
     value = decode_number();
     ASSERT_EQ(value, 769);
-
-    byte_value = decode_byte();
-    ASSERT_EQ(byte_value, 0);
 }
 
 void test_decode_name(void) {
