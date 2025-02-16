@@ -119,17 +119,17 @@ parse_directive:
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        sty     argument_count          ; Remember the number of arguments we want
+        tya                             ; Pass in expected number of arguments
         jsr     parse_argument_list
         bcs     @pop_parser_state       ; Error parsing arguments
-        lda     argument_count
         beq     @pop_parser_state       ; Parsed all arguments; carry must be clear here because BCS above
         sec                             ; If next condition met, return failure
         bmi     @pop_parser_state       ; Parsed too many arguments
+        sta     B                       ; Store number of remaining arguments in B
 @next_missing_argument:
         jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
         bcs     @pop_parser_state       ; encode_byte error
-        dec     argument_count          ; Done with one "no value"
+        dec     B                       ; Done with one "no value"
         bne     @next_missing_argument  ; Loop if more
         beq     @pop_parser_state       ; Otherwise done; carry will be clear because BCS above
 
@@ -161,22 +161,28 @@ parse_repeated_variable:
         rts
 
 ; Parses a list of arguments separated by commas.
-; Decrements argument_count for each argument read, which the caller can check, if it cares.
+; Accepts the expected number of arguments in A and decrements for each argument, returning the result in A, which
+; will be either negative if we parsed too many arguments, 0 if exactly the expected number, and positive if some
+; arguments were missing.
 ; Zero-length argument lists are okay, but if we find a comma, there has to be a following argument.
 
 parse_argument_list:
+        pha                             ; Store the argument count that was passed in
         jsr     parse_expression        ; Parse the first argument
         bcc     @next                   ; Found one argument; continue
         clc                             ; Otherwise return success
+        pla
         rts
 
 @next:
-        dec     argument_count          ; One argument done
+        tsx                             ; Set up stack access
+        dec     $101,x                  ; Decrement the argument count
         jsr     parse_argument_separator    ; Look for argument separator
         bcc     @done                   ; No separator; return
         jsr     parse_expression        ; Parse the argument following the separator
         bcc     @next                   ; Failing to parse an argument just means we reached the end
 @done:
+        pla                             ; Return modified argument count in A; sets flags
         rts                             ; Accurately returns carry set on failure, clear on success
 
 ; Parses and tokenizes a expression.
