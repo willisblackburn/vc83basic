@@ -70,9 +70,6 @@ word(himem_ptr, void*)
 comment Read/write position in buffer
 byte(buffer_pos)
 
-comment The number of arguments that parse_argument_list is parsing
-byte(argument_count)
-
 comment Read/write position in line
 byte(line_pos)
 
