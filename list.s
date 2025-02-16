@@ -185,14 +185,15 @@ list_directive:
 
 list_argument_list:
         and     #$07                    ; Isolate the count
-        sta     argument_count          ; Re-use argument_count from parser module
+        pha                             ; Save on the stack
         jsr     decode_byte             ; Check if the next argument is 0
         beq     @no_value               ; If so then don't list
 @next_argument:
         dec     line_pos                ; Back up
         jsr     list_expression         ; List the expression
 @no_value:
-        dec     argument_count          ; Done with one argument
+        tsx                             ; Set up stack access
+        dec     $101,x                  ; Done with one argument
         beq     @done                   ; Finish if no more
         jsr     decode_byte             ; Check if next argument is 0
         beq     @no_value               
@@ -201,6 +202,7 @@ list_argument_list:
         bne     @next_argument          ; Will never write 0 so this is unconditional branch
 
 @done:
+        pla                             ; Pop and discard the argument counter
         rts
 
 ; List the elements of a print expression, which might be a tab, empty space, or expression.
