@@ -151,8 +151,8 @@ list_characters_to_eot:
         jmp     append_buffer
 
 list_argument_type_vectors:
-        .word   list_literal-1              ; NT_VAR
-        .word   list_repeated_literal-1     ; NT_RPT_VAR
+        .word   list_variable-1             ; NT_VAR
+        .word   list_repeated_variable-1    ; NT_RPT_VAR
         .word   list_literal-1              ; NT_NUMBER
         .word   list_repeated_literal-1     ; NT_RPT_NUMBER
         .word   list_statement-1            ; NT_STATEMENT
@@ -233,7 +233,7 @@ list_vectors:
         .word   list_operator-1         ; XH_OP
         .word   list_literal-1          ; XH_NUMBER
         .word   list_literal-1          ; XH_STRING
-        .word   list_literal-1          ; XH_VAR
+        .word   list_variable-1         ; XH_VAR
         .word   list_paren-1            ; XH_PAREN
 
 list_expression:
@@ -273,6 +273,30 @@ list_repeated_literal:
         clc                             ; Signal success
         rts
 
+list_variable:
+        jsr     list_literal            ; Will return with the last character written in A
+        cmp     #'('                    ; Was the variable an array?
+        bne     @done                   ; If so then we're done
+        jsr     decode_byte             ; Number of indexes
+        jsr     list_argument_list      ; List them all
+        jmp     list_close_paren        ; Close and exit
+        
+@done:
+        clc                             ; Success
+        rts
+
+loop_list_repeated_variable:
+        lda     #','                    ; Write ',' to output
+        jsr     append_buffer
+list_repeated_variable:
+        jsr     list_variable           ; List one number
+        ldy     line_pos                ; Peek next byte
+        lda     (line_ptr),y
+        bne     loop_list_repeated_variable ; Not 0 so keep going
+        inc     line_pos                ; Skip over 0
+        clc                             ; Signal success
+        rts
+
 list_paren:
         inc     line_pos                ; Skip over '('
         jsr     add_whitespace
@@ -280,6 +304,7 @@ list_paren:
         jsr     append_buffer
         ldax    #list_vectors
         jsr     decode_expression
+list_close_paren:
         lda     #')'
         jsr     append_buffer
         clc                             ; Signal success
