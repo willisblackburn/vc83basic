@@ -128,7 +128,7 @@ list_characters_to_eot:
 
 list_argument_type_vectors:
         .word   list_literal-1              ; NT_VAR
-        .word   list_repeated_variable-1    ; NT_RPT_VAR
+        .word   list_repeated_literal-1     ; NT_RPT_VAR
 
 ; Lists a single directive from the token stream.
 ; A = the directive
@@ -207,15 +207,16 @@ list_literal:
         sty     line_pos                ; Update line_pos
         rts
 
-loop_list_repeated_variable:
+loop_list_repeated_literal:
         lda     #','                    ; Write ',' to output
         jsr     append_buffer
-list_repeated_variable:
-        jsr     list_literal            ; List one variable
+list_repeated_literal:
+        jsr     list_literal            ; List one number
         ldy     line_pos                ; Peek next byte
         lda     (line_ptr),y
-        bne     loop_list_repeated_variable ; Not 0 so keep going
+        bne     loop_list_repeated_literal  ; Not 0 so keep going
         inc     line_pos                ; Skip over 0
+        clc                             ; Signal success
         rts
 
 list_paren:
