@@ -163,12 +163,18 @@ parse_variable:
         cmp     #'(' | EOT              ; Was the last character of the name a paren?
         clc                             ; If not we're going to return with carry clear
         bne     @done
+        ldpha   line_pos                ; Save the value of line_pos; this is where we'll store the arity
+        inc     line_pos                ; Skip past the length byte
+        lda     #$FF                    ; Set argument count to -1 instead of 0 so I can just invert bits
         jsr     parse_argument_list     ; Parse the array arguments
-        bcs     @done                   ; Failed
-        jsr     parse_close             ; Parse the closing parenthesis
-        bcs     @done
-        jmp     encode_zero             ; Encode zero to terminate the array argument list
-
+        eor     #$FF                    ; Invert bits to get argument count
+        tay                             ; Park it in Y
+        pla                             ; Get the original line_pos back
+        tax                             ; Into X
+        tya                             ; Argumetn count into A
+        sta     line_buffer,x           ; Update the count in line_buffer
+        bcs     @done                   ; This is where we finally check if parse_argument_list failed
+        jsr     parse_close             ; Parse the closing parenthesis and return result
 @done:
         rts                             ; CPY sets carry correctly for return
 

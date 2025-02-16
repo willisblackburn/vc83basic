@@ -159,8 +159,8 @@ void test_parse_expression(void) {
     const char line_data_10[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' | EOT, 0 };
     const char line_data_11[] = { 'A', '$' | EOT, TOKEN_OP | OP_CONCAT, '"', 'A', 'B', 'C', '"' | EOT, 0};
-    const char line_data_12[] = { 'X', '(' | EOT, '2' | EOT, 0, '5' | EOT, 0, 0, 0 };
-    const char line_data_13[] = { 'A', '$', '(' | EOT, '1' | EOT, 0, 0, 0 };
+    const char line_data_12[] = { 'X', '(' | EOT, 2, '2' | EOT, 0, '5' | EOT, 0, 0 };
+    const char line_data_13[] = { 'A', '$', '(' | EOT, 1, '1' | EOT, 0, 0 };
 
     PRINT_TEST_NAME();
 
