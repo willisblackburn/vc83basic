@@ -90,9 +90,10 @@ reverse_copy:
 ; On return the byte count will remain in size.
 ; BC SAFE, DE SAFE
 
+clear_memory_a:
+        ldx     #0                      ; Initialize high byte to 0
 clear_memory:
         stax    size                    ; Number of bytes in size
-clear_memory_size:
         lda     #0                      ; Zero byte to write
         tax                             ; X is the number of blocks written; initialize to 0
         tay                             ; Y is the number of bytes written; initialize to 0
