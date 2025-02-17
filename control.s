@@ -7,7 +7,7 @@
 ; GOTO statement:
 
 exec_goto:
-        jsr     decode_int              ; Go get the line number
+        jsr     get_line_number         ; Go get the line number
 exec_goto_line_number:
         jsr     find_line               ; Find the program line
         rts                             ; Either next_line_ptr is set or carry (error) is set
@@ -21,7 +21,7 @@ exec_on_goto:
 ; GOSUB statement:
 
 exec_gosub:
-        jsr     decode_int              ; GOSUB line number
+        jsr     get_line_number         ; GOSUB line number
 exec_gosub_line_number:
         stax    line_number             ; Store the line number before calling find_line
         jsr     push_next_line_ptr      ; Save return address
@@ -53,7 +53,7 @@ exec_on:
         ldy     line_pos
         lda     (line_ptr),y            ; Peek at next character
         beq     @not_found              ; If it's 0, nothing matched; continue
-        jsr     decode_int              ; Get the next line number into AX
+        jsr     get_line_number         ; Get the next line number into AX
         dec     on_value                ; Decrement the "ON" value
         bne     @loop                   ; If not zero then keep looking
         jmp     (on_handler)            ; Jump to whatever handler was passed in
@@ -200,3 +200,7 @@ push_next_line_ptr:
         sta     stack+Control::next_line_ptr+1,x
 @done:
         rts
+
+get_line_number:
+        jsr     decode_number
+        jmp     truncate_fp_to_int

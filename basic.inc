@@ -64,7 +64,6 @@ FP1s = FP1+UnpackedFloat::s
 ; decode.s
 .global decode_expression
 .global decode_number
-.global decode_int
 .global decode_name
 .global decode_operator
 .global decode_unary_operator
