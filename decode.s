@@ -74,10 +74,6 @@ decode_number:
         sty     line_pos                ; Update line_pos
         rts
 
-decode_int:
-        jsr     decode_number
-        jmp     truncate_fp_to_int
-
 ; Decodes a string.
 ; Returns the address of the string in AX.
 

@@ -80,7 +80,6 @@ S1 = FPX+2
 ; decode.s
 .global decode_expression
 .global decode_number
-.global decode_int
 .global decode_string
 .global decode_name
 .global decode_operator
