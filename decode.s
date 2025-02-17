@@ -71,10 +71,6 @@ decode_number:
         sty     line_pos                ; Update line_pos
         rts
 
-decode_int:
-        jsr     decode_number
-        jmp     truncate_fp_to_int
-
 ; Decodes a variable name and set up decode_name_ptr and decode_name_length.
 ; X SAFE, BC SAFE, DE SAFE
 
