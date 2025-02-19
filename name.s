@@ -114,7 +114,6 @@ find_or_add_variable:
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by decode_name_ptr and decode_name_length.
 ; These are both set in decode_name. The name must already end in a character with the high bit set.
-; The type in decode_name_type determines the size of the variable.
 ; name_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
 ; name_index = the number of names currently in the table (also left by find_name)
 ; Returns carry clear on success or carry set on failure.
