@@ -82,7 +82,7 @@ void list_directive(/* A */ char directive);
 char find_name(/* AX */ const char* name_ptr);
 void initialize_name_ptr(void* name_ptr);
 void advance_name_ptr(void);
-void add_variable(size_t data_size);
+void add_variable(void);
 
 // parser.s
 void parse_line(void);
