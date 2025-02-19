@@ -117,8 +117,6 @@ find_or_add_variable:
         rts                             ; Return success
 
 @not_found:
-        ldx     decode_name_type
-        lda     type_size_table,x
         ldx     #0
 
 ; Fall through
@@ -126,7 +124,7 @@ find_or_add_variable:
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by decode_name_ptr and decode_name_length.
 ; These are both set in decode_name. The name must already end in a character with the high bit set.
-; AX = the number of data bytes to allocate after the name
+; The type in decode_name_type determines the size of the variable.
 ; name_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
 ; name_index = the number of names currently in the table (also left by find_name)
 ; Returns carry clear on success or carry set on failure.
@@ -136,42 +134,19 @@ add_variable:
         sec                             ; Set carry in case the variable count check fails and to add 1 for length
         ldy     name_index              ; Check if too many variables already
         bmi     @error                  ; variable_count >= 128
+        ldx     decode_name_type        ; Figure out the variable size based on the type
+        lda     type_size_table,x
         adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
-        sta     B                       ; Park length low byte in B
-        bcc     @skip_inx               ; No carry; don't need to increment high byte
-        inx
-@skip_inx:
-        txa                             ; Test high byte
-        beq     @single_byte_encoding   ; High byte is zero; we can use a single-byte encoding
-        inc     B                       ; Else we have to use two bytes, so add one more to length
-        bne     @skip_inx_2             ; Didn't roll over so don't need to INX
-        inx
-@skip_inx_2:
-        sec                             ; Set carry in case this next check fails
-        txa                             ; Test high byte again
-        bmi     @error                  ; If high bit is already set then length is too large to encode
-@single_byte_encoding:
-        stx     C                       ; Store high byte of the length in C
-        lda     B                       ; Recover low byte; length is now in AX for call to grow, and in BC
+        sta     B                       ; Remember the length for later
         ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
-        jsr     grow                    ; Do the grow
+        jsr     grow_a                  ; Do the grow
         bcs     @error
         mvax    name_ptr, dst_ptr       ; Prepare to clear the newly-allocated entry
-        ldax    BC                      ; Recover size
-        jsr     clear_memory
+        lda     B                       ; Recover size
+        jsr     clear_memory_a
         sta     (dst_ptr),y             ; Y will be first uncleared byte on return; clear it to terminate name table
+        lda     B                       ; Recover size again
         ldy     #0                      ; Start writing length to name_ptr starting at offset 0
-        ldx     C                       ; Consider the high byte
-        bne     @write_two_byte_length  ; High byte is non-zero; use two-byte encoding
-        lda     B                       ; Consider the low byte again (note we are discarding the zero high byte)
-        bpl     @write_length_low_byte  ; It's < 128; just use single-byte encoding
-@write_two_byte_length:
-        txa                             ; High byte into A
-        ora     #$80                    ; Set high bit, which we know is clear because we tested it before
-        sta     (name_ptr),y
-        iny
-        lda     B                       ; Replace A with low byte
-@write_length_low_byte:
         sta     (name_ptr),y
         iny
         jsr     rebase_name_ptr         ; Add Y to name_ptr

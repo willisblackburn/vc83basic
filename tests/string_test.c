@@ -4,7 +4,7 @@ void add_string_variable_with_name(const char* name, const String* value) {
     parse_and_decode_name(name);
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
-    add_variable(sizeof (String*));
+    add_variable();
     // Now name_ptr points to the data allocated for the new variable, so we can cast and assign through it.
     *((const String**)name_ptr) = value;
     ASSERT_EQ(err, 0);
