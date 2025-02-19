@@ -113,11 +113,8 @@ advance_rebase_name_ptr_done:
 find_or_add_variable:
         ldax    variable_name_table_ptr
         jsr     find_name               ; Look for a variable with this name
-        bcs     @not_found              ; Most common case is that it's found, so branch only if it's not
+        bcs     add_variable            ; Most common case is that it's found, so branch only if it's not
         rts                             ; Return success
-
-@not_found:
-        ldx     #0
 
 ; Fall through
 
