@@ -145,43 +145,41 @@ void test_add_variable(void) {
     // add_variable is used after find_name, which sets up name_ptr.
     // The call_find_name_fail function sets decode_name_ptr.
     call_find_name_fail("X", variable_name_table_ptr, 0, variable_name_table_ptr, __LINE__);
-    add_variable(2);
+    add_variable();
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr[0], 4); // length
+    ASSERT_EQ(variable_name_table_ptr[0], 7); // length
     ASSERT_EQ(variable_name_table_ptr[1], 'X' | EOT);
-    ASSERT_EQ(variable_name_table_ptr[2], 0); // 2 data bytes
-    ASSERT_EQ(variable_name_table_ptr[3], 0);
-    ASSERT_EQ(variable_name_table_ptr[4], 0); // end of variable name table
+    ASSERT_EQ(variable_name_table_ptr[2], 0); // 5 data bytes ...
+    ASSERT_EQ(variable_name_table_ptr[7], 0); // end of variable name table
     ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 2);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 1);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 1);
 
     // Should be able to find X now
     call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
 
     // Add more variables
-    call_find_name_fail("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4, __LINE__);
-    add_variable(511);
+    call_find_name_fail("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 7, __LINE__);
+    add_variable();
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(variable_name_table_ptr[4], 0x82); // length (515) high byte with high bit set
-    ASSERT_EQ(variable_name_table_ptr[5], 0x03); // length low byte
-    ASSERT_EQ(variable_name_table_ptr[6], 'A');
-    ASSERT_EQ(variable_name_table_ptr[7], 'B' | EOT);
-    ASSERT_EQ(variable_name_table_ptr[8], 0); // data bytes
-    ASSERT_EQ(variable_name_table_ptr[519], 0); // end of variable name table
-    ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 4 + 4);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 1);
+    ASSERT_EQ(variable_name_table_ptr[7], 8); // length
+    ASSERT_EQ(variable_name_table_ptr[8], 'A');
+    ASSERT_EQ(variable_name_table_ptr[9], 'B' | EOT);
+    ASSERT_EQ(variable_name_table_ptr[10], 0); // 5 data bytes ...
+    ASSERT_EQ(variable_name_table_ptr[15], 0); // end of variable name table
+    ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 7 + 3);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 8 + 1);
 
-    call_find_name_fail("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515, __LINE__);
-    add_variable(6);
+    call_find_name_fail("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 7 + 8, __LINE__);
+    add_variable();
     HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
 
     call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
-    call_find_name("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 4 + 4, __LINE__);
-    call_find_name("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 4 + 515 + 2, __LINE__);
+    call_find_name("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 7 + 3, __LINE__);
+    call_find_name("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 7 + 8 + 2, __LINE__);
 
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 4 + 515 + 8 + 1);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 8 + 7 + 1);
 }
 
 int main(void) {
