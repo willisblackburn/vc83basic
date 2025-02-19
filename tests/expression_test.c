@@ -35,7 +35,7 @@ void test_evaluate_expression(void) {
     set_decode_name_ptr("DATA");
     find_name(variable_name_table_ptr);
     ASSERT_NE(err, 0);
-    add_variable(2);
+    add_variable();
     ASSERT_EQ(err, 0);
 
     HEXDUMP(variable_name_table_ptr, 32);
