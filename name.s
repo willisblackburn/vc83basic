@@ -68,23 +68,16 @@ initialize_name_ptr:
 advance_name_ptr:
         mvax    next_name_ptr, name_ptr ; Advance to next entry
         ldy     #0                      ; name_ptr index
-        ldx     #0                      ; X is the first byte of the name table entry
         sec                             ; Set carry for error return if we find no more entries
-        lda     (name_ptr),y            ; Load first byte of name table entry; may be single byte or high byte
+        lda     (name_ptr),y            ; Load length byte from name table entry
         beq     advance_rebase_name_ptr_done    ; If length is zero then no more names
-        bpl     @single_byte            ; High bit is clear; just add this as the low byte
-        and     #$7F                    ; Clear the high bit
-        tax                             ; The byte we read is the high byte
-        iny
-        lda     (name_ptr),y            ; It was a two-byte length, so get the low byte at Y=1
-@single_byte:
         clc
-        adc     next_name_ptr           ; Add AX to next_name_ptr
+        adc     next_name_ptr           ; Add length to next_name_ptr
         sta     next_name_ptr
-        txa
-        adc     next_name_ptr+1
-        sta     next_name_ptr+1
-        iny                             ; Y is now the number of bytes in the length
+        bcc     @skip_inc
+        inc     next_name_ptr+1
+@skip_inc:
+        iny
 
 ; Fall through
 
