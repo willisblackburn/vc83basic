@@ -5,7 +5,7 @@ void test_initalize_program(void) {
 
     initialize_program();
 
-    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 2);
+    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + 5);
     ASSERT_EQ(*variable_name_table_ptr, 0);
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1); // Variable name table is empty with terminating 0
     ASSERT_PTR_LT(free_ptr, himem_ptr);
