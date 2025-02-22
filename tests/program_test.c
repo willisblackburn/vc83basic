@@ -132,7 +132,7 @@ void test_shrink(void) {
 
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400);
-    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
 
     // Now shrink each section, each time checking that no data is corrupted.
 
@@ -140,13 +140,13 @@ void test_shrink(void) {
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
-    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
 
     shrink(&free_ptr, 4);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data - 4);
-    ASSERT_PTR_EQ(free_ptr, (char*)variable_name_table_ptr + sizeof variable_name_table_data - 4);
+    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data - 4);
 }
 
 void test_find_line(void) {
