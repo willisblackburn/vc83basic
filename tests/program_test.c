@@ -8,7 +8,7 @@ void test_initalize_program(void) {
     ASSERT_EQ(next_line_ptr, program_ptr);
     ASSERT_EQ(next_line_ptr->next_line_offset, sizeof (Line) + 2); // +1 for next statement offset +1 for END token
     ASSERT_EQ(next_line_ptr->number, -1);
-    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + sizeof (Line) + 2);
+    ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + 5);
     ASSERT_EQ(*variable_name_table_ptr, 0);
     ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1); // Variable name table is empty with terminating 0
     ASSERT_PTR_LT(free_ptr, himem_ptr);
