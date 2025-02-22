@@ -6,7 +6,7 @@ void test_initalize_program(void) {
     initialize_program();
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
     ASSERT_EQ(line_ptr->number, -1);
     ASSERT_EQ((void*)free_ptr, (void*)(program_ptr + 1)); // sizeof *program_ptr == size of the line header
     ASSERT_LT((void*)free_ptr, (void*)himem_ptr);
