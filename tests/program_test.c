@@ -6,7 +6,7 @@ void test_initalize_program(void) {
     initialize_program();
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line)); // Add 1 for END token
+    ASSERT_EQ(line_ptr->next_line_offset, 3);
     ASSERT_EQ(line_ptr->number, -1);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + 3);
     ASSERT_EQ(*variable_name_table_ptr, 0);
