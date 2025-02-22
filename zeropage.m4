@@ -83,7 +83,7 @@ comment Pointer to current name table entry
 word(name_ptr, char*)
 
 comment Pointer to the next name table entry
-word(next_name_ptr, char*)
+word(next_name_ptr, const char*)
 
 comment Index of name in name table
 byte(name_index)
