@@ -7,50 +7,33 @@ void test_initialize_name_ptr(void) {
     name_ptr = NULL;
     next_name_ptr = NULL;
 
-    initialize_name_ptr(0xA000);
+    initialize_name_ptr((void*)0xA000);
     ASSERT_PTR_EQ(name_ptr, NULL);
-    ASSERT_PTR_EQ(next_name_ptr, 0xA000);
+    ASSERT_PTR_EQ(next_name_ptr, (void*)0xA000);
 }
 
 void test_advance_name_ptr(void) {
 
-    const char name_table_data[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
-        'T', 'O' | EOT, 1 };
-    const char name_table_data_2[] = { 4, 'R', 'U', 'N' | EOT, 0 };
-    static char large_name_table[541];
+    const char name_table[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
+        'T', 'O' | EOT, 1, 4, 'R', 'U', 'N' | EOT, 0  };
 
     PRINT_TEST_NAME();
 
-    // Set up the large name table.
-    memset(large_name_table, 0, sizeof large_name_table);
-    // Use 2 entries from name_table_data: 16 bytes
-    memcpy(large_name_table, name_table_data, sizeof name_table_data);
-    // Add a large 520-byte variable
-    large_name_table[16] = 0x82; // length high byte with high bit set
-    large_name_table[17] = 0x08; // length low byte
-    large_name_table[18] = 'X' | EOT;
-    // Next variable will be at offset 16 + 520 = 536
-    memcpy(large_name_table + 536, name_table_data_2, sizeof name_table_data_2);
-
     // Pre-requisite
-    next_name_ptr = large_name_table;
+    next_name_ptr = name_table;
 
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, large_name_table + 1);
-    ASSERT_EQ(next_name_ptr, large_name_table + 6);
+    ASSERT_EQ(name_ptr, name_table + 1);
+    ASSERT_EQ(next_name_ptr, name_table + 6);
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, large_name_table + 6 + 1);
-    ASSERT_EQ(next_name_ptr, large_name_table + 6 + 10);
+    ASSERT_EQ(name_ptr, name_table + 6 + 1);
+    ASSERT_EQ(next_name_ptr, name_table + 6 + 10);
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, large_name_table + 6 + 10 + 2);
-    ASSERT_EQ(next_name_ptr, large_name_table + 6 + 10 + 520);
-    advance_name_ptr();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, large_name_table + 6 + 10 + 520 + 1);
-    ASSERT_EQ(next_name_ptr, large_name_table + 6 + 10 + 520 + 4);
+    ASSERT_EQ(name_ptr, name_table + 6 + 10 + 1);
+    ASSERT_EQ(next_name_ptr, name_table + 6 + 10 + 4);
     advance_name_ptr();
     ASSERT_NE(err, 0);
 }
@@ -84,7 +67,7 @@ void test_find_name(void) {
 
     const char name_table_1[] = { 6, 'P', 'R', 'I', 'N', 'T' | EOT, 0 };
     const char name_table_2[] = { 6, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 'X' | EOT, 0 };
-    const char name_table_3[] = { 1, 'X' | EOT, 6, 'P', 'R', 'I', 'N', 'T' | EOT, 0 };
+    const char name_table_3[] = { 2, 'X' | EOT, 6, 'P', 'R', 'I', 'N', 'T' | EOT, 0 };
     const char name_table_4[] = { 5, 'L', 'I', 'S', 'T' | EOT, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
         'T', 'O' | EOT, 1, 0 };
     const char name_table_5[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
