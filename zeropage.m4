@@ -65,6 +65,9 @@ word(next_line_ptr, Line*)
 comment The start of the variable name table
 word(variable_name_table_ptr, char*)
 
+comment The start of the array name table
+word(array_name_table_ptr, char*)
+
 comment The start of free space past the variable name table
 word(free_ptr, void*)
 

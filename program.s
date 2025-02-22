@@ -32,22 +32,25 @@ initialize_program:
 ; BC SAFE
 
 reset_program_state:
-        ldx     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get free_ptr
+        ldx     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get array_name_table_ptr
         ldy     variable_name_table_ptr+1
-        inx
+        inxy
+        stx     array_name_table_ptr
+        sty     array_name_table_ptr+1
+        inxy
         stx     free_ptr
-        bne     @skip_iny
-        iny
-@skip_iny:
         sty     free_ptr+1
         lda     #0                      ; Load zero into A
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
+        sta     (array_name_table_ptr),y    ; Initialize array name table to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, stack_pos
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
         rts
+
+
 
 ; Sets next_line_ptr to program_ptr. Does not change the run state.
 ; Returns next_line_ptr in AX.

@@ -128,7 +128,7 @@ add_variable:
         lda     type_size_table,x
         adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Remember the length for later
-        ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
+        ldy     #array_name_table_ptr   ; Grow variable name table by moving array_name_table_ptr up
         jsr     grow_a                  ; Do the grow
         bcs     @error
         mvax    name_ptr, dst_ptr       ; Prepare to clear the newly-allocated entry

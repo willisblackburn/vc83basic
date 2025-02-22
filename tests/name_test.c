@@ -123,7 +123,7 @@ void test_add_variable(void) {
     // Call initialize_program to set up variable_name_table_ptr.
     initialize_program();
     ASSERT_EQ(variable_name_table_ptr[0], 0);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 1);
 
     // add_variable is used after find_name, which sets up name_ptr.
     // The call_find_name_fail function sets decode_name_ptr.
@@ -136,7 +136,7 @@ void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[2], 0); // 5 data bytes ...
     ASSERT_EQ(variable_name_table_ptr[7], 0); // end of variable name table
     ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 2);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 1);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 7 + 1);
 
     // Should be able to find X now
     call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
@@ -152,17 +152,17 @@ void test_add_variable(void) {
     ASSERT_EQ(variable_name_table_ptr[10], 0); // 5 data bytes ...
     ASSERT_EQ(variable_name_table_ptr[15], 0); // end of variable name table
     ASSERT_PTR_EQ(name_ptr, variable_name_table_ptr + 7 + 3);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 8 + 1);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 7 + 8 + 1);
 
     call_find_name_fail("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 7 + 8, __LINE__);
     add_variable();
-    HEXDUMP(variable_name_table_ptr, ((char*)free_ptr - variable_name_table_ptr));
+    HEXDUMP(variable_name_table_ptr, ((char*)array_name_table_ptr - variable_name_table_ptr));
 
     call_find_name("X", variable_name_table_ptr, 0, variable_name_table_ptr + 2, __LINE__);
     call_find_name("AB", variable_name_table_ptr, 1, variable_name_table_ptr + 7 + 3, __LINE__);
     call_find_name("Y", variable_name_table_ptr, 2, variable_name_table_ptr + 7 + 8 + 2, __LINE__);
 
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 7 + 8 + 7 + 1);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 7 + 8 + 7 + 1);
 }
 
 int main(void) {

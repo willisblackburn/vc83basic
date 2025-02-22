@@ -7,7 +7,9 @@ void test_initalize_program(void) {
 
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)program_ptr + 5);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1); // Variable name table is empty with terminating 0
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 1);
+    ASSERT_EQ(*array_name_table_ptr, 0);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
     ASSERT_PTR_LT(free_ptr, himem_ptr);
 }
 
@@ -76,7 +78,9 @@ void test_grow(void) {
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 11); // 11 is 2 lines of 3 + 5 bytes for END
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 1);
+    ASSERT_EQ(*array_name_table_ptr, 0);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
 
     // Verify the program contents.
     ASSERT_EQ(next_line_ptr->next_line_offset, 3);
@@ -98,7 +102,9 @@ void test_grow(void) {
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 11);
     ASSERT_EQ(*variable_name_table_ptr, 0);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + 1 + 0x400);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 1);
+    ASSERT_EQ(*array_name_table_ptr, 0);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1 + 0x400);
 }
 
 void test_shrink(void) {
@@ -123,7 +129,7 @@ void test_shrink(void) {
 
     // Expand the variable name table.
     // The variable name table already contains 1 byte, so subtract 1 from the size of the data we want to write.
-    grow(&free_ptr, sizeof variable_name_table_data - 1);
+    grow(&array_name_table_ptr, sizeof variable_name_table_data - 1);
     ASSERT_EQ(err, 0);
     // Fill in some variable data.
     memcpy(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
@@ -132,7 +138,8 @@ void test_shrink(void) {
 
     ASSERT_PTR_EQ(next_line_ptr, program_ptr);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
 
     // Now shrink each section, each time checking that no data is corrupted.
 
@@ -140,13 +147,15 @@ void test_shrink(void) {
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
 
-    shrink(&free_ptr, 4);
+    shrink(&array_name_table_ptr, 4);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + 5 + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data - 4);
-    ASSERT_PTR_EQ(free_ptr, variable_name_table_ptr + sizeof variable_name_table_data - 4);
+    ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + sizeof variable_name_table_data - 4);
+    ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
 }
 
 void test_find_line(void) {

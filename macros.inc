@@ -168,3 +168,12 @@
         sta     address,x
         bne     :-
 .endmacro
+
+; Increments a 16-bit value stored in XY.
+
+.macro inxy
+        inx
+        bne     :+
+        iny
+:
+.endmacro
