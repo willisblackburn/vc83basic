@@ -1,6 +1,13 @@
 .include "macros.inc"
 .include "basic.inc"
 
+evaluate_vectors:
+        .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_operator-1         ; XH_OP
+        .word   evaluate_number-1           ; XH_NUMBER
+        .word   evaluate_variable-1         ; XH_VAR
+        .word   evaluate_paren-1            ; XH_PAREN
+
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
@@ -9,13 +16,6 @@ evaluate_expression:
         jsr     process_operators       ; May fail with carry set
 @error:
         rts
-
-evaluate_vectors:
-        .word   evaluate_unary_operator-1   ; XH_UNARY_OP
-        .word   evaluate_operator-1         ; XH_OP
-        .word   evaluate_number-1           ; XH_NUMBER
-        .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
         jsr     decode_name
@@ -74,6 +74,25 @@ push_operator:
 @done:
         rts
 
+operator_vectors:
+        .word   op_add-1
+        .word   op_sub-1
+        .word   op_mul-1
+        .word   op_div-1
+        .word   op_pow-1
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   0
+        .word   unary_op_minus-1
+
 ; Process operators with a precedence >= the precedence passed in A.
 ; The open and close parens will never be handled through the jump table: close paren is never actually put on the
 ; operator stack, and open parens have such a low precedence that they will never be evaluated.
@@ -97,25 +116,6 @@ process_operators:
         bcc     @next                   ; If operator success then continue, else fail
 @done:
         rts
-
-operator_vectors:
-        .word   op_add-1
-        .word   op_sub-1
-        .word   op_mul-1
-        .word   op_div-1
-        .word   op_pow-1
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   0
-        .word   unary_op_minus-1
 
 op_add:
         jsr     pop_value               ; Get first value
