@@ -8,6 +8,14 @@
 .assert Value::number_value = 0, error
 .assert Value::string_value_ptr = 0, error
 
+evaluate_vectors:
+        .word   evaluate_unary_operator-1   ; XH_UNARY_OP
+        .word   evaluate_operator-1         ; XH_OP
+        .word   evaluate_number-1           ; XH_NUMBER
+        .word   evaluate_string-1           ; XH_STRING
+        .word   evaluate_variable-1         ; XH_VAR
+        .word   evaluate_paren-1            ; XH_PAREN
+
 evaluate_expression:
         ldax    #evaluate_vectors
         jsr     decode_expression
@@ -16,14 +24,6 @@ evaluate_expression:
         jsr     process_operators       ; May fail with carry set
 @error:
         rts
-
-evaluate_vectors:
-        .word   evaluate_unary_operator-1   ; XH_UNARY_OP
-        .word   evaluate_operator-1         ; XH_OP
-        .word   evaluate_number-1           ; XH_NUMBER
-        .word   evaluate_string-1           ; XH_STRING
-        .word   evaluate_variable-1         ; XH_VAR
-        .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_variable:
         jsr     decode_name
@@ -93,6 +93,26 @@ push_operator:
 @done:
         rts
 
+operator_vectors:
+        .word   op_add-1
+        .word   op_sub-1
+        .word   op_mul-1
+        .word   op_div-1
+        .word   op_pow-1
+        .word   op_concat-1
+        .word   op_eq-1
+        .word   op_lt-1
+        .word   op_gt-1
+        .word   op_ne-1
+        .word   op_le-1
+        .word   op_ge-1
+        .word   op_and-1
+        .word   op_or-1
+        .word   0
+        .word   0
+        .word   unary_op_minus-1
+        .word   unary_op_not-1
+
 ; Process operators with a precedence >= the precedence passed in A.
 ; The open and close parens will never be handled through the jump table: close paren is never actually put on the
 ; operator stack, and open parens have such a low precedence that they will never be evaluated.
@@ -116,26 +136,6 @@ process_operators:
         bcc     @next                   ; If operator success then continue, else fail
 @done:
         rts
-
-operator_vectors:
-        .word   op_add-1
-        .word   op_sub-1
-        .word   op_mul-1
-        .word   op_div-1
-        .word   op_pow-1
-        .word   op_concat-1
-        .word   op_eq-1
-        .word   op_lt-1
-        .word   op_gt-1
-        .word   op_ne-1
-        .word   op_le-1
-        .word   op_ge-1
-        .word   op_and-1
-        .word   op_or-1
-        .word   0
-        .word   0
-        .word   unary_op_minus-1
-        .word   unary_op_not-1
 
 op_sub:
         lda     #>(fsub-1)
