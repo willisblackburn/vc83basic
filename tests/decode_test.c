@@ -64,8 +64,8 @@ void test_decode_name(void) {
         'X' | EOT,
         'T', 'H', 'I', 'N', 'G', '3' | EOT,
         'A', '$' | EOT,
-        'X', '(' | EOT, 1,
-        'A', '$', '(' | EOT, 5
+        'X' | EOT, '(', 1,
+        'A', '$' | EOT, '(', 5
      };
 
     PRINT_TEST_NAME();
@@ -92,13 +92,13 @@ void test_decode_name(void) {
 
     decode_name();
     ASSERT_EQ(decode_name_ptr, line_buffer.data + 9);
-    ASSERT_EQ(decode_name_length, 2);
+    ASSERT_EQ(decode_name_length, 1);
     ASSERT_EQ(decode_name_type, TYPE_NUMBER | TYPE_ARRAY);
     ASSERT_EQ(decode_name_arity, 1);
 
     decode_name();
     ASSERT_EQ(decode_name_ptr, line_buffer.data + 12);
-    ASSERT_EQ(decode_name_length, 3);
+    ASSERT_EQ(decode_name_length, 2);
     ASSERT_EQ(decode_name_type, TYPE_STRING | TYPE_ARRAY);
     ASSERT_EQ(decode_name_arity, 5);
 }

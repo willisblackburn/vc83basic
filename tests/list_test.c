@@ -50,8 +50,8 @@ void test_list_directive(void) {
     const char line_data_14[] = { '"', 'H', 'E', 'L', 'L', 'O', '"' | EOT, 0 };
     const char line_data_15[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"',
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' | EOT, 0 };
-    const char line_data_16[] = { 'X', '(' | EOT, 2, '2' | EOT, 0, '5' | EOT, 0, 0 };
-    const char line_data_17[] = { 'A', '$', '(' | EOT, 1, '1' | EOT, 0, 0 };
+    const char line_data_16[] = { 'X' | EOT, '(', 2, '2' | EOT, 0, '5' | EOT, 0, 0 };
+    const char line_data_17[] = { 'A', '$' | EOT, '(', 1, '1' | EOT, 0, 0 };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";

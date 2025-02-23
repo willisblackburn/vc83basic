@@ -160,9 +160,13 @@ parse_variable:
         bcs     @done
         cpy     #<(name_pattern_op - name_pattern)  ; Make sure it was a name not an operator
         bcs     @done                   ; Was an operator
-        cmp     #'(' | EOT              ; Was the last character of the name a paren?
+        ldx     buffer_pos              ; Check the next character to see if this is an array
+        lda     buffer,x
+        cmp     #'('                    ; Is this an array?
         clc                             ; If not we're going to return with carry clear
         bne     @done
+        inc     buffer_pos              ; Skip past it
+        jsr     encode_byte             ; Encode the '('
         ldpha   line_pos                ; Save the value of line_pos; this is where we'll store the arity
         inc     line_pos                ; Skip past the length byte
         lda     #$FF                    ; Set argument count to -1 instead of 0 so I can just invert bits
@@ -388,12 +392,8 @@ name_pattern_identifier:
         .byte   '0', 10, <(name_pattern_identifier - name_pattern)
         .byte   '_',  1, <(name_pattern_identifier - name_pattern)
         .byte   '$',  1, <(name_pattern_string_suffix - name_pattern)
-        .byte   '(',  1, <(name_pattern_array_suffix - name_pattern)
         .byte   PATTERN_OK
 name_pattern_string_suffix:
-        .byte   '(',  1, <(name_pattern_array_suffix - name_pattern)
-        .byte   PATTERN_OK
-name_pattern_array_suffix:
         .byte   PATTERN_OK
 name_pattern_op:
         .byte   PATTERN_OK

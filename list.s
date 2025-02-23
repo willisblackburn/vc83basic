@@ -275,8 +275,12 @@ list_repeated_literal:
 
 list_variable:
         jsr     list_literal            ; Will return with the last character written in A
-        cmp     #'('                    ; Was the variable an array?
-        bne     @done                   ; If so then we're done
+        ldy     line_pos                ; Peek next byte
+        lda     (line_ptr),y
+        cmp     #'('                    ; Is this an array?
+        bne     @done                   ; If not then we're done
+        inc     line_pos                ; Move past it
+        jsr     append_buffer           ; Output the '('
         jsr     decode_byte             ; Number of indexes
         jsr     list_argument_list      ; List them all
         jmp     list_close_paren        ; Close and exit

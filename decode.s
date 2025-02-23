@@ -100,6 +100,7 @@ decode_name:
         adc     #0                      ; Will leave carry clear since decode_name_ptr calculation should not roll over
         sta     decode_name_ptr+1
         ldy     #0                      ; Search for the end of the name starting at position 0
+        sty     decode_name_arity       ; While we have a zero, initialize decode_name_arity
 @next:
         lda     (decode_name_ptr),y
         bmi     @last
@@ -113,27 +114,25 @@ decode_name:
         adc     line_pos
         sta     line_pos                ; Update line_pos
         ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
-        dey                             ; Back up one so we can check if the last character is '('
+        dey                             ; Back up one so we can check if the last character is '$'
         lda     (decode_name_ptr),y
-        cmp     #'(' | EOT              ; Last character will always have high bit set
-        beq     @array
-        txa                             ; To be stored in decode_name_arity (X = 0 here)
-        beq     @check_string           ; Unconditional
-@array:
-        ldx     #TYPE_ARRAY
-        iny                             ; Array arity will be the byte following the end of the name
-        lda     (decode_name_ptr),y     ; Load arity
-        dey                             ; Back up again in order to check for '$'
-        dey
-        inc     line_pos                ; Have to move line_pos past the arity byte too
-@check_string:
-        sta     decode_name_arity       ; Save the arity
-        lda     (decode_name_ptr),y
-        ora     #EOT                    ; Pretend that this was the last character, even if it wasn't
-        cmp     #'$' | EOT              ; Check if it's a string
+        cmp     #'$' | EOT              ; If it's there, it will have the high bit set
         bne     @not_string
-        inx                             ; It was a string; all we have to is increment
+        inx                             ; It was a string; change the type
 @not_string:
+        iny                             ; Restore Y to where it previously was, past the end of the name
+        lda     (decode_name_ptr),y     ; See if the next character is '('
+        cmp     #'('
+        bne     @not_array
+        iny                             ; Array arity will be the byte following the end of the name
+        lda     (decode_name_ptr),y     ; Copy arity
+        sta     decode_name_arity
+        inc     line_pos                ; Move line_pos past '(' and arity
+        inc     line_pos
+        txa
+        ora     #TYPE_ARRAY             ; OR the array bit into the type
+        tax
+@not_array:
         stx     decode_name_type        ; Remember the type
         rts
 
