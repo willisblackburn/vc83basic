@@ -116,16 +116,13 @@ find_or_add_variable:
 ; These are both set in decode_name. The name must already end in a character with the high bit set.
 ; The type in decode_name_type determines the size of the variable.
 ; name_ptr = a pointer to the 0 at the end of the variable name table (left by find_name)
-; name_index = the number of names currently in the table (also left by find_name)
 ; Returns carry clear on success or carry set on failure.
 ; On return, updates name_ptr to point to the data following the new name, as if found by find_name.
 
 add_variable:
-        sec                             ; Set carry in case the variable count check fails and to add 1 for length
-        ldy     name_index              ; Check if too many variables already
-        bmi     @error                  ; variable_count >= 128
         ldx     decode_name_type        ; Figure out the variable size based on the type
         lda     type_size_table,x
+        sec                             ; Set carry in case the variable count check fails and to add 1 for length
         adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Remember the length for later
         ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
