@@ -120,7 +120,7 @@ find_or_add_variable:
 
 add_variable:
         lda     #.sizeof(Float)
-        sec                             ; Set carry in case the variable count check fails and to add 1 for length
+        sec                             ; Set carry to add 1 for length byte
         adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
         sta     B                       ; Remember the length for later
         ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
