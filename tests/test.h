@@ -109,7 +109,7 @@ void int32_to_fp(void);
 int truncate_fp_to_int(void);
 void truncate_fp_to_int32(void);
 void fp_to_string(void);
-void string_to_fp(const char* ptr, char pos);
+void string_to_fp(/* AX */ const char* ptr, /* Y */ char pos);
 char char_to_digit(/* A */ char c);
 void adjust_exponent(/* X */ char add, /* Y */ char subtract);
 void normalize(void);
@@ -153,7 +153,7 @@ void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 // string.s
 char load_s0(/* AY */ const String* value);
 char load_s1(/* AY */ const String* value);
-const String* read_string(const char* ptr, char pos);
+const String* read_string(/* AX */ const char* ptr, /* Y */ char pos);
 const String* string_alloc(/* A */ char length);
 void compact(void);
 
