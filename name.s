@@ -137,10 +137,11 @@ add_variable:
 @copy_next_character:
         lda     (decode_name_ptr),y     ; Get name character
         sta     (name_ptr),y            ; Store into name table
-        bmi     @copy_last
+        bmi     @copy_complete
         iny
-        bne     @copy_next_character
-@copy_last:
+        bne     @copy_next_character    ; Unconditional
+
+@copy_complete:
         iny                             ; Last character
         jsr     rebase_name_ptr         ; Make name_ptr point past end of data
         ldx     decode_name_type        ; Set up to clear the data bytes
