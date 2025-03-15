@@ -11,6 +11,29 @@ void fill_test_data(size_t offset, size_t size) {
     }
 }
 
+void test_clear_memory(void) {
+    PRINT_TEST_NAME();
+
+    // Clear <256 bytes
+    fill_test_data(0, 100);
+    HEXDUMP(test_data, 16);
+    clear_memory(test_data, 10);
+    HEXDUMP(test_data, 16);
+    // Should clear offsets 0-9, offset 10 remains the same.
+    ASSERT_EQ(test_data[0], 0);
+    ASSERT_EQ(test_data[9], 0);
+    ASSERT_EQ(test_data[10], 10);
+
+    // Passing size = 0 should clear 256 bytes
+    fill_test_data(0, 258);
+    clear_memory(test_data, 0);
+    // Should clear offsets 0-255
+    ASSERT_EQ(test_data[0], 0);
+    ASSERT_EQ(test_data[255], 0);
+    ASSERT_EQ(test_data[256], 0); // fill_test_data sets offset 256 to 0
+    ASSERT_EQ(test_data[257], 1);
+}
+
 void verify_test_data(const char* p, size_t size) {
     // Check first 4 and last 4 bytes.
     ASSERT_EQ(p[0], 0);
@@ -103,6 +126,7 @@ void test_invoke_indexed_vector(void) {
 
 int main(void) {
     initialize_target();
+    test_clear_memory();
     test_copy();
     test_reverse_copy();
     test_invoke_indexed_vector();
