@@ -160,6 +160,7 @@ void compact(void);
 // util.s
 void copy(/* AX */ size_t size);
 void reverse_copy(/* AX */ size_t size);
+void clear_memory(/* AX */ void* ptr, /* Y */ char size);
 int invoke_indexed_vector(/* AX */ void* vectors, /* Y */ char index);
 
 #define HEXDUMP(data, length) hexdump(#data, (char*)(data), (length))
