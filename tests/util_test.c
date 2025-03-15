@@ -11,46 +11,27 @@ void fill_test_data(size_t offset, size_t size) {
     }
 }
 
-void call_clear_memory(size_t size) {
-    dst_ptr = test_data;
-    clear_memory(size);
-}
-
 void test_clear_memory(void) {
     PRINT_TEST_NAME();
 
     // Clear <256 bytes
     fill_test_data(0, 100);
     HEXDUMP(test_data, 16);
-    call_clear_memory(10);
+    clear_memory(test_data, 10);
     HEXDUMP(test_data, 16);
     // Should clear offsets 0-9, offset 10 remains the same.
     ASSERT_EQ(test_data[0], 0);
     ASSERT_EQ(test_data[9], 0);
     ASSERT_EQ(test_data[10], 10);
 
-    // Clear >256 bytes
-    fill_test_data(0, 300);
-    call_clear_memory(259);
-    // Should clear offsets 0-9, offset 10 remains the same.
+    // Passing size = 0 should clear 256 bytes
+    fill_test_data(0, 258);
+    clear_memory(test_data, 0);
+    // Should clear offsets 0-255
     ASSERT_EQ(test_data[0], 0);
-    ASSERT_EQ(test_data[258], 0);
-    ASSERT_EQ(test_data[259], 3);
-
-    // Clear even multiple of 256 bytes
-    fill_test_data(0, 1000);
-    call_clear_memory(512);
-    // Should clear offsets 0-9, offset 10 remains the same.
-    ASSERT_EQ(test_data[0], 0);
-    ASSERT_EQ(test_data[511], 0);
-    ASSERT_EQ(test_data[512], 0);
-    ASSERT_EQ(test_data[513], 1);
-
-    // Clear zero bytes
-    test_data[0] = test_data[1] = 1;
-    call_clear_memory(0);
-    ASSERT_EQ(test_data[0], 1);
-    ASSERT_EQ(test_data[1], 1);
+    ASSERT_EQ(test_data[255], 0);
+    ASSERT_EQ(test_data[256], 0); // fill_test_data sets offset 256 to 0
+    ASSERT_EQ(test_data[257], 1);
 }
 
 void verify_test_data(const char* p, size_t size) {
