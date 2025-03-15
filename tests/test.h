@@ -97,7 +97,7 @@ void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 // util.s
 void copy(/* AX */ size_t size);
 void reverse_copy(/* AX */ size_t size);
-void clear_memory(/* AX */ size_t size);
+void clear_memory(/* AX */ void* ptr, /* Y */ char size);
 int mul2(/* AX */ int value);
 int mul10(/* AX */ int value);
 int div10(/* AX */ int value);
