@@ -195,7 +195,7 @@ S1 = FPX+2
 ; util.s
 .global copy, copy_a, copy_y_from
 .global reverse_copy
-.global clear_memory, clear_memory_a
+.global clear_memory
 .global invoke_indexed_vector
 
 ; target/*
