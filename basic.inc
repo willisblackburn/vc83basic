@@ -167,7 +167,7 @@ FP1s = FP1+UnpackedFloat::s
 ; util.s
 .global copy, copy_a
 .global reverse_copy
-.global clear_memory, clear_memory_a
+.global clear_memory
 .global mul2a, mul2, mul10, div10
 .global invoke_indexed_vector
 .global read_number
