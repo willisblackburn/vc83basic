@@ -134,9 +134,7 @@ add_variable:
 @copy_last:
         iny                             ; Last character
         jsr     rebase_name_ptr         ; Make name_ptr point past end of data
-        ldx     decode_name_type        ; Set up to clear the data bytes
-        ldy     type_size_table,x
-        iny                             ; Clear one more byte to recreate the 0 that terminates the name table
+        ldy     #.sizeof(Float) + 1     ; Clear data + 1 to recreate the 0 that terminates the name table
         ldax    name_ptr
         jsr     clear_memory            ; Clear the variable data
 @done:
