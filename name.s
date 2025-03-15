@@ -124,15 +124,11 @@ add_variable:
         lda     type_size_table,x
         sec                             ; Set carry to add 1 for length byte
         adc     decode_name_length      ; Add decode_name_length plus 1 (carry) to get total size to allocate
-        sta     B                       ; Remember the length for later
+        pha                             ; Preserve length while we call grow
         ldy     #free_ptr               ; Grow variable name table by moving free_ptr up
         jsr     grow_a                  ; Do the grow
+        pla                             ; Length back into A before w check error return
         bcs     @error
-        mvax    name_ptr, dst_ptr       ; Prepare to clear the newly-allocated entry
-        lda     B                       ; Recover size
-        jsr     clear_memory_a
-        sta     (dst_ptr),y             ; Y will be first uncleared byte on return; clear it to terminate name table
-        lda     B                       ; Recover size again
         ldy     #0                      ; Start writing length to name_ptr starting at offset 0
         sta     (name_ptr),y
         iny
@@ -144,10 +140,15 @@ add_variable:
         bmi     @copy_last
         iny
         bne     @copy_next_character
-
 @copy_last:
         iny                             ; Last character
         jsr     rebase_name_ptr         ; Make name_ptr point past end of data
+        ldx     decode_name_type        ; Set up to clear the data bytes
+        ldy     type_size_table,x
+        iny                             ; Clear one more byte to recreate the 0 that terminates the name table
+        ldax    name_ptr
+        jsr     clear_memory            ; Clear the variable data
+@done:
         clc                             ; Signal success
 @error:
         rts
