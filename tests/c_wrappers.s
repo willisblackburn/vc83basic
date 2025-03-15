@@ -182,6 +182,9 @@ _reverse_copy:
 
 _clear_memory:
 .export _clear_memory
+        sta     B                       ; Size in A; we need it in Y
+        jsr     popax                   ; Address of memory
+        ldy     B      
         jmp     clear_memory
 
 _mul2:
