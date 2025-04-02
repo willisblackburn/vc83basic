@@ -35,6 +35,7 @@ fp_ten: .byte $00, $00, $00, $20, 130
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
 ; X = either #FP0 or #FP1
+; DE SAFE
 
 ; Y indexes Float starting at position 0 so make sure everything is in the right place.
 .assert Float::t = 0, error
@@ -79,6 +80,7 @@ load_fp:
 
 ; Stores the value in FP0 as a Float value in memory.
 ; AY = destination address
+; DE SAFE
 
 store_fp0:
         ldx     #FP0
@@ -112,6 +114,7 @@ store_fp0:
         rts
 
 ; Swaps FP0 and FP1.
+; BC SAFE, DE SAFE
 
 swap_fp0_fp1:
         ldy     #.sizeof(UnpackedFloat)-1
@@ -125,6 +128,7 @@ swap_fp0_fp1:
         rts
 
 ; Copies FP0 to FP1.
+; BC SAFE, DE SAFE
 
 copy_fp0_fp1:
         lda     FP0s
