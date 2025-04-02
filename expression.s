@@ -232,7 +232,7 @@ unary_op_not:
 ; Push the value in FP0 onto the value stack.
 ; FP0 = the value to push
 ; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
-; BC SAFE, DE SAFE
+; DE SAFE
 
 push_value_0:
         jsr     clear_fp0
@@ -252,6 +252,7 @@ push_fp0:
         rts
 
 ; Pops a value from the stack into an FP register.
+; DE SAFE
 
 pop_fp0:
         ldy     stack_pos               ; Load stack pointer into Y to use as offset
