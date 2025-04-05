@@ -14,10 +14,14 @@ void test_initialize_name_ptr(void) {
 
 void test_advance_name_ptr(void) {
 
-    const char name_table[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
-        'T', 'O' | EOT, 1, 4, 'R', 'U', 'N' | EOT, 0  };
+    const char name_table_data[] = { 6, 'L', 'I', 'S', 'T' | EOT, 1, 10, 'P', 'R', 'I', 'N', 'T' | EOT, 1, 
+        'T', 'O' | EOT, 1, 0x80, 5, 'R', 'U', 'N' | EOT, 1 | 0x80, 254 };
+    char name_table[532];
 
     PRINT_TEST_NAME();
+
+    memset(name_table, 0, sizeof name_table);
+    memcpy(name_table, name_table_data, sizeof name_table_data);
 
     // Pre-requisite
     next_name_ptr = name_table;
@@ -32,8 +36,12 @@ void test_advance_name_ptr(void) {
     ASSERT_EQ(next_name_ptr, name_table + 6 + 10);
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 6 + 10 + 1);
-    ASSERT_EQ(next_name_ptr, name_table + 6 + 10 + 4);
+    ASSERT_EQ(name_ptr, name_table + 6 + 10 + 2);
+    ASSERT_EQ(next_name_ptr, name_table + 6 + 10 + 5);
+    advance_name_ptr();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 6 + 10 + 5 + 2);
+    ASSERT_EQ(next_name_ptr, name_table + 6 + 10 + 5 + 510);
     advance_name_ptr();
     ASSERT_NE(err, 0);
 }
@@ -214,9 +222,23 @@ void test_imul_16(void) {
 
 void test_dimension_array() {
     const char line_data_1[] = { 'X' | EOT, '(', 1, '3' | EOT, 0 };
+    const char line_data_2[] = { 'Y' | EOT, '(', 2, '2' | EOT, 0, '5' | EOT, 0 };
+    const char expect_array_data_1[] = {
+        0x80, 0x1A,     // size (26 bytes)
+        'X' | EOT,      // name
+        0x01,           // arity
+        0x14, 0x00,     // dimension 1
+        0, 0, 0, 0, 0,  // index 0
+        0, 0, 0, 0, 0,  // index 1
+        0, 0, 0, 0, 0,  // index 2
+        0, 0, 0, 0, 0,  // index 3
+        0               // next entry: end of table
+    };
     char index;
  
     PRINT_TEST_NAME();
+
+    // Test 1-dimensional array
 
     // Call initialize_program to set up variable_name_table_ptr.
     initialize_program();
@@ -249,11 +271,25 @@ void test_dimension_array() {
     // Name table entry length (2 bytes, high-low, MSB set): $80, $1A
     // Name: 'X' | EOT ($D8)
     // Arity: $01
-    // Dimension values (2 bytes, low-high): $03, $00
+    // Dimension values (2 bytes, low-high): $14, $00
     // Data: 4 floats (indexes 0-3) * 5 bytes = 20 bytes
     // Total 26 bytes
 
     ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 26 + 1);
+    ASSERT_MEMORY_EQ(array_name_table_ptr, expect_array_data_1, sizeof expect_array_data_1);
+
+    // Test 2-dimensional array
+
+    // Look up Y as an array
+    set_line(0, line_data_2, sizeof line_data_2);
+    decode_name();
+    ASSERT_EQ(decode_name_arity, 2);
+    index = find_name(array_name_table_ptr);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(index, 1);
+
+
+
 }
 
 void test_find_array_element() {

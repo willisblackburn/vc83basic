@@ -68,16 +68,23 @@ initialize_name_ptr:
 advance_name_ptr:
         mvax    next_name_ptr, name_ptr ; Advance to next entry
         ldy     #0                      ; name_ptr index
+        ldx     #0                      ; X is the high byte of the length of the name table entry
         sec                             ; Set carry for error return if we find no more entries
-        lda     (name_ptr),y            ; Load length byte from name table entry
+        lda     (name_ptr),y            ; Load first byte of name table entry; may be single byte or high byte
         beq     advance_rebase_name_ptr_done    ; If length is zero then no more names
+        bpl     @single_byte            ; High bit is clear; use this as the low byte
+        and     #$7F                    ; Clear the high bit
+        tax                             ; The byte we read is the high byte
+        iny
+        lda     (name_ptr),y            ; It was a two-byte length, so get the low byte at Y=1
+@single_byte:
         clc
         adc     next_name_ptr           ; Add length to next_name_ptr
         sta     next_name_ptr
-        bcc     @skip_inc
-        inc     next_name_ptr+1
-@skip_inc:
-        iny
+        txa
+        adc     next_name_ptr+1
+        sta     next_name_ptr+1
+        iny                             ; Y is now the number of bytes in the length
 
 ; Fall through
 
@@ -216,8 +223,15 @@ dimension_array:
 ; name_ptr still points to the first byte after the name, which is where we'll leave it.
 ; name_ptr + Y is the start of the array element data.
 
-        sty     E                       ; Store offset of array data in E
-        tya
+        tya                             ; Calculate start of array data and store in BC
+        clc
+        adc     name_ptr
+        ldx     name_ptr+1
+        bcc     @skip_inx_2
+        inx
+@skip_inx_2:
+        stax    BC
+        tya                             ; Again start with Y and calculate total size of name table entry
         clc
         adc     #2                      ; Add 2 for length bytes at start of name table entry; assume no overflow
         adc     decode_name_length      ; Name length; assume no overflow
@@ -235,25 +249,20 @@ dimension_array:
         sta     (dst_ptr),y             ; Low byte
         ldax    size
         ldy     #free_ptr
-        jsr     grow                    ; Grow to accommodate the entire array
-        bcc     @error                  ; Oops, too big
-        ldax    name_ptr                ; Calculate start of array data as name_ptr + B
-        clc
-        adc     E
-        bcc     @skip_inx_2
-        inx
-@skip_inx_2:
-        stax    dst_ptr                 ; dst_ptr is start of array data; array_element_size is the size to clear
+        jsr     grow                    ; Grow to accommodate the entire array; clobbers size and DE
+        bcs     @error                  ; Oops, too big
+        mvax    BC, dst_ptr             ; Prepare to clear array data from address stored in BC
         ldy     #0                      ; Initialize Y to 0
         tya                             ; Set with 0
 @next_block:
-        dec     size+1                  ; Will only be minus if it was 0 to start; size can't be >=32K
-        beq     @no_more_blocks         ; No more blocks
+        dec     array_element_size+1    ; Will only go negative if it was 0 to start; size can't be >=32K
+        bmi     @no_more_blocks         ; No more blocks
         jsr     set_memory
-        beq     @next_block             ; Unconditional; uaranteed Y=0 and Z flag set on return
+        inc     dst_ptr+1               ; Move pointer to next block
+        bne     @next_block             ; Unconditional since dst_ptr should not roll over
 @no_more_blocks:
-        ldy     size                    ; Set the remaining bytes
-        beq     @no_remaining_bytes
+        ldy     array_element_size      ; Set the remaining bytes
+        iny                             ; Increment so we also set 0 at the end of the name table
         jsr     set_memory
 @no_remaining_bytes:
         clc                             ; Signal success
