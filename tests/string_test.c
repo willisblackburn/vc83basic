@@ -201,9 +201,12 @@ void test_string_alloc_retry(void) {
 
     s = string_alloc(100);
     ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 100 - STRING_EXTRA);
+    ASSERT_PTR_EQ(s, string_ptr);
     s2 = string_alloc(100);
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(s, s2);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 100 - STRING_EXTRA);
+    ASSERT_PTR_EQ(s2, string_ptr);
 
     // Make sure small string survives after allocation failure.
     // HELLO$ will be allocated after surviving 100-byte string from above. Then compact will have to collect the
@@ -211,21 +214,26 @@ void test_string_alloc_retry(void) {
 
     s = string_alloc(5);
     ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(s, s2 - 5 - STRING_EXTRA);
     memcpy(s->data, "HELLO", 5);
     add_string_variable_with_name("HELLO$", s);
+
+    // This allocation should discard s2, move "HELLO" up to the top of the string space, and allocate s beneath it.
+    // Total usage should be 100 + 5 bytes plus STRING_EXTRA bytes overhead for each string = 111 bytes.
+
     s2 = string_alloc(100);
     ASSERT_EQ(err, 0);
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA - 100 - STRING_EXTRA);
+    ASSERT_PTR_EQ(s2, string_ptr);
 
     // Check HELLO$
     parse_and_decode_name("HELLO$");
     find_name(variable_name_table_ptr);
     ASSERT_EQ(err, 0);
     s = *(const String**)name_ptr;
+    ASSERT_EQ(s, (char *)himem_ptr - 5 - STRING_EXTRA); // "HELLO" should still be at top of memory
     ASSERT_EQ(s->length, 5);
     ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
-
-    // string_pointer should point to a 100-byte string followed by a 5-byte string.
-    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA - 100 - STRING_EXTRA);
 }
 
 int main(void) {
