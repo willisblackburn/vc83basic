@@ -180,7 +180,7 @@ void test_compact(void) {
     ASSERT_EQ(s->length, 255);
     ASSERT_EQ(s->data[0], 0);
     ASSERT_EQ(s->data[1], 1);
-    ASSERT_EQ(s->data[255], 255);
+    ASSERT_EQ(s->data[254], 254);
 }
 
 void test_string_alloc_retry(void) {
