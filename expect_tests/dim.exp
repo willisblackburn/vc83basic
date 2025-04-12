@@ -1,3 +1,24 @@
 source [file join [file dirname [info script]] common.expinc]
 spawn_basic
 
+# Explicit DIM
+test {
+DIM A(100)
+LET A(1)=10
+LET A(100)=1000
+PRINT A(1),A(2),A(100)
+} {
+10         0               1000
+}
+
+# Implicit DIM
+test {
+LET X(1)=10
+PRINT X(1)
+PRINT X(11)
+} {
+10
+
+READY
+ERROR
+}
