@@ -189,7 +189,6 @@ compact:
         jsr     initialize_name_ptr
 @mark_next:
         jsr     advance_name_ptr
-        ldax name_ptr
         bcs     @calculate
         jsr     find_variable_data
         beq     @mark_next              ; Not a string; move on to the next one
