@@ -168,7 +168,7 @@ string_alloc:
 
 compact:
 
-; Phase 1: Set the relocation address low byte of all strings to 0.
+; Phase 1: Set the relocation address high byte of all strings to 0.
 
         mvax    string_ptr, src_ptr     ; Use src_ptr to scan string space
         bne     @clear_next_2           ; Unconditional bypass set_src_ptr_next_string call
@@ -178,6 +178,7 @@ compact:
         jsr     check_src_ptr
         bcs     @mark                   ; No more to clear
         jsr     set_src_ptr_relocation_address
+        iny
         lda     #0
         sta     (src_ptr),y             ; Set to 0
         jmp     @clear_next
@@ -193,6 +194,7 @@ compact:
         jsr     find_variable_data
         beq     @mark_next              ; Not a string; move on to the next one
         jsr     set_src_ptr_relocation_address  ; Add length to src_ptr; Y points to relocation address
+        iny
         lda     #1
         sta     (src_ptr),y             ; Store 1 into the relocation address field.
         bne     @mark_next
@@ -209,11 +211,11 @@ compact:
         jsr     check_src_ptr
         bcs     @update                 ; No more strings
         jsr     set_src_ptr_relocation_address
-        lda     (src_ptr),y             ; Marked?
-        beq     @calculate_next         ; Nope, move on
         lda     dst_ptr                 ; Save current value of dst_ptr into relocation address
         sta     (src_ptr),y
         iny
+        lda     (src_ptr),y             ; Marked?
+        beq     @calculate_next         ; Nope, move on
         lda     dst_ptr+1
         sta     (src_ptr),y
         txa                             ; Length is still in X from the call to set_src_ptr_relocation_address
@@ -284,11 +286,11 @@ compact:
         jsr     check_src_ptr
         bcs     @shift                  ; No more strings
         jsr     set_src_ptr_relocation_address
-        lda     (src_ptr),y             ; Marked?
-        beq     @relocate_next          ; Nope, move on
-        sta     dst_ptr                 ; Save relocation address into dst_ptr
+        lda     (src_ptr),y             ; Save relocation address into dst_ptr
+        sta     dst_ptr    
         iny
         lda     (src_ptr),y
+        beq     @relocate_next          ; If not marked then skip
         sta     dst_ptr+1
 
 ; src_ptr now points to the relocation address, so subtract the length (still in X) and 1 (length byte) to recover
