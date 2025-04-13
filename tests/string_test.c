@@ -134,9 +134,6 @@ void test_compact(void) {
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - STRING_EXTRA - 5 - STRING_EXTRA - 120 - STRING_EXTRA);
 
-    parse_and_decode_name("A$");
-    find_name(variable_name_table_ptr);
-    ASSERT_EQ(err, 0);
     compact();
     // Only the "HELLO" string should remain.
     ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA);
@@ -145,11 +142,12 @@ void test_compact(void) {
     find_name(variable_name_table_ptr);
     ASSERT_EQ(err, 0);
     s = *(const String**)name_ptr;
+    ASSERT_PTR_EQ(s, (char*)himem_ptr - 5 - STRING_EXTRA);
     ASSERT_EQ(s->length, 5);
     ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
 
     // Try some large strings.
-    // Populate the string with values from 0 to 255 to verify they're copied correctly.
+    // Populate the string with values from 0 to 254 to verify they're copied correctly.
     string_alloc(255);
     ASSERT_EQ(err, 0);
     s = string_alloc(255);
