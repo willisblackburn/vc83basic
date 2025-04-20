@@ -133,7 +133,6 @@ void test_compact(void) {
     string_alloc(120);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - STRING_EXTRA - 5 - STRING_EXTRA - 120 - STRING_EXTRA);
-
     compact();
     // Only the "HELLO" string should remain.
     ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 5 - STRING_EXTRA);
