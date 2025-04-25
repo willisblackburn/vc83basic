@@ -114,14 +114,6 @@ set_memory:
         bne     set_memory
         rts
 
-; Clears memory for an array.
-; dst_ptr = pointer to the memory to clear
-; AX = the amount of memory to clear
-
-array_clear_memory:
-        
-
-
 ; Invokes a vector selected from an table of vectors.
 ; JSR to here to have the routine at the vector return to the caller of this function, or JMP to have it
 ; return to the caller's caller.
