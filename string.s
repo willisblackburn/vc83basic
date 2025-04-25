@@ -244,7 +244,7 @@ compact:
         bcs     @relocate
         jsr     set_name_ptr_data
         beq     @update_next            ; Not a string; move on to the next one
-        jsr     set_src_ptr_relocation_offset   ; Add length to src_ptr; Y points to relocation address
+        jsr     set_src_ptr_relocation_offset   ; Add length to src_ptr; Y points to relocation offset
         clc                             ; Do new string_ptr (DE) + relocation offset into variable address
         lda     (src_ptr),y
         adc     D
@@ -265,7 +265,7 @@ compact:
         mvax    string_ptr, src_ptr
         bne     @relocate_next_2        ; Unconditional bypass set_src_ptr_next_string call 
 @relocate_next:
-        jsr     set_src_ptr_next_string ; Move src_ptr past relocation address and to next string
+        jsr     set_src_ptr_next_string ; Move src_ptr past relocation offset and to next string
 @relocate_next_2:        
         jsr     check_src_ptr
         bcs     @shift                  ; No more strings
