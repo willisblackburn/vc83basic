@@ -92,9 +92,7 @@ exec_for:
         sta     stack+Control::variable_name_ptr,x
         lda     decode_name_ptr+1
         sta     stack+Control::variable_name_ptr+1,x
-        phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
         jsr     evaluate_expression     ; Start value (may clobber decode_name_ptr)
-        plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
         bcs     @error
         jsr     find_or_add_variable
         bcs     @error
