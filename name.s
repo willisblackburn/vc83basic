@@ -120,9 +120,7 @@ find_or_add_variable:
         rts
 
 @array:
-        phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
         jsr     evaluate_argument_list  ; Evaluate the array arguments
-        plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
         ldax    array_name_table_ptr
         jsr     find_name               ; Look for an array with this name
         bcc     @found_array
