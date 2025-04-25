@@ -16,13 +16,20 @@ evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
         .word   evaluate_paren-1            ; XH_PAREN
 
+; Evaluate a full expression.
+; Evaluating an expression often involves evaluating names, and decoding names affects decode_name_ptr and related
+; values. Sometimes the caller is using them (for example, they might identify the variable that LET is setting), so
+; we save them on the stack and restore them before returning.
+
 evaluate_expression:
+        phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
         ldax    #evaluate_vectors
         jsr     decode_expression
         bcs     @error                  ; Expression evaluation failed
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
         jsr     process_operators       ; May fail with carry set
 @error:
+        plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
         rts
 
 evaluate_variable:
