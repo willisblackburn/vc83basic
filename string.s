@@ -302,7 +302,7 @@ compact:
 ; Invokes a handler vector for each string value in the variable name table.
 
 for_all_referenced_strings:
-        stax    dst_ptr                 ; Save the vector into dst_ptr
+        stax    vector_table_ptr        ; Use vector_table_ptr to store the handler vector
         ldax    variable_name_table_ptr ; Prepare to scan variables
         jsr     initialize_name_ptr
         bne     @next                   ; Unconditional since initialize_name_ptr exits with Z clear
@@ -318,7 +318,7 @@ for_all_referenced_strings:
         rts
 
 @invoke:
-        jmp     (dst_ptr)               ; Jump to handler; RTS from handler will return to point after JSR @invoke
+        jmp     (vector_table_ptr)      ; Jump to handler; RTS from handler will return to point after JSR @invoke
 
 ; Phase 2 handler
 
