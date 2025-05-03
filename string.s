@@ -30,18 +30,18 @@ load_s:
 @null_string:
         rts
 
-; Parses a string from src_ptr and writes it to a new string allocated from string space.
+; Parses a string from read_ptr and writes it to a new string allocated from string space.
 ; Stops parsing upon reaching the termination character. If the first character of the input is a double quote, then
 ; the termination character is also a double quote, and read_string interprets two double-quotes in the middle of the
 ; string as a single quote. Otherwise the termination character is a comma (',').
 ; Finding a NUL in the input terminates the string no matter what.
-; AX = the buffer address (stored in src_ptr)
+; AX = the buffer address (stored in read_ptr)
 ; Y = the starting offset
 ; Returns the address of the new string in AX and the last read position in Y, carry clear if ok, carry set if error.
 
 read_string:
-        stax    src_ptr                 ; Store src_ptr
-        sty     B                       ; Read position relative to src_ptr
+        stax    read_ptr                ; Store read_ptr
+        sty     B                       ; Read position relative to read_ptr
         lda     #0                      ; Allocate 0-byte string
         jsr     string_alloc            ; Don't care about the address of this string
         bcs     @done
@@ -49,7 +49,7 @@ read_string:
         jsr     string_alloc
         bcs     @done
         ldy     B
-        lda     (src_ptr),y             ; Get first character
+        lda     (read_ptr),y            ; Get first character
         iny                             ; Skip past it in case it's a double quote
         cmp     #'"'                    ; Is first character a double quote?
         beq     @store_terminator       ; It is, use it
@@ -62,7 +62,7 @@ read_string:
         sta     C                       ; Initialize write position relative to string_ptr
 @next:
         ldy     B                       ; Read offset
-        lda     (src_ptr),y             ; Get next source character
+        lda     (read_ptr),y            ; Get next source character
         and     #$7F                    ; Remove EOT bit if set
         beq     @finish                 ; Was zero, definitely finished
         cmp     D                       ; Was it the terminator?
@@ -71,7 +71,7 @@ read_string:
         bne     @finish                 ; Nope; we're finished
         inc     B                       ; Always skip over this quote
         iny                             ; Increment Y in order to check the next character
-        cmp     (src_ptr),y             ; Check second double quote (if present cannot have EOT set)
+        cmp     (read_ptr),y            ; Check second double quote (if present cannot have EOT set)
         bne     @finish                 ; Nope, just finish; B points to character after double quote
 @not_terminator:
         ldy     C                       ; Write offset
