@@ -607,23 +607,23 @@ output_y_zeros:
 ; If the first character is not a number or a '-', then return an error. Otherwise, read up to the first non-digit or
 ; until a character with the EOT bit set.
 ; The caller should skip whitespace (if necessary) before calling this function.
-; AX = the buffer address (stored in src_ptr)
+; AX = the buffer address (stored in read_ptr)
 ; Y = the starting offset
 ; Returns the number in FP0 and the last read position in Y, carry clear if ok, carry set if error.
 
 string_to_fp:
-        stax    src_ptr                 ; Store src_ptr
+        stax    read_ptr                ; Store read_ptr
         sty     E                       ; Save starting position in E        
         jsr     clear_fp0               ; Reset to zero (including sign)
         mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
-        lda     (src_ptr),y
+        lda     (read_ptr),y
         cmp     #'-'                    ; Check if it's negative; note that '-' will never have EOT set
         bne     @not_negative
         ror     FP0s                    ; If equal then carry will have been set; roll into sign
 @next_character:
         iny                             ; Skip past negative sign
 @not_negative:
-        lda     (src_ptr),y             ; Get the next character
+        lda     (read_ptr),y            ; Get the next character
         and     #$7F                    ; Clear EOT bit if set
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
@@ -667,7 +667,7 @@ string_to_fp:
         rts
 
 @check_eot:
-        lda     (src_ptr),y             ; Reload the original character
+        lda     (read_ptr),y            ; Reload the original character
         bpl     @next_character         ; If EOT not set then carry on
         iny                             ; EOT was set to increment past this character
 
