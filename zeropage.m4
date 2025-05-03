@@ -104,6 +104,9 @@ endblock(DECODE_NAME_STATE)
 comment Whether the program is not running, running, stopped, or awaiting reset
 byte(program_state)
 
+comment Pointer to the source of data when reading a value
+word(read_ptr, const char*)
+
 comment The vector table pointer that was passed into decode_expression
 word(decode_expression_vector_table_ptr, void*)
 
