@@ -177,12 +177,12 @@ invoke_indexed_vector:
 
 ; Reads a number from the buffer.
 ; If the first character is not a digit, then return an error. Otherwise, read up to the first non-digit.
-; AX = the buffer address (stored in src_ptr)
+; AX = the buffer address (stored in read_ptr)
 ; Y = the starting offset
 ; Returns the number in AX and the last read position in Y, carry clear if ok, carry set if error
 
 read_number:
-        stax    src_ptr                 ; Store src_ptr
+        stax    read_ptr                ; Store read_ptr
         sty     B                       ; Store starting position in B so we can read it later
         lda     #0                      ; Intialize the value to 0
         sta     C                       ; Keep the low byte of the result in C
@@ -190,7 +190,7 @@ read_number:
         dey                             ; Negate the next instruction
 @next_character:
         iny                             ; Increment the read position
-        lda     (src_ptr),y
+        lda     (read_ptr),y
         and     #$7F                    ; Clear EOT bit if set
         jsr     char_to_digit           ; X SAFE function
         bcs     @finish                 ; If there was an error in char_to_digit, stop parsing
@@ -205,7 +205,7 @@ read_number:
         bcc     @check_eot              ; If carry clear then done with this digit
         inx                             ; Otherwise increment high byte
 @check_eot:
-        lda     (src_ptr),y             ; Reload the original character
+        lda     (read_ptr),y            ; Reload the original character
         bpl     @next_character         ; If EOT not set then carry on
         iny                             ; Move past the character with the EOT bit set
 
