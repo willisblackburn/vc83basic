@@ -96,3 +96,6 @@ comment Length of the name referred to by decode_name_ptr
 byte(decode_name_length)
 
 endblock(DECODE_NAME_STATE)
+
+comment Pointer to the source of data when reading a value
+word(read_ptr, const char*)
