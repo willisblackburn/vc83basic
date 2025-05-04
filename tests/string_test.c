@@ -44,7 +44,9 @@ void test_string_alloc(void) {
     initialize_program();
 
     original_string_ptr = string_ptr;
+    DEBUG_PTR(original_string_ptr);
     s = string_alloc(10);
+    DEBUG_PTR(s);
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(s, string_ptr);
     ASSERT_PTR_EQ(string_ptr, (char*)original_string_ptr - 10 - STRING_EXTRA);
