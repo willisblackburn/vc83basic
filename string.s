@@ -103,19 +103,34 @@ read_string:
 @done:
         rts                             ; If we reached here via @finish, carry guaranteed to be clear by ADC
 
-; Allocates space for a new string on the string heap.
+; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in AX.
 ; BC SAFE, DE SAFE
 
 string_alloc:
-        pha                             ; Save the original length
+        pha                             ; Remember the requested size in order to set it into string later
         ldx     #0                      ; Initialize high byte of block length to 0
         clc
         adc     #STRING_EXTRA           ; Add 3 bytes to length: 1 byte for length, 2 bytes for GC relocation pointer
         bcc     @skip_inx               ; If no carry then leave high byte at 0
         inx                             ; Otherwise it's 1
 @skip_inx:
+        jsr     string_alloc_memory     ; Allocate memory
+        pla                             ; Get size we saved earlier
+        bcs     @error                  ; Allocation failed
+        ldy     #0
+        sta     (string_ptr),y          ; Set the length of the allocated string
+@error:
+        ldax    string_ptr              ; Return pointer in AX
+        rts
+
+; Allocates memory for a new string on the string heap. Called from string_alloc with the total amount of memory
+; needed for the string, which is the string length plus STRING_EXTRA bytes of overhead.
+; AX = the memory required for the new string
+; BC SAFE
+
+string_alloc_memory:
         eor     #$FF                    ; Invert length and set carry in order to do string_ptr - AX
         sec                             ; This calculates proposed new value for string_ptr
         adc     string_ptr
@@ -124,7 +139,6 @@ string_alloc:
         eor     #$FF
         adc     string_ptr+1
         tax                             ; Store high byte of proposed value in X
-        pla                             ; Recover length from stack
         cpx     free_ptr+1              ; Compare high byte vs. free_ptr
         bcc     @error                  ; New string_ptr high byte < free_ptr; it's definitely an error
         bne     @string_ptr_ok          ; If it's greater then it's definitely okay
@@ -133,12 +147,9 @@ string_alloc:
 @string_ptr_ok:
         sty     string_ptr              ; Proposed string_ptr >= free_ptr; go update it
         stx     string_ptr+1
-        ldy     #0                      ; Offset of length
-        sta     (string_ptr),y          ; Set the length
-        ldax    string_ptr              ; Return pointer in AX
         clc                             ; Signal success
         rts
 
 @error:
-        sec
+        sec                             ; Because math @error is reached from BCC so have to set carry
         rts
