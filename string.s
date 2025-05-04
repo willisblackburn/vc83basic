@@ -42,11 +42,8 @@ load_s:
 read_string:
         stax    read_ptr                ; Store read_ptr
         sty     B                       ; Read position relative to read_ptr
-        lda     #0                      ; Allocate 0-byte string
-        jsr     string_alloc            ; Don't care about the address of this string
-        bcs     @done
-        lda     #255                    ; Allocate second 255-byte string
-        jsr     string_alloc
+        ldax    #(255 + STRING_EXTRA + STRING_EXTRA)    ; Allocate space for 2 strings with total length of 255
+        jsr     string_alloc_memory
         bcs     @done
         ldy     B
         lda     (read_ptr),y            ; Get first character
