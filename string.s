@@ -260,6 +260,43 @@ for_all_referenced_strings:
 @next:
         jsr     advance_name_ptr
         bcc     @continue
+        ldax    array_name_table_ptr    ; Prepare to scan arrays
+        jsr     initialize_name_ptr
+        bne     @next_array
+
+@continue_array:
+        jsr     set_name_ptr_data       ; Sets name_ptr to first byte after the name, which will be the arity
+        beq     @next_array             ; Not a string array; move on to the next one
+        ldy     #0
+        lda     (name_ptr),y            ; Load arity
+        asl     A                       ; Arity *2 because we need to skip past 16-bit multiplier for each dimension
+        tay                             ; Into Y
+        iny                             ; Increment so we also skip past the arity itself
+@next_element:
+        jsr     rebase_name_ptr         ; Move name_ptr so it now points to the next array element
+        lda     name_ptr+1              ; Check if we've run out of array elements
+        cmp     next_name_ptr+1
+        bne     @continue_element       ; Not yet
+        lda     name_ptr                ; Maybe; check low byte too
+        cmp     next_name_ptr
+        beq     @next_array             ; Out of array elements
+@continue_element:
+        ldy     #0
+        lda     (name_ptr),y            ; Set up src_ptr
+        sta     src_ptr
+        iny
+        lda     (name_ptr),y
+        sta     src_ptr+1
+        ora     src_ptr                 ; Check if string is not null
+        beq     @null_string
+        jsr     handle_string
+@null_string:
+        ldy     #2
+        bne     @next_element           ; Unconditional because Y=2
+
+@next_array:
+        jsr     advance_name_ptr
+        bcc     @continue_array
         rts
 
 ; With src_ptr pointing to a string, adds the length of the string referenced by src_ptr plus one to src_ptr, so that
