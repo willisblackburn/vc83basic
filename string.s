@@ -264,6 +264,8 @@ for_all_referenced_strings:
         jsr     initialize_name_ptr
         bne     @next_array
 
+; And each string value in the array name table.
+
 @continue_array:
         jsr     set_name_ptr_data       ; Sets name_ptr to first byte after the name, which will be the arity
         beq     @next_array             ; Not a string array; move on to the next one
@@ -287,16 +289,37 @@ for_all_referenced_strings:
         iny
         lda     (name_ptr),y
         sta     src_ptr+1
-        ora     src_ptr                 ; Check if string is not null
-        beq     @null_string
         jsr     handle_string
-@null_string:
         ldy     #2
         bne     @next_element           ; Unconditional because Y=2
 
 @next_array:
         jsr     advance_name_ptr
         bcc     @continue_array
+
+; And each string variable on the expression stack.
+
+        ldpha   stack_pos               ; Save stack_pos value
+        cmp     #PRIMARY_STACK_SIZE     ; Stack empty?
+        beq     @stack_done
+
+@continue_stack_value:
+        tax
+        lda     stack+Value::type,x     ; Get value type
+        bmi     @stack_done             ; If it's negative then it's a control structure: no more values
+        beq     @next_stack_value       ; Not a string
+        lda     stack+Value::string_value_ptr,x
+        sta     src_ptr
+        lda     stack+Value::string_value_ptr+1,x
+        sta     src_ptr+1
+        jsr     handle_string
+
+@next_stack_value:
+        jsr     stack_free_value
+        bne     @continue_stack_value
+
+@stack_done:
+        plsta   stack_pos               ; Restore stack_pos
         rts
 
 ; With src_ptr pointing to a string, adds the length of the string referenced by src_ptr plus one to src_ptr, so that
@@ -304,11 +327,17 @@ for_all_referenced_strings:
 ; When calling the handler, X will contain the length of the string.
 
 handle_string:
+        lda     src_ptr                 ; Check if src_ptr is null
+        ora     src_ptr+1
+        beq     @done                   ; It is
         ldy     #0
         lda     (src_ptr),y             ; Load length first
         tax                             ; Move into X in case someone wants it later
         jsr     add_src_ptr_plus_one
         jmp     (vector_table_ptr)      ; Jump to handler; RTS from handler will return to point after JSR @invoke
+
+@done:
+        rts
 
 ; Phase 1 handler
 
