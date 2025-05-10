@@ -75,6 +75,7 @@ comment Types
 
 def(TYPE_NUMBER,        hex(00))
 def(TYPE_STRING,        hex(01))
+def(TYPE_CONTROL,       hex(FF))
 
 comment Expression precedence levels
 

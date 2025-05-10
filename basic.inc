@@ -24,6 +24,7 @@
     next_line_ptr .res 2
     next_line_pos .res 1
     variable_name_ptr .res 2
+    type .res 1
     end_value .res .sizeof(Float)
     step_value .res .sizeof(Float)
 .endstruct
@@ -39,6 +40,10 @@
     .endunion
     type .res 1
 .endstruct
+
+; We use type to distinguish between Value and Control on the stack, so make sure they're at the same offset.
+
+.assert Control::type = Value::type, error
 
 ; Zero Page
 

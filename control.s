@@ -209,6 +209,8 @@ push_next_line_ptr:
         sta     stack+Control::next_line_ptr+1,x
         lda     next_line_pos
         sta     stack+Control::next_line_pos,x
+        lda     #TYPE_CONTROL           ; Identify this as Control not Value
+        sta     stack+Control::type
         txa                             ; Move stack pointer back to A
 @done:
         rts
