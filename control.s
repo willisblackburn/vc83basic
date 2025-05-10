@@ -4,6 +4,9 @@
 ; stack must be page-aligned
 .assert <stack = 0, error
 
+; We use type to distinguish between Value and Control on the stack, so make sure they're at the same offset.
+.assert Control::type = Value::type, error
+
 ; GOTO statement:
 
 exec_goto:

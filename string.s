@@ -308,10 +308,8 @@ for_all_referenced_strings:
         lda     stack+Value::type,x     ; Get value type
         bmi     @stack_done             ; If it's negative then it's a control structure: no more values
         beq     @next_stack_value       ; Not a string
-        lda     stack+Value::string_value_ptr,x
-        sta     src_ptr
-        lda     stack+Value::string_value_ptr+1,x
-        sta     src_ptr+1
+        stx     src_ptr                 ; Set up src_ptr to point into stack
+        mva     #>stack, src_ptr+1
         jsr     handle_string
 
 @next_stack_value:

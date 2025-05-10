@@ -41,10 +41,6 @@
     type .res 1
 .endstruct
 
-; We use type to distinguish between Value and Control on the stack, so make sure they're at the same offset.
-
-.assert Control::type = Value::type, error
-
 ; Zero Page
 
 .include "zeropage.inc"
