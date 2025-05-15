@@ -71,7 +71,7 @@ void list_statement(void);
 void list_directive(/* A */ char directive);
 
 // name.s
-char find_name(/* AX */ const char* name_ptr);
+char find_name(/* AX */ const char* name_table_ptr);
 void advance_name_ptr(void);
 void add_variable(void);
 
