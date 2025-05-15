@@ -26,25 +26,25 @@ void test_advance_name_ptr(void) {
     ASSERT_NE(err, 0);
 }
 
-void call_find_name(const char* name, const char* name_table, char expect_index,
+void call_find_name(const char* name, const char* name_table_ptr, char expect_index,
     const char* expect_name_ptr, int line) {        
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
     parse_and_decode_name(name);
-    HEXDUMP(name_table, 32);
-    index = find_name(name_table);
+    HEXDUMP(name_table_ptr, 32);
+    index = find_name(name_table_ptr);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(index, expect_index);
     ASSERT_PTR_EQ(name_ptr, expect_name_ptr);
 }
 
-void call_find_name_fail(const char* name, const char* name_table, char expect_index,
+void call_find_name_fail(const char* name, const char* name_table_ptr, char expect_index,
     const char* expect_name_ptr, int line) {
     char index;
     fprintf(stderr, "  %s:%d: find_name(\"%s\")\n", __FILE__, line, name);
     parse_and_decode_name(name);
-    HEXDUMP(name_table, 32);
-    index = find_name(name_table);
+    HEXDUMP(name_table_ptr, 32);
+    index = find_name(name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, expect_index);
     // On fail name_ptr should always point to 0 at the end of the name table.
