@@ -66,7 +66,7 @@ void encode_byte(/* A */ char value);
 int evaluate_expression(void);
 
 // name.s
-char find_name(/* AX */ const char* name_ptr);
+char find_name(/* AX */ const char* name_table_ptr);
 void advance_name_ptr(void);
 void add_variable(void);
 
