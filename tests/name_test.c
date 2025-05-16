@@ -12,16 +12,16 @@ void test_advance_name_ptr(void) {
 
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 1);
-    ASSERT_EQ(next_name_ptr, name_table + 6);
+    ASSERT_PTR_EQ(name_ptr, name_table + 1);
+    ASSERT_PTR_EQ(next_name_ptr, name_table + 6);
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 6 + 1);
-    ASSERT_EQ(next_name_ptr, name_table + 6 + 10);
+    ASSERT_PTR_EQ(name_ptr, name_table + 6 + 1);
+    ASSERT_PTR_EQ(next_name_ptr, name_table + 6 + 10);
     advance_name_ptr();
     ASSERT_EQ(err, 0);
-    ASSERT_EQ(name_ptr, name_table + 6 + 10 + 1);
-    ASSERT_EQ(next_name_ptr, name_table + 6 + 10 + 4);
+    ASSERT_PTR_EQ(name_ptr, name_table + 6 + 10 + 1);
+    ASSERT_PTR_EQ(next_name_ptr, name_table + 6 + 10 + 4);
     advance_name_ptr();
     ASSERT_NE(err, 0);
 }
