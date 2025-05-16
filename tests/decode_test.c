@@ -46,11 +46,11 @@ void test_decode_name(void) {
     set_line(0, line_data, sizeof line_data);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data);
     ASSERT_EQ(decode_name_length, 1);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data + 1);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data + 1);
     ASSERT_EQ(decode_name_length, 6);
 }
 
