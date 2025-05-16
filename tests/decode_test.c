@@ -73,31 +73,31 @@ void test_decode_name(void) {
     set_line(0, line_data, sizeof line_data);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data);
     ASSERT_EQ(decode_name_length, 1);
     ASSERT_EQ(decode_name_type, TYPE_NUMBER);
     ASSERT_EQ(decode_name_arity, 0);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data + 1);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data + 1);
     ASSERT_EQ(decode_name_length, 6);
     ASSERT_EQ(decode_name_type, TYPE_NUMBER);
     ASSERT_EQ(decode_name_arity, 0);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data + 7);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data + 7);
     ASSERT_EQ(decode_name_length, 2);
     ASSERT_EQ(decode_name_type, TYPE_STRING);
     ASSERT_EQ(decode_name_arity, 0);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data + 9);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data + 9);
     ASSERT_EQ(decode_name_length, 1);
     ASSERT_EQ(decode_name_type, TYPE_NUMBER);
     ASSERT_EQ(decode_name_arity, 1);
 
     decode_name();
-    ASSERT_EQ(decode_name_ptr, line_buffer.data + 12);
+    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data + 12);
     ASSERT_EQ(decode_name_length, 2);
     ASSERT_EQ(decode_name_type, TYPE_STRING);
     ASSERT_EQ(decode_name_arity, 5);
