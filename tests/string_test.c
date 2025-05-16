@@ -230,7 +230,7 @@ void test_string_alloc_retry(void) {
     find_name(variable_name_table_ptr);
     ASSERT_EQ(err, 0);
     s = *(const String**)name_ptr;
-    ASSERT_EQ(s, (char *)himem_ptr - 5 - STRING_EXTRA); // "HELLO" should still be at top of memory
+    ASSERT_PTR_EQ(s, (char *)himem_ptr - 5 - STRING_EXTRA); // "HELLO" should still be at top of memory
     ASSERT_EQ(s->length, 5);
     ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
 }

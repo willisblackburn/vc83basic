@@ -20,7 +20,7 @@ void test_reset_next_line_ptr(void) {
     next_line_ptr = NULL;
     reset_next_line_ptr();
 
-    ASSERT_EQ(next_line_ptr, program_ptr);
+    ASSERT_PTR_EQ(next_line_ptr, program_ptr);
 }
 
 void test_advance_next_line_ptr(void) {
@@ -53,7 +53,7 @@ void test_grow(void) {
 
     // Add 3 bytes to the program space by adding to line_ptr.
     // First make sure line_ptr points to the beginning of the program.
-    ASSERT_EQ(next_line_ptr, program_ptr);
+    ASSERT_PTR_EQ(next_line_ptr, program_ptr);
 
     // Add 3 bytes.
     grow(&next_line_ptr, 3);
@@ -156,7 +156,7 @@ void test_find_line(void) {
     initialize_program();
     reset_next_line_ptr();
 
-    ASSERT_EQ(next_line_ptr, program_ptr);
+    ASSERT_PTR_EQ(next_line_ptr, program_ptr);
 
     // Add three lines: 10, 256, and 10000.
     // It doesn't matter what the actual line data is since we're not going to execute it.
