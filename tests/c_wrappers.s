@@ -117,7 +117,10 @@ _push_string:
 
 _pop_string:
 .export _pop_string
-        jmp     pop_string
+        jsr     pop_string
+        sty     B                       ; Pointer is returned in AY instead of AX
+        ldx     B
+        rts
 
 _stack_alloc:
 .export _stack_alloc

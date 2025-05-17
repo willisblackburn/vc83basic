@@ -182,6 +182,141 @@ void test_compact(void) {
     ASSERT_EQ(s->data[254], 254);
 }
 
+void test_compact_with_array(void) {
+    const char line_data[] = { 'A', '$' | EOT, '(', 1, '5' | EOT, 0 };
+    const String* hello;
+    const String* world;
+    char index;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Don't repeat stuff from other tests; just get on with setting up an array.
+    // We build the array by parsing an expression, since it's the simplest way to do it.
+
+    // Look up A$ as an array
+    set_line(0, line_data, sizeof line_data);
+    decode_name();
+    ASSERT_EQ(decode_name_arity, 1);
+    index = find_name(array_name_table_ptr);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(index, 0);
+
+    // Parse dimension values
+    evaluate_argument_list(decode_name_arity);
+
+    // Make sure argument is on the stack
+    ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 6);
+
+    // Add as new array
+    dimension_array();
+    ASSERT_EQ(err, 0);
+
+    HEXDUMP(array_name_table_ptr, 64);
+
+    // Look up the name A$ again
+    set_line(0, line_data, sizeof line_data);
+    decode_name();
+    index = find_name(array_name_table_ptr);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(index, 0);
+
+    // name_ptr should point to the array data: array_name_table_ptr +
+    //   2 for the 16-bit length
+    //   2 for "A$"
+    ASSERT_PTR_EQ(name_ptr, array_name_table_ptr + 4);
+
+    // Advance 3 more bytes for the arity and the dimension length; now name_ptr is a String**
+    name_ptr += 3;
+
+    string_alloc(20);
+    ASSERT_EQ(err, 0);
+    hello = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(hello->data, "HELLO", 5);
+    
+    world = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(world->data, "WORLD", 5);
+    
+    ((const String**)name_ptr)[3] = hello;
+    ((const String**)name_ptr)[4] = world;
+
+    // Pre-compact, there are three strings with 30 bytes total plus 9 bytes overhead
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 30 - 3 * STRING_EXTRA);
+
+    compact();
+
+    // Post-compact, there should be just the two 5-byte strings left
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 2 * STRING_EXTRA);
+
+    // Find the A$ array again
+    set_line(0, line_data, sizeof line_data);
+    decode_name();
+    index = find_name(array_name_table_ptr);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(index, 0);
+
+    name_ptr += 3;
+
+    hello = ((const String**)name_ptr)[3];
+    world = ((const String**)name_ptr)[4];
+
+    ASSERT_EQ(hello->length, 5);
+    ASSERT_MEMORY_EQ(hello->data, "HELLO", 5);
+    ASSERT_EQ(world->length, 5);
+    ASSERT_MEMORY_EQ(world->data, "WORLD", 5);
+}
+
+void test_compact_with_expression(void) {
+    const String* hello;
+    const String* world;
+    const String* s;
+    char index;
+
+    PRINT_TEST_NAME();
+
+    initialize_program();
+
+    // Make sure that compact preserves strings that are only referenced from the expression stack.
+
+    string_alloc(20);
+    ASSERT_EQ(err, 0);
+    hello = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(hello->data, "HELLO", 5);
+    world = string_alloc(5);
+    ASSERT_EQ(err, 0);
+    memcpy(world->data, "WORLD", 5);
+
+    push_string(hello);
+    push_string(world);
+
+    // Pre-compact, there are three strings with 30 bytes total plus 9 bytes overhead
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 30 - 3 * STRING_EXTRA);
+
+    DEBUG_PTR(hello);
+    DEBUG_PTR(world);
+
+    compact();
+
+    // Post-compact, there should be just the two 5-byte strings left
+    ASSERT_PTR_EQ(string_ptr, (char*)himem_ptr - 10 - 2 * STRING_EXTRA);
+
+    // Popping values should get the correct strings
+    world = pop_string();
+    hello = pop_string();
+
+    DEBUG_PTR(hello);
+    DEBUG_PTR(world);
+
+    ASSERT_EQ(hello->length, 5);
+    ASSERT_MEMORY_EQ(hello->data, "HELLO", 5);
+    ASSERT_EQ(world->length, 5);
+    ASSERT_MEMORY_EQ(world->data, "WORLD", 5);
+}
+
 void test_string_alloc_retry(void) {
     const String* s;
     const String* s2;
@@ -241,6 +376,8 @@ int main(void) {
     test_string_alloc();
     test_read_string();
     test_compact();
+    test_compact_with_array();
     test_string_alloc_retry();
+    test_compact_with_expression();
     return 0;
 }

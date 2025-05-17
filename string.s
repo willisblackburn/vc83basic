@@ -295,10 +295,10 @@ for_all_referenced_strings:
 ; In this section we use name_ptr to point to the value on the stack, just as in the variable and array sections.
 
         ldpha   stack_pos               ; Save stack_pos value
-        cmp     #PRIMARY_STACK_SIZE     ; Stack empty?
-        beq     @stack_done
 
 @continue_stack_value:
+        cmp     #PRIMARY_STACK_SIZE     ; Stack empty?
+        beq     @stack_done
         tax
         lda     stack+Value::type,x     ; Get value type
         bmi     @stack_done             ; If it's negative then it's a control structure: no more values
@@ -309,7 +309,7 @@ for_all_referenced_strings:
 
 @next_stack_value:
         jsr     stack_free_value
-        bne     @continue_stack_value
+        bne     @continue_stack_value   ; Unconditional: freeing value will never leave stack_pos = 0
 
 @stack_done:
         plsta   stack_pos               ; Restore stack_pos
