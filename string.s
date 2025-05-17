@@ -256,11 +256,23 @@ for_all_referenced_strings:
 @continue:
         jsr     set_name_ptr_data
         beq     @next                   ; Not a string; move on to the next one
-        jsr     handle_string
+        jsr     load_src_ptr_handle_string
 @next:
         jsr     advance_name_ptr
         bcc     @continue
         rts
+
+; Loads src_ptr from name_ptr and then falls through to handle_string.
+
+load_src_ptr_handle_string:
+        ldy     #0
+        lda     (name_ptr),y            ; Set up src_ptr
+        sta     src_ptr
+        iny
+        lda     (name_ptr),y
+        sta     src_ptr+1
+
+; Fall through
 
 ; With src_ptr pointing to a string, adds the length of the string referenced by src_ptr plus one to src_ptr, so that
 ; src_ptr points to the relocation offset.
@@ -386,12 +398,6 @@ set_name_ptr_data:
 @not_string:
         iny                             ; Advance past last character
         jsr     rebase_name_ptr         ; Point name_ptr to data
-        ldy     #0                      ; Set up src_ptr
-        lda     (name_ptr),y
-        sta     src_ptr
-        iny
-        lda     (name_ptr),y
-        sta     src_ptr+1
         txa                             ; Return type in A (setting flags)
         rts
 
