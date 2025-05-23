@@ -43,7 +43,7 @@ decode_expression:
         bcc     @dispatch
         iny                             ; Variable
         sbc     #('A' - '0')
-        cmp     #26
+        cmp     #26                     ; Is it one of 26 letters starting with 'A'?
         bcc     @dispatch
         iny                             ; Subexpression start
         cmp     #<('(' - 'A')
