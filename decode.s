@@ -51,6 +51,7 @@ decode_expression:
         cmp     #<('"'- 'A')
         beq     @dispatch
         iny                             ; Variable
+        cmp     #26                     ; Is it one of 26 letters starting with 'A'?
         bcc     @dispatch
         iny                             ; Subexpression start
         cmp     #<('(' - 'A')
