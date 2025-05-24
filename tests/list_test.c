@@ -52,6 +52,8 @@ void test_list_directive(void) {
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' | EOT, 0 };
     const char line_data_16[] = { 'X' | EOT, '(', 2, '2' | EOT, 0, '5' | EOT, 0, 0 };
     const char line_data_17[] = { 'A', '$' | EOT, '(', 1, '1' | EOT, 0, 0 };
+    const char line_data_18[] = { 0 | TOKEN_FUNCTION, '"', 'H', 'E', 'L', 'L', 'O', '"' | EOT, 0, 0 };
+    const char line_data_19[] = { 1 | TOKEN_FUNCTION, '2', '5' | EOT, 0, 0 };
 
     const char list_1[] = "4112";
     const char list_2[] = "X";
@@ -70,6 +72,8 @@ void test_list_directive(void) {
     const char list_15[] = "\"BUG OR \"\"FEATURE?\"\"\"";
     const char list_16[] = "X(2,5)";
     const char list_17[] = "A$(1)";
+    const char list_18[] = "LEN(\"HELLO\")";
+    const char list_19[] = "STR$(25)";
 
     PRINT_TEST_NAME();
 
@@ -93,6 +97,8 @@ void test_list_directive(void) {
     call_list_directive(1, line_data_15, sizeof line_data_15, list_15, __LINE__);
     call_list_directive(1, line_data_16, sizeof line_data_16, list_16, __LINE__);
     call_list_directive(1, line_data_17, sizeof line_data_17, list_17, __LINE__);
+    call_list_directive(1, line_data_18, sizeof line_data_18, list_18, __LINE__);
+    call_list_directive(1, line_data_19, sizeof line_data_19, list_19, __LINE__);
 }
 
 void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {

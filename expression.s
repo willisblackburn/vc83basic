@@ -14,6 +14,7 @@ evaluate_vectors:
         .word   evaluate_number-1           ; XH_NUMBER
         .word   evaluate_string-1           ; XH_STRING
         .word   evaluate_variable-1         ; XH_VAR
+        .word   0
         .word   evaluate_paren-1            ; XH_PAREN
 
 evaluate_paren:

@@ -14,7 +14,8 @@
 .assert XH_NUMBER = 2, error
 .assert XH_STRING = 3, error
 .assert XH_VAR = 4, error
-.assert XH_PAREN = 5, error
+.assert XH_FUNCTION = 5, error
+.assert XH_PAREN = 6, error
 
 decode_expression:
         stax    decode_expression_vector_table_ptr  ; Store the value passed in AX as the vector table
@@ -52,9 +53,14 @@ decode_expression:
         iny                             ; Variable
         cmp     #26                     ; Is it one of 26 letters starting with 'A'?
         bcc     @dispatch
+        iny                             ; Function
+        sbc     #<('`' - 'A')
+        cmp     #32
+        bcc     @dispatch
         iny                             ; Subexpression start
-        cmp     #<('(' - 'A')
+        cmp     #<('(' - '`')
         beq     @dispatch
+
         sec                             ; None of the above; set carry to indicate failure (shouldn't happen...)
 @error:
         rts
@@ -138,6 +144,10 @@ decode_operator:
 
 decode_unary_operator:
         lda     #$07
+        bne     decode_byte_with_mask   ; Unconditional jump
+
+decode_function:
+        lda     #$1F
         bne     decode_byte_with_mask   ; Unconditional jump
 
 ; Decodes a single byte and returns it in A.

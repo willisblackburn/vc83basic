@@ -233,6 +233,7 @@ list_vectors:
         .word   list_literal-1          ; XH_NUMBER
         .word   list_literal-1          ; XH_STRING
         .word   list_variable-1         ; XH_VAR
+        .word   list_function-1         ; XH_FUNCTION
         .word   list_paren-1            ; XH_PAREN
 
 list_expression:
@@ -296,6 +297,20 @@ list_repeated_variable:
         inc     line_pos                ; Skip over 0
         clc                             ; Signal success
         rts
+
+list_function:
+        jsr     decode_function
+        pha                             ; Remember the function number to look up number of arguments later
+        tay
+        ldax    #function_name_table
+        jsr     list_tokenized_name
+        lda     #'('
+        jsr     append_buffer
+        pla                             ; Function number again
+        tax
+        lda     function_arity_table,x  ; Get number of arguments
+        jsr     list_argument_list      ; List them all
+        jmp     list_close_paren        ; Close and exit
 
 list_paren:
         inc     line_pos                ; Skip over '('

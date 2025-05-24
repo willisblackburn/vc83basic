@@ -88,6 +88,7 @@ S1 = FPX+2
 .global decode_name
 .global decode_operator
 .global decode_unary_operator
+.global decode_function
 .global decode_byte
 .global peek_decode_byte
 

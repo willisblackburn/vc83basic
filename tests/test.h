@@ -81,6 +81,7 @@ const String* decode_string(void);
 void decode_name(void);
 char decode_operator(void);
 char decode_unary_operator(void);
+char decode_function(void);
 char decode_byte(void);
 
 // encode.s

@@ -124,6 +124,7 @@ void xh_operator(void) {
         case 2: ASSERT_EQ(op, OP_DIV); break;
         case 3: ASSERT_EQ(op, OP_MUL); break;
         case 4: ASSERT_EQ(op, OP_OR); break;
+        case 5: ASSERT_EQ(op, OP_SUB); break;
     }
 }
 
@@ -150,6 +151,14 @@ void xh_variable(void) {
     ASSERT_EQ(*decode_name_ptr, 'X' | EOT);
 }
 
+int function_count;
+
+void xh_function(void) {
+    char function = decode_function();
+    ++function_count;
+    ASSERT_EQ(function, 0);
+}
+
 int paren_count;
 
 void xh_paren(void) {
@@ -164,12 +173,13 @@ void* decode_xh_vectors[] = {
     (char*)xh_number - 1,
     (char*)xh_string - 1,
     (char*)xh_variable - 1,
+    (char*)xh_function - 1,
     (char*)xh_paren - 1,
 };
 
 void test_decode_expression(void) {
 
-    // 4112+(X/3)*-X
+    // 4112+(X/3)*-X OR NOT X-LEN("HELLO")
     const char line_data[] = {
         '4', '1', '1', '2' | EOT,
         TOKEN_OP | OP_ADD,        
@@ -184,6 +194,10 @@ void test_decode_expression(void) {
         TOKEN_OP | OP_OR,
         TOKEN_UNARY_OP | UNARY_OP_NOT,
         'X' | EOT,
+        TOKEN_OP | OP_SUB,
+        0 | TOKEN_FUNCTION,
+        '"', 'H', 'E', 'L', 'L', 'O', '"' | EOT,
+        0,
         0
     };
 
@@ -194,7 +208,7 @@ void test_decode_expression(void) {
     decode_expression(decode_xh_vectors);
     ASSERT_EQ(num_count, 2);
     ASSERT_EQ(var_count, 3);
-    ASSERT_EQ(op_count, 4);
+    ASSERT_EQ(op_count, 5);
     ASSERT_EQ(unary_op_count, 2);
     ASSERT_EQ(paren_count, 1);
 }

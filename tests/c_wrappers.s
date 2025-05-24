@@ -78,6 +78,10 @@ _decode_unary_operator:
 .export _decode_unary_operator
         jmp     decode_unary_operator
 
+_decode_function:
+.export _decode_function
+        jmp     decode_function
+
 _decode_byte:
 .export _decode_byte
         jmp     decode_byte
