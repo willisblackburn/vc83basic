@@ -125,7 +125,7 @@ void test_decode_expression(void) {
         0,
         TOKEN_OP | OP_MUL, 
         TOKEN_UNARY_OP | UNARY_OP_MINUS,             
-        'X' | EOT,                  // X
+        'X' | EOT,
         TOKEN_OP | OP_OR,
         TOKEN_UNARY_OP | UNARY_OP_NOT,
         'X' | EOT,
