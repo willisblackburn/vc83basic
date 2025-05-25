@@ -214,6 +214,37 @@ void test_parse_argument_separator(void) {
     ASSERT_EQ(buffer_pos, 1);
 }
 
+void call_parse_argument_list(const char* s, char count, const char* expect_line_data, size_t expect_line_data_length, 
+        char expect_remaining, int line) {
+    size_t expect_buffer_pos;
+    char remaining;
+    fprintf(stderr, "  %s:%d: parse_argument_list(\"%s\", %d)\n", __FILE__, line, s, count);
+    expect_buffer_pos = strlen(s);
+    strcpy(buffer, s);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
+    remaining = parse_argument_list(count);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
+    ASSERT_EQ(remaining, expect_remaining);
+}
+
+void test_parse_argument_list(void) {
+
+    const char line_data_1[] = { '1' | EOT, 0, 'X' | EOT, 0 };
+    const char line_data_2[] = { '1' | EOT, 0 };
+
+    PRINT_TEST_NAME();
+
+    call_parse_argument_list("1,X", 2, line_data_1, sizeof line_data_1, 0, __LINE__);
+    call_parse_argument_list("1", 1, line_data_2, sizeof line_data_2, 0, __LINE__);
+    call_parse_argument_list("1,X", 1, line_data_1, sizeof line_data_1, -1, __LINE__);
+    call_parse_argument_list("1", 2, line_data_2, sizeof line_data_2, 1, __LINE__);
+    call_parse_argument_list("", 1, NULL, 0, 1, __LINE__);
+}
+
 void call_parse_directive(const char* s, char directive, const char* expect_line_data, size_t expect_line_data_length, 
         int line) {
     size_t expect_buffer_pos;
@@ -382,6 +413,7 @@ int main(void) {
     test_parse_number();
     test_parse_expression();
     test_parse_argument_separator();
+    test_parse_argument_list();
     test_parse_directive();
     test_parse_statement();
     test_parse_line();

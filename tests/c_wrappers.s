@@ -338,6 +338,11 @@ _parse_variable:
         jsr     parse_variable
         jmp     set_err
 
+_parse_argument_list:
+.export _parse_argument_list
+        jsr     parse_argument_list
+        jmp     set_err
+
 _parse_expression:
 .export _parse_expression
         jsr     parse_expression
