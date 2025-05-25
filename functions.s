@@ -1,6 +1,31 @@
 .include "macros.inc"
 .include "basic.inc"
 
+fun_asc:
+        jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
+        jsr     load_s0
+        ldy     #0
+        lda     (S0),y                  ; Get first character of string
+        ldx     #0
+        jsr     int_to_fp               ; Make it into an FP value
+        jmp     push_fp0                ; Push it
+
+fun_chr_s:
+        jsr     pop_fp0
+        jsr     truncate_fp_to_int
+        pha                             ; Park the character
+        lda     #1                      ; Allocate space for a 1-byte string
+        jsr     string_alloc
+        pla                             ; Pop the character back
+        bcs     @done                   ; Memory must be *very* low!
+        iny                             ; Increment Y to 1
+        sta     (string_ptr),y          ; Set the character in the string
+        ldax    string_ptr
+        jmp     push_string
+
+@done:
+        rts
+
 fun_len:
         jsr     pop_string
         jsr     load_s0                 ; Length comes back in A, which is what we want

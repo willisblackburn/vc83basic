@@ -90,7 +90,9 @@ evaluate_decoded_variable:
 
 function_vectors:
         .word   fun_len-1
-        .word   fun_str_s-1    
+        .word   fun_str_s-1
+        .word   fun_chr_s-1 
+        .word   fun_asc-1
 
 evaluate_function:
         jsr     decode_function

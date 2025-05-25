@@ -131,6 +131,8 @@ S1 = FPX+2
 .global fcmp
 
 ; functions.s
+.global fun_asc
+.global fun_chr_s
 .global fun_len
 .global fun_str_s
 
