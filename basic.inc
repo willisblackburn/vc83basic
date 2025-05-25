@@ -90,6 +90,7 @@ DE = D
 .global parse_line
 .global parse_statement
 .global parse_directive
+.global parse_argument_list
 .global parse_expression
 .global parse_name
 .global parse_number
