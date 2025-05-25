@@ -130,6 +130,10 @@ S1 = FPX+2
 .global fneg
 .global fcmp
 
+; functions.s
+.global fun_len
+.global fun_str_s
+
 ; input.s
 .global exec_input
 

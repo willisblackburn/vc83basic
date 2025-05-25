@@ -9,6 +9,7 @@ COMMON_SOURCES = \
 	encode.s \
 	expression.s \
 	fp.s \
+	functions.s \
 	input.s \
 	let.s \
 	list.s \

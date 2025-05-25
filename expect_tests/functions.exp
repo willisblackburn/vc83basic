@@ -1,0 +1,6 @@
+source [file join [file dirname [info script]] common.expinc]
+spawn_basic
+
+test "PRINT LEN(\"HELLO\")\n" "5\n"
+
+test "PRINT STR\$(25)\n" "25\n"
