@@ -140,6 +140,7 @@ void parse_line(void);
 void parse_statement(void);
 void parse_directive(/* A */ char directive);
 void parse_variable(void);
+char parse_argument_list(/* A */ char count);
 void parse_expression(void);
 void parse_name(void);
 void parse_number(void);
