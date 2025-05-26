@@ -103,7 +103,7 @@ read_string:
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in AX.
-; BC SAFE
+; BC SAFE, DE SAFE (if compact not called)
 
 string_alloc:
         pha                             ; Remember the requested size in order to set it into string later
@@ -125,7 +125,7 @@ string_alloc:
 ; Allocates memory for a new string on the string heap. Called from string_alloc with the total amount of memory
 ; needed for the string, which is the string length plus STRING_EXTRA bytes of overhead.
 ; AX = the memory required for the new string
-; BC SAFE
+; BC SAFE, DE SAFE (if compact not called)
 
 string_alloc_memory:
         stax    line_number             ; Borrow line_number to save requested size in case we have to retry
