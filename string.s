@@ -125,7 +125,7 @@ string_alloc:
 ; Allocates memory for a new string on the string heap. Called from string_alloc with the total amount of memory
 ; needed for the string, which is the string length plus STRING_EXTRA bytes of overhead.
 ; AX = the memory required for the new string
-; BC SAFE
+; BC SAFE, DE SAFE
 
 string_alloc_memory:
         eor     #$FF                    ; Invert length and set carry in order to do string_ptr - AX
