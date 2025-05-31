@@ -53,6 +53,7 @@ function_name_table:
 :       .byte   :+ - *, 'L', 'E', 'F', 'T', '$' | EOT
 :       .byte   :+ - *, 'R', 'I', 'G', 'H', 'T', '$' | EOT
 :       .byte   :+ - *, 'M', 'I', 'D', '$' | EOT
+:       .byte   :+ - *, 'V', 'A', 'L' | EOT
 :       .byte   0
 
 function_arity_table:
@@ -63,6 +64,7 @@ function_arity_table:
         .byte   2   ; LEFT$
         .byte   2   ; RIGHT$
         .byte   3   ; MID$
+        .byte   1   ; VAL
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.

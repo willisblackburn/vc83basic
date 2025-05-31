@@ -155,3 +155,17 @@ fun_str_s:
 @done:
         rts
 
+fun_val:
+        jsr     pop_string              ; Get the argument string
+        sta     D                       ; Store the length into D
+        jsr     load_s0                 ; Into S0
+        mvax    #buffer, dst_ptr        ; Copy
+        ldax    S0
+        ldy     D
+        jsr     copy_y_from
+        ldx     D
+        lda     #0
+        sta     buffer,x                ; Terminate string with 0
+        ldax    #buffer
+        jsr     string_to_fp            ; Parse it
+        jmp     push_fp0                ; Push FP0 and return carry from string_to_fp

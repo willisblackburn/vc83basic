@@ -126,3 +126,22 @@ PRINT STR$(25)
 25
 }
 
+test {
+PRINT STR$(3.14159)
+} {
+3.14159
+}
+
+# VAL
+
+test {
+PRINT VAL("25")
+} {
+25
+}
+
+test {
+PRINT VAL("3.14159")
+} {
+3.14159
+}
