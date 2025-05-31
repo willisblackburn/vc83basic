@@ -178,11 +178,12 @@ op_concat:
         adc     E                       ; Get total length of string
         bcs     @error                  ; Combined string is too long
         jsr     string_alloc            ; Otherwise A is length of new string; allocate it
-        stax    dst_ptr                 ; New space is destination for the copy
+        sta     dst_ptr                 ; New space is destination for the copy
         inc     dst_ptr                 ; Move past length byte
-        bne     @skip_inc
-        inc     dst_ptr+1
-@skip_inc:
+        bne     @skip_iny
+        iny
+@skip_iny:
+        sty     dst_ptr+1
         ldax    S0                      ; Copy S0 to dst_ptr
         ldy     D
         jsr     copy_y_from
