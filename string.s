@@ -103,7 +103,7 @@ read_string:
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in AX.
-; BC SAFE, DE SAFE (if compact not called)
+; BC SAFE (if compact not called), DE SAFE
 
 string_alloc:
         pha                             ; Remember the requested size in order to set it into string later
