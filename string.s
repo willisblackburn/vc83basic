@@ -5,7 +5,7 @@
 ; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or S1
 ; for load_s1.
 ; AY = a pointer to the string to load
-; BC SAFE
+; DE SAFE
 
 load_s1:
         ldx     #S1
@@ -13,20 +13,20 @@ load_s1:
 load_s0:
         ldx     #S0
 load_s:
-        stay    DE                      ; DE is a temporary pointer
+        stay    BC                      ; BC is a temporary pointer
         sty     1,x                     ; Store high byte of string address
         tay                             ; Move low byte into Y since I'm about to clobber A
-        ora     E                       ; Check for null
+        ora     C                       ; Check for null
         beq     @null_string            ; A is conveniently 0 for return
         iny                             ; Increment low byte of address
         sty     0,x                     ; Store low byte of string address
         bne     @skip_inc               ; Low byte didn't roll over so don't have to adjust high byte
-        ldy     E                       ; High byte is in E, so re-load and re-store
+        ldy     C                       ; High byte is in C, so re-load and re-store
         iny
         sty     1,x
 @skip_inc:
         ldy     #0                      ; Length offset
-        lda     (DE),y                  ; Load the length for return
+        lda     (BC),y                  ; Load the length for return
 @null_string:
         rts
 
@@ -125,7 +125,7 @@ string_alloc:
 ; Allocates memory for a new string on the string heap. Called from string_alloc with the total amount of memory
 ; needed for the string, which is the string length plus STRING_EXTRA bytes of overhead.
 ; AX = the memory required for the new string
-; BC SAFE, DE SAFE (if compact not called)
+; BC SAFE (if compact not called), DE SAFE
 
 string_alloc_memory:
         stax    line_number             ; Borrow line_number to save requested size in case we have to retry
@@ -165,7 +165,7 @@ string_alloc_memory:
 ; address. The algorithm uses two bytes after the end of each string to store its relocation offset relative to
 ; the start of the string space (string_ptr). The string_alloc function allocates 3 (STACK_EXTRA) extra bytes to
 ; accommodate the length of the string and the two-byte relocation offset.
-; BC SAFE
+; DE SAFE
 
 ; Logic depends on being able to add string length + 3 to get to next string.
 .assert STRING_EXTRA = 3, error
@@ -191,15 +191,15 @@ compact:
 
 ; Phase 4: Update string variables to point to the new addresses.
 ; After calculating relocation offsets, size is now the total size of all strings, and the new value of string_ptr
-; is himem_ptr minus that size. Store new string_ptr value in DE.
+; is himem_ptr minus that size. Store new string_ptr value in BC.
 
         sec                             ; Subtract size from himem_ptr to get the new string_ptr value
         lda     himem_ptr
         sbc     size
-        sta     D                       ; Store in DE
+        sta     B                       ; Store in BC
         lda     himem_ptr+1
         sbc     size+1
-        sta     E
+        sta     C
         ldax    #phase_4_update_string
         jsr     for_all_referenced_strings
 
@@ -213,16 +213,16 @@ compact:
         jsr     for_all_strings
 
 ; Phase 6: All the strings have been relocated to free_ptr.
-; The new value of string_ptr is in DE. Subtract it from himem_ptr to get the size to copy.
+; The new value of string_ptr is in BC. Subtract it from himem_ptr to get the size to copy.
 
-        sec                             ; Do himem_ptr - DE and store in size
+        sec                             ; Do himem_ptr - BC and store in size
         lda     himem_ptr
-        sbc     D
+        sbc     B
         pha                             ; Save for call to copy
         lda     himem_ptr+1
-        sbc     E
+        sbc     C
         pha
-        mvax    DE, string_ptr          ; Set up new string_ptr
+        mvax    BC, string_ptr          ; Set up new string_ptr
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
         plax                            ; Get the size we pushed earlier
@@ -381,13 +381,13 @@ phase_3_calculate_relocation_offset:
 ; Phase 4 handler
 
 phase_4_update_string:
-        clc                             ; Do new string_ptr (DE) + relocation offset into variable address
+        clc                             ; Do new string_ptr (BC) + relocation offset into variable address
         lda     (src_ptr),y
-        adc     D
+        adc     B
         sta     (name_ptr),y
         iny                             ; Y=1
         lda     (src_ptr),y
-        adc     E
+        adc     C
         sta     (name_ptr),y
         rts
 

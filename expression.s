@@ -196,12 +196,12 @@ op_pow:
 op_concat:
         jsr     pop_string              ; Get the second string
         jsr     load_s1                 ; Load into S1
-        sta     C                       ; Length of second string in C 
+        sta     E                       ; Length of second string in E
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
-        sta     B                       ; Length of first string in B
+        sta     D                       ; Length of first string in D
         clc
-        adc     C                       ; Get total length of string
+        adc     E                       ; Get total length of string
         bcs     @error                  ; Combined string is too long
         jsr     string_alloc            ; Otherwise A is length of new string; allocate it
         stax    dst_ptr                 ; New space is destination for the copy
@@ -210,10 +210,10 @@ op_concat:
         inc     dst_ptr+1
 @skip_inc:
         ldax    S0                      ; Copy S0 to dst_ptr
-        ldy     B
+        ldy     D
         jsr     copy_y_from
         ldax    S1                      ; Copy S1
-        ldy     C
+        ldy     E
         jsr     copy_y_from
         ldax    string_ptr              ; Happily, string_ptr is still the address of the new string
         jsr     push_string
@@ -228,19 +228,19 @@ op_concat:
 compare_string_values:
         jsr     pop_string              ; Get second string
         jsr     load_s1                 ; Second string into S1
-        sta     C                       ; Length of second string in C
+        sta     E                       ; Length of second string in E
         jsr     pop_string              ; Get first string
         jsr     load_s0                 ; First string into S0
-        sta     B                       ; Length of first string in B
-        cmp     C                       ; Compare first string length to second
+        sta     D                       ; Length of first string in D
+        cmp     E                       ; Compare first string length to second
         bcc     @use_first_string_length
-        lda     C                       ; Replace length in A with the shorter second string length 
+        lda     E                       ; Replace length in A with the shorter second string length 
 @use_first_string_length:
-        sta     D                       ; Store shortest string length in D
+        sta     B                       ; Store shortest string length in B
         ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
 @next_character:
         iny
-        cpy     D                       ; Out of characters?
+        cpy     B                       ; Out of characters?
         beq     @compare_lengths        ; Yes
         lda     (S0),y                  ; Compare the next character
         cmp     (S1),y
@@ -248,8 +248,8 @@ compare_string_values:
         rts                             ; Return with the flags from the comparison
 
 @compare_lengths:
-        lda     B                       ; Characters are the same, so shorter string is lesser or equal
-        cmp     C
+        lda     D                       ; Characters are the same, so shorter string is lesser or equal
+        cmp     E
         rts
 
 op_eq:
