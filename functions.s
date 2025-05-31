@@ -18,7 +18,7 @@ fun_chr_s:
         jsr     string_alloc
         pla                             ; Pop the character back
         bcs     @done                   ; Memory must be *very* low!
-        iny                             ; Increment Y to 1
+        ldy     #1                      ; Write to string position 1
         sta     (string_ptr),y          ; Set the character in the string
         ldax    string_ptr
         jmp     push_string

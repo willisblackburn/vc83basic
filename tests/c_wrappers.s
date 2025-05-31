@@ -435,6 +435,8 @@ _read_string:
 _string_alloc:
 .export _string_alloc
         jsr     string_alloc
+        sty     B                       ; Move return from AY to AX
+        ldx     B
         jmp     set_err
 
 _compact:
