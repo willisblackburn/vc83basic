@@ -102,7 +102,7 @@ read_string:
 
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
-; Returns the address of the new string in AX.
+; Returns the address of the new string in AY (to make it easy to pass to load_s0/s1)
 ; BC SAFE, DE SAFE
 
 string_alloc:
@@ -119,7 +119,7 @@ string_alloc:
         ldy     #0
         sta     (string_ptr),y          ; Set the length of the allocated string
 @error:
-        ldax    string_ptr              ; Return pointer in AX
+        lday    string_ptr              ; Return pointer in AY
         rts
 
 ; Allocates memory for a new string on the string heap. Called from string_alloc with the total amount of memory
