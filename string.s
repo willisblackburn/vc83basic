@@ -5,7 +5,7 @@
 ; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or S1
 ; for load_s1.
 ; AY = a pointer to the string to load
-; BC SAFE
+; DE SAFE
 
 load_s1:
         ldx     #S1
@@ -13,20 +13,20 @@ load_s1:
 load_s0:
         ldx     #S0
 load_s:
-        stay    DE                      ; DE is a temporary pointer
+        stay    BC                      ; BC is a temporary pointer
         sty     1,x                     ; Store high byte of string address
         tay                             ; Move low byte into Y since I'm about to clobber A
-        ora     E                       ; Check for null
+        ora     C                       ; Check for null
         beq     @null_string            ; A is conveniently 0 for return
         iny                             ; Increment low byte of address
         sty     0,x                     ; Store low byte of string address
         bne     @skip_inc               ; Low byte didn't roll over so don't have to adjust high byte
-        ldy     E                       ; High byte is in E, so re-load and re-store
+        ldy     C                       ; High byte is in C, so re-load and re-store
         iny
         sty     1,x
 @skip_inc:
         ldy     #0                      ; Length offset
-        lda     (DE),y                  ; Load the length for return
+        lda     (BC),y                  ; Load the length for return
 @null_string:
         rts
 
