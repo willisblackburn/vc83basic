@@ -276,17 +276,6 @@ parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
         jmp     parse_pattern
 
-; Parses a series of names separated by commas.
-
-parse_repeated_name:
-        jsr     parse_name              ; Parse next variable name
-        bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
-@done:
-        rts
-
 ; Parses a number from the buffer.
 
 parse_number:
