@@ -234,6 +234,34 @@ parse_unary_operator:
 @error:
         rts
 
+; Parses a number from the buffer.
+
+parse_number:
+        ldy     #<(number_pattern - name_pattern - 3)
+        jmp     parse_pattern
+
+name_pattern:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '&', 10, <(name_pattern_op - name_pattern)
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
+        .byte   PATTERN_ERROR
+name_pattern_identifier:
+        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
+        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
+        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
+        .byte   PATTERN_OK
+name_pattern_op:
+        .byte   PATTERN_OK
+name_pattern_relational:
+        .byte   '<',  3, <(name_pattern_relational - name_pattern)
+        .byte   PATTERN_OK
+number_pattern:
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
+        .byte   PATTERN_ERROR
+number_pattern_2:
+        .byte   '0', 10, <(number_pattern_2 - name_pattern)
+        .byte   PATTERN_OK
+
 ; Parses a name from the buffer, using the state machine passed in AX, then looks up a name in the name table.
 ; AX = pointer to the start of the name table
 ; Returns carry clear on success with the index of the matched name in A. Returns carry set and restores buffer_pos
@@ -262,35 +290,8 @@ parse_tokenized_name_2:
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
-        jmp     parse_pattern
 
-; Parses a number from the buffer.
-
-parse_number:
-        ldy     #<(number_pattern - name_pattern - 3)
-        jmp     parse_pattern
-
-name_pattern:
-        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
-        .byte   '&', 10, <(name_pattern_op - name_pattern)
-        .byte   '<',  3, <(name_pattern_relational - name_pattern)
-        .byte   PATTERN_ERROR
-name_pattern_identifier:
-        .byte   'A', 26, <(name_pattern_identifier - name_pattern)
-        .byte   '0', 10, <(name_pattern_identifier - name_pattern)
-        .byte   '_',  1, <(name_pattern_identifier - name_pattern)
-        .byte   PATTERN_OK
-name_pattern_op:
-        .byte   PATTERN_OK
-name_pattern_relational:
-        .byte   '<',  3, <(name_pattern_relational - name_pattern)
-        .byte   PATTERN_OK
-number_pattern:
-        .byte   '0', 10, <(number_pattern_2 - name_pattern)
-        .byte   PATTERN_ERROR
-number_pattern_2:
-        .byte   '0', 10, <(number_pattern_2 - name_pattern)
-        .byte   PATTERN_OK
+; Fall through
 
 ; Parses characters from buffer that match a pattern, starting at buffer_pos.
 ; Copies the text into line_buffer and sets decode_name_ptr. 
