@@ -75,7 +75,11 @@ parse_statement:
 @directive:
         jsr     rebase_name_ptr         ; Catch up name_ptr
         txa                             ; Recover the directive
+        tay                             ; Move into Y in order to use A to save name state
+        phzp    NAME_STATE, NAME_STATE_SIZE
+        tya                             ; Recover directive from Y
         jsr     parse_directive
+        plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
 @error:
@@ -100,33 +104,30 @@ parse_argument_type_vectors:
 .assert NT_VAR = $10, error
 
 parse_directive:
-        tay                             ; Keep in Y while using A to save state
-        phzp    PARSER_STATE, PARSER_STATE_SIZE
-        tya                             ; Recover directive from Y
+        tay                             ; Retain directive in A
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
         tya                             ; Pass in expected number of arguments
         jsr     parse_argument_list
-        bcs     @pop_parser_state       ; Error parsing arguments
-        beq     @pop_parser_state       ; Parsed all arguments; carry must be clear here because BCS above
+        bcs     @done                   ; Error parsing arguments
+        beq     @done                   ; Parsed all arguments; carry must be clear here because BCS above
         sec                             ; If next condition met, return failure
-        bmi     @pop_parser_state       ; Parsed too many arguments
+        bmi     @done                   ; Parsed too many arguments
         sta     B                       ; Store number of remaining arguments in B
 @next_missing_argument:
         jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
-        bcs     @pop_parser_state       ; encode_byte error
+        bcs     @done                   ; encode_byte error
         dec     B                       ; Done with one "no value"
         bne     @next_missing_argument  ; Loop if more
-        beq     @pop_parser_state       ; Otherwise done; carry will be clear because BCS above
+        beq     @done                   ; Otherwise done; carry will be clear because BCS above
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
         jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
 
-@pop_parser_state:
-        plzp    PARSER_STATE, PARSER_STATE_SIZE
+@done:
         rts
 
 ; Parses a list of arguments separated by commas.
