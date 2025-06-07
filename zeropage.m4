@@ -71,6 +71,23 @@ word(free_ptr, void*)
 comment The address of "high memory" that will not be touched by the interpreter
 word(himem_ptr, void*)
 
+comment The line number sought by find_line
+word(line_number, int)
+
+comment NAME_STATE is the set of zero page values that parse_statement restores after parsing a directive
+block(NAME_STATE, 5)
+
+comment Pointer to current name table entry
+word(name_ptr, char*)
+
+comment Pointer to the next name table entry
+word(next_name_ptr, const char*)
+
+comment Index of name in name table
+byte(name_index)
+
+endblock(NAME_STATE)
+
 comment Read/write position in buffer
 byte(buffer_pos)
 
@@ -82,23 +99,6 @@ byte(next_line_pos)
 
 comment Position of current statement
 byte(statement_line_pos)
-
-comment The line number sought by find_line
-word(line_number, int)
-
-comment PARSER_STATE is the set of zero page values we save when recursively parsing expressions
-block(PARSER_STATE, 5)
-
-comment Pointer to current name table entry
-word(name_ptr, char*)
-
-comment Pointer to the next name table entry
-word(next_name_ptr, const char*)
-
-comment Index of name in name table
-byte(name_index)
-
-endblock(PARSER_STATE)
 
 comment DECODE_NAME_STATE is the set of zero page fields that describe a name decoded from a program line
 block(DECODE_NAME_STATE, 3)
