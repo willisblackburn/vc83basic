@@ -6,15 +6,14 @@ define(`var', ``$1: .res $2
 .export _$1 = $1'')
 define(`comment', `;')
 define(`block', ``$1 = *
-$1_SIZE = $1_END - $1
-.assert $1_SIZE = $2, error'')
+.assert $1_END - $1 = $2, error'')
 define(`endblock', ``$1_END = *'')
     ',
     OUTPUT, `inc', `
 define(`var', ``.globalzp $1'')
 define(`comment', `;')
 define(`block', ``.globalzp $1
-.globalzp $1_SIZE'')
+$1_SIZE = $2'')
 define(`endblock', `')
     ',
     OUTPUT, `h', `
