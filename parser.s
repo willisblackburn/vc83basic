@@ -62,12 +62,22 @@ parse_line:
 parse_statement:
         ldax    #statement_name_table
         jsr     initialize_name_ptr
-@try:
-        ldpha   buffer_pos              ; Save the buffer position in case we need to backtrack
-        ldpha   line_pos                ; And the line buffer position
+@next:
+        jsr     parse_next_statement    ; Will restore parser state on failure
+        bcc     @done
+        ldy     #0                      ; Check if we failed because we reached the end of the name table
+        lda     (next_name_ptr),y
+        bne     @next                   ; Continue if there's at least one more name; otherwise return the carry set
+@done:
+        rts
+
+; Try to parse the buffer starting with the name table entry at name_ptr.
+
+parse_next_statement:
+        jsr     save_parser_state
         jsr     parse_tokenized_name_2
         bcs     @error
-        jsr     encode_byte             ; Replace name with statement token
+        jsr     encode_byte             ; Encode statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
         ldy     #0                      ; Start reading from name_ptr offset 0
@@ -87,7 +97,7 @@ parse_statement:
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
         beq     @next
-        bne     @backtrack_try_again
+        bne     @error
 
 @directive:
         jsr     rebase_name_ptr         ; Catch up name_ptr
@@ -99,18 +109,13 @@ parse_statement:
         plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
-@backtrack_try_again:
-        plsta   line_pos                ; Restore state
-        plsta   buffer_pos
-        jmp     @try
+@error:
+        sec                             ; Tell save_parser_state epilogue to restore state
+        rts
 
 @success:
-        clc                             ; Signal success
-@error:
-        pla                             ; Discard saved values
-        pla
-@done:
-        rts  
+        clc
+        rts
 
 parse_argument_type_vectors:
         .word   parse_variable-1            ; NT_VAR
@@ -539,3 +544,50 @@ skip_whitespace:
         cmp     #' '        
         beq     loop_skip_whitespace       
         rts
+
+; Save parser state on the stack.
+; The parsing function should JSR to here. Calling this function will replace the caller's return address on the
+; stack so that when the caller does RTS, control passes to the epilogue, which will restore the parser state if
+; the carry flag is set.
+; 
+; Stack upon entry:     return address of caller's caller (2 bytes)
+;                       return address of caller (2 bytes) (where RTS from this function goes)
+;
+; Modified stack:       return address of caller's caller
+;                       parser state
+;                       address of epilogue
+;                       return address of caller (2 bytes) (where RTS from this function goes)
+
+save_parser_state:
+    stax    BC                          ; Arguments
+    plstaa  DE                          ; Return address
+    phzp    PARSER_STATE, PARSER_STATE_SIZE
+    jsr     @continue_begin_parse       ; This JSR will return to begin_parse caller
+
+; This is the epilogue that runs after the caller does RTS.
+;
+; Stack:                return address of caller's caller
+;                       parser state
+
+    stax    BC                          ; Return value
+    bcc     @success
+    plzp    PARSER_STATE, PARSER_STATE_SIZE
+    bcs     @done                       ; Unconditional
+
+@success:
+    tsx                                 ; Just add PARSER_STATE_SIZE to stack pointer to clear the stack
+    txa
+    adc     #PARSER_STATE_SIZE          ; Carry is already clear and this cannot set it
+    tax
+    txs
+@done:
+    ldax    BC
+    rts
+
+; By executing JSR to here, save_parser_state puts the address of the epilogue on the stack.
+; Restore the original return address and also restore the arguments.
+
+@continue_begin_parse:
+    ldphaa  DE
+    ldax    BC
+    rts

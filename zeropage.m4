@@ -93,11 +93,16 @@ byte(name_index)
 
 endblock(NAME_STATE)
 
+comment PARSER_STATE is the set of zero page values we restore when a parse fails
+block(PARSER_STATE, 2)
+
 comment Read/write position in buffer
 byte(buffer_pos)
 
 comment Read/write position in line
 byte(line_pos)
+
+endblock(PARSER_STATE)
 
 comment The next value of line_pos (analogous to next_line_ptr)
 byte(next_line_pos)
