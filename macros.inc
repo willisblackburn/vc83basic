@@ -12,21 +12,21 @@
 
 .macro ldax address
     .if (.match (.left (1, {address}), #))
-            lda     #<(.right (.tcount ({address})-1, {address}))
-            ldx     #>(.right (.tcount ({address})-1, {address}))
+        lda     #<(.right (.tcount ({address})-1, {address}))
+        ldx     #>(.right (.tcount ({address})-1, {address}))
     .else
-            lda     address
-            ldx     address+1
+        lda     address
+        ldx     address+1
     .endif
 .endmacro
 
 .macro lday address
     .if (.match (.left (1, {address}), #))
-            lda     #<(.right (.tcount ({address})-1, {address}))
-            ldy     #>(.right (.tcount ({address})-1, {address}))
+        lda     #<(.right (.tcount ({address})-1, {address}))
+        ldy     #>(.right (.tcount ({address})-1, {address}))
     .else
-            lda     address
-            ldy     address+1
+        lda     address
+        ldy     address+1
     .endif
 .endmacro
 
@@ -61,15 +61,15 @@
 
 .macro mvaa from, to
     .if (.match (.left (1, {from}), #))
-            lda     #<(.right (.tcount ({from})-1, {from}))
-            sta     to
-            lda     #>(.right (.tcount ({from})-1, {from}))
-            sta     to+1
+        lda     #<(.right (.tcount ({from})-1, {from}))
+        sta     to
+        lda     #>(.right (.tcount ({from})-1, {from}))
+        sta     to+1
     .else
-            lda     from
-            sta     to
-            lda     from+1
-            sta     to+1
+        lda     from
+        sta     to
+        lda     from+1
+        sta     to+1
     .endif
 .endmacro
 
