@@ -263,7 +263,7 @@ parse_print_separators:
 parse_expression:
         jsr     parse_primary_expression    ; Parse an expression without any binary operators
         bcs     @error                  ; Not found; must be an error
-        jsr     parse_binary_operator
+        jsr     parse_operator
         bcc     parse_expression        ; Binary operator found; keep parsing
         jsr     encode_zero             ; Terminate expression with 0
         clc                             ; Signal success
@@ -289,7 +289,7 @@ parse_primary_expression:
 
 ; Parses a binary operator. Only called from parse_expression.
 
-parse_binary_operator:
+parse_operator:
         jsr     save_parser_state
         ldax    #operator_name_table
         jsr     parse_tokenized_name
