@@ -60,7 +60,6 @@ decode_expression:
         iny                             ; Subexpression start
         cmp     #<('(' - '`')
         beq     @dispatch
-
         sec                             ; None of the above; set carry to indicate failure (shouldn't happen...)
 @error:
         rts
