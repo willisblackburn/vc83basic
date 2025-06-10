@@ -47,6 +47,8 @@ evaluate_expression:
 
 evaluate_argument_list:
         pha                             ; Save the number of arguments expected on the stack
+        tax                             ; Test for zero
+        beq     @done                   ; Was zero; don't evaluate anything
 @next:
         jsr     peek_decode_byte        ; Empty value?
         beq     @no_value               ; Yes
@@ -93,6 +95,11 @@ function_vectors:
         .word   fun_str_s-1
         .word   fun_chr_s-1 
         .word   fun_asc-1
+        .word   fun_left_s-1
+        .word   fun_right_s-1
+        .word   fun_mid_s-1
+        .word   fun_val-1
+        .word   fun_fre-1
 
 evaluate_function:
         jsr     decode_function

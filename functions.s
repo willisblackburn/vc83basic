@@ -11,7 +11,7 @@ fun_asc:
         jmp     push_fp0                ; Push it
 
 fun_chr_s:
-        jsr     pop_fp0
+        jsr     pop_fp0                 ; TODO: pop_fp0 + truncate_fp_to_int also common, should be one function
         jsr     truncate_fp_to_int
         pha                             ; Park the character
         lda     #1                      ; Allocate space for a 1-byte string
@@ -24,6 +24,121 @@ fun_chr_s:
         jmp     push_string
 
 @done:
+        rts
+
+fun_fre:
+        jsr     compact                 ; GC strings
+        sec                             ; Calculate free memory
+        lda     himem_ptr
+        sbc     free_ptr
+        tay                             ; Park low byte
+        lda     himem_ptr+1
+        sbc     free_ptr+1
+        tax                             ; High byte in X
+        tya                             ; Low byte back into A
+        jsr     int_to_fp               ; Load into FP0
+        jmp     push_fp0
+
+fun_left_s:
+        jsr     fun_mid_s_setup         ; Requested length in D
+        bcs     fun_mid_s_error         ; If setup failed
+        jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
+        lda     #0                      ; Starting position
+        jmp     fun_mid_s_finish        ; Finish as MID
+
+fun_right_s:
+        jsr     fun_mid_s_setup         ; Requested length in D
+        bcs     fun_mid_s_error         ; If setup failed
+        jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
+        sec
+        sbc     D                       ; Subtract requested length from string length to get starting position
+        jmp     fun_mid_s_finish        ; Finish as MID
+
+fun_mid_s:
+        jsr     fun_mid_s_setup         ; Requested length in D
+        bcs     fun_mid_s_error         ; If setup failed
+        jsr     pop_fp0                 ; Pop the starting position
+        jsr     truncate_fp_to_int
+        sec
+        bmi     fun_mid_s_error         ; Don't allow negative starting position
+        sbc     #1                      ; Subtract 1 to make it 0-based; carry is already set
+        bmi     fun_mid_s_error         ; Fail if that made it negative (i.e., don't allow starting position to be 0)
+        pha                             ; Push starting position on stack
+        jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
+        pla                             ; Starting position in A
+        cmp     E                       ; Compare to string length
+        bcc     @less                   ; Starting position < string length; okay
+        lda     E                       ; Otherwise replace with string length
+@less:
+        pha                             ; Push modified starting position while adjusting requested length
+        clc
+        sbc     E                       ; A (staring position) - E (string length) - 1
+        eor     #$FF                    ; E - A = the length of the string available after starting position
+        cmp     D                       ; Compare with requested length
+        bcs     @ok                     ; Available length >= requested length: ok
+        sta     D                       ; Otherwise make requested length = available length
+@ok:
+        pla                             ; Pop starting position
+
+; When we get here:
+; A is the 0-based starting position.
+; D is the requested length and is no more than the length of the string less the starting position.
+; E is the total string length, which is no longer relevant, so we'll use it for the starting position instead
+
+fun_mid_s_finish:
+        sta     E                       ; Starting position in E
+        lda     D
+        jsr     string_alloc            ; Guaranteed to succeed
+        sta     dst_ptr                 ; New space is destination for the copy
+        inc     dst_ptr                 ; Move past length byte
+        bne     @skip_iny
+        iny
+@skip_iny:
+        sty     dst_ptr+1
+        ldax    S0                      ; Copy source is S0 + E
+        clc
+        adc     E
+        bcc     @skip_src_inx
+        inx
+@skip_src_inx:
+        ldy     D
+        jsr     copy_y_from
+        ldax    string_ptr
+        jmp     push_string
+
+fun_mid_s_error:
+        sec
+fun_mid_s_done:
+        rts
+
+; Do some stuff that is common to LEFT$, RIGHT$, MID$: set D to the requested length.
+
+fun_mid_s_setup:
+        ldphaa  string_ptr              ; Remember current string_ptr
+        lda     #255
+        jsr     string_alloc            ; Allocate a 255-byte string; if success then we know we can alloc later
+        plstaa  string_ptr              ; Restore string_ptr
+        bcs     @done                   ; If allocation failed then skip the rest
+        jsr     pop_fp0                 ; Requested length
+        jsr     truncate_fp_to_int      ; Length of string returned in A
+        sec
+        bmi     @done                   ; Don't allow negative length
+        sta     D                       ; Save in D
+        clc                             ; Signal success
+@done:
+        rts
+
+; Go get the string, set E to its length, and also return length in A.
+; D contains the requested length; limit it to the string length.
+
+fun_mid_s_pop_string:
+        jsr     pop_string
+        jsr     load_s0
+        sta     E
+        cmp     D                       ; Compare string length to requested length
+        bcs     @ok                     ; String length >= requested length; okay
+        sta     D                       ; Otherwise overwrite requested length with string length
+@ok:
         rts
 
 fun_len:
@@ -53,3 +168,17 @@ fun_str_s:
 @done:
         rts
 
+fun_val:
+        jsr     pop_string              ; Get the argument string
+        sta     D                       ; Store the length into D
+        jsr     load_s0                 ; Into S0
+        mvax    #buffer, dst_ptr        ; Copy
+        ldax    S0
+        ldy     D
+        jsr     copy_y_from
+        ldx     D
+        lda     #0
+        sta     buffer,x                ; Terminate string with 0
+        ldax    #buffer
+        jsr     string_to_fp            ; Parse it
+        jmp     push_fp0                ; Push FP0 and return carry from string_to_fp

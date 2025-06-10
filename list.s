@@ -186,6 +186,7 @@ list_directive:
 list_argument_list:
         and     #$07                    ; Isolate the count
         pha                             ; Save on the stack
+        beq     @done                   ; Zero-length argument list
         jsr     decode_byte             ; Check if the next argument is 0
         beq     @no_value               ; If so then don't list
 @next_argument:

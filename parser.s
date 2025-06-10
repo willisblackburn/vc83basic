@@ -62,12 +62,22 @@ parse_line:
 parse_statement:
         ldax    #statement_name_table
         jsr     initialize_name_ptr
-@try:
-        ldpha   buffer_pos              ; Save the buffer position in case we need to backtrack
-        ldpha   line_pos                ; And the line buffer position
+@next:
+        jsr     parse_next_statement    ; Will restore parser state on failure
+        bcc     @done
+        ldy     #0                      ; Check if we failed because we reached the end of the name table
+        lda     (next_name_ptr),y
+        bne     @next                   ; Continue if there's at least one more name; otherwise return the carry set
+@done:
+        rts
+
+; Try to parse the buffer starting with the name table entry at name_ptr.
+
+parse_next_statement:
+        jsr     save_parser_state
         jsr     parse_tokenized_name_2
         bcs     @error
-        jsr     encode_byte             ; Replace name with statement token
+        jsr     encode_byte             ; Encode statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
         ldy     #0                      ; Start reading from name_ptr offset 0
@@ -87,7 +97,7 @@ parse_statement:
         inc     buffer_pos              ; Increment buffer pointer
         cmp     buffer,x
         beq     @next
-        bne     @backtrack_try_again
+        bne     @error
 
 @directive:
         jsr     rebase_name_ptr         ; Catch up name_ptr
@@ -99,18 +109,13 @@ parse_statement:
         plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
-@backtrack_try_again:
-        plsta   line_pos                ; Restore state
-        plsta   buffer_pos
-        jmp     @try
+@error:
+        sec                             ; Tell save_parser_state epilogue to restore state
+        rts
 
 @success:
-        clc                             ; Signal success
-@error:
-        pla                             ; Discard saved values
-        pla
-@done:
-        rts  
+        clc
+        rts
 
 parse_argument_type_vectors:
         .word   parse_variable-1            ; NT_VAR
@@ -157,6 +162,7 @@ parse_directive:
         rts
 
 parse_variable:
+        jsr     save_parser_state
         jsr     parse_name              ; Parse the variable name
         bcs     @done
         cpy     #<(name_pattern_op - name_pattern)  ; Make sure it was a name not an operator
@@ -257,15 +263,8 @@ parse_print_separators:
 parse_expression:
         jsr     parse_primary_expression    ; Parse an expression without any binary operators
         bcs     @error                  ; Not found; must be an error
-        ldax    #operator_name_table
-        jsr     parse_tokenized_name
-        bcs     @no_operator            ; Not found; expression ends here
-        ora     #TOKEN_OP               ; OR in the operator token
-        jsr     encode_byte
-        bcs     @error
-        jmp     parse_expression        ; Otherwise parse the following expression
-
-@no_operator:
+        jsr     parse_operator
+        bcc     parse_expression        ; Binary operator found; keep parsing
         jsr     encode_zero             ; Terminate expression with 0
         clc                             ; Signal success
 @error:
@@ -288,9 +287,22 @@ parse_primary_expression:
 @done:
         rts
 
+; Parses a binary operator. Only called from parse_expression.
+
+parse_operator:
+        jsr     save_parser_state
+        ldax    #operator_name_table
+        jsr     parse_tokenized_name
+        bcs     @error
+        ora     #TOKEN_OP               ; OR in the operator token
+        jmp     encode_byte
+@error:
+        rts
+
 ; Parses an expression in parentheses.
 
 parse_parentheses:
+        jsr     save_parser_state
         jsr     skip_whitespace         ; Skip whitespace and return the next character
         cmp     #'('                    ; Is is a left paren?
         sec                             ; Prepare to return error in case it's not
@@ -315,6 +327,7 @@ parse_close:
 ; Parses the unary operators '-' (minus) and NOT.
 
 parse_unary_operator:
+        jsr     save_parser_state
         ldax    #unary_operator_name_table
         jsr     parse_tokenized_name
         bcs     @error
@@ -328,6 +341,7 @@ parse_unary_operator:
 ; Parses a function call.
 
 parse_function:
+        jsr     save_parser_state
         ldax    #function_name_table
         jsr     parse_tokenized_name
         bcs     @done
@@ -420,20 +434,13 @@ string_pattern_3:
 parse_tokenized_name:
         jsr     initialize_name_ptr
 parse_tokenized_name_2:
-        ldpha   buffer_pos              ; Save buffer_pos value in case we have to return an error
         jsr     parse_name              ; Go parse the name; decode_name_ptr set on return
         bcs     @error
         mva     decode_name_ptr, line_pos   ; Prepare to overwrite name in line_buffer (referenced by decode_name_ptr) with token
-        jsr     find_name_2             ; Try to find the name in the name table
-        bcs     @error                  ; Not valid
-        tay                             ; Need A again
-        pla                             ; Pop and discard the saved buffer_pos
-        tya                             ; Recover A
-        rts                             ; Return with carry clear        
+        jmp     find_name_2             ; Try to find the name in the name table
 
 @error:
-        plsta   buffer_pos              ; Restore buffer_pos
-        rts                             ; Return with carry set
+        rts
 
 ; Parses a name from the buffer.
 ; Sets the high bit on the last character in line_buffer, which is also returned (with the high bit set) in A.
@@ -539,3 +546,50 @@ skip_whitespace:
         cmp     #' '        
         beq     loop_skip_whitespace       
         rts
+
+; Save parser state on the stack.
+; The parsing function should JSR to here. Calling this function will replace the caller's return address on the
+; stack so that when the caller does RTS, control passes to the epilogue, which will restore the parser state if
+; the carry flag is set.
+; 
+; Stack upon entry:     return address of caller's caller (2 bytes)
+;                       return address of caller (2 bytes) (where RTS from this function goes)
+;
+; Modified stack:       return address of caller's caller
+;                       parser state
+;                       address of epilogue
+;                       return address of caller (2 bytes) (where RTS from this function goes)
+
+save_parser_state:
+    stax    BC                          ; Arguments
+    plstaa  DE                          ; Return address
+    phzp    PARSER_STATE, PARSER_STATE_SIZE
+    jsr     @continue_begin_parse       ; This JSR will return to begin_parse caller
+
+; This is the epilogue that runs after the caller does RTS.
+;
+; Stack:                return address of caller's caller
+;                       parser state
+
+    stax    BC                          ; Return value
+    bcc     @success
+    plzp    PARSER_STATE, PARSER_STATE_SIZE
+    bcs     @done                       ; Unconditional
+
+@success:
+    tsx                                 ; Just add PARSER_STATE_SIZE to stack pointer to clear the stack
+    txa
+    adc     #PARSER_STATE_SIZE          ; Carry is already clear and this cannot set it
+    tax
+    txs
+@done:
+    ldax    BC
+    rts
+
+; By executing JSR to here, save_parser_state puts the address of the epilogue on the stack.
+; Restore the original return address and also restore the arguments.
+
+@continue_begin_parse:
+    ldphaa  DE
+    ldax    BC
+    rts

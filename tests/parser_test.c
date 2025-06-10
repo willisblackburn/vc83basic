@@ -163,6 +163,8 @@ void test_parse_expression(void) {
     const char line_data_13[] = { 'A', '$' | EOT, '(', 1, '1' | EOT, 0, 0 };
     const char line_data_14[] = { 0 | TOKEN_FUNCTION, '"', 'H', 'E', 'L', 'L', 'O', '"' | EOT, 0, 0 };
     const char line_data_15[] = { 1 | TOKEN_FUNCTION, '2', '5' | EOT, 0, 0 };
+    const char line_data_16[] = { 8 | TOKEN_FUNCTION, 0 };
+    const char line_data_17[] = { 8 | TOKEN_FUNCTION, TOKEN_OP | OP_MUL, '2', '0' | EOT, 0 };
 
     PRINT_TEST_NAME();
 
@@ -183,6 +185,8 @@ void test_parse_expression(void) {
     call_parse_expression("A$(1)", line_data_13, sizeof line_data_13, __LINE__);
     call_parse_expression("LEN(\"HELLO\")", line_data_14, sizeof line_data_14, __LINE__);
     call_parse_expression("STR$(25)", line_data_15, sizeof line_data_15, __LINE__);
+    call_parse_expression("FRE()", line_data_16, sizeof line_data_16, __LINE__);
+    call_parse_expression("FRE()*20", line_data_17, sizeof line_data_17, __LINE__);
 }
 
 void test_parse_argument_separator(void) {

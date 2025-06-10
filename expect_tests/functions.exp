@@ -1,6 +1,147 @@
 source [file join [file dirname [info script]] common.expinc]
 spawn_basic
 
-test "PRINT LEN(\"HELLO\")\n" "5\n"
+# ASC
 
-test "PRINT STR\$(25)\n" "25\n"
+test {
+PRINT ASC("A")
+} {
+65
+}
+
+# CHR$
+
+test {
+PRINT CHR$(65)
+} {
+A
+}
+
+# LEFT$, RIGHT$, MID$
+
+test {
+PRINT LEFT$("HELLO",2)
+} {
+HE
+}
+
+test {
+PRINT LEFT$("HELLO",100)
+} {
+HELLO
+}
+
+test {
+PRINT LEFT$("HELLO",0)
+} {
+
+}
+
+test {
+PRINT LEFT$("HELLO",-1)
+} {
+ERROR
+}
+
+test {
+PRINT RIGHT$("HELLO",2)
+} {
+LO
+}
+
+test {
+PRINT RIGHT$("HELLO",100)
+} {
+HELLO
+}
+
+test {
+PRINT RIGHT$("HELLO",0)
+} {
+
+}
+
+test {
+PRINT RIGHT$("HELLO",-1)
+} {
+ERROR
+}
+
+test {
+PRINT MID$("HELLO",2,3)
+} {
+ELL
+}
+
+test {
+PRINT MID$("HELLO",1,100)
+} {
+ELLO
+}
+
+test {
+PRINT MID$("HELLO",1,0)
+} {
+
+}
+
+test {
+PRINT MID$("HELLO",1,-1)
+} {
+ERROR
+}
+
+test {
+PRINT MID$("HELLO",0,1)
+} {
+ERROR
+}
+
+test {
+PRINT MID$("HELLO",-1,1)
+} {
+ERROR
+}
+
+test {
+LET H$="HELLO"
+PRINT LEFT$(H$,1)&MID$(H$,2,3)&RIGHT$(H$,1)
+} {
+HELLO
+}
+
+# LEN
+
+test {
+PRINT LEN("HELLO")
+} {
+5
+}
+
+# STR$
+
+test {
+PRINT STR$(25)
+} {
+25
+}
+
+test {
+PRINT STR$(3.14159)
+} {
+3.14159
+}
+
+# VAL
+
+test {
+PRINT VAL("25")
+} {
+25
+}
+
+test {
+PRINT VAL("3.14159")
+} {
+3.14159
+}
