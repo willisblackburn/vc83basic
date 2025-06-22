@@ -4,20 +4,20 @@ statement_name_table:
         .byte   :+ - *, 'E', 'N', 'D' | EOT
 :       .byte   :+ - *, 'R', 'U', 'N' | EOT
 :       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | EOT, NT_PRINT_EXP
-:       .byte   :+ - *, 'L', 'E', 'T' | EOT, NT_VAR, '=', 1
+:       .byte   :+ - *, 'L', 'E', 'T' | EOT, NT_VAR, '=' | EOT, 1
 :       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | EOT, NT_RPT_VAR
 :       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT, 2
 :       .byte   :+ - *, 'G', 'O', 'T', 'O' | EOT, NT_NUMBER
 :       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | EOT, NT_NUMBER
 :       .byte   :+ - *, 'R', 'E', 'T', 'U', 'R', 'N' | EOT
 :       .byte   :+ - *, 'P', 'O', 'P' | EOT
-:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'T', 'O', NT_RPT_NUMBER
-:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'S', 'U', 'B', NT_RPT_NUMBER
-:       .byte   :+ - *, 'F', 'O', 'R' | EOT, NT_VAR, '=', 1, 'T', 'O', 1
+:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'T', 'O' | EOT, NT_RPT_NUMBER
+:       .byte   :+ - *, 'O', 'N' | EOT, 1, 'G', 'O', 'S', 'U', 'B' | EOT, NT_RPT_NUMBER
+:       .byte   :+ - *, 'F', 'O', 'R' | EOT, NT_VAR, '=' | EOT, 1, 'T', 'O' | EOT, 1
 :       .byte   :+ - *, 'N', 'E', 'X', 'T' | EOT, NT_VAR
 :       .byte   :+ - *, 'S', 'T', 'O', 'P' | EOT
 :       .byte   :+ - *, 'C', 'O', 'N', 'T' | EOT
-:       .byte   :+ - *, 'I', 'F' | EOT, 1, 'T', 'H', 'E', 'N', NT_STATEMENT
+:       .byte   :+ - *, 'I', 'F' | EOT, 1, 'T', 'H', 'E', 'N' | EOT, NT_STATEMENT
 :       .byte   :+ - *, 'N', 'E', 'W' | EOT
 :       .byte   :+ - *, 'C', 'L', 'R' | EOT
 :       .byte   :+ - *, 'D', 'I', 'M' | EOT, NT_VAR

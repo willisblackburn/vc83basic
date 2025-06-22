@@ -78,37 +78,41 @@ parse_next_statement:
         jsr     parse_tokenized_name_2
         bcs     @error
         jsr     encode_byte             ; Encode statement token
-@after_directive:
-        jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
-        ldy     #0                      ; Start reading from name_ptr offset 0
 @next:
-        tya                             ; Read position into A
-        clc
-        adc     name_ptr                ; Add to name_ptr; A is now low byte of read position
+        lda     name_ptr                ; Check to see if we've run out of statement syntax data
         cmp     next_name_ptr           ; Is it the next name_ptr?
         beq     @success                ; If so, have reached the end of the statement
-        lda     (name_ptr),y
-        iny                             ; Move to next byte in name table entry data
-        tax                             ; Temporarily store in X
-        and     #$60                    ; Check if it's a directive (not a literal, x00x xxxx)
-        beq     @directive              ; It is
-        txa                             ; Restore byte from name table entry data
-        ldx     buffer_pos              ; Compare it to the current character in the buffer
-        inc     buffer_pos              ; Increment buffer pointer
-        cmp     buffer,x
-        beq     @next
-        bne     @error
-
-@directive:
-        jsr     rebase_name_ptr         ; Catch up name_ptr
-        txa                             ; Recover the directive
-        tay                             ; Move into Y in order to use A to save name state
+        ldy     #0                      ; Start reading from name_ptr offset 0
+        lda     (name_ptr),y            ; Read next byte of statement syntax
+        and     #$E0                    ; Check if it's a directive (000x xxxx) or a literal
+        bne     @literal                ; It's a literal
         phzp    NAME_STATE, NAME_STATE_SIZE
-        tya                             ; Recover directive from Y
+        lda     (name_ptr),y            ; It's a directive; read the type
         jsr     parse_directive
         plzp    NAME_STATE, NAME_STATE_SIZE
-        bcc     @after_directive
+        bcs     @error
+        ldy     #1                      ; Set Y to 1 so rebase moves name_ptr past the directive
+        bne     @rebase
 
+@literal:
+        jsr     skip_whitespace         ; Discard any whitespace before handling literal
+@next_literal:
+        lda     (name_ptr),y            ; Read byte again
+        php                             ; Push flags so we can check high bit later
+        iny
+        and     #$7F                    ; Clear EOT if it's set
+        ldx     buffer_pos              ; Get buffer pos into X
+        inc     buffer_pos              ; Move past
+        cmp     buffer,x                ; Check match
+        bne     @no_match               ; Did not match
+        plp                             ; Recover flags
+        bpl     @next_literal           ; If EOT wasn't set then keep matching
+@rebase:
+        jsr     rebase_name_ptr         ; Catch up name_ptr
+        bcc     @next                   ; Unconditional
+
+@no_match:
+        plp                             ; Pop and discard the saved flags
 @error:
         sec                             ; Tell save_parser_state epilogue to restore state
         rts

@@ -75,35 +75,35 @@ list_statement:
         tay
         ldax    #statement_name_table
         jsr     list_tokenized_name
-        jsr     rebase_name_ptr         ; Add the name length in Y to name_ptr
-@after_directive:
-        ldy     #0                      ; Start reading from name_ptr offset 0
 @next:
-        tya                             ; Read position into A
-        clc
-        adc     name_ptr                ; Add to name_ptr; A is now low byte of read position
+        jsr     rebase_name_ptr         ; Add the name or literal length in Y to name_ptr
+        lda     name_ptr                ; Check to see if we've run out of statement syntax data
         cmp     next_name_ptr           ; Is it the next name_ptr?
-        beq     @done                   ; Finished
-        tya                             ; Test Y
-        bne     @not_initial_alpha      ; Not first character in group
-        lda     (name_ptr),y
-        cmp     #'A'                    ; Check if it's alpha
-        bcc     @not_initial_alpha      ; No
-        jsr     add_whitespace
-@not_initial_alpha:
-        lda     (name_ptr),y
-        iny                             ; Move to next byte in name table data
-        cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
-        bcc     @directive              ; It is
-        jsr     append_buffer           ; Write to buffer
-        bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
-
-@directive:
-        tax                             ; Save directive in X
-        jsr     rebase_name_ptr         ; Catch up name_ptr
-        txa                             ; Get directive
+        beq     @done                   ; If so, have reached the end of the statement
+        ldy     #0                      ; Start reading from name_ptr offset 0
+        lda     (name_ptr),y            ; Read next byte of statement syntax
+        and     #$E0                    ; Check if it's a directive (000x xxxx) or a literal
+        bne     @literal                ; It's a literal
+        lda     (name_ptr),y            ; It's a directive; read the type
         jsr     list_directive
-        jmp     @after_directive
+        ldy     #1                      ; Set Y to 1 so rebase moves name_ptr past the directive
+        bne     @next                   ; Unconditional
+
+@literal:
+        lda     (name_ptr),y
+        and     #$7F                    ; Clear EOT if it's set
+        cmp     #'A'                    ; Check if it's alpha
+        bcc     @next_literal           ; No
+        jsr     add_whitespace
+@next_literal:
+        lda     (name_ptr),y
+        php                             ; Push flags so we can check high bit later
+        iny
+        and     #$7F                    ; Clear EOT if it's set
+        jsr     append_buffer
+        plp                             ; Restore flags
+        bpl     @next_literal           ; EOT not set so keep going
+        bmi     @next                   ; Unconditional
 
 @done:
         rts
