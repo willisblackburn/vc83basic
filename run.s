@@ -36,8 +36,8 @@ exec_stop:
 exec_cont:
         sec                             ; Set in case we take this next branch
         mvaa    resume_line_ptr, next_line_ptr
-        mva     resume_line_pos, next_line_pos
         beq     @done                   ; Can't resume because high byte of resume_line_ptr is 0
+        mva     resume_line_pos, next_line_pos
         mva     #PS_RUNNING, program_state
         clc
 @done:
