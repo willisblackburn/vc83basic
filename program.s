@@ -50,8 +50,6 @@ reset_program_state:
         mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
         rts
 
-
-
 ; Sets next_line_ptr to program_ptr. Does not change the run state.
 ; Returns next_line_ptr in AX.
 ; BC SAFE, DE SAFE
