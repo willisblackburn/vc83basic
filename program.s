@@ -15,18 +15,10 @@
 
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
-        mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr
-        stax    line_ptr                ; Set program_ptr and line_ptr to end of BSS
-        ldy     #Line::number+1         ; Offset of line number high byte (should be 2)
-        lda     #$FF                    ; Line number = -1
-        sta     (line_ptr),y            ; Save line number high byte
-        dey
-        sta     (line_ptr),y            ; Line number low byte
-        dey     
-        lda     #Line::data             ; This is the offset of the next line if this line has no data
-        sta     (line_ptr),y            ; Save as next line offset
-        jsr     advance_line_ptr_a      ; Add it to line_ptr; line_ptr is now invalid but that's okay
-        mvax    line_ptr, variable_name_table_ptr   ; Invalid line_ptr is the start of variable name table
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
+        jsr     append_null_line                            ; Build a null line at program_ptr
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
+        mva     #PS_STOPPED, program_state
         
 ; Fall through to reset_program_state
 
@@ -57,6 +49,23 @@ reset_program_state:
 reset_line_ptr:
         mvax    program_ptr, line_ptr
         rts
+
+; Builds a null line at the location passed in AX. The null line has line number -1 and a length of zero.
+; The zero length prevents advance_line_ptr from advancing past the line.
+; This function makes assumptions about these offsets:
+
+.assert Line::next_line_offset = 0, error
+.assert Line::number = 1, error
+
+null_line:
+        .byte 0                         ; next_line_offset
+        .byte $FF, $FF                  ; number
+
+append_null_line:
+        stax    dst_ptr
+        ldy     #.sizeof(Line)
+        ldax    #null_line
+        jmp     copy_y_from
 
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
@@ -90,14 +99,12 @@ find_line:
         rts     
 
 ; Advances the current line pointer to the next line.
-; The advance_line_ptr_a entry point takes the line length from A instead of the next_line_offset field.
 ; line_ptr = current line (updated)
 ; BC SAFE, DE SAFE
 
 advance_line_ptr:
         ldy     #Line::next_line_offset
         lda     (line_ptr),y            ; Get next line offset into A
-advance_line_ptr_a:
         clc
         adc     line_ptr                ; Add line length to low byte of line_ptr
         ldx     line_ptr+1              ; High byte into X
@@ -121,7 +128,7 @@ insert_or_update_line:
         ldy     #Line::next_line_offset
         lda     (line_ptr),y            ; Get next line offset into A
         pha                             ; Save the next line offset on the stack; it will be the shrink length
-        jsr     advance_line_ptr_a      ; Advance line_ptr (use _a entry point because A is already length)
+        jsr     advance_line_ptr        ; Advance line_ptr
         pla                             ; Get the length of the line back off the stack
         ldy     #line_ptr               ; Select line_ptr as the pointer to move
         jsr     shrink_a
@@ -133,7 +140,7 @@ insert_or_update_line:
 @insert:
         lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
         tax                             ; Save in X since we'll need it again
-        cmp     #Line::data             ; Compare next line offset with the offset of the data field
+        cmp     #.sizeof(Line)          ; Compare next line offset with the offset of the data field
         beq     @finish                 ; If they're the same, line is blank, nothing to insert
         ldphaa  line_ptr                ; Push line_ptr onto stack so we can get it back later
         txa                             ; Copy line length back into A as the amount to grow
