@@ -38,12 +38,12 @@ reset_program_state:
 @skip_iny:
         sty     free_ptr+1
         lda     #0                      ; Load zero into A
+        sta     resume_line_ptr+1       ; Initialize resume_line_ptr high byte to 0 to disable CONT
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, stack_pos
-        mva     #0, resume_line_ptr+1   ; Initialize resume_line_ptr high byte to 0 to disable CONT
         rts
 
 ; Sets next_line_ptr to program_ptr. Does not change the run state.
