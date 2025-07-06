@@ -48,7 +48,8 @@ reset_program_state:
         mva     #PS_STOPPED, program_state  ; Set the program state to stopped
         mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, stack_pos
-        rts
+
+; Fall through
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
