@@ -7,15 +7,15 @@
 exec_run:
         jsr     reset_program_state     ; Clear the variable name table
 @run_one_line:
-        ldy     #Line::number+1         ; Position of line number high byte
+        ldy     #Line::next_line_offset ; Position of next line offset
         lda     (line_ptr),y            ; Into A
-        bmi     @program_end            ; If MSB of line number is set, we're at end of program
+        beq     @end                    ; If zero, we're at end of program
         jsr     run_line
         bcs     @done
         jsr     advance_line_ptr        ; Advance to next line
         jmp     @run_one_line
 
-@program_end:
+@end:
         clc
 
 @done:
@@ -24,7 +24,7 @@ exec_run:
 ; Executes the line pointed by line_ptr
 
 run_line:
-        mva     #Line::data, line_pos   ; Initialize read position to start of data
+        mva     #.sizeof(Line), line_pos    ; Initialize read position to start of data
         jsr     decode_byte             ; Get statement number
         jsr     invoke_statement_handler
         rts

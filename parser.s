@@ -11,8 +11,8 @@
 ; If the line number is missing, set it to -1.
 
 parse_line:
-        mva     #0, buffer_pos          ; Initialize the read pointer
-        mva     #Line::data, line_pos   ; Initialize write pointer
+        mva     #0, buffer_pos              ; Initialize the read pointer
+        mva     #.sizeof(Line), line_pos    ; Initialize write pointer
         jsr     skip_whitespace
         ldax    #buffer                 ; Read line number from buffer
         ldy     buffer_pos
