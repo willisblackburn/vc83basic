@@ -46,8 +46,7 @@ reset_program_state:
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         mva     #PS_STOPPED, program_state  ; Set the program state to stopped
-
-; Fall through
+        rts
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
