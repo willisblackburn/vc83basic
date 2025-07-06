@@ -44,7 +44,8 @@ reset_program_state:
         lda     #0                      ; Load zero into A
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
-        rts
+
+; Fall through
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
