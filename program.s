@@ -16,12 +16,9 @@
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
-        stax    next_line_ptr           ; Also set next_line_ptr
-        ldy     #0                      ; Populate END statement starting at offset 0
-        sty     program_state           ; Before adding END statement, set program state to stopped
-        jsr     build_end_statement
-        jsr     advance_next_line_ptr   ; Advance next_line_ptr to the next line
-        mvax    next_line_ptr, variable_name_table_ptr  ; New value is the start of variable name table
+        jsr     append_null_line                            ; Build a null line at program_ptr
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
+        mva     #PS_STOPPED, program_state
         
 ; Fall through to reset_program_state
 
@@ -58,33 +55,25 @@ reset_next_line_ptr:
         ldax    program_ptr
 reset_next_line_ptr_2:
         stax    next_line_ptr
-        mvy     #Line::data, next_line_pos
+        mvy     #.sizeof(Line), next_line_pos
         rts
 
-; Builds a line containing an END statement at next_line_ptr.
-; This function makes assumptions about these offsets.
-; TODO: 30 bytes, try to reduce by just copying from a template since all values are constants
+; Builds a null line at the location passed in AX. The null line has line number -1 and a length of zero.
+; The zero length prevents advance_next_line_ptr from advancing past the line.
+; This function makes assumptions about these offsets:
 
 .assert Line::next_line_offset = 0, error
 .assert Line::number = 1, error
-.assert Line::data = 3, error
 
-build_end_statement:
-        ldy     #0                      ; Start at offset 0 to next_line_ptr
-        lda     #Line::data+2           ; Next line offset is data offset +1 for next statement offset +1 for END
-        sta     (next_line_ptr),y       ; Save as next line offset
-        iny
-        lda     #$FF                    ; Line number = -1
-        sta     (next_line_ptr),y       ; Save line number low byte
-        iny
-        sta     (next_line_ptr),y       ; Line number high byte
-        iny
-        lda     #Line::data+2           ; Next line offset is also next statement offset
-        sta     (next_line_ptr),y       ; Line number high byte
-        iny
-        lda     #ST_END                 ; END
-        sta     (next_line_ptr),y       ; Save as next line offset
-        rts
+null_line:
+        .byte 0                         ; next_line_offset
+        .byte $FF, $FF                  ; number
+
+append_null_line:
+        stax    dst_ptr
+        ldy     #.sizeof(Line)
+        ldax    #null_line
+        jmp     copy_y_from
 
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
@@ -131,7 +120,7 @@ advance_next_line_ptr:
         bcc     @skip                   ; Don't need to change the high byte
         inc     next_line_ptr+1         ; Increment the high byte
 @skip:
-        mvy     #Line::data, next_line_pos
+        mvy     #.sizeof(Line), next_line_pos
         rts        
 
 ; Updates the program based on the information in line_buffer.
@@ -160,7 +149,7 @@ insert_or_update_line:
 @insert:
         lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
         tax                             ; Save in X since we'll need it again
-        cmp     #Line::data             ; Compare next line offset with the offset of the data field
+        cmp     #.sizeof(Line)          ; Compare next line offset with the offset of the data field
         beq     @finish                 ; If they're the same, line is blank, nothing to insert
         ldphaa  next_line_ptr           ; Push next_line_ptr onto stack so we can get it back later
         txa                             ; Copy line length back into A as the amount to grow
