@@ -6,6 +6,12 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
+; Maximum line length we're willing to encode (leave 16 bytes at end for END statement in immediate mode)
+MAX_LINE_LENGTH = 240
+
+; Make sure Line didn't get too big
+.assert .sizeof(Line) < 256 - MAX_LINE_LENGTH, error
+
 ; Encodes zero, which terminates a number, repeated list, or subexpression.
 
 encode_zero:
@@ -30,9 +36,9 @@ encode_byte:
 ; Y SAFE, BC SAFE, DE SAFE
 
 encode:
-        ldx     line_pos
-        cpx     #(254 - Line::data - 1) ; Max length = 255 - 1 (for this byte) - space for END line in immediate mode
-        bcs     @error
+        ldx     line_pos                ; line_pos is line position but it is also the current line length
+        cpx     #MAX_LINE_LENGTH-1      ; Subtract 1 for this byte
+        bcs     @error                  ; If carry set (no borrow) then line length >= MAX_LINE_LENGTH-1
         sta     line_buffer,x
         inc     line_pos
         rts
