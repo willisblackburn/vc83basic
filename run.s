@@ -8,8 +8,15 @@
 ; execution at the first line of the program.
 
 exec_run:
-        jsr     reset_program_state     ; Clear the variable name table
         jsr     reset_next_line_ptr
+
+; Fall through
+
+; CLR statement:
+; Resets the runtime state of the program, but keeps the program in memory.
+
+exec_clr:
+        jsr     reset_program_state
         clc
         rts
 
@@ -28,10 +35,15 @@ exec_end:
 ; Stops the program (can be resumed with CONT).
 
 exec_stop:
-        mvaa    next_line_ptr, resume_line_ptr
+        lda     next_line_ptr+1         ; Check if we're running in immediate mode
+        cmp     #>line_buffer
+        beq     @error                  ; If equal then return with carry set
+        sta     resume_line_ptr+1
+        mva     next_line_ptr, resume_line_ptr  ; Note mva not mvaa
         mva     next_line_pos, resume_line_pos
         mva     #PS_STOPPED, program_state
         clc
+@error:
         rts
 
 ; CONT statement:
@@ -52,13 +64,5 @@ exec_cont:
 
 exec_new:
         jsr     initialize_program
-        clc
-        rts
-
-; CLR statement:
-; Resets the runtime state of the program, but keeps the program in memory.
-
-exec_clr:
-        jsr     reset_program_state
         clc
         rts
