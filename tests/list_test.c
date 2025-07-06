@@ -148,9 +148,10 @@ void test_list_line(void) {
     ASSERT_MEMORY_EQ(buffer, list_2, sizeof list_2 - 1);
     ASSERT_EQ(buffer_pos, sizeof list_2 - 1);
 
-    // Test that list_line returns carry set when at the last line (or any negative-numbered line):
+    // Test that list_line returns carry set when at the null line:
 
-    set_line(-1, line_data_2, sizeof line_data_2);
+    line_buffer.number = -1;
+    line_buffer.next_line_offset = 0;
     list_line();
     ASSERT_NE(err, 0);
 }
