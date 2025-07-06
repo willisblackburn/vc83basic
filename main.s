@@ -37,7 +37,7 @@ main:
         ldy     #Line::next_line_offset ; Load the offset of the next line
         lda     (next_line_ptr),y
         beq     @end                    ; If next line offset is 0 then end
-        cmp     next_line_pos           ; Is the next line offset also the current position?
+        cmp     next_line_pos           ; Is the next line offset also the offset of the next statement?
         beq     @next_line              ; If yes then restart from next line
         mvax    next_line_ptr, line_ptr ; Move to next statement
         mva     next_line_pos, line_pos
