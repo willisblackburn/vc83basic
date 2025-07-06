@@ -17,3 +17,41 @@ CONT
 READY
 2
 }
+
+# CONT should still be possible even if we issue some other statements.
+
+test {
+NEW
+10 PRINT 1
+20 STOP
+30 PRINT X
+40 END
+RUN
+LET X=100
+CONT
+} {
+1
+
+READY
+
+READY
+100
+}
+
+
+# CONT is not possible without STOP.
+
+test {
+NEW
+10 PRINT 1
+20 END
+30 PRINT 2
+40 END
+RUN
+CONT
+} {
+1
+
+READY
+ERROR
+}
