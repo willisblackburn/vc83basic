@@ -53,10 +53,6 @@ word(program_ptr, Line*)
 comment A pointer to the current program line
 word(line_ptr, Line*)
 
-comment The value that line_ptr should take after we finish executing the current line.
-comment May be modified by control statements like GOTO, GOSUB, RETURN, NEXT, etc.
-word(next_line_ptr, Line*)
-
 comment The start of the variable name table
 word(variable_name_table_ptr, char*)
 

@@ -7,8 +7,8 @@
 
 ; LIST statement:
 ; Scans through the program and prints each line.
-; We use line_ptr and next_line_ptr to list the program.
-; It's possible the LIST is being called from within the program, so we save the existing next_line_ptr value
+; We use line_ptr to list the program.
+; It's possible the LIST is being called from within the program, so we save the existing line_ptr value
 ; on the stack and restore it after so we can resume execution after the LIST statement.
 
 exec_list:
@@ -33,16 +33,20 @@ exec_list:
 ; line_ptr = pointer to the line
 ; Returns with carry flag set if line_ptr points to the end of the program.
 
+.assert Line::next_line_offset = 0, error
+.assert Line::number = 1, error
+
 list_line:
-        mva     #0, buffer_pos          ; Initialize write position in buffer
-        ldy     #Line::number+1         ; Position of line number high byte
-        lda     (line_ptr),y            ; Into A
-        bmi     @done                   ; If MSB of line number is set, we're at end of program
+        mvy     #0, buffer_pos          ; Initialize write position in buffer (also set Y to next_line_offset)
+        lda     (line_ptr),y            ; Next line offset into A
+        beq     @done                   ; If it's the null statement then we're at the end of the program
+        ldy     #Line::number+1         ; Load line number high byte
+        lda     (line_ptr),y
         tax                             ; Move into X
         dey                             ; Position of line number low byte
         lda     (line_ptr),y
         jsr     format_number           ; Format into buffer
-        mva     #Line::data, line_pos   ; Initialize read position to start of data
+        mva     #.sizeof(Line), line_pos    ; Initialize read position to start of data
         jsr     list_statement
         clc
         rts
