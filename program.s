@@ -25,7 +25,8 @@ initialize_program:
         iny
         sta     (program_ptr),y
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), free_ptr
-        rts
+
+; Fall through
 
 ; Sets line_ptr to program_ptr.
 ; Returns line_ptr in AX.
