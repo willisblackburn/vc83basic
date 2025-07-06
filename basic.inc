@@ -3,8 +3,7 @@
 .struct Line
     next_line_offset .res 1
     number .res 2
-    ; data consists of next_statement_offset followed by tokenized data
-    data .res 1
+    ; Following are sequences of statements consists of next_statement_offset followed by tokenized data
 .endstruct
 
 BUFFER_SIZE = 256
@@ -47,8 +46,9 @@ BUFFER_SIZE = 256
 .global initialize_program
 .global reset_program_state
 .global reset_line_ptr
+.global append_null_line
 .global find_line
-.global advance_line_ptr, advance_line_ptr_a
+.global advance_line_ptr
 .global insert_or_update_line
 .global set_variable_value_ptr
 .global set_variable_value
@@ -64,7 +64,7 @@ BUFFER_SIZE = 256
 .global statement_name_table
 
 ; util.s
-.global copy, copy_a
+.global copy, copy_a, copy_y_from
 .global reverse_copy
 .global mul10, div10
 
