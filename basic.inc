@@ -16,8 +16,7 @@
 .struct Line
     next_line_offset .res 1
     number .res 2
-    ; data consists of next_statement_offset followed by tokenized data
-    data .res 1
+    ; Following are sequences of statements consists of next_statement_offset followed by tokenized data
 .endstruct
 
 .struct Control
@@ -168,7 +167,7 @@ S1 = FPX+2
 .global initialize_program
 .global reset_program_state
 .global reset_next_line_ptr, reset_next_line_ptr_2
-.global build_end_statement
+.global append_null_line
 .global find_line, find_line_2
 .global advance_next_line_ptr
 .global insert_or_update_line
