@@ -16,7 +16,14 @@
 initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
-        jsr     append_null_line                            ; Build a null line at program_ptr
+        ldy     #Line::next_line_offset ; Build a null line at the end of the program
+        tya
+        sta     (program_ptr),y
+        lda     #$FF                    ; Set line -1
+        iny
+        sta     (program_ptr),y
+        iny
+        sta     (program_ptr),y
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
         
 ; Fall through to reset_program_state
@@ -47,23 +54,6 @@ reset_program_state:
 reset_line_ptr:
         mvax    program_ptr, line_ptr
         rts
-
-; Builds a null line at the location passed in AX. The null line has line number -1 and a length of zero.
-; The zero length prevents advance_line_ptr from advancing past the line.
-; This function makes assumptions about these offsets:
-
-.assert Line::next_line_offset = 0, error
-.assert Line::number = 1, error
-
-null_line:
-        .byte 0                         ; next_line_offset
-        .byte $FF, $FF                  ; number
-
-append_null_line:
-        stax    dst_ptr
-        ldy     #.sizeof(Line)
-        ldax    #null_line
-        jmp     copy_y_from
 
 ; Searches for a line in the program.
 ; This function needs to be reasonably fast because it will be called every time the program executes GOTO, 
