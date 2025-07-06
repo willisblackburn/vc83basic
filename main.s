@@ -34,20 +34,24 @@ main:
 @next_line:
         jsr     advance_next_line_ptr   ; Otherwise go to next line
 @dispatch:
+        ldy     #Line::next_line_offset ; Load the offset of the next line
+        lda     (next_line_ptr),y
+        beq     @end                    ; If next line offset is 0 then end
+        cmp     next_line_pos           ; Is the next line offset also the current position?
+        beq     @next_line              ; If yes then restart from next line
         mvax    next_line_ptr, line_ptr ; Move to next statement
         mva     next_line_pos, line_pos
-        ldy     #Line::next_line_offset
-        cmp     (line_ptr),y            ; Is the current statement offset also the next line offset?
-        beq     @next_line              ; If yes then restart from next line
         jsr     decode_byte             ; The next byte is the next statement offset
-        sta     next_line_pos
+        sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     dispatch_statement
         bcc     @loop
 @error:
         jsr     print_error
         jsr     exec_stop
-        bcc     @loop
+        bcc     @loop                   ; Unconditional
 
+@end:
+        mva     #PS_STOPPED, program_state
 @get_command:
         jsr     print_ready
 @wait_for_input:
@@ -56,18 +60,17 @@ main:
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
-        mva     #0, resume_line_ptr+1   ; Clear high byte of resume line_ptr to disable CONT
+        mva     #0, resume_line_ptr+1   ; Clear high byte of resume_line_ptr to disable CONT
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
         bcc     @wait_for_input
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer
-        cmp     #Line::data             ; Does the "next line" start at the beginning of *this* line?
+        cmp     #.sizeof(Line)          ; Does the "next line" start at the beginning of *this* line?
         beq     @wait_for_input         ; Yes, just ignore input
-        mvax    #line_buffer, next_line_ptr ; Set next_line_ptr to point to line_buffer
-        jsr     advance_next_line_ptr   ; So we can move it to the next statement
-        jsr     build_end_statement     ; Populate END statement after the immediate mode statement
+        ldx     #>line_buffer           ; High byte of the address for the the null line
+        jsr     append_null_line
         mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
         ldax    #line_buffer            ; Reset next_line_ptr to line_buffer
         jsr     reset_next_line_ptr_2
