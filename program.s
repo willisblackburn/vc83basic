@@ -39,7 +39,8 @@ reset_program_state:
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, stack_pos
-        rts
+
+; Fall through
 
 ; Sets next_line_ptr to program_ptr.
 ; Returns next_line_ptr in AX.
