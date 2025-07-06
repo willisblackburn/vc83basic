@@ -6,9 +6,9 @@ void test_initalize_program(void) {
     initialize_program();
 
     ASSERT_EQ(line_ptr, program_ptr);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->next_line_offset, 0);
     ASSERT_EQ(line_ptr->number, -1);
-    ASSERT_PTR_EQ(free_ptr, program_ptr + 1); // sizeof *program_ptr == size of the line header
+    ASSERT_PTR_EQ(free_ptr, (char*)program_ptr + sizeof (Line));
     ASSERT_PTR_LT(free_ptr, himem_ptr);
 }
 
@@ -27,10 +27,10 @@ void test_reset_line_ptr(void) {
 void test_advance_line_ptr(void) {
     PRINT_TEST_NAME();
 
-    // Calling advance_line_ptr on the empty program should advance line_ptr to free_ptr.
+    // Calling advance_line_ptr on the empty program should not advance line_ptr.
     initialize_program();
     advance_line_ptr();
-    ASSERT_PTR_EQ(line_ptr, free_ptr);
+    ASSERT_PTR_EQ(line_ptr, program_ptr);
 
     // If we put in a fake lines with various lengths then line_ptr should advance by the size of each.
     // Note that we're charging into unallocated memory here, but that's okay since we own memory space
@@ -55,34 +55,34 @@ void test_grow(void) {
     ASSERT_PTR_EQ(line_ptr, program_ptr);
 
     // Add 3 bytes.
-    grow(&line_ptr, 3);
+    grow(&line_ptr, sizeof (Line));
     ASSERT_EQ(err, 0);
 
     // Set line_ptr back to program_ptr. There should now be 3 bytes where we can put stuff.
     line_ptr = program_ptr;
-    line_ptr->next_line_offset = 3;
+    line_ptr->next_line_offset = sizeof (Line);
     line_ptr->number = 20;
 
     // Now move it up 3 again.
-    grow(&line_ptr, 3);
+    grow(&line_ptr, sizeof (Line));
     ASSERT_EQ(err, 0);
     line_ptr = program_ptr;
-    line_ptr->next_line_offset = 3;
+    line_ptr->next_line_offset = sizeof (Line);
     line_ptr->number = 10;
 
     // Other pointers should be at their correct positions.
 
     ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9));
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + sizeof (Line) * 3);
 
     // Verify the program contents.
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, 10);
     line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));
     ASSERT_EQ(line_ptr->number, 20);
     line_ptr = (Line*)((char*)line_ptr + line_ptr->next_line_offset);
-    ASSERT_EQ(line_ptr->next_line_offset, 3);
+    ASSERT_EQ(line_ptr->next_line_offset, 0);
     ASSERT_EQ(line_ptr->number, -1);
 
     // Now grow free_ptr by 1K.
@@ -93,7 +93,7 @@ void test_grow(void) {
     ASSERT_EQ(err, 0);
 
     ASSERT_PTR_EQ(line_ptr, program_ptr);
-    ASSERT_PTR_EQ(free_ptr, (void*)((char*)line_ptr + 9 + 0x400));
+    ASSERT_PTR_EQ(free_ptr, (char*)line_ptr + sizeof (Line) * 3 + 0x400);
 }
 
 void test_shrink(void) {
@@ -206,7 +206,7 @@ void test_insert_or_update_line(void) {
     ASSERT_MEMORY_EQ(line_ptr->data, line_10_data, sizeof line_10_data);  
     
     advance_line_ptr();
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));    
+    ASSERT_EQ(line_ptr->next_line_offset, 0);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     set_line(200, line_200_data, sizeof line_200_data);
@@ -219,7 +219,7 @@ void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
     advance_line_ptr();
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));    
+    ASSERT_EQ(line_ptr->next_line_offset, 0);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test inserting a line before the other two.
@@ -236,7 +236,7 @@ void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_200_data);    
     ASSERT_EQ(line_ptr->number, 200);    
     advance_line_ptr();
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));    
+    ASSERT_EQ(line_ptr->next_line_offset, 0);    
     ASSERT_EQ(line_ptr->number, -1);    
 
     // Test deleting a line.
@@ -250,7 +250,7 @@ void test_insert_or_update_line(void) {
     ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line) + sizeof line_10_data);    
     ASSERT_EQ(line_ptr->number, 10);    
     advance_line_ptr();
-    ASSERT_EQ(line_ptr->next_line_offset, sizeof (Line));    
+    ASSERT_EQ(line_ptr->next_line_offset, 0);    
     ASSERT_EQ(line_ptr->number, -1);    
 }
 

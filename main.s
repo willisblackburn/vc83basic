@@ -22,7 +22,7 @@ main:
         bcs     @immediate_mode         ; No line number; execute in immediate mode
         stax    line_buffer+Line::number
         jsr     skip_whitespace         ; Leaves buffer_pos in X
-        ldy     #Line::data             ; Start writing into line_buffer at the position of the line_data field
+        ldy     #.sizeof(Line)          ; Start writing into line_buffer after the Line header
 @copy_one_char:        
         lda     buffer,x                ; Load next char from buffer
         beq     @copy_done              ; Finished loading into line buffer
@@ -59,7 +59,7 @@ exec_run:
         lda     (line_ptr),y
         sta     B                       ; Store in B
         ldx     #0                      ; Copy data into offset 0 in buffer
-        ldy     #Line::data             ; Starting at data offset
+        ldy     #.sizeof(Line)          ; Starting at data offset
 @copy_byte:
         lda     (line_ptr),y            ; Load byte
         sta     buffer,x                ; Store into buffer
