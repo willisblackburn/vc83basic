@@ -5,8 +5,7 @@
 .struct Line
     next_line_offset .res 1
     number .res 2
-    ; data consists of next_statement_offset followed by tokenized data
-    data .res 1
+    ; Following are sequences of statements consists of next_statement_offset followed by tokenized data
 .endstruct
 
 .struct Control
@@ -105,7 +104,7 @@ DE = D
 .global initialize_program
 .global reset_program_state
 .global reset_next_line_ptr
-.global build_end_statement
+.global append_null_line
 .global find_line, find_line_2
 .global advance_next_line_ptr
 .global insert_or_update_line
@@ -124,7 +123,7 @@ DE = D
 .global operator_precedence_table
 
 ; util.s
-.global copy, copy_a
+.global copy, copy_a, copy_y_from
 .global reverse_copy
 .global clear_memory
 .global mul2a, mul2, mul10, div10

@@ -12,6 +12,9 @@
 ; copy_a accepts a size < 256 bytes in A.
 ; BC SAFE, DE SAFE
 
+copy_y_from:
+        stax    src_ptr                 ; AX is src_ptr; dst_ptr must already be set
+        tya                             ; Y is size
 copy_a:
         ldx     #0
 copy:
