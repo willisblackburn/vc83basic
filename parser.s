@@ -152,7 +152,8 @@ parse_repeated_variable:
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
         jsr     parse_argument_separator    ; Try to read a separator
         bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
+        jmp     encode_zero             ; Terminate the repeated list
+
 @done:
         rts
 
@@ -195,8 +196,8 @@ parse_expression:
         jmp     parse_expression        ; Otherwise parse the following expression
 
 @no_operator:
-        jsr     encode_zero             ; Terminate expression with 0
-        clc                             ; Signal success
+        jmp     encode_zero             ; Terminate expression with 0
+
 @error:
         rts
 
@@ -257,7 +258,8 @@ parse_repeated_number:
         bcs     @done                   ; If no number then fail
         jsr     parse_argument_separator
         bcs     parse_repeated_number   ; Parse another number after the separator
-        jsr     encode_zero             ; Terminate the repeated list
+        jmp     encode_zero             ; Terminate the repeated list
+
 @done:
         rts
 
