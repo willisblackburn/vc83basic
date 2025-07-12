@@ -12,7 +12,7 @@ MAX_LINE_LENGTH = 240
 ; Make sure Line didn't get too big
 .assert .sizeof(Line) < 256 - MAX_LINE_LENGTH, error
 
-; Encodes zero, which terminates a number, repeated list, or subexpression.
+; Encodes zero.
 
 encode_zero:
         lda     #0
