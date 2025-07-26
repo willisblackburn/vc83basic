@@ -6,6 +6,13 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
+; Encodes zero.
+
+encode_zero:
+        lda     #0
+
+; Fall through
+
 ; Encodes a single byte.
 ; A = the byte to encode
 ; Y SAFE, BC SAFE, DE SAFE

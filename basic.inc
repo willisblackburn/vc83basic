@@ -28,6 +28,7 @@ DE = D
 .global decode_byte
 
 ; encode.s
+.global encode_zero
 .global encode_byte
 
 ; expression.s

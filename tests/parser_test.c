@@ -77,8 +77,8 @@ void call_parse_number(const char* s, char set_buffer_pos, const char* expect_li
 
 void test_parse_number(void) {
 
-    const char number_10_line_data[] = { '1', '0' | EOT };
-    const char number_20_line_data[] = { '2', '0' | EOT };
+    const char number_10_line_data[] = { '1', '0' };
+    const char number_20_line_data[] = { '2', '0' };
 
     PRINT_TEST_NAME();
 
@@ -117,7 +117,7 @@ void call_parse_expression(const char* s, const char* expect_line_data, size_t e
 
 void test_parse_expression(void) {
     
-    const char line_data_1[] = { '1' | EOT };
+    const char line_data_1[] = { '1' };
     const char line_data_2[] = { 'X' | EOT };
 
     PRINT_TEST_NAME();
@@ -147,8 +147,8 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 
 void test_parse_directive(void) {
 
-    const char line_data_1[] = { '1' | EOT };
-    const char line_data_2[] = { 'X' | EOT };
+    const char line_data_1[] = { '1', 0 };
+    const char line_data_2[] = { 'X' | EOT, 0 };
 
     PRINT_TEST_NAME();
 
@@ -175,8 +175,8 @@ void call_parse_statement(const char* s, const char* expect_line_data, size_t ex
 void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_PRINT, '8' | EOT };
-    const char line_data_3[] = { ST_LET, 'X' | EOT, '1', '0', '0' | EOT };
+    const char line_data_2[] = { ST_PRINT, '8', 0 };
+    const char line_data_3[] = { ST_LET, 'X' | EOT, '1', '0', '0', 0 };
 
     PRINT_TEST_NAME();
 
@@ -215,7 +215,7 @@ void test_parse_statement(void) {
 
 void test_parse_line(void) {
 
-    const char line_data_1[] = { ST_LET, 'X' | EOT, '1', '0', '0' | EOT };
+    const char line_data_1[] = { ST_LET, 'X' | EOT, '1', '0', '0', 0 };
     const char line_data_2[] = { ST_RUN };
 
     PRINT_TEST_NAME();

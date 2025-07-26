@@ -39,14 +39,14 @@ parse_line:
         rts
 
 ; Parses a complete statement.
-; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
+; The last byte of the statement should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
         jsr     parse_name
         bcs     @error
-        mva     decode_name_ptr, line_pos   ; match_ptr is pointing to name within line_buffer; back up line_pos to start
+        mva     decode_name_ptr, line_pos   ; name_ptr is pointing to name in line_buffer; back up line_pos to start
         ldax    #statement_name_table
         jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error
@@ -107,6 +107,7 @@ parse_directive:
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
         jsr     parse_expression        ; Just parse one expression for now
+        jsr     encode_zero             ; Terminate with 0
         jmp     @done
 
 @single:
@@ -131,7 +132,18 @@ parse_expression:
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
-        jmp     parse_pattern
+        jsr     parse_pattern
+        bcs     @error
+
+; Set the EOT bit on most recently encoded byte.
+
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        ora     #EOT                    ; Set bit 7
+        sta     line_buffer,x           ; Write back
+@error:
+        rts
 
 ; Parses a number from the buffer.
 
@@ -188,25 +200,16 @@ parse_pattern:
         lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
-        bne     @match
+        bne     @match                  ; Unconditional
 
 @terminal:
         ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
         pla                             ; Pop saved value of buffer_pos off the stack
-        bcs     @error
-
-; Set the EOT bit on most recently encoded byte.
-
-        ldx     line_pos                ; Get line_buffer write position
-        dex                             ; Back to last character we wrote
-        lda     line_buffer,x
-        ora     #EOT                    ; Set bit 7
-        sta     line_buffer,x           ; Write back
-        rts
-
+        bcc     @done
 @error:
         sta     buffer_pos              ; Restore buffer_pos from stack
         mva     decode_name_ptr, line_pos   ; Restore line_pos to the value we saved earlier 
+@done:
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.
