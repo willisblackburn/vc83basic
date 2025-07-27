@@ -39,14 +39,14 @@ parse_line:
         rts
 
 ; Parses a complete statement.
-; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
+; The last byte of the statement should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
         jsr     parse_name
         bcs     @error
-        mva     decode_name_ptr, line_pos   ; Back up line_pos to start of name within line_buffer
+        mva     decode_name_ptr, line_pos   ; name_ptr is pointing to name in line_buffer; back up line_pos to start
         ldax    #statement_name_table
         jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error
@@ -79,6 +79,7 @@ parse_statement:
         phzp    NAME_STATE, NAME_STATE_SIZE
         tya                             ; Recover directive from Y
         jsr     parse_directive
+        jsr     encode_zero             ; Terminate with 0
         plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
@@ -107,16 +108,12 @@ parse_directive:
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        jsr     parse_expression        ; Just parse one expression for now
-        jmp     @done
+        jmp     parse_expression        ; Just parse one expression for now
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
-        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-
-@done:
-        rts
+        jmp     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 ; Parses and tokenizes a expression.
 
@@ -132,17 +129,28 @@ parse_expression:
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
-        jmp     parse_pattern
+        jsr     parse_pattern
+        bcs     @error
+
+; Set the EOT bit on most recently encoded byte.
+
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        ora     #EOT                    ; Set bit 7
+        sta     line_buffer,x           ; Write back
+@error:
+        rts
 
 ; Parses a series of names separated by commas.
 
 parse_repeated_name:
         jsr     parse_name              ; Parse next variable name
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
+        jsr     parse_encode_argument_separator ; Try to read a separator
+        bcc     parse_repeated_name     ; If carry clear keep going; if carry set then no separator and we're done
 @done:
+        clc                             ; Carry was set from not finding last separator
         rts
 
 ; Parses a number from the buffer.
@@ -200,25 +208,16 @@ parse_pattern:
         lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
-        bne     @match
+        bne     @match                  ; Unconditional
 
 @terminal:
         ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
         pla                             ; Pop saved value of buffer_pos off the stack
-        bcs     @error
-
-; Set the EOT bit on most recently encoded byte.
-
-        ldx     line_pos                ; Get line_buffer write position
-        dex                             ; Back to last character we wrote
-        lda     line_buffer,x
-        ora     #EOT                    ; Set bit 7
-        sta     line_buffer,x           ; Write back
-        rts
-
+        bcc     @done
 @error:
         sta     buffer_pos              ; Restore buffer_pos from stack
         mva     decode_name_ptr, line_pos   ; Restore line_pos to the value we saved earlier 
+@done:
         rts
 
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
@@ -234,6 +233,13 @@ parse_argument_separator:
 
 @error:
         clc                             ; Clear carry since we don't know its state following the CMP above
+        rts
+
+parse_encode_argument_separator:
+        jsr     parse_argument_separator
+        bcc     @done
+        jmp     encode_byte
+@done:
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.
