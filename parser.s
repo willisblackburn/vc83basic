@@ -79,6 +79,7 @@ parse_statement:
         phzp    NAME_STATE, NAME_STATE_SIZE
         tya                             ; Recover directive from Y
         jsr     parse_directive
+        jsr     encode_zero             ; Terminate with 0
         plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
@@ -106,17 +107,12 @@ parse_directive:
         sec
         sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
         bcs     @single
-        jsr     parse_expression        ; Just parse one expression for now
-        jsr     encode_zero             ; Terminate with 0
-        jmp     @done
+        jmp     parse_expression        ; Just parse one expression for now
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
-        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-
-@done:
-        rts
+        jmp     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 ; Parses and tokenizes a expression.
 
