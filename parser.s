@@ -39,14 +39,14 @@ parse_line:
         rts
 
 ; Parses a complete statement.
-; The last byte the statement should be 0, which won't match anything. This avoids the need to keep checking
+; The last byte of the statement should be 0, which won't match anything. This avoids the need to keep checking
 ; the buffer length.
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
         jsr     parse_name
         bcs     @error
-        mva     decode_name_ptr, line_pos   ; Back up line_pos to start of name within line_buffer
+        mva     decode_name_ptr, line_pos   ; name_ptr is pointing to name in line_buffer; back up line_pos to start
         ldax    #statement_name_table
         jsr     find_name               ; Start by finding name; sets record_ptr
         bcs     @error
@@ -79,6 +79,7 @@ parse_statement:
         phzp    NAME_STATE, NAME_STATE_SIZE
         tya                             ; Recover directive from Y
         jsr     parse_directive
+        jsr     encode_zero             ; Terminate with 0
         plzp    NAME_STATE, NAME_STATE_SIZE
         bcc     @after_directive
 
@@ -111,24 +112,15 @@ parse_directive:
         tya                             ; Pass in expected number of arguments
         jsr     parse_argument_list
         bcs     @done                   ; Error parsing arguments
-        beq     @done                   ; Parsed all arguments; carry must be clear here because BCS above
-        sec                             ; If next condition met, return failure
-        bmi     @done                   ; Parsed too many arguments
-        sta     B                       ; Store number of remaining arguments in B
-@next_missing_argument:
-        jsr     encode_zero             ; Store 0 (no value) for any remaining arguments
-        bcs     @done                   ; encode_byte error
-        dec     B                       ; Done with one "no value"
-        bne     @next_missing_argument  ; Loop if more
-        beq     @done                   ; Otherwise done; carry will be clear because BCS above
+        bpl     @done                   ; Parsed all or some arguments; too few are okay
+        sec                             ; Parsed too many arguments; fail
+@done:
+        rts
 
 @single:
         tay                             ; The value left in A after subtracting NT_VAR is the vector index
         ldax    #parse_argument_type_vectors
-        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-
-@done:
-        rts
+        jmp     invoke_indexed_vector   ; Jump to the parser for the argument type
 
 ; Parses a list of arguments separated by commas.
 ; Accepts the expected number of arguments in A and decrements for each argument, returning the result in A, which
@@ -147,7 +139,7 @@ parse_argument_list:
 @next:
         tsx                             ; Set up stack access
         dec     $101,x                  ; Decrement the argument count
-        jsr     parse_argument_separator    ; Look for argument separator
+        jsr     parse_encode_argument_separator ; Try to read a separator
         bcc     @done                   ; No separator; return
         jsr     parse_expression        ; Parse the argument following the separator
         bcc     @next                   ; Failing to parse an argument just means we reached the end
@@ -169,16 +161,26 @@ parse_expression:
 
 parse_name:
         ldy     #<(name_pattern - name_pattern - 3)
-        jmp     parse_pattern
+        jsr     parse_pattern
+        bcs     @error
+
+; Set the EOT bit on most recently encoded byte.
+
+        ldx     line_pos                ; Get line_buffer write position
+        dex                             ; Back to last character we wrote
+        lda     line_buffer,x
+        ora     #EOT                    ; Set bit 7
+        sta     line_buffer,x           ; Write back
+@error:
+        rts
 
 ; Parses a series of names separated by commas.
 
 parse_repeated_name:
         jsr     parse_name              ; Parse next variable name
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_argument_separator    ; Try to read a separator
+        jsr     parse_encode_argument_separator ; Try to read a separator
         bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
-        jsr     encode_zero             ; Terminate the repeated list
 @done:
         rts
 
@@ -237,39 +239,36 @@ parse_pattern:
         lda     buffer,x                ; Reload character from buffer
         jsr     encode_byte             ; Encode
         inc     buffer_pos              ; Next character; should always be >0
-        bne     @match
+        bne     @match                  ; Unconditional
 
 @terminal:
         ror     A                       ; Shift low bit from PATTERN_OK/ERROR into carry
         pla                             ; Pop saved value of buffer_pos off the stack
-        bcs     @error
-
-; Set the EOT bit on most recently encoded byte.
-
-        ldx     line_pos                ; Get line_buffer write position
-        dex                             ; Back to last character we wrote
-        lda     line_buffer,x
-        ora     #EOT                    ; Set bit 7
-        sta     line_buffer,x           ; Write back
-        rts
-
+        bcc     @done
 @error:
         sta     buffer_pos              ; Restore buffer_pos from stack
         mva     decode_name_ptr, line_pos   ; Restore line_pos to the value we saved earlier 
+@done:
         rts
 
+parse_encode_argument_separator:
+        jsr     parse_argument_separator
+        bcc     parse_argument_separator_done
+        jmp     encode_byte             ; Does not affect carry
+
 ; Parses a mandatory comma beween arguments. Does not write any tokens.
-; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did.
+; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did. This is
+; because often not finding the separator (carry clear) means that the parse has succeeded.
 ; Y SAFE
 
 parse_argument_separator:
         jsr     skip_whitespace         ; Leaves next character in A
         cmp     #','                    ; Sets carry if character was ','
-        bne     @error
+        bne     parse_argument_separator_done
         inc     buffer_pos
         rts
 
-@error:
+parse_argument_separator_done:
         clc                             ; Clear carry since we don't know its state following the CMP above
         rts
 

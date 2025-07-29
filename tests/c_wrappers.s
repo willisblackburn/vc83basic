@@ -65,8 +65,7 @@ _decode_byte:
 
 _encode_byte:
 .export _encode_byte
-        jsr     encode_byte
-        jmp     set_err
+        jmp     encode_byte
 
 ; expression.s
 
