@@ -85,10 +85,6 @@ _list_statement:
 .export _list_statement
         jmp     list_statement
 
-_list_directive:
-.export _list_directive
-        jmp     list_directive
-
 ; name.s
 
 _find_name:
