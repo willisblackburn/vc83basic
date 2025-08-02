@@ -148,9 +148,8 @@ parse_repeated_name:
         jsr     parse_name              ; Parse next variable name
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
         jsr     parse_encode_argument_separator ; Try to read a separator
-        bcs     parse_repeated_name     ; If carry clear keep going; if carry set then no separator and we're done
+        bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
 @done:
-        clc                             ; Carry was set from not finding last separator
         rts
 
 ; Parses a number from the buffer.
