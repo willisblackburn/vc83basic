@@ -18,27 +18,7 @@ encode_zero:
 ; Y SAFE, BC SAFE, DE SAFE
 
 encode_byte:
-        jsr     encode
-        rts
-
-; Encodes a single byte and returns to the caller's caller on failure.
-; A = the byte to encode
-; On error, pops the return address off the stack and then does RTS to the caller's return address. This is so
-; the caller doesn't have to check error status after encoding each byte error. Of course this implies the caller
-; *can't* handle the error. Also, the caller can't have anything other than its own return address on the stack when
-; calling this function.
-; Y SAFE, BC SAFE, DE SAFE
-
-encode:
         ldx     line_pos
         sta     line_buffer,x
         inc     line_pos
-        beq     @error
-        clc
         rts
-
-@error:
-        pla                             ; Discard the return address 
-        pla     
-        sec
-        rts                             ; Return to the caller's caller

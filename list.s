@@ -59,13 +59,12 @@ list_line:
 
 list_statement:
         jsr     decode_byte             ; Get statement token
-        tay
+        tay                             ; Set up for list_tokenized_name
         ldax    #statement_name_table
         jsr     list_tokenized_name
-        jsr     rebase_name_ptr         ; Add the name length in Y to name_ptr
 @after_directive:
         ldy     #0                      ; Start reading from name_ptr offset 0
-@next:
+@next_byte:
         tya                             ; Read position into A
         clc
         adc     name_ptr                ; Add to name_ptr; A is now low byte of read position
@@ -76,13 +75,45 @@ list_statement:
         cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
         bcc     @directive              ; It is
         jsr     append_buffer           ; Write to buffer
-        bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
+        bne     @next_byte              ; Unconditional; Z flag cleared by INC in append_buffer
 
 @directive:
-        tax                             ; Save directive in X
         jsr     rebase_name_ptr         ; Catch up name_ptr
-        txa                             ; Get directive
-        jsr     list_directive
+        phzp    NAME_STATE, NAME_STATE_SIZE
+        jsr     decode_byte             ; Decode first byte
+        beq     @directive_end          ; Was empty; don't add whitespace
+        jsr     add_whitespace
+        dec     line_pos                ; Back up so we start with first byte
+@next_directive_byte:
+        jsr     decode_byte
+        beq     @directive_end          ; End of directive
+        tax                             ; Save in X
+        sec
+        sbc     #TOKEN_UNARY_OP
+        cmp     #8                      ; Number of possible unary operators
+        bcs     @not_unary_operator
+        tay
+        ldax    #unary_operator_name_table
+        jsr     list_tokenized_name
+        bcc     @next_directive_byte    ; Unconditional because list_tokenized_name always clears carry
+
+@not_unary_operator:
+        sbc     #(TOKEN_OP - TOKEN_UNARY_OP)
+        cmp     #16                     ; Number of possible binary operators
+        bcs     @not_operator
+        tay
+        ldax    #operator_name_table
+        jsr     list_tokenized_name
+        bcc     @next_directive_byte    ; Unconditional because list_tokenized_name always clears carry
+
+@not_operator:
+        txa                             ; Restore original byte
+        and     #$7F                    ; To clear EOT
+        jsr     append_buffer
+        bne     @next_directive_byte    ; Unconditional
+
+@directive_end:
+        plzp    NAME_STATE, NAME_STATE_SIZE
         jmp     @after_directive
 
 @done:
@@ -101,141 +132,21 @@ list_tokenized_name:
         dec     name_index
         bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
 @not_found:
-        ldax    name_ptr                ; Output from name_ptr
-        ldy     #0                      ; Start at offset 0
-
-; Fall through
-
-; Output text from the line up to EOT.
-; AX = the source pointer
-; Y = the offset from the source pointer
-; Returns the new offset in Y.
-
-list_characters_to_eot:
-        stax    src_ptr
-        lda     (src_ptr),y             ; Check first character to see if we need to add whitespace
-        and     #$7F                    ; Clear high bit if it's set
-        cmp     #'A'
-        bcc     @next
+        ldy     #0
+        lda     (name_ptr),y
+        and     #$7F                    ; In case EOT is set
+        cmp     #'A'                    ; Only add whitespace before tokenized name if it starts with a letter
+        bcc     @next_byte
         jsr     add_whitespace
-@next:
-        lda     (src_ptr),y
-        bmi     @last
+@next_byte:
+        lda     (name_ptr),y
+        php                             ; Remember if EOT bit was set
+        and     #$7F                    ; Clear if it was
         jsr     append_buffer
         iny
-        bne     @next
-@last:
-        iny                             ; Increment position past the last character
-        and     #$7F                    ; Clear high bit
-        clc                             ; Signal success for the benefit of callers who JMP here
-        jmp     append_buffer
-
-list_argument_type_vectors:
-        .word   list_literal-1              ; NT_VAR
-        .word   list_repeated_literal-1     ; NT_RPT_VAR
-
-; Lists a single directive from the token stream.
-; A = the directive
-
-; Make sure NT_VAR is the first single-arg directive
-.assert NT_VAR = $10, error
-
-list_directive:
-        tay                             ; Keep in Y while using A to save state
-        phzp    name_ptr, 4
-        tya                             ; Recover directive from Y
-        sec
-        sbc     #NT_VAR                 ; If we can subtract NT_VAR without borrowing then it's a single-arg directive
-        bcs     @single
-        tya
-        jsr     list_argument_list
-        jmp     @pop_state
-
-@single:
-        tay                             ; The value left in A after subtracting NT_VAR is the vector index
-        ldax    #list_argument_type_vectors
-        jsr     invoke_indexed_vector   ; Jump to the parser for the argument type
-@pop_state:
-        plzp    name_ptr, 4
-        rts
-
-list_argument_list:
-        and     #$07                    ; Isolate the count
-        pha                             ; Save on the stack
-        jsr     decode_byte             ; Check if the next argument is 0
-        beq     @no_value               ; If so then don't list
-@next_argument:
-        dec     line_pos                ; Back up
-        jsr     list_expression         ; List the expression
-@no_value:
-        tsx                             ; Set up stack access
-        dec     $101,x                  ; Done with one argument
-        beq     @done                   ; Finish if no more
-        jsr     decode_byte             ; Check if next argument is 0
-        beq     @no_value               
-        lda     #','                    ; Output argument separator
-        jsr     append_buffer
-        bne     @next_argument          ; Will never write 0 so this is unconditional branch
-
-@done:
-        pla                             ; Pop and discard the argument counter
-        rts
-
-list_vectors:
-        .word   list_unary_operator-1   ; XH_UNARY_OP
-        .word   list_operator-1         ; XH_OP
-        .word   list_literal-1          ; XH_NUMBER
-        .word   list_literal-1          ; XH_VAR
-        .word   list_paren-1            ; XH_PAREN
-
-list_expression:
-        ldax    #list_vectors
-        jmp     decode_expression
-
-list_unary_operator:
-        jsr     add_whitespace
-        jsr     decode_unary_operator
-        tay         
-        ldax    #unary_operator_name_table
-        jmp     list_tokenized_name
-
-list_operator:
-        jsr     decode_operator
-        tay         
-        ldax    #operator_name_table
-        jmp     list_tokenized_name
-
-list_literal:
-        jsr     add_whitespace
-        ldax    line_ptr
-        ldy     line_pos
-        jsr     list_characters_to_eot
-        sty     line_pos                ; Update line_pos
-        rts
-
-loop_list_repeated_literal:
-        lda     #','                    ; Write ',' to output
-        jsr     append_buffer
-list_repeated_literal:
-        jsr     list_literal            ; List one number
-        ldy     line_pos                ; Peek next byte
-        lda     (line_ptr),y
-        bne     loop_list_repeated_literal  ; Not 0 so keep going
-        inc     line_pos                ; Skip over 0
-        clc                             ; Signal success
-        rts
-
-list_paren:
-        inc     line_pos                ; Skip over '('
-        jsr     add_whitespace
-        lda     #'('
-        jsr     append_buffer
-        ldax    #list_vectors
-        jsr     decode_expression
-        lda     #')'
-        jsr     append_buffer
-        clc                             ; Signal success
-        rts
+        plp
+        bpl     @next_byte
+        jmp     rebase_name_ptr         ; Add the name length in Y to name_ptr
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if buffer_pos > 0 and if buffer[buffer_pos-1] is a name character or is a ')'.

@@ -77,8 +77,8 @@ void call_parse_number(const char* s, char set_buffer_pos, const char* expect_li
 
 void test_parse_number(void) {
 
-    const char number_10_line_data[] = { '1', '0' | EOT };
-    const char number_20_line_data[] = { '2', '0' | EOT };
+    const char number_10_line_data[] = { '1', '0' };
+    const char number_20_line_data[] = { '2', '0' };
 
     PRINT_TEST_NAME();
 
@@ -117,12 +117,12 @@ void call_parse_expression(const char* s, const char* expect_line_data, size_t e
 
 void test_parse_expression(void) {
     
-    const char line_data_1[] = { '1' | EOT, 0 };
-    const char line_data_2[] = { 'X' | EOT, 0 };
-    const char line_data_3[] = { 'X' | EOT, TOKEN_OP | OP_ADD, '1' | EOT, 0 };
-    const char line_data_4[] = { '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3' | EOT, 0,
-        TOKEN_OP | OP_MUL, 'Y' | EOT, 0 };
-    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT, 0 };
+    const char line_data_1[] = { '1' };
+    const char line_data_2[] = { 'X' | EOT };
+    const char line_data_3[] = { 'X' | EOT, TOKEN_OP | OP_ADD, '1' };
+    const char line_data_4[] = { '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
+        TOKEN_OP | OP_MUL, 'Y' | EOT };
+    const char line_data_5[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT };
 
     PRINT_TEST_NAME();
 
@@ -183,8 +183,8 @@ void call_parse_argument_list(const char* s, char count, const char* expect_line
 
 void test_parse_argument_list(void) {
 
-    const char line_data_1[] = { '1' | EOT, 0, 'X' | EOT, 0 };
-    const char line_data_2[] = { '1' | EOT, 0 };
+    const char line_data_1[] = { '1', ',', 'X' | EOT };
+    const char line_data_2[] = { '1' };
 
     PRINT_TEST_NAME();
 
@@ -212,11 +212,9 @@ void call_parse_directive(const char* s, char directive, const char* expect_line
 
 void test_parse_directive(void) {
 
-    const char line_data_1[] = { '1' | EOT, 0 };
-    const char line_data_2[] = { 'X' | EOT, 0 };
-    const char line_data_3[] = { 'X' | EOT };
-    const char line_data_4[] = { 'X' | EOT, 0 };
-    const char line_data_5[] = { 'X' | EOT, 'Y' | EOT, 0 };
+    const char line_data_1[] = { '1' };
+    const char line_data_2[] = { 'X' | EOT };
+    const char line_data_3[] = { 'X' | EOT, ',', 'Y' | EOT };
 
     PRINT_TEST_NAME();
 
@@ -224,9 +222,9 @@ void test_parse_directive(void) {
 
     call_parse_directive("1", 1, line_data_1, sizeof line_data_1, __LINE__);
     call_parse_directive("X", 1, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_directive("X", NT_VAR, line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_directive("X", NT_RPT_VAR, line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_directive("X,Y", NT_RPT_VAR, line_data_5, sizeof line_data_5, __LINE__);
+    call_parse_directive("X", NT_VAR, line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_directive("X", NT_RPT_VAR, line_data_2, sizeof line_data_2, __LINE__);
+    call_parse_directive("X,Y", NT_RPT_VAR, line_data_3, sizeof line_data_3, __LINE__);
 }
 
 void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
@@ -246,11 +244,11 @@ void call_parse_statement(const char* s, const char* expect_line_data, size_t ex
 void test_parse_statement(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_PRINT, '8' | EOT, 0 };
-    const char line_data_3[] = { ST_LET, 'X' | EOT, '1', '0', '0' | EOT, 0 };
-    const char line_data_4[] = { ST_INPUT, 'X' | EOT, 'Y' | EOT, 0 };
-    const char line_data_5[] = { ST_LIST, '1', '0' | EOT, 0, '2', '0' | EOT, 0 };
-    const char line_data_6[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3' | EOT, 0,
+    const char line_data_2[] = { ST_PRINT, '8', 0 };
+    const char line_data_3[] = { ST_LET, 'X' | EOT, 0, '1', '0', '0', 0 };
+    const char line_data_4[] = { ST_INPUT, 'X' | EOT, ',', 'Y' | EOT, 0 };
+    const char line_data_5[] = { ST_LIST, '1', '0', ',', '2', '0', 0 };
+    const char line_data_6[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
         TOKEN_OP | OP_MUL, 'Y' | EOT, 0 };
 
     PRINT_TEST_NAME();
@@ -293,7 +291,7 @@ void test_parse_statement(void) {
 
 void test_parse_line(void) {
 
-    const char line_data_1[] = { ST_LET, 'X' | EOT, '1', '0', '0' | EOT, 0 };
+    const char line_data_1[] = { ST_LET, 'X' | EOT, 0, '1', '0', '0', 0 };
     const char line_data_2[] = { ST_RUN };
 
     PRINT_TEST_NAME();
