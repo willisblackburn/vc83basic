@@ -95,10 +95,10 @@ list_statement:
 
 @directive:
         jsr     rebase_name_ptr         ; Catch up name_ptr
-        ldy     line_pos                ; Output from line_pos until we reach a 0
-        lda     (line_ptr),y            ; First character
+        jsr     decode_byte             ; Decode first byte
         beq     @after_directive        ; Was empty; don't add whitespace
         jsr     add_whitespace
+        dec     line_pos                ; Back up so we start with first byte
 @next_directive_byte:
         jsr     decode_byte
         beq     @after_directive        ; End of directive
