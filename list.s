@@ -97,20 +97,14 @@ list_statement:
         jsr     rebase_name_ptr         ; Catch up name_ptr
         ldy     line_pos                ; Output from line_pos until we reach a 0
         lda     (line_ptr),y            ; First character
-        beq     @directive_end          ; Was empty; don't add whitespace
+        beq     @after_directive        ; Was empty; don't add whitespace
         jsr     add_whitespace
 @next_directive_byte:
-        lda     (line_ptr),y            ; Next character
-        beq     @directive_end          ; End of directive
-        and     #$7F                    ; Clear EOT if set
+        jsr     decode_byte
+        beq     @after_directive        ; End of directive
+        and     #$7F                    ; To clear EOT
         jsr     append_buffer
-        iny
         bne     @next_directive_byte    ; Unconditional
-
-@directive_end:
-        iny                             ; Skip 0 at end of directive
-        sty     line_pos
-        bne     @after_directive        ; Unconditional
 
 @done:
         rts
