@@ -27,6 +27,8 @@ decode_expression:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
         beq     @end                    ; If we're at the end of the expression then stop
+        cmp     #')'
+        beq     @end                    ; Also stop if we see a ')'
         and     #$7F                    ; Clear high bit if set
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
@@ -53,7 +55,6 @@ decode_expression:
         rts
 
 @end:
-        inc     line_pos                ; Consume terminating 0
         clc                             ; Success
         rts
 
@@ -92,22 +93,11 @@ decode_name:
         sta     line_pos                ; Update line_pos
         rts
 
-decode_operator:
-        lda     #$0F
-        bne     decode_byte_with_mask   ; Unconditional jump
-
-decode_unary_operator:
-        lda     #$07
-        bne     decode_byte_with_mask   ; Unconditional jump
-
 ; Decodes a single byte and returns it in A.
 ; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
-; The decode_byte_with_mask entry point accepts a mask byte in A and ANDs it with the byte from the token stream.
 
 decode_byte:
-        lda     #$FF
-decode_byte_with_mask:
         ldy     line_pos                ; Read line_pos into Y and increment
         inc     line_pos  
-        and     (line_ptr),y            ; AND byte with mask and return
+        lda     (line_ptr),y            ; Load and return the byte
         rts
