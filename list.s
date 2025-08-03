@@ -80,7 +80,7 @@ list_statement:
         jsr     rebase_name_ptr         ; Add the name length in Y to name_ptr
 @after_directive:
         ldy     #0                      ; Start reading from name_ptr offset 0
-@next:
+@next_byte:
         tya                             ; Read position into A
         clc
         adc     name_ptr                ; Add to name_ptr; A is now low byte of read position
@@ -91,7 +91,7 @@ list_statement:
         cmp     #' '                    ; Check if it's a directive (not a literal, x00x xxxx)
         bcc     @directive              ; It is
         jsr     append_buffer           ; Write to buffer
-        bne     @next                   ; Unconditional; Z flag cleared by INC in append_buffer
+        bne     @next_byte              ; Unconditional; Z flag cleared by INC in append_buffer
 
 @directive:
         jsr     rebase_name_ptr         ; Catch up name_ptr
