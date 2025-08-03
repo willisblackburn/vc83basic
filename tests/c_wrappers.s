@@ -61,14 +61,6 @@ _decode_name:
 .export _decode_name
         jmp     decode_name
 
-_decode_operator:
-.export _decode_operator
-        jmp     decode_operator
-
-_decode_unary_operator:
-.export _decode_unary_operator
-        jmp     decode_unary_operator
-
 _decode_byte:
 .export _decode_byte
         jmp     decode_byte

@@ -92,22 +92,11 @@ decode_name:
         sta     line_pos                ; Update line_pos
         rts
 
-decode_operator:
-        lda     #$0F
-        bne     decode_byte_with_mask   ; Unconditional jump
-
-decode_unary_operator:
-        lda     #$07
-        bne     decode_byte_with_mask   ; Unconditional jump
-
 ; Decodes a single byte and returns it in A.
 ; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
-; The decode_byte_with_mask entry point accepts a mask byte in A and ANDs it with the byte from the token stream.
 
 decode_byte:
-        lda     #$FF
-decode_byte_with_mask:
         ldy     line_pos                ; Read line_pos into Y and increment
         inc     line_pos  
-        and     (line_ptr),y            ; AND byte with mask and return
+        lda     (line_ptr),y            ; Load and return the byte
         rts
