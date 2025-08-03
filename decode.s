@@ -53,7 +53,6 @@ decode_expression:
         rts
 
 @end:
-        inc     line_pos                ; Consume terminating 0
         clc                             ; Success
         rts
 

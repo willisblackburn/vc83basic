@@ -100,6 +100,8 @@ void xh_paren(void) {
     ++paren_count;
     decode_byte();
     decode_expression(decode_xh_vectors);
+    // Consume ')'
+    decode_byte();
 }
 
 void* decode_xh_vectors[] = {
