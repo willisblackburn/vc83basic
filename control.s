@@ -43,6 +43,7 @@ exec_on_gosub:
 exec_on:
         stax    on_handler              ; Store the handler address
         jsr     evaluate_expression     ; Evaluate the "ON" expression
+        inc     line_pos                ; Skip past the terminator
         jsr     pop_fp0
         jsr     truncate_fp_to_int      ; FP0 -> integer in AX
         sta     on_value
@@ -50,16 +51,23 @@ exec_on:
         txa                             ; Check the high byte
         bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
-        ldy     line_pos
-        lda     (line_ptr),y            ; Peek at next character
-        beq     @not_found              ; If it's 0, nothing matched; continue
+        dec     on_value                ; Decrease value sought by 1
+        bmi     @error                  ; If it went negative then it was originally 0; count as error
+        beq     @found                  ; It was found
+        ldy     line_pos                ; Otherwise advance to the next ','
+@next_byte:
+        lda     (line_ptr),y
+        beq     @error                  ; Found the terminator instead
+        iny
+        cmp     #','
+        bne     @next_byte
+        sty     line_pos                ; Update line_pos with the position after the next ','
+        beq     @loop                   ; Unconditional
+
+@found:
         jsr     get_line_number         ; Get the next line number into AX
-        dec     on_value                ; Decrement the "ON" value
-        bne     @loop                   ; If not zero then keep looking
         jmp     (on_handler)            ; Jump to whatever handler was passed in
 
-@not_found:
-        clc
 @error:
         rts
 
@@ -85,17 +93,20 @@ exec_for:
         jsr     push_next_line_ptr      ; Save return address
         bcs     @error                  ; Stack overflow
         jsr     decode_name             ; Get the name (now in decode_name_ptr)
+        inc     line_pos                ; Skip terminator following name
         ldx     stack_pos               ; Get stack pointer to store name
         lda     decode_name_ptr         ; Store pointer to variable name
         sta     stack+Control::variable_name_ptr,x
         lda     decode_name_ptr+1
         sta     stack+Control::variable_name_ptr+1,x
         jsr     evaluate_expression     ; Start value (may clobber decode_name_ptr)
+        inc     line_pos                ; Skip terminator
         bcs     @error
         jsr     find_or_add_variable
         bcs     @error
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
+        inc     line_pos                ; Skip terminator
         bcs     @error
         jsr     pop_fp0                 ; Get the evaluated value
         bcs     @error
@@ -175,6 +186,7 @@ exec_pop:
 
 exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
+        inc     line_pos                ; Skip terminator
         jsr     pop_fp0
         jsr     fp0_is_zero             ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
