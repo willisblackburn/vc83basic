@@ -46,8 +46,6 @@ DE = D
 .global decode_expression
 .global decode_number
 .global decode_name
-.global decode_operator
-.global decode_unary_operator
 .global decode_byte
 
 ; encode.s
