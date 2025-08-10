@@ -5,6 +5,7 @@
 
 exec_let:
         jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
+        inc     line_pos                ; Skip terminator
         jsr     find_or_add_variable
         ldphaa  name_ptr                ; Remember name_ptr
         jsr     evaluate_expression     ; Value is in AX
