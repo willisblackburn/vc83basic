@@ -22,19 +22,22 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     int value;
-    const char line_data[] = { '0' | EOT, '2', '5', '6' | EOT, '7', '6', '9' | EOT };
+    const char line_data[] = { '0', ',', '2', '5', '6', ',', '7', '6', '9', ',' };
 
     PRINT_TEST_NAME();
 
     set_line(0, line_data, sizeof line_data);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 0);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 256);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 769);
 }
 
@@ -118,13 +121,13 @@ void test_decode_expression(void) {
 
     // 4112+(X/3)*-X
     const char line_data[] = {
-        '4', '1', '1', '2' | EOT,
+        '4', '1', '1', '2',
         TOKEN_OP | OP_ADD,        
         '(',
         'X' | EOT,
         TOKEN_OP | OP_DIV,              
-        '3' | EOT,
-        0,
+        '3',
+        ')',
         TOKEN_OP | OP_MUL, 
         TOKEN_UNARY_OP | UNARY_OP_MINUS,             
         'X' | EOT,
