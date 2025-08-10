@@ -22,19 +22,22 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     int value;
-    const char line_data[] = { '0' | EOT, '2', '5', '6' | EOT, '7', '6', '9' | EOT };
+    const char line_data[] = { '0', ',', '2', '5', '6', ',', '7', '6', '9', ',' };
 
     PRINT_TEST_NAME();
 
     set_line(0, line_data, sizeof line_data);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 0);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 256);
 
     value = decode_number();
+    decode_byte();
     ASSERT_EQ(value, 769);
 }
 
