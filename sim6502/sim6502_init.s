@@ -137,7 +137,7 @@ debug_handler:
         lda     dst_ptr                 ; dst_ptr, ...
         ldx     dst_ptr+1
         jsr     pushax
-        ldy     #40                     ; 40 bytes on the C stack
+        ldy     #44                     ; 44 bytes on the C stack
         jsr     _fprintf
         lda     save_a                  ; Restore 6502 registers
         ldx     save_x

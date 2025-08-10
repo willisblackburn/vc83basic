@@ -57,7 +57,8 @@ evaluate_number:
         jmp     push_fp0                ; Push number
 
 evaluate_operator:
-        jsr     decode_operator         ; Return the operator in A
+        jsr     decode_byte             ; Return the operator in A
+        and     #(TOKEN_OP - 1)
         pha                             ; Keep on the stack while we process higher-precedence operators
         lsr     A                       ; Divide by 2        
         tax                             ; Move into X to use as index
@@ -72,7 +73,8 @@ evaluate_operator:
         jmp     push_operator           ; Push this operator onto the stack
 
 evaluate_unary_operator:
-        jsr     decode_unary_operator   ; Get the unary operator
+        jsr     decode_byte             ; Get the unary operator
+        and     #(TOKEN_UNARY_OP - 1)
         ora     #PR_UNARY_OP            ; Unary ops have highest precedence and are right-assoc so don't do anything
         jmp     push_operator           ; Except push the operator onto the stack
 
@@ -82,6 +84,7 @@ evaluate_paren:
         jsr     push_operator
         jsr     evaluate_expression     ; Evaluate the subexpression; may fail
         inc     op_stack_pos            ; Pop the open paren (even if evaluate_expression failed)
+        inc     line_pos                ; Consume the ')'
         rts
 
 evaluate_string:

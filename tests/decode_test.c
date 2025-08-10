@@ -21,19 +21,22 @@ void test_decode_byte(void) {
 }
 
 void test_decode_number(void) {
-    const char line_data[] = { '1', '0', '0' | EOT, '4', '1', '1', '2' | EOT, '3', '.', '1', '4', '1', '5', '9' | EOT };
+    const char line_data[] = { '1', '0', '0', ',', '4', '1', '1', '2', ',', '3', '.', '1', '4', '1', '5', '9', ',' };
 
     PRINT_TEST_NAME();
 
     set_line(0, line_data, sizeof line_data);
 
     decode_number();
+    decode_byte();
     ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 133, 0xC8000000);
 
     decode_number();
+    decode_byte();
     ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 139, 0x80800000);
 
     decode_number();
+    decode_byte();
     ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 128, 0xC90FCF81);
 }
 
@@ -80,7 +83,7 @@ extern void* decode_xh_vectors[];
 int unary_op_count;
 
 void xh_unary_operator(void) {
-    char op = decode_unary_operator();
+    char op = decode_byte() & (TOKEN_UNARY_OP - 1);
     switch (++unary_op_count) {
         case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
         case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
@@ -90,7 +93,7 @@ void xh_unary_operator(void) {
 int op_count;
 
 void xh_operator(void) {
-    char op = decode_operator();
+    char op = decode_byte()  & (TOKEN_OP - 1);
     switch (++op_count) {
         case 1: ASSERT_EQ(op, OP_ADD); break;
         case 2: ASSERT_EQ(op, OP_DIV); break;
@@ -128,6 +131,8 @@ void xh_paren(void) {
     ++paren_count;
     decode_byte();
     decode_expression(decode_xh_vectors);
+    // Consume ')'
+    decode_byte();
 }
 
 void* decode_xh_vectors[] = {
@@ -143,13 +148,13 @@ void test_decode_expression(void) {
 
     // 4112+(X/3)*-X
     const char line_data[] = {
-        '4', '1', '1', '2' | EOT,
+        '4', '1', '1', '2',
         TOKEN_OP | OP_ADD,        
         '(',
         'X' | EOT,
         TOKEN_OP | OP_DIV,              
-        '3' | EOT,
-        0,
+        '3',
+        ')',
         TOKEN_OP | OP_MUL, 
         TOKEN_UNARY_OP | UNARY_OP_MINUS,             
         'X' | EOT,
