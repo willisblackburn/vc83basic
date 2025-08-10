@@ -26,9 +26,6 @@ decode_expression:
 @start:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
-        beq     @end                    ; If we're at the end of the expression then stop
-        cmp     #')'
-        beq     @end                    ; Also stop if we see a ')'
         and     #$7F                    ; Clear high bit if set
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
@@ -50,12 +47,9 @@ decode_expression:
         iny                             ; Subexpression start
         cmp     #<('(' - 'A')
         beq     @dispatch
-        sec                             ; None of the above; set carry to indicate failure (shouldn't happen...)
-@error:
-        rts
-
 @end:
-        clc                             ; Success
+        clc                             ; None of the above; probably ')' or ',' or ';' so return success
+@error:
         rts
 
 ; Decodes a number and returns it in AX.
