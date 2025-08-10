@@ -5,6 +5,7 @@
 
 exec_let:
         jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
+        inc     line_pos                ; Skip terminator
         jsr     evaluate_expression     ; Value is now on the evaluation stack
         bcs     @error
         jsr     find_or_add_variable
