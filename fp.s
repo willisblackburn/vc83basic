@@ -624,7 +624,6 @@ string_to_fp:
         iny                             ; Skip past negative sign
 @not_negative:
         lda     (read_ptr),y            ; Get the next character
-        and     #$7F                    ; Clear EOT bit if set
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
         lda     D                       ; Check if we've already seen a decimal
