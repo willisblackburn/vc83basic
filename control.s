@@ -52,7 +52,7 @@ exec_on:
         bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
         dec     on_value                ; Decrease value sought by 1
-        bmi     @error                  ; If it went negative then it was originally 0; count as error
+        bmi     @zero                   ; If it went negative then it was originally 0
         beq     @found                  ; It was found
         ldy     line_pos                ; Otherwise advance to the next ','
 @next_byte:
@@ -68,6 +68,8 @@ exec_on:
         jsr     get_line_number         ; Get the next line number into AX
         jmp     (on_handler)            ; Jump to whatever handler was passed in
 
+@zero:
+        clc
 @error:
         rts
 
