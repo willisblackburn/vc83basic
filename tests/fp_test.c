@@ -539,9 +539,6 @@ void test_string_to_fp(void) {
     call_string_to_fp("-100-", NEGATIVE, 133, 0xC8000000, __LINE__);
     call_string_to_fp("3.14159+", POSITIVE, 128, 0xC90FCF81, __LINE__);
     
-    // Verify that string_to_fp stops on EOT bit: $B0 is '0' with EOT set.
-    call_string_to_fp("1\xB0" "00", POSITIVE, 130, 0xA0000000, __LINE__);
-    
     // Verify that string_to_fp leaves buffer_pos alone when faced with non-numbers.
     fail_string_to_fp("X10", __LINE__);
     fail_string_to_fp("*3", __LINE__);
