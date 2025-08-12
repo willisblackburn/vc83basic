@@ -60,7 +60,6 @@ read_string:
 @next:
         ldy     B                       ; Read offset
         lda     (read_ptr),y            ; Get next source character
-        and     #$7F                    ; Remove EOT bit if set
         beq     @finish                 ; Was zero, definitely finished
         cmp     D                       ; Was it the terminator?
         bne     @not_terminator         ; Nope
