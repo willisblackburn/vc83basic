@@ -8,7 +8,7 @@
 ;
 ; s = sign
 ; t = fractional part of significand, 31 bits, lowest byte first
-; e = exponent, 8 bits, excess-127 (MSB is inverted)
+; e = exponent, 8 bits, excess-127
 ;     If e = 0 and s = 0 then value = 0
 ;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
 ;     If e >= 1 then actual exponent is e-127 and actual significand is 1+t (implied 1. before t)
@@ -626,7 +626,6 @@ string_to_fp:
         iny                             ; Skip past negative sign
 @not_negative:
         lda     (read_ptr),y            ; Get the next character
-        and     #$7F                    ; Clear EOT bit if set
         cmp     #'.'                    ; Is it the decimal point?
         bne     @not_decimal_point      ; No
         lda     D                       ; Check if we've already seen a decimal
@@ -769,7 +768,7 @@ shift_right_normalize:
 ;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
 ;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
 ;   (increase exponent) once again.
-;   * If the exponent is >127, fail with an overflow error.n (TODO: need to handle this)
+;   * If the exponent is >127, fail with an overflow error. (TODO: need to handle this)
 ; Otherwise, return the final result.
 ; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
 ; etc.) also clobbers all registers.

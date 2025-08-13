@@ -221,9 +221,9 @@ void test_imul_16(void) {
 }
 
 void test_dimension_array() {
-    const char line_data_1[] = { 'X' | EOT, '(', 1, '3' | EOT, 0 };
-    const char line_data_2[] = { 'Y' | EOT, '(', 2, '2', '5' | EOT, 0, '5' | EOT, 0 };
-    const char line_data_3[] = { 'A', '$' | EOT, '(', 1, '5' | EOT, 0 };
+    const char line_data_1[] = { 'X' | EOT, '(', '3', ')' };
+    const char line_data_2[] = { 'Y' | EOT, '(', '2', '5', ',', '5', ')' };
+    const char line_data_3[] = { 'A', '$' | EOT, '(', '5', ')' };
     const char expect_array_data_1[] = {
         0x80, 0x1A,     // size (26 bytes)
         'X' | EOT,      // name
@@ -272,13 +272,15 @@ void test_dimension_array() {
     // Look up X as an array
     set_line(0, line_data_1, sizeof line_data_1);
     decode_name();
-    ASSERT_EQ(decode_name_arity, 1);
+    ASSERT_EQ(decode_name_type, TYPE_NUMBER);
+    ASSERT_EQ(decode_name_arity, -1);
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 0);
 
-    // Parse dimension values
-    evaluate_argument_list(decode_name_arity);
+    // Parse dimension values (returns input minus number of args read; negate to get arity)
+    decode_name_arity = -evaluate_argument_list(0);
+    ASSERT_EQ(decode_name_arity, 1);
 
     // Make sure argument is on the stack
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 6);
@@ -305,13 +307,15 @@ void test_dimension_array() {
     // Look up Y as an array
     set_line(0, line_data_2, sizeof line_data_2);
     decode_name();
-    ASSERT_EQ(decode_name_arity, 2);
+    ASSERT_EQ(decode_name_type, TYPE_NUMBER);
+    ASSERT_EQ(decode_name_arity, -1);
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 1);
 
     // Parse dimension values
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
+    ASSERT_EQ(decode_name_arity, 2);
 
     // Make sure argument is on the stack
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 12);
@@ -338,13 +342,15 @@ void test_dimension_array() {
     // Look up A$ as an array
     set_line(0, line_data_3, sizeof line_data_3);
     decode_name();
-    ASSERT_EQ(decode_name_arity, 1);
+    ASSERT_EQ(decode_name_type, TYPE_STRING);
+    ASSERT_EQ(decode_name_arity, -1);
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 2);
 
     // Parse dimension values
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
+    ASSERT_EQ(decode_name_arity, 1);
 
     // Make sure argument is on the stack
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 6);
@@ -369,26 +375,28 @@ void call_find_array_element(const char* line_data, size_t line_data_length, cha
 
     set_line(0, line_data, line_data_length);
     decode_name();
+    ASSERT_EQ(decode_name_type, TYPE_NUMBER);
+    ASSERT_EQ(decode_name_arity, -1);
     index = find_name(array_name_table_ptr);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(index, expect_index);
 
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
     find_array_element();
     ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(name_ptr, expect_name_ptr);
 }
 
 void test_find_array_element() {
-    const char line_data_1[] = { 'X' | EOT, '(', 1, '3' | EOT, 0 };
-    const char line_data_2[] = { 'Y' | EOT, '(', 2, '2', '5' | EOT, 0, '5' | EOT, 0 };
-    const char line_data_x_0[] = { 'X' | EOT, '(', 1, '0' | EOT, 0 };
-    const char line_data_x_1[] = { 'X' | EOT, '(', 1, '1' | EOT, 0 };
-    const char line_data_x_3[] = { 'X' | EOT, '(', 1, '3' | EOT, 0 };
-    const char line_data_x_4[] = { 'X' | EOT, '(', 1, '3' | EOT, 0 };
-    const char line_data_y_0_0[] = { 'Y' | EOT, '(', 2, '0' | EOT, 0, '0' | EOT, 0 };
-    const char line_data_y_1_1[] = { 'Y' | EOT, '(', 2, '1' | EOT, 0, '1' | EOT, 0 };
-    const char line_data_y_26_1[] = { 'Y' | EOT, '(', 2, '2', '6' | EOT, 0, '1' | EOT, 0 };
+    const char line_data_1[] = { 'X' | EOT, '(', '3', ')' };
+    const char line_data_2[] = { 'Y' | EOT, '(', '2', '5', ',', '5', ')' };
+    const char line_data_x_0[] = { 'X' | EOT, '(', '0', ')' };
+    const char line_data_x_1[] = { 'X' | EOT, '(', '1', ')' };
+    const char line_data_x_3[] = { 'X' | EOT, '(', '3', ')' };
+    const char line_data_x_4[] = { 'X' | EOT, '(', '3', ')' };
+    const char line_data_y_0_0[] = { 'Y' | EOT, '(', '0', ',', '0', ')' };
+    const char line_data_y_1_1[] = { 'Y' | EOT, '(', '1', ',', '1', ')' };
+    const char line_data_y_26_1[] = { 'Y' | EOT, '(', '2', '6', ',', '1', ')' };
     char index;
 
     PRINT_TEST_NAME();
@@ -405,7 +413,7 @@ void test_find_array_element() {
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 0);
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
     dimension_array();
     ASSERT_EQ(err, 0);
 
@@ -422,7 +430,7 @@ void test_find_array_element() {
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 1);
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
     dimension_array();
     ASSERT_EQ(err, 0);
 
@@ -436,7 +444,7 @@ void test_find_array_element() {
     set_line(0, line_data_y_26_1, sizeof line_data_y_26_1);
     decode_name();
     find_name(array_name_table_ptr);
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
     find_array_element();
     ASSERT_NE(err, 0);
 }

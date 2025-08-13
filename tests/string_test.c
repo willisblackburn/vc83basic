@@ -183,7 +183,7 @@ void test_compact(void) {
 }
 
 void test_compact_with_array(void) {
-    const char line_data[] = { 'A', '$' | EOT, '(', 1, '5' | EOT, 0 };
+    const char line_data[] = { 'A', '$' | EOT, '(', '5', ')' };
     const String* hello;
     const String* world;
     char index;
@@ -198,13 +198,14 @@ void test_compact_with_array(void) {
     // Look up A$ as an array
     set_line(0, line_data, sizeof line_data);
     decode_name();
-    ASSERT_EQ(decode_name_arity, 1);
+    ASSERT_EQ(decode_name_type, TYPE_STRING);
+    ASSERT_EQ(decode_name_arity, -1);
     index = find_name(array_name_table_ptr);
     ASSERT_NE(err, 0);
     ASSERT_EQ(index, 0);
 
     // Parse dimension values
-    evaluate_argument_list(decode_name_arity);
+    decode_name_arity = -evaluate_argument_list(0);
 
     // Make sure argument is on the stack
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 6);

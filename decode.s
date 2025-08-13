@@ -25,8 +25,8 @@ decode_expression:
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
         bcs     @error                  ; The handler failed
 @start:
-        jsr     peek_decode_byte
-        beq     @end                    ; If we're at the end of the expression then stop
+        ldy     line_pos                ; Peek at next byte in token stream
+        lda     (line_ptr),y
         and     #$7F                    ; Clear high bit if set
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
@@ -55,13 +55,9 @@ decode_expression:
         iny                             ; Subexpression start
         cmp     #<('(' - 'A')
         beq     @dispatch
-        sec                             ; None of the above; set carry to indicate failure (shouldn't happen...)
-@error:
-        rts
-
 @end:
-        inc     line_pos                ; Consume terminating 0
-        clc                             ; Success
+        clc                             ; None of the above; probably ')' or ',' or ';' so return success
+@error:
         rts
 
 ; Decodes a number and returns it in FP0.
@@ -99,7 +95,8 @@ decode_name:
         adc     #0                      ; Will leave carry clear since decode_name_ptr calculation should not roll over
         sta     decode_name_ptr+1
         ldy     #0                      ; Search for the end of the name starting at position 0
-        sty     decode_name_arity       ; While we have a zero, initialize decode_name_arity
+        sty     decode_name_type        ; Variable is TYPE_NUMBER (0) unless we learn otherwise
+        sty     decode_name_arity       ; Default to arity 0 meaning not an array
 @next:
         lda     (decode_name_ptr),y
         bmi     @last
@@ -112,53 +109,26 @@ decode_name:
         tya                             ; Add to line_pos; carry should be clear
         adc     line_pos
         sta     line_pos                ; Update line_pos
-        ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
         lda     (decode_name_ptr),y
         cmp     #'$' | EOT              ; If it's there, it will have the high bit set
         bne     @not_string
-        inx                             ; It was a string; change the type
+        inc     decode_name_type        ; Make it TYPE_STRING (1)
 @not_string:
         iny                             ; Restore Y to where it previously was, past the end of the name
         lda     (decode_name_ptr),y     ; See if the next character is '('
         cmp     #'('
         bne     @not_array
-        iny                             ; Array arity will be the byte following the end of the name
-        lda     (decode_name_ptr),y     ; Copy arity
-        sta     decode_name_arity
-        inc     line_pos                ; Move line_pos past '(' and arity
-        inc     line_pos
+        dec     decode_name_arity       ; Remember it was an array (will figure out real arity later)
+        inc     line_pos                ; Skip past the '('
 @not_array:
-        stx     decode_name_type        ; Remember the type
         rts
-
-decode_operator:
-        lda     #$0F
-        bne     decode_byte_with_mask   ; Unconditional jump
-
-decode_unary_operator:
-        lda     #$07
-        bne     decode_byte_with_mask   ; Unconditional jump
 
 ; Decodes a single byte and returns it in A.
 ; The last instruction loads A, so this function will return with the Z and N flags set accordingly.
-; The decode_byte_with_mask entry point accepts a mask byte in A and ANDs it with the byte from the token stream.
-; X SAFE, BC SAFE, DE SAFE
 
 decode_byte:
-        lda     #$FF
-decode_byte_with_mask:
         ldy     line_pos                ; Read line_pos into Y and increment
         inc     line_pos  
-        and     (line_ptr),y            ; AND byte with mask and return
-        rts
-
-; Checks the next byte. JSR to here saves 1 byte for each use.
-; Returns the byte in A and the flags set from reading that byte. Leaves Y set to the value in line_pos.
-; The caller should increment line_pos if it decided to use the returned value.
-; X SAFE, BC SAFE, DE SAFE
-
-peek_decode_byte:
-        ldy     line_pos                ; Read line_pos into Y
-        lda     (line_ptr),y            ; Peek at next character
+        lda     (line_ptr),y            ; Load and return the byte
         rts

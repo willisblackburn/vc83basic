@@ -13,3 +13,16 @@ PRINT X
 } {
 5
 }
+
+test {
+PRINT "HELLO, WORLD"
+} {
+HELLO, WORLD
+}
+
+test {
+LET PI=3.14159
+PRINT "PI=";PI
+} {
+PI=3.14159
+}

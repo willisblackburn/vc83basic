@@ -88,7 +88,7 @@ void encode_byte(/* A */ char value);
 
 // expression.s
 void evaluate_expression(void);
-void evaluate_argument_list(char n);
+signed char evaluate_argument_list(signed char expected_arguments);
 void push_fp0(void);
 void pop_fp0(void);
 void push_string(/* AX */ const String* value);

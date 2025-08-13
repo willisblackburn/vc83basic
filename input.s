@@ -25,7 +25,7 @@ exec_input:
 
 @assign:
         jsr     assign_variable         ; Store the value
-        jsr     peek_decode_byte
+        jsr     decode_byte             ; Read the next byte, which is either ',' or 0
         clc                             ; Clear carry in case we're done            
         beq     @done                   ; It was 0, nothing more to read
         jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue

@@ -16,85 +16,6 @@ void create_variables(void) {
     add_variable_with_name("Y");
 }
 
-void call_list_directive(char directive, const char* line_data, size_t line_data_length,
-    const char* expect_buffer, int line) {
-    fprintf(stderr, "  %s:%d: list_directive(%d)\n", __FILE__, line, directive);
-    set_line(0, line_data, line_data_length);
-    buffer_pos = 0;
-    list_directive(directive);
-    ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
-    ASSERT_EQ(buffer_pos, strlen(expect_buffer));
-}
-
-void test_list_directive(void) {
-
-    const char line_data_1[] = { '4', '1', '1', '2' | EOT, 0 };
-    const char line_data_2[] = { 'X' | EOT, 0 };
-    const char line_data_3[] = { 'X' | EOT, 0, '4', '1', '1', '2' | EOT, 0 };
-    const char line_data_4[] = { 'X' | EOT };
-    const char line_data_5[] = { 'X' | EOT, 0 };
-    const char line_data_6[] = { 'X' | EOT, 'Y' | EOT, 0 };
-    const char line_data_7[] = { '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3' | EOT, 0,
-        TOKEN_OP | OP_MUL, 'Y' | EOT, 0 };
-    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT, 0 };
-    const char line_data_9[] = { '2', '2' | EOT, TOKEN_OP | OP_DIV, '7' | EOT, 0 };
-    const char line_data_10[] = { '2', '2' | EOT, TOKEN_OP | OP_DIV, '7' | EOT, 0,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT, 0 };
-    const char line_data_11[] = { 'X' | EOT, TOKEN_OP | OP_LE, '7' | EOT, TOKEN_OP | OP_OR,
-        'Y' | EOT, TOKEN_OP | OP_EQ, '4', '1', '1', '2' | EOT, 0 };
-    const char line_data_12[] = { '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3' | EOT, 0,
-        TOKEN_OP | OP_AND, 'Y' | EOT, 0 };
-    const char line_data_13[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | EOT, TOKEN_OP | OP_EQ,
-        '3' | EOT, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_UNARY_OP | UNARY_OP_MINUS, 
-        'Y' | EOT, 0, 0 };
-    const char line_data_14[] = { '"', 'H', 'E', 'L', 'L', 'O', '"' | EOT, 0 };
-    const char line_data_15[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"',
-        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' | EOT, 0 };
-    const char line_data_16[] = { 'X' | EOT, '(', 2, '2' | EOT, 0, '5' | EOT, 0, 0 };
-    const char line_data_17[] = { 'A', '$' | EOT, '(', 1, '1' | EOT, 0, 0 };
-
-    const char list_1[] = "4112";
-    const char list_2[] = "X";
-    const char list_3[] = "X,4112";
-    const char list_4[] = "X";
-    const char list_5[] = "X";
-    const char list_6[] = "X,Y";
-    const char list_7[] = "(X+3)*Y";
-    const char list_8[] = "-X";
-    const char list_9[] = "22/7";
-    const char list_10[] = "22/7,-X";
-    const char list_11[] = "X<=7 OR Y=4112";
-    const char list_12[] = "(X+3) AND Y";
-    const char list_13[] = "NOT (X=3 OR NOT -Y)";
-    const char list_14[] = "\"HELLO\"";
-    const char list_15[] = "\"BUG OR \"\"FEATURE?\"\"\"";
-    const char list_16[] = "X(2,5)";
-    const char list_17[] = "A$(1)";
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-    create_variables();
-
-    call_list_directive(1, line_data_1, sizeof line_data_1, list_1, __LINE__);
-    call_list_directive(1, line_data_2, sizeof line_data_2, list_2, __LINE__);
-    call_list_directive(2, line_data_3, sizeof line_data_3, list_3, __LINE__);
-    call_list_directive(NT_VAR, line_data_4, sizeof line_data_4, list_4, __LINE__);
-    call_list_directive(NT_RPT_VAR, line_data_5, sizeof line_data_5, list_5, __LINE__);
-    call_list_directive(NT_RPT_VAR, line_data_6, sizeof line_data_6, list_6, __LINE__);
-    call_list_directive(1, line_data_7, sizeof line_data_7, list_7, __LINE__);
-    call_list_directive(1, line_data_8, sizeof line_data_8, list_8, __LINE__);
-    call_list_directive(1, line_data_9, sizeof line_data_9, list_9, __LINE__);
-    call_list_directive(2, line_data_10, sizeof line_data_10, list_10, __LINE__);
-    call_list_directive(1, line_data_11, sizeof line_data_11, list_11, __LINE__);
-    call_list_directive(1, line_data_12, sizeof line_data_12, list_12, __LINE__);
-    call_list_directive(1, line_data_13, sizeof line_data_13, list_13, __LINE__);
-    call_list_directive(1, line_data_14, sizeof line_data_14, list_14, __LINE__);
-    call_list_directive(1, line_data_15, sizeof line_data_15, list_15, __LINE__);
-    call_list_directive(1, line_data_16, sizeof line_data_16, list_16, __LINE__);
-    call_list_directive(1, line_data_17, sizeof line_data_17, list_17, __LINE__);
-}
-
 void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_statement()\n", __FILE__, line);
     set_line(0, line_data, line_data_length);
@@ -107,12 +28,31 @@ void call_list_statement(const char* line_data, size_t line_data_length, const c
 void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_LET, 'X' | EOT, '3', '2', '7', '6', '7' | EOT, 0 };
-    const char line_data_3[] = { ST_LIST, '1', '0' | EOT, 0, '2', '0' | EOT, 0 };
-    const char line_data_4[] = { ST_LIST, '1', '0' | EOT, 0, 0  };
-    const char line_data_5[] = { ST_LIST, 0, 0 };
-    const char line_data_6[] = { ST_INPUT, 'X' | EOT, 'Y' | EOT, 0 };
-    const char line_data_7[] = { ST_ON_GOTO, 'X' | EOT, 0, '1', '0' | EOT, '2', '0' | EOT, 0 };
+    const char line_data_2[] = { ST_LET, 'X' | EOT, 0, '3', '2', '7', '6', '7', 0 };
+    const char line_data_3[] = { ST_LIST, '1', '0', ',', '2', '0', 0 };
+    const char line_data_4[] = { ST_LIST, '1', '0', 0  };
+    const char line_data_5[] = { ST_LIST, 0 };
+    const char line_data_6[] = { ST_INPUT, 'X' | EOT, ',', 'Y' | EOT, 0 };
+    const char line_data_7[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
+        TOKEN_OP | OP_MUL, 'Y' | EOT, 0 };
+    const char line_data_8[] = { ST_PRINT, TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT, 0 };
+    const char line_data_9[] = { ST_PRINT, '2', '2' | EOT, TOKEN_OP | OP_DIV, '7', 0 };
+    const char line_data_10[] = { ST_PRINT, '2', '2' | EOT, TOKEN_OP | OP_DIV, '7', ',',
+        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT, 0 };
+    const char line_data_11[] = { ST_ON_GOTO, 'X' | EOT, 0, '1', '0', ',', '2', '0', 0 };
+    const char line_data_12[] = { ST_PRINT, 'X' | EOT, TOKEN_OP | OP_LE, '7', TOKEN_OP | OP_OR,
+        'Y' | EOT, TOKEN_OP | OP_EQ, '4', '1', '1', '2', 0 };
+    const char line_data_13[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
+        TOKEN_OP | OP_AND, 'Y' | EOT, 0 };
+    const char line_data_14[] = { ST_PRINT, TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | EOT, TOKEN_OP | OP_EQ,
+        '3', TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT, TOKEN_UNARY_OP | UNARY_OP_MINUS, 
+        'Y' | EOT, ')', 0 };
+    const char line_data_15[] = { ST_IF_THEN, 'X' | EOT, TOKEN_OP | OP_LT, '1', '0', 0, ST_PRINT, 'X' | EOT, 0, 0 };
+    const char line_data_16[] = { ST_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
+    const char line_data_17[] = { ST_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"',
+        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
+    const char line_data_18[] = { ST_PRINT, 'X' | EOT, '(', '2', ',', '5', ')', 0 };
+    const char line_data_19[] = { ST_PRINT, 'A', '$' | EOT, '(', '1', ')', 0 };
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
@@ -120,7 +60,19 @@ void test_list_statment(void) {
     const char list_4[] = "LIST 10";
     const char list_5[] = "LIST";
     const char list_6[] = "INPUT X,Y";
-    const char list_7[] = "ON X GOTO 10,20";
+    const char list_7[] = "PRINT (X+3)*Y";
+    const char list_8[] = "PRINT -X";
+    const char list_9[] = "PRINT 22/7";
+    const char list_10[] = "PRINT 22/7,-X";
+    const char list_11[] = "ON X GOTO 10,20";
+    const char list_12[] = "PRINT X<=7 OR Y=4112";
+    const char list_13[] = "PRINT (X+3) AND Y";
+    const char list_14[] = "PRINT NOT (X=3 OR NOT -Y)";
+    const char list_15[] = "IF X<10 THEN PRINT X";
+    const char list_16[] = "PRINT \"HELLO\"";
+    const char list_17[] = "PRINT \"BUG OR \"\"FEATURE?\"\"\"";
+    const char list_18[] = "PRINT X(2,5)";
+    const char list_19[] = "PRINT A$(1)";
 
     PRINT_TEST_NAME();
 
@@ -134,15 +86,26 @@ void test_list_statment(void) {
     call_list_statement(line_data_5, sizeof line_data_5, list_5, __LINE__);
     call_list_statement(line_data_6, sizeof line_data_6, list_6, __LINE__);
     call_list_statement(line_data_7, sizeof line_data_7, list_7, __LINE__);
+    call_list_statement(line_data_8, sizeof line_data_8, list_8, __LINE__);
+    call_list_statement(line_data_9, sizeof line_data_9, list_9, __LINE__);
+    call_list_statement(line_data_10, sizeof line_data_10, list_10, __LINE__);
+    call_list_statement(line_data_11, sizeof line_data_11, list_11, __LINE__);
+    call_list_statement(line_data_12, sizeof line_data_12, list_12, __LINE__);
+    call_list_statement(line_data_13, sizeof line_data_13, list_13, __LINE__);
+    call_list_statement(line_data_14, sizeof line_data_14, list_14, __LINE__);
+    call_list_statement(line_data_15, sizeof line_data_15, list_15, __LINE__);
+    call_list_statement(line_data_16, sizeof line_data_16, list_16, __LINE__);
+    call_list_statement(line_data_17, sizeof line_data_17, list_17, __LINE__);
+    call_list_statement(line_data_18, sizeof line_data_18, list_18, __LINE__);
+    call_list_statement(line_data_19, sizeof line_data_19, list_19, __LINE__);
 }
 
 void test_list_line(void) {
 
-    const char line_data_1[] = { 10, ST_PRINT, '2', '5', '7' | EOT, 0, 0 };
-    const char line_data_2[] = { 12, ST_LET, 'X' | EOT, '3', '2', '7', '6', '7' | EOT, 0 };
-    const char line_data_3[] = { 12, ST_LET, 'X' | EOT, '3', '2', '7', '6', '7' | EOT, 0,
-        17, ST_PRINT, 'X' | EOT, 0, 0 };
-    const char line_data_end[] = { 5, ST_END };
+    const char line_data_1[] = { 9, ST_PRINT, '2', '5', '7', 0 };
+    const char line_data_2[] = { 13, ST_LET, 'X' | EOT, 0, '3', '2', '7', '6', '7', 0 };
+    const char line_data_3[] = { 13, ST_LET, 'X' | EOT, 0, '3', '2', '7', '6', '7', 0,
+        17, ST_PRINT, 'X' | EOT, 0 };
     
     const char list_1[] = "10 PRINT 257";
     const char list_2[] = "400 LET X=32767";
@@ -182,7 +145,6 @@ void test_list_line(void) {
 int main(void) {
 
     initialize_target();
-    test_list_directive();
     test_list_statment();
     test_list_line();
 

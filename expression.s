@@ -16,9 +16,6 @@ evaluate_vectors:
         .word   evaluate_variable-1         ; XH_VAR
         .word   evaluate_paren-1            ; XH_PAREN
 
-evaluate_paren:
-        inc     line_pos                ; Consume the '('
-
 ; Fall through
 
 ; Evaluate a full expression.
@@ -40,31 +37,35 @@ evaluate_expression:
         plzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Recover the decoded name
         rts
 
-; Evaluate a number of arguments.
-; A = the number of arguments expected (must be at least 1)
-; Returns the number of arguments that were not NO_VALUE in A.
+; Evaluate a number of arguments. The argument list will either end in a 0 (as in a series of arguments for a
+; statement) or in a close paren (as in a DIM statement, array reference, or function call).
+; A = the number of arguments expected
+; Returns the number of arguments that were expected but not found; will be negative if too many argument found.
 
 evaluate_argument_list:
         pha                             ; Save the number of arguments expected on the stack
 @next:
-        jsr     peek_decode_byte        ; Empty value?
-        beq     @no_value               ; Yes
+        ldy     line_pos                ; Peek at next byte in token stream
+        lda     (line_ptr),y
+        beq     @done                   ; Was 0
+        cmp     #')'
+        beq     @done                   ; Was ')'
+        cmp     #','                    ; If it's a comma then just skip it
+        bne     @no_comma
+        inc     line_pos                ; Skip the comma
+@no_comma:
         jsr     evaluate_expression     ; Read the next expression
+        bcs     @error                  ; Possibly type error in expression
         tsx                             ; Get ready to access stack
         dec     $101,x                  ; Decrement the number of arguments
-        bne     @next                   ; More to do
+        jmp     @next                   ; Continue on
+
 @done:
+        inc     line_pos                ; Skip over the terminating byte
         clc
+@error:
         pla                             ; Return number of arguments read
         rts
-
-@no_value:
-        tsx
-        lda     $101,x                  ; The number of arguments remaining to be read
-        clc
-        adc     line_pos                ; Add to line_pos to skip over the "no value" bytes
-        sta     line_pos
-        bne     @done                   ; Unconditional
 
 evaluate_variable:
         jsr     decode_name
@@ -92,7 +93,8 @@ evaluate_number:
         jmp     push_fp0                ; Push number
 
 evaluate_operator:
-        jsr     decode_operator         ; Return the operator in A
+        jsr     decode_byte             ; Return the operator in A
+        and     #(TOKEN_OP - 1)
         pha                             ; Keep on the stack while we process higher-precedence operators
         lsr     A                       ; Divide by 2        
         tax                             ; Move into X to use as index
@@ -107,9 +109,19 @@ evaluate_operator:
         jmp     push_operator           ; Push this operator onto the stack
 
 evaluate_unary_operator:
-        jsr     decode_unary_operator   ; Get the unary operator
+        jsr     decode_byte             ; Get the unary operator
+        and     #(TOKEN_UNARY_OP - 1)
         ora     #PR_UNARY_OP            ; Unary ops have highest precedence and are right-assoc so don't do anything
         jmp     push_operator           ; Except push the operator onto the stack
+
+evaluate_paren:
+        inc     line_pos                ; Consume the '('
+        lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
+        jsr     push_operator
+        jsr     evaluate_expression     ; Evaluate the subexpression; may fail
+        inc     op_stack_pos            ; Pop the open paren (even if evaluate_expression failed)
+        inc     line_pos                ; Consume the ')'
+        rts
 
 evaluate_string:
         jsr     decode_string           ; Returns pointer in AX
