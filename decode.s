@@ -95,6 +95,7 @@ decode_name:
         adc     #0                      ; Will leave carry clear since decode_name_ptr calculation should not roll over
         sta     decode_name_ptr+1
         ldy     #0                      ; Search for the end of the name starting at position 0
+        sty     decode_name_type        ; Variable is TYPE_NUMBER (0) unless we learn otherwise
 @next:
         lda     (decode_name_ptr),y
         bmi     @last
@@ -107,14 +108,12 @@ decode_name:
         tya                             ; Add to line_pos; carry should be clear
         adc     line_pos
         sta     line_pos                ; Update line_pos
-        ldx     #TYPE_NUMBER            ; Variable is a number unless we learn otherwise
         dey                             ; Back up one so we can check if the last character is '$'
         lda     (decode_name_ptr),y
         cmp     #'$' | EOT              ; If it's there, it will have the high bit set
         bne     @not_string
-        inx                             ; It was a string; change the type
+        inc     decode_name_type        ; Make it TYPE_STRING (1)
 @not_string:
-        stx     decode_name_type        ; Remember the type
         rts
 
 ; Decodes a single byte and returns it in A.
