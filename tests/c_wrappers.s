@@ -70,18 +70,6 @@ _decode_name:
 .export _decode_name
         jmp     decode_name
 
-_decode_operator:
-.export _decode_operator
-        jmp     decode_operator
-
-_decode_unary_operator:
-.export _decode_unary_operator
-        jmp     decode_unary_operator
-
-_decode_function:
-.export _decode_function
-        jmp     decode_function
-
 _decode_byte:
 .export _decode_byte
         jmp     decode_byte
@@ -90,8 +78,7 @@ _decode_byte:
 
 _encode_byte:
 .export _encode_byte
-        jsr     encode_byte
-        jmp     set_err
+        jmp     encode_byte
 
 ; expression.s
 
@@ -275,10 +262,6 @@ _list_line:
 _list_statement:
 .export _list_statement
         jmp     list_statement
-
-_list_directive:
-.export _list_directive
-        jmp     list_directive
 
 ; name.s
 

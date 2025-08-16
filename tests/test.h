@@ -79,9 +79,6 @@ void decode_expression(/* AX */ void** vector_table_ptr);
 void decode_number(void);
 const String* decode_string(void);
 void decode_name(void);
-char decode_operator(void);
-char decode_unary_operator(void);
-char decode_function(void);
 char decode_byte(void);
 
 // encode.s
@@ -89,7 +86,7 @@ void encode_byte(/* A */ char value);
 
 // expression.s
 void evaluate_expression(void);
-void evaluate_argument_list(char n);
+signed char evaluate_argument_list(signed char expected_arguments);
 void push_fp0(void);
 void pop_fp0(void);
 void push_string(/* AX */ const String* value);

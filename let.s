@@ -7,7 +7,7 @@ exec_let:
         jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
         jsr     find_or_add_variable
         bcs     assign_variable_error
-@evaluate:
+        inc     line_pos                ; Skip terminator
         ldphaa  name_ptr                ; Remember name_ptr 
         jsr     evaluate_expression     ; Value is now on the evaluation stack
         plstaa  name_ptr                ; Restore name so we can assign it

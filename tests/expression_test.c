@@ -34,16 +34,17 @@ void test_stack_alloc_free(void) {
 }
 
 void test_one_op(char op, const Float* expected00, const Float* expected01, const Float* expected10, 
-                        const Float* expected11) {
+    const Float* expected11) {
 
-    char line_data[] = { '0' | EOT, 0 /* op */, '0' | EOT, 0 };
     Float value;
+    // Terminate expression with 0.
+    char line_data[] = { '0', 0 /* op */, '0', 0 };
 
     DEBUG(op);
 
     line_data[1] = TOKEN_OP | op;
-    line_data[0] = '0' | EOT;
-    line_data[2] = '0' | EOT;
+    line_data[0] = '0';
+    line_data[2] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -51,16 +52,16 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected00);
 
-    line_data[0] = '0' | EOT;
-    line_data[2] = '1' | EOT;
+    line_data[0] = '0';
+    line_data[2] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected01);
 
-    line_data[0] = '1' | EOT;
-    line_data[2] = '0' | EOT;
+    line_data[0] = '1';
+    line_data[2] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -68,8 +69,8 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected10);
 
-    line_data[0] = '1' | EOT;
-    line_data[2] = '1' | EOT;
+    line_data[0] = '1';
+    line_data[2] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -80,13 +81,14 @@ void test_one_op(char op, const Float* expected00, const Float* expected01, cons
 
 void test_one_unary_op(char op, const Float* expected0, const Float* expected1) {
 
-    char line_data[] = { 0 /* op */, '0' | EOT, 0 };
+    // Terminate expression with 0.
+    char line_data[] = { 0 /* op */, '0', 0 };
     Float value;
 
     DEBUG(op);
 
     line_data[0] = TOKEN_UNARY_OP | op;
-    line_data[1] = '0' | EOT;
+    line_data[1] = '0';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -94,7 +96,7 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
     store_fp0(&value);
     ASSERT_FLOAT_EQ(value, *expected0);
 
-    line_data[1] = '1' | EOT;
+    line_data[1] = '1';
     set_line(0, line_data, sizeof line_data);
     evaluate_expression();
     ASSERT_EQ(err, 0);
@@ -134,11 +136,12 @@ void test_evaluate_expression_op(void) {
 void test_evaluate_expression_op_precedence(void) {
     Float value;
 
+    // Terminate each expression with 0.
     // 2-1-1 = 0
-    char line_data_1[] = { '2' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, 0 };
+    char line_data_1[] = { '2', TOKEN_OP | OP_SUB, '1', TOKEN_OP | OP_SUB, '1', 0 };
     Float result_1 = { 0x00000000, 0 };
     // 2-(1-1) = 2
-    char line_data_2[] = { '2' | EOT, TOKEN_OP | OP_SUB, '(', '1' | EOT, TOKEN_OP | OP_SUB, '1' | EOT, 0, 0 };
+    char line_data_2[] = { '2', TOKEN_OP | OP_SUB, '(', '1', TOKEN_OP | OP_SUB, '1', ')', 0 };
     Float result_2 = { 0x00000000, 128 };
 
     PRINT_TEST_NAME();
@@ -235,11 +238,12 @@ void test_string_comparison(void) {
 }
 
 void test_evaluate_argument_list(void) {
-    const char line_data[] = { '1', '2', '8' | EOT, 0, '1' | EOT, TOKEN_OP | OP_ADD, '2' | EOT, 0 };
+    const char line_data[] = { '1', '2', '8', ',', '1', TOKEN_OP | OP_ADD, '2', 0 };
     const Float value_128 = { 0x00000000, 134 };
     const Float value_3 = { 0x40000000, 128 };
 
     Float value = { 0x00000000, 0 };
+    signed char skipped_arguments;
 
     PRINT_TEST_NAME();
 
@@ -247,7 +251,8 @@ void test_evaluate_argument_list(void) {
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE);
 
     set_line(0, line_data, sizeof line_data);
-    evaluate_argument_list(2);
+    skipped_arguments = evaluate_argument_list(5);
+    ASSERT_EQ(skipped_arguments, 3);
 
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 12 /* 5 bytes plus 1 byte for type for each value */);
 

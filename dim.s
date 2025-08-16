@@ -7,14 +7,15 @@ exec_dim:
         jsr     decode_name             ; Get the name and type
         sec                             ; Set carry in case this next check fails
         lda     decode_name_arity       ; See if it's an array name
-        beq     @error                  ; Nope
+        bpl     @error                  ; Nope
+        jsr     evaluate_argument_list  ; Evaluate the dimensions values (A = decdee_name_arity = $FF)
+        bcs     @error
+        eor     #$FF                    ; Invert to get number of arguments
+        sta     decode_name_arity
         ldax    array_name_table_ptr    ; Look for the name in the name table
         jsr     find_name
         ldax    name_ptr
         bcc     @error                  ; Name already exists
-        lda     decode_name_arity
-        jsr     evaluate_argument_list  ; Evaluate the dimensions values
-        bcs     @error
         jmp     dimension_array         ; Go do it
 
 @error:

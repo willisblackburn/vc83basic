@@ -112,7 +112,7 @@ advance_rebase_name_ptr_done:
 
 find_or_add_variable:
         lda     decode_name_arity       ; Is it an array?
-        bne     @array                  ; Go handle array
+        bmi     @array                  ; Go handle array
         ldax    variable_name_table_ptr
         jsr     find_name               ; Look for a variable with this name
         bcs     add_variable            ; Most common case is that it's found, so branch only if it's not
@@ -120,7 +120,10 @@ find_or_add_variable:
         rts
 
 @array:
-        jsr     evaluate_argument_list  ; Evaluate the array arguments
+        jsr     evaluate_argument_list  ; Evaluate the array arguments: arity $FF is still in A
+        bcs     @error
+        eor     #$FF                    ; A is now arity of array reference
+        sta     decode_name_arity
         ldax    array_name_table_ptr
         jsr     find_name               ; Look for an array with this name
         bcc     @found_array
@@ -136,8 +139,6 @@ find_or_add_variable:
         bcs     @error
 @found_array:
         jmp     find_array_element      ; On return name_ptr points to the location of the element
-
-; Fall through
 
 ; Extends the variable name table by adding a new name.
 ; The new name consists of the characters defined by decode_name_ptr and decode_name_length.
