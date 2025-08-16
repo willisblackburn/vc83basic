@@ -44,7 +44,7 @@ evaluate_number:
 
 evaluate_operator:
         jsr     decode_byte             ; Return the operator in A
-        and     #(TOKEN_OP - 1)
+        and     #<~TOKEN_OP
         pha                             ; Keep on the stack while we process higher-precedence operators
         lsr     A                       ; Divide by 2        
         tax                             ; Move into X to use as index
@@ -60,7 +60,7 @@ evaluate_operator:
 
 evaluate_unary_operator:
         jsr     decode_byte             ; Get the unary operator
-        and     #(TOKEN_UNARY_OP - 1)
+        and     #<~TOKEN_UNARY_OP
         ora     #PR_UNARY_OP            ; Unary ops have highest precedence and are right-assoc so don't do anything
         jmp     push_operator           ; Except push the operator onto the stack
 
