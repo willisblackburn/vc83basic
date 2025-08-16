@@ -24,8 +24,8 @@ define(`block', `')
 define(`endblock', `')
     ')
 
-define(`byte', `var($1, 1, char)')
-define(`word', `var($1, 2, $2)')
+define(`byte', `var($1, 1, ifelse($2, `', `char', $2))')
+define(`word', `var($1, 2, ifelse($2, `', `int', $2))')
 
 comment Generated from __file__
 
@@ -74,7 +74,7 @@ comment The address of "high memory" that will not be touched by the interpreter
 word(himem_ptr, void*)
 
 comment The line number sought by find_line
-word(line_number, int)
+word(line_number)
 
 comment NAME_STATE is the set of zero page values that parse_statement restores after parsing a directive
 block(NAME_STATE, 5)
