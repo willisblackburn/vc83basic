@@ -69,8 +69,6 @@ extern const char statement_name_table[];
 void decode_expression(/* AX */ void** vector_table_ptr);
 int decode_number(void);
 void decode_name(void);
-char decode_operator(void);
-char decode_unary_operator(void);
 char decode_byte(void);
 
 // encode.s
