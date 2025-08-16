@@ -62,7 +62,7 @@ extern void* decode_xh_vectors[];
 int unary_op_count;
 
 void xh_unary_operator(void) {
-    char op = decode_byte() & (TOKEN_UNARY_OP - 1);
+    char op = decode_byte() & (char)~TOKEN_UNARY_OP;
     switch (++unary_op_count) {
         case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
     }
@@ -71,7 +71,7 @@ void xh_unary_operator(void) {
 int op_count;
 
 void xh_operator(void) {
-    char op = decode_byte()  & (TOKEN_OP - 1);
+    char op = decode_byte()  & (char)~TOKEN_OP;
     switch (++op_count) {
         case 1: ASSERT_EQ(op, OP_ADD); break;
         case 2: ASSERT_EQ(op, OP_DIV); break;
