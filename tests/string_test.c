@@ -60,20 +60,19 @@ void test_string_alloc(void) {
 }
 
 void call_read_string(const char* input, const char* expect_string_data, char expect_y, int line) {
-    const String* s;
     const String* leftover;
     size_t expect_length = strlen(expect_string_data);
     fprintf(stderr, "  %s:%d: read_string(input=\"%s\")\n", __FILE__, line, input);
     strcpy(buffer, input);
-    s = read_string(buffer, 0);
+    read_string(buffer, 0);
     // Check the returned string.
     ASSERT_EQ(err, 0);
-    HEXDUMP(s, sizeof (String) + expect_length);
-    ASSERT_EQ(s->length, expect_length);
-    ASSERT_EQ(memcmp(s->data, expect_string_data, s->length), 0);
+    HEXDUMP(string_ptr, sizeof (String) + expect_length);
+    ASSERT_EQ(string_ptr->length, expect_length);
+    ASSERT_EQ(memcmp(string_ptr->data, expect_string_data, string_ptr->length), 0);
     // Check the leftover string.
-    leftover = (const String*)((const char*)s + STRING_EXTRA + s->length);
-    ASSERT_EQ(leftover->length, 255 - s->length);
+    leftover = (const String*)((const char*)string_ptr + STRING_EXTRA + string_ptr->length);
+    ASSERT_EQ(leftover->length, 255 - string_ptr->length);
     // Make sure read position returned correctly.
     ASSERT_EQ(Y, expect_y);
 }

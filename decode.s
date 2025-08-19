@@ -71,7 +71,7 @@ decode_number:
         rts
 
 ; Decodes a string.
-; Returns the address of the string in AX.
+; On return, string_ptr will point to the decoded string.
 
 decode_string:
         ldax    line_ptr                ; Prepare for read_string
