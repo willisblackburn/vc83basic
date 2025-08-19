@@ -37,7 +37,7 @@ load_s:
 ; Finding a NUL in the input terminates the string no matter what.
 ; AX = the buffer address (stored in read_ptr)
 ; Y = the starting offset
-; Returns the address of the new string in AX and the last read position in Y, carry clear if ok, carry set if error.
+; Leaves string_ptr pointing at the string and the last read position in Y, carry clear if ok, carry set if error.
 
 read_string:
         stax    read_ptr                ; Store read_ptr
@@ -94,14 +94,13 @@ read_string:
         txa                             ; Length
         eor     #$FF                    ; Invert bits to produce 255 - length
         sta     (DE),y                  ; Store it
-        ldax    string_ptr              ; Return pointer to string in AX
         ldy     B                       ; Return read position in Y
 @done:
         rts                             ; If we reached here via @finish, carry guaranteed to be clear by ADC
 
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
-; Returns the address of the new string in AY (to make it easy to pass to load_s0/s1)
+; Returns the address of the new string in string_ptr and in AY (to make it easy to pass to load_s0/s1).
 ; BC SAFE, DE SAFE
 
 string_alloc:

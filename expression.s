@@ -88,9 +88,8 @@ evaluate_paren:
         rts
 
 evaluate_string:
-        jsr     decode_string           ; Returns pointer in AX
-        jsr     push_string
-        rts        
+        jsr     decode_string           ; Sets string_ptr
+        jmp     push_string
 
 push_operator:
         sec                             ; Set carry so can just return failure if stack pointer is 0
@@ -340,20 +339,20 @@ pop_fp0:
 @error:
         rts
 
-; Pushes the string in AX onto the stack.
+; Pushes the string referenced by string_ptr onto the stack. This works because this function is only called after
+; we have generated a new string.
 ; Returns carry clear on success, carry set on failure.
 ; DE SAFE
 
 push_string:
-        stax    BC                      ; Store string address in BC
         jsr     stack_alloc_value
         bcs     @error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
         sta     stack+Value::type,y
-        lda     B                       ; Recover low byte of string address
+        lda     string_ptr              ; Copy low byte of string address
         sta     stack+Value::string_value_ptr,y     ; Save low and high byte of string address
-        lda     C                       ; High byte
+        lda     string_ptr+1            ; High byte
         sta     stack+Value::string_value_ptr+1,y   ; Carry still clear for return
 @error:
         rts
