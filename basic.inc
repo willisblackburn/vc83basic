@@ -197,6 +197,8 @@ S1 = FPX+2
 ; read.s
 .global exec_read
 .global exec_restore
+.global exec_data
+.global exec_rem
 
 ; run.s
 .global exec_run

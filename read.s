@@ -28,7 +28,7 @@ exec_read:
         ldy     #Line::next_line_offset ; Check if data_line_ptr is at end of program (case 5)
         lda     (data_line_ptr),y
         tax                             ; Remember in X in case I need it to go to next line
-        beq     @error
+        beq     @done
         ldy     #.sizeof(Line) + 1      ; Check for DATA (add 1 to skip next statement offset)
         lda     (data_line_ptr),y
         cmp     #ST_DATA
@@ -56,12 +56,12 @@ exec_read:
         ldy     data_line_pos
 
 
-        jsr     peek_decode_byte
-        clc                             ; Clear carry in case we're done            
-        beq     @done                   ; It was 0, nothing more to read
-        jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
-        bcc     exec_input              ; Didn't find ',' so issue a new prompt
-        bcs     @next_var               ; Otherwise just read the next variable
+        ; jsr     peek_decode_byte
+        ; clc                             ; Clear carry in case we're done            
+        ; beq     @done                   ; It was 0, nothing more to read
+        ; jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
+        ; bcc     exec_input              ; Didn't find ',' so issue a new prompt
+        ; bcs     @next_var               ; Otherwise just read the next variable
 @done:
         rts
 
@@ -86,7 +86,7 @@ read_separator:
 ; RESTORE statement:
 
 exec_restore:
-        mvax    program_ptr, next_data_ptr
+        mvax    program_ptr, data_line_ptr
 
 
 ; Fall through

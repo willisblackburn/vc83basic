@@ -18,6 +18,7 @@ COMMON_SOURCES = \
 	parser.s \
 	print.s \
 	program.s \
+	read.s \
 	run.s \
 	string.s \
 	tables.s \

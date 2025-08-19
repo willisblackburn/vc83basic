@@ -61,6 +61,9 @@ comment The value that line_ptr should take after we finish executing the curren
 comment May be modified by control statements like GOTO, GOSUB, RETURN, NEXT, etc.
 word(next_line_ptr, Line*)
 
+comment DATA statement we're reading
+word(data_line_ptr, Line*)
+
 comment The start of the variable name table
 word(variable_name_table_ptr, char*)
 
@@ -109,6 +112,9 @@ byte(next_line_pos)
 
 comment Position of current statement
 byte(statement_line_pos)
+
+comment Position we're reading within the DATA line
+byte(data_line_pos)
 
 comment DECODE_NAME_STATE is the set of zero page fields that describe a name decoded from a program line
 block(DECODE_NAME_STATE, 5)
