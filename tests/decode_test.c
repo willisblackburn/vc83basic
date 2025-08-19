@@ -44,7 +44,6 @@ void test_decode_string(void) {
     const char line_data[] = {
         '"', 'H', 'E', 'L', 'L', 'O', '"'
     };
-    const String* s;
 
     PRINT_TEST_NAME();
 
@@ -55,10 +54,10 @@ void test_decode_string(void) {
     HEXDUMP(&line_buffer, 32);
     HEXDUMP(line_ptr, 32);
 
-    s = decode_string();
-    HEXDUMP(s, 32);
-    ASSERT_EQ(s->length, 5);
-    ASSERT_EQ(memcmp(s->data, "HELLO", 5), 0);
+    decode_string();
+    HEXDUMP(string_ptr, 32);
+    ASSERT_EQ(string_ptr->length, 5);
+    ASSERT_EQ(memcmp(string_ptr->data, "HELLO", 5), 0);
     ASSERT_EQ(line_pos, 10);
 }
 
