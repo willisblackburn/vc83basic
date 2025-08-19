@@ -20,7 +20,6 @@ fun_chr_s:
         bcs     @done                   ; Memory must be *very* low!
         ldy     #1                      ; Write to string position 1
         sta     (string_ptr),y          ; Set the character in the string
-        ldax    string_ptr
         jmp     push_string
 
 @done:
@@ -103,7 +102,6 @@ fun_mid_s_finish:
 @skip_src_inx:
         ldy     D
         jsr     copy_y_from
-        ldax    string_ptr
         jmp     push_string
 
 fun_mid_s_error:
@@ -162,7 +160,6 @@ fun_str_s:
         mvax    string_ptr, dst_ptr     ; Set up copy destination
         ldax    #buffer                 ; Source
         jsr     copy_y_from
-        ldax    string_ptr
         jmp     push_string
 
 @done:

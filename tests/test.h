@@ -77,7 +77,7 @@ extern const char statement_name_table[];
 // decode.s
 void decode_expression(/* AX */ void** vector_table_ptr);
 void decode_number(void);
-const String* decode_string(void);
+void decode_string(void);
 void decode_name(void);
 char decode_byte(void);
 
@@ -89,7 +89,7 @@ void evaluate_expression(void);
 signed char evaluate_argument_list(signed char expected_arguments);
 void push_fp0(void);
 void pop_fp0(void);
-void push_string(/* AX */ const String* value);
+void push_string(void);
 const String* pop_string(void);
 char stack_alloc(/* A */ char size);
 void stack_free(/* A */ char size);
@@ -157,7 +157,7 @@ void shrink(/* Y */ void* ptr, /* AX */ size_t size);
 // string.s
 char load_s0(/* AY */ const String* value);
 char load_s1(/* AY */ const String* value);
-const String* read_string(/* AX */ const char* ptr, /* Y */ char pos);
+void read_string(/* AX */ const char* ptr, /* Y */ char pos);
 const String* string_alloc(/* A */ char length);
 void compact(void);
 
