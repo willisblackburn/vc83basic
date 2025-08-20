@@ -159,7 +159,7 @@ parse_variable:
 parse_repeated_variable:
         jsr     parse_variable          ; Parse next variable name
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_encode_argument_separator ; Try to read a separator
+        jsr     parse_argument_separator    ; Try to read a separator
         bcs     parse_repeated_variable ; If carry set keep going; if carry clear then no separator and we're done
 
 @done:
@@ -182,7 +182,7 @@ parse_argument_list:
 @next:
         tsx                             ; Set up stack access
         dec     $101,x                  ; Decrement the argument count
-        jsr     parse_encode_argument_separator ; Try to read a separator
+        jsr     parse_argument_separator    ; Try to read a separator
         bcc     @done                   ; No separator; return
         jsr     parse_expression        ; Parse the argument following the separator
         bcc     @next                   ; Failing to parse an argument just means we reached the end
@@ -262,7 +262,7 @@ parse_number:
 parse_repeated_number:
         jsr     parse_number            ; Parse a first number
         bcs     @done                   ; If no number then fail
-        jsr     parse_encode_argument_separator
+        jsr     parse_argument_separator    ; Try to read a separator
         bcs     parse_repeated_number   ; Parse another number after the separator
 @done:
         rts
@@ -388,38 +388,29 @@ parse_pattern:
 @done:
         rts
 
-parse_encode_argument_separator:
-        jsr     parse_argument_separator
-        bcc     parse_argument_separator_done
-        jmp     encode_byte             ; Does not affect carry
-
 ; Parses a mandatory colon beween arguments. Does not write any tokens.
 
 parse_statement_separator:
-        lda     #':'
-        bne     parse_separator
+        jsr     skip_whitespace
+        cmp     #':'
+        bne     separator_not_found
+        inc     buffer_pos              ; Skip ':'
+        rts                             ; Returns with carry set on equal
 
-; Parses a mandatory comma beween arguments. Does not write any tokens.
-
-parse_argument_separator:
-        lda     #','
-
-; Parses a separator character.
-; A = the separator character
+; Parses a mandatory comma beween arguments.
 ; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did. This is
 ; because often not finding the separator (carry clear) means that the parse has succeeded.
 ; Y SAFE
 
-parse_separator:
-        sta     B                       ; Use B for the comparison
+parse_argument_separator:
         jsr     skip_whitespace
-        cmp     B                       ; Compare non-whitespace character to separator
-        bne     parse_argument_separator_done
-        inc     buffer_pos
-        rts
+        cmp     #','
+        bne     separator_not_found
+        inc     buffer_pos              ; Skip ','
+        jmp     encode_byte             ; Leaves carry set on equal
 
-parse_argument_separator_done:
-        clc                             ; Clear carry since we don't know its state following the CMP above
+separator_not_found:
+        clc                             ; Means not found
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.

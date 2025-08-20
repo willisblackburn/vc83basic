@@ -136,7 +136,6 @@ FP1s = FP1+UnpackedFloat::s
 .global parse_name
 .global parse_number
 .global parse_argument_separator
-.global skip_whitespace
 
 ; print.s
 .global exec_print
@@ -171,6 +170,8 @@ FP1s = FP1+UnpackedFloat::s
 .global reverse_copy
 .global clear_memory
 .global invoke_indexed_vector
+.global read_argument_separator
+.global find_printable_character
 
 ; target/*
 .global startup, initialize_target, readline, write, putch, newline
