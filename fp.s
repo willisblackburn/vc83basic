@@ -613,7 +613,8 @@ output_y_zeros:
 
 string_to_fp:
         stax    read_ptr                ; Store read_ptr
-        sty     E                       ; Save starting position in E        
+        jsr     find_printable_character    ; Skip any whitespace        
+        sty     E                       ; Save starting position in E
         jsr     clear_fp0               ; Reset to zero (including sign)
         mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
         lda     (read_ptr),y
