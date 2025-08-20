@@ -119,3 +119,30 @@ invoke_indexed_vector:
         lda     (vector_table_ptr),y    
         pha
         rts                             ; RTS jumps to vector pushed on the stack
+
+; Reads and discards an argument separator.
+; Returns with carry set if the separator was found, else clear, and advances Y past the separator if found.
+
+read_argument_separator:
+        jsr     find_printable_character
+        cmp     #','
+        bne     @not_found
+        iny                             ; Advance Y past the separator
+        rts
+
+@not_found:
+        clc                             ; Carry clear signals not found
+        rts
+
+; Reads forward and finds the next non-whitespace character.
+; read_ptr = the read address
+; Y = the starting position
+; Returns the next non-whitespace character in A and the position of that character in Y.
+
+continue_find_printable_character:
+        iny
+find_printable_character:
+        lda     (read_ptr),y
+        cmp     #' '
+        beq     continue_find_printable_character
+        rts
