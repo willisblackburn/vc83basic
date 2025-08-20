@@ -127,7 +127,6 @@ DE = D
 .global invoke_indexed_vector
 .global read_number, char_to_digit
 .global format_number
-.global read_argument_separator
 .global find_printable_character
 
 ; target/*
