@@ -147,7 +147,7 @@ parse_name:
 parse_repeated_name:
         jsr     parse_name              ; Parse next variable name
         bcs     @done                   ; It's always an error if we expected a variable and didn't find one
-        jsr     parse_encode_argument_separator ; Try to read a separator
+        jsr     parse_argument_separator    ; Try to read a separator
         bcs     parse_repeated_name     ; If carry set keep going; if carry clear then no separator and we're done
 @done:
         rts
@@ -219,25 +219,20 @@ parse_pattern:
 @done:
         rts
 
-parse_encode_argument_separator:
-        jsr     parse_argument_separator
-        bcc     parse_argument_separator_done
-        jmp     encode_byte             ; Does not affect carry
-
-; Parses a mandatory comma beween arguments. Does not write any tokens.
+; Parses a mandatory comma beween arguments.
 ; Return codes are reversed: we return carry clear if we did *not* find a separator and carry set if we did. This is
 ; because often not finding the separator (carry clear) means that the parse has succeeded.
 ; Y SAFE
 
 parse_argument_separator:
-        jsr     skip_whitespace         ; Leaves next character in A
-        cmp     #','                    ; Sets carry if character was ','
-        bne     parse_argument_separator_done
-        inc     buffer_pos
-        rts
+        jsr     skip_whitespace
+        cmp     #','
+        bne     separator_not_found
+        inc     buffer_pos              ; Skip ','
+        jmp     encode_byte             ; Leaves carry set on equal
 
-parse_argument_separator_done:
-        clc                             ; Clear carry since we don't know its state following the CMP above
+separator_not_found:
+        clc                             ; Means not found
         rts
 
 ; Skip past any whitespace in the buffer. Returns the next character in A.
