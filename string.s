@@ -41,6 +41,7 @@ load_s:
 
 read_string:
         stax    read_ptr                ; Store read_ptr
+        jsr     find_printable_character    ; Skip any whitespace        
         sty     B                       ; Read position relative to read_ptr
         ldax    #(255 + STRING_EXTRA + STRING_EXTRA)    ; Allocate space for 2 strings with total length of 255
         jsr     string_alloc_memory

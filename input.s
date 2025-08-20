@@ -28,7 +28,9 @@ exec_input:
         jsr     decode_byte             ; Read the next byte, which is either ',' or 0
         clc                             ; Clear carry in case we're done            
         beq     @done                   ; It was 0, nothing more to read
-        jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
+        ldy     buffer_pos              ; Prepare to skip past the argument separator, if present
+        jsr     read_argument_separator ; We read something from this line so need a ',' to continue
+        sty     buffer_pos              ; Save back new buffer_pos
         bcc     exec_input              ; Didn't find ',' so issue a new prompt
         bcs     @next_var               ; Otherwise just read the next variable
 @done:
