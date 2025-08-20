@@ -208,7 +208,6 @@ S1 = FPX+2
 .global reverse_copy
 .global clear_memory, set_memory
 .global invoke_indexed_vector
-.global read_argument_separator
 .global find_printable_character
 
 ; target/*
