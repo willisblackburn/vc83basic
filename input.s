@@ -22,9 +22,11 @@ exec_input:
         clc                             ; Clear carry in case we're done            
         beq     @done                   ; It was 0, nothing more to read
         ldy     buffer_pos              ; Prepare to skip past the argument separator, if present
-        jsr     read_argument_separator ; We read something from this line so need a ',' to continue
+        jsr     find_printable_character    ; We read something from this line so need a ',' to continue
+        cmp     #','                    ; Was it the separator?
+        bne     exec_input              ; Nope, just issue a new prompt
+        iny                             ; Skip separator        
         sty     buffer_pos              ; Save back new buffer_pos
-        bcc     exec_input              ; Didn't find ',' so issue a new prompt
-        bcs     @next_var               ; Otherwise just read the next variable
+        bne     @next_var               ; Read the next variable
 @done:
         rts
