@@ -186,6 +186,7 @@ invoke_indexed_vector:
 
 read_number:
         stax    read_ptr                ; Store read_ptr
+        jsr     find_printable_character                        
         sty     B                       ; Store starting position in B so we can read it later
         lda     #0                      ; Intialize the value to 0
         sta     C                       ; Keep the low byte of the result in C
@@ -260,4 +261,17 @@ format_number:
 
 @done:
         stx     buffer_pos              ; Update X
+        rts
+
+; Reads forward and finds the next non-whitespace character.
+; read_ptr = the read address
+; Y = the starting position
+; Returns the next non-whitespace character in A and the position of that character in Y.
+
+continue_find_printable_character:
+        iny
+find_printable_character:
+        lda     (read_ptr),y
+        cmp     #' '
+        beq     continue_find_printable_character
         rts

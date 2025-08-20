@@ -55,7 +55,6 @@ DE = D
 .global parse_expression
 .global parse_name
 .global parse_number
-.global skip_whitespace
 
 ; print.s
 .global exec_print
@@ -86,6 +85,7 @@ DE = D
 .global invoke_indexed_vector
 .global read_number, char_to_digit
 .global format_number
+.global find_printable_character
 
 ; target/*
 .global startup, initialize_target, readline, write, putch, newline
