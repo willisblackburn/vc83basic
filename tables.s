@@ -6,7 +6,7 @@ statement_name_table:
 :       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | EOT, NT_PRINT_EXP
 :       .byte   :+ - *, 'L', 'E', 'T' | EOT, NT_VAR, '=', 1
 :       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | EOT, NT_RPT_VAR
-:       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT, 2
+:       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT
 :       .byte   :+ - *, 'G', 'O', 'T', 'O' | EOT, NT_NUMBER
 :       .byte   :+ - *, 'G', 'O', 'S', 'U', 'B' | EOT, NT_NUMBER
 :       .byte   :+ - *, 'R', 'E', 'T', 'U', 'R', 'N' | EOT
