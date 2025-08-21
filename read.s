@@ -28,40 +28,53 @@ exec_read:
         ldy     #Line::next_line_offset ; Check if data_line_ptr is at end of program (case 5)
         lda     (data_line_ptr),y
         tax                             ; Remember in X in case I need it to go to next line
+        debug $00
         beq     @done
         ldy     #.sizeof(Line) + 1      ; Check for DATA (add 1 to skip next statement offset)
         lda     (data_line_ptr),y
         cmp     #ST_DATA
+        debug $01
         bne     exec_read_next_line     ; Not DATA; go to next line and try again (case 4)
         ldy     data_line_pos
         lda     (data_line_ptr),y       ; Check if we're pointing at the 0 at the end of the DATA line
+        debug $02
         beq     exec_read_next_line     ; We are; move to the next line
 
 ; Now we're left with case 1 or case 2: somewhere on a DATA line
 
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
+        debug $10
         bcs     @done
         lda     decode_name_type        ; Is it a number or a string?
         bne     @string                 ; It's a string
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     string_to_fp            ; Parse the number
+        debug $11
         bcs     @done                   ; Failed to read a number
         sty     data_line_pos           ; Update data_line_pos
         jsr     push_fp0                ; Push FP0 onto the value stack
 
 @assign:
         jsr     assign_variable         ; Store the value
+        ldy     line_pos
+        lda     (line_ptr),y            ; Peek next byte
+        cmp     #','                    ; More variables?
+        clc                             ; Prepare to return success
+        debug $20
+        bne     @done                   ; Nope
+        inc     line_pos
         ldy     data_line_pos
-
-
-        ; jsr     peek_decode_byte
-        ; clc                             ; Clear carry in case we're done            
-        ; beq     @done                   ; It was 0, nothing more to read
-        ; jsr     parse_argument_separator    ; We read something from ths line so need a ',' to continue
-        ; bcc     exec_input              ; Didn't find ',' so issue a new prompt
-        ; bcs     @next_var               ; Otherwise just read the next variable
+        jsr     find_printable_character    ; Look for an argument separator
+        beq     exec_read               ; Found 0 instead; try next line
+        cmp     #','                    ; Was it a comma?
+        sec                             ; In case next check fails
+        debug $21
+        bne     @done                   ; Didn't find it
+        iny                             ; Skip it
+        sty     data_line_pos           ; Save new line_pos
+        bne     exec_read               ; Move on to read the next value
 @done:
         rts
 
@@ -69,25 +82,16 @@ exec_read:
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     read_string
+        debug $12
         bcs     @done
         sty     data_line_pos           ; Update data_line_pos to next read position
         jsr     push_string             ; Push result string onto the stack
         jmp     @assign
 
-
-
-read_separator:
-
-
-
-
-
-
 ; RESTORE statement:
 
 exec_restore:
         mvax    program_ptr, data_line_ptr
-
 
 ; Fall through
 
@@ -98,5 +102,3 @@ exec_rem:
 exec_data:
         clc
         rts
-
-
