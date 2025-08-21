@@ -8,7 +8,7 @@
 ; LIST statement:
 ; Scans through the program and prints each line.
 ; We use line_ptr and next_line_ptr to list the program.
-; It's possible the LIST is being called from within the program, so we save the existing next_line_ptr value
+; It's possible that LIST is being called from within the program, so we save the existing next_line_ptr value
 ; on the stack and restore it after so we can resume execution after the LIST statement.
 
 exec_list:
