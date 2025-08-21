@@ -5,5 +5,5 @@ statement_name_table:
 :       .byte   :+ - *, 'P', 'R', 'I', 'N', 'T' | EOT, 1
 :       .byte   :+ - *, 'L', 'E', 'T' | EOT, NT_VAR, '=', 1
 :       .byte   :+ - *, 'I', 'N', 'P', 'U', 'T' | EOT, NT_RPT_VAR
-:       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT, 2
+:       .byte   :+ - *, 'L', 'I', 'S', 'T' | EOT
 :       .byte   0
