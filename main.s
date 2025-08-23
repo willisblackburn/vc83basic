@@ -51,7 +51,7 @@ main:
         bcc     @loop                   ; Unconditional
 
 @end:
-        mva     #PS_STOPPED, program_state
+        jsr     reset_program_state
 @get_command:
         jsr     print_ready
 @wait_for_input:

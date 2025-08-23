@@ -1,2 +1,77 @@
 source [file join [file dirname [info script]] common.expinc]
 spawn_basic
+
+# Trivial READ
+
+test {
+10 DATA 3.14159
+20 DATA HELLO
+30 READ PI
+40 PRINT PI
+50 READ MSG$
+60 PRINT MSG$
+RUN
+} {
+3.14159
+HELLO
+}
+
+# Multiple values per line
+
+test {
+NEW
+10 DATA 3.14159,HELLO
+30 READ PI
+40 PRINT PI
+50 READ MSG$
+60 PRINT MSG$
+RUN
+} {
+3.14159
+HELLO
+}
+
+# READ mulitiple variables
+
+test {
+NEW
+10 DATA 3.14159
+20 DATA HELLO
+30 READ PI,MSG$
+40 PRINT PI
+60 PRINT MSG$
+RUN
+} {
+3.14159
+HELLO
+}
+
+# Both
+
+test {
+NEW
+10 DATA 3.14159,HELLO
+30 READ PI,MSG$
+40 PRINT PI
+60 PRINT MSG$
+RUN
+} {
+3.14159
+HELLO
+}
+
+# RESTORE
+
+test {
+NEW
+10 DATA 1,2,3
+20 READ A,B,C
+30 PRINT A,B,C
+40 RESTORE
+50 READ X,Y,Z
+60 PRINT X,Y,Z
+RUN
+} {
+1         2         3
+1         2         3
+}

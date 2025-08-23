@@ -16,7 +16,7 @@ exec_run:
 ; Resets the runtime state of the program, but keeps the program in memory.
 
 exec_clr:
-        jsr     reset_program_state
+        jsr     clear_variables
         clc
         rts
 
@@ -26,8 +26,7 @@ exec_clr:
 .assert PS_STOPPED = 0, error
 
 exec_end:
-        mva     #PS_STOPPED, program_state
-        sta     resume_line_ptr+1       ; Disable CONT
+        jsr     reset_program_state
         clc
         rts
 

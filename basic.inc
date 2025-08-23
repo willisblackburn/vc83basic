@@ -185,7 +185,9 @@ S1 = FPX+2
 
 ; program.s
 .global initialize_program
+.global clear_variables
 .global reset_program_state
+.global reset_data_line_ptr
 .global reset_next_line_ptr, reset_next_line_ptr_2
 .global append_null_line
 .global find_line, find_line_2
@@ -227,6 +229,7 @@ S1 = FPX+2
 .global reverse_copy
 .global clear_memory, set_memory
 .global invoke_indexed_vector
+.global read_argument_separator
 .global find_printable_character
 
 ; target/*

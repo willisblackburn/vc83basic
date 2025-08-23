@@ -137,15 +137,36 @@ invoke_indexed_vector:
         pha
         rts                             ; RTS jumps to vector pushed on the stack
 
-; Reads forward and finds the next non-whitespace character.
+; Reads a comma beween arguments. Also recognizes 0 as end of input.
 ; read_ptr = the read address
 ; Y = the starting position
-; Returns the next non-whitespace character in A and the position of that character in Y.
+; Returns carry clear if everything was okay or carry set if we found something other than a comma or 0.
+
+read_argument_separator:
+        jsr     find_printable_character
+        clc                             ; Set carry in case next check is okay
+        beq     @done                   ; Read 0; just exit
+        cmp     #','                    ; If it wasn't 0 then it better be ','
+        sec                             ; Set carry in case it's not ','
+        bne     @done                   ; And it's not
+        clc                             ; Clear carry to return success
+        iny                             ; Skip past the commma
+@done:
+        sty     data_line_pos           ; Update data_line_pos to next read position
+        rts
+
+; Reads forward and finds the next non-whitespace character, which might be 0.
+; read_ptr = the read address
+; Y = the starting position
+; Returns the next non-whitespace character in A and the position of that character in Y. If Z is set on return,
+; it means the character read was 0.
 
 continue_find_printable_character:
         iny
 find_printable_character:
         lda     (read_ptr),y
+        beq     @done
         cmp     #' '
         beq     continue_find_printable_character
+@done:
         rts

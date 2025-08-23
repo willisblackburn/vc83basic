@@ -5,9 +5,6 @@
 .include "macros.inc"
 .include "basic.inc"
 
-; We treat this as zero.
-.assert PS_STOPPED = 0, error
-
 ; Initializes a new program.
 ; Clears the program, all variables, and the string heap. Sets the run state to stopped.
 ; Does not set next_line_ptr since the program is not running.
@@ -18,9 +15,9 @@ initialize_program:
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
         jsr     append_null_line                            ; Build a null line at program_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
-        mva     #PS_STOPPED, program_state
+        jsr     reset_program_state                         ; Reset resume_line_ptr and data_line_ptr
         
-; Fall through to reset_program_state
+; Fall through to clear_variables
 
 ; Clears the runtime state of the program.
 ; Clears all variables and the string heap. The run state and next_line_ptr remain unchanged, so this can be called
@@ -28,7 +25,7 @@ initialize_program:
 ; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
 
-reset_program_state:
+clear_variables:
         ldx     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get array_name_table_ptr
         ldy     variable_name_table_ptr+1
         inxy
@@ -38,13 +35,26 @@ reset_program_state:
         stx     free_ptr
         sty     free_ptr+1
         lda     #0                      ; Load zero into A
-        sta     resume_line_ptr+1       ; Initialize resume_line_ptr high byte to 0 to disable CONT
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     (array_name_table_ptr),y    ; Initialize array name table to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
         mva     #PRIMARY_STACK_SIZE, stack_pos
+        rts
+
+; Set the program state to STOPPED and reset the pointers used by CONT and READ.
+; These point into the program, so we have to invalidate them whenever the program changes.
+
+; We treat this as zero.
+.assert PS_STOPPED = 0, error
+
+reset_program_state:
+        mva     #PS_STOPPED, program_state
+        sta     resume_line_ptr+1                   ; Initialize resume_line_ptr high byte to 0 to disable CONT
+reset_data_line_ptr:
+        mvax    program_ptr, data_line_ptr          ; Begin reading DATA at start of program
+        mva     #.sizeof(Line) + 2, data_line_pos   ; Skip 1 for DATA, 1 for next statement offset
         rts
 
 ; Sets next_line_ptr to program_ptr. Does not change the run state.
