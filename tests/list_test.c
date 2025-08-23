@@ -29,8 +29,7 @@ void test_list_statment(void) {
 
     const char line_data_1[] = { ST_RUN };
     const char line_data_2[] = { ST_LET, 'X' | EOT, 0, '3', '2', '7', '6', '7', 0 };
-    const char line_data_3[] = { ST_LIST, '1', '0', ',', '2', '0', 0 };
-    const char line_data_4[] = { ST_LIST, '1', '0', 0  };
+    // obsolete 3 and 4
     const char line_data_5[] = { ST_LIST, 0 };
     const char line_data_6[] = { ST_INPUT, 'X' | EOT, ',', 'Y' | EOT, 0 };
     const char line_data_7[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
@@ -51,8 +50,6 @@ void test_list_statment(void) {
     
     const char list_1[] = "RUN";
     const char list_2[] = "LET X=32767";
-    const char list_3[] = "LIST 10,20";
-    const char list_4[] = "LIST 10";
     const char list_5[] = "LIST";
     const char list_6[] = "INPUT X,Y";
     const char list_7[] = "PRINT (X+3)*Y";
@@ -72,8 +69,6 @@ void test_list_statment(void) {
 
     call_list_statement(line_data_1, sizeof line_data_1, list_1, __LINE__);
     call_list_statement(line_data_2, sizeof line_data_2, list_2, __LINE__);
-    call_list_statement(line_data_3, sizeof line_data_3, list_3, __LINE__);
-    call_list_statement(line_data_4, sizeof line_data_4, list_4, __LINE__);
     call_list_statement(line_data_5, sizeof line_data_5, list_5, __LINE__);
     call_list_statement(line_data_6, sizeof line_data_6, list_6, __LINE__);
     call_list_statement(line_data_7, sizeof line_data_7, list_7, __LINE__);
