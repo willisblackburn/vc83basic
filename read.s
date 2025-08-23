@@ -60,15 +60,8 @@ exec_read:
         clc                             ; Prepare to return success
         bne     @done                   ; Nope
         inc     line_pos
-        ldy     data_line_pos
-        jsr     find_printable_character    ; Look for an argument separator
-        beq     exec_read               ; Found 0 instead; try next line
-        cmp     #','                    ; Was it a comma?
-        sec                             ; In case next check fails
-        bne     @done                   ; Didn't find it
-        iny                             ; Skip it
-        sty     data_line_pos           ; Save new line_pos
-        bne     exec_read               ; Move on to read the next value
+        bne     exec_read               ; Unconditional
+
 @done:
         rts
 
