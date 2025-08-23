@@ -75,3 +75,26 @@ RUN
 1               2               3
 1               2               3
 }
+
+# Whitespace and quote handling
+
+test {
+NEW
+10 DATA 1, 2 ,  3
+11 DATA HELLO, WORLD
+12 DATA "EMBEDDED ""QUOTES""", " SPACES "
+20 READ X,Y,Z
+30 PRINT X,Y,Z
+40 READ A$,B$
+50 PRINT A$;B$
+60 READ MSG$
+70 PRINT MSG$
+80 READ S$
+90 PRINT ">";S$;"<"
+RUN
+} {
+1               2               3
+HELLOWORLD
+EMBEDDED "QUOTES"
+> SPACES <
+}
