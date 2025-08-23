@@ -211,7 +211,7 @@ void test_parse_statement(void) {
     const char line_data_2[] = { ST_PRINT, '8', 0 };
     const char line_data_3[] = { ST_LET, 'X' | EOT, 0, '1', '0', '0', 0 };
     const char line_data_4[] = { ST_INPUT, 'X' | EOT, ',', 'Y' | EOT, 0 };
-    const char line_data_5[] = { ST_LIST, '1', '0', ',', '2', '0', 0 };
+    // obsolete 5
 
     PRINT_TEST_NAME();
 
@@ -221,7 +221,6 @@ void test_parse_statement(void) {
     call_parse_statement("PRINT 8", line_data_2, sizeof line_data_2, __LINE__);
     call_parse_statement("LET X=100", line_data_3, sizeof line_data_3, __LINE__);
     call_parse_statement("INPUT X,Y", line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_statement("LIST 10,20", line_data_5, sizeof line_data_5, __LINE__);
 
     // Test that adding spaces here and there doesn't mix up the parser.
 
