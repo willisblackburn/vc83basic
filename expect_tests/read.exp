@@ -76,6 +76,24 @@ RUN
 1               2               3
 }
 
+# RUN performs RESTORE
+
+test {
+NEW
+10 DATA 1,2,3
+20 READ A,B,C
+30 PRINT A,B,C
+RUN
+} {
+1               2               3
+}
+
+test {
+RUN
+} {
+1               2               3
+}
+
 # Whitespace and quote handling
 
 test {

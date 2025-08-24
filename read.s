@@ -78,7 +78,7 @@ exec_read:
 ; RESTORE statement:
 
 exec_restore:
-        jsr     reset_data_line_ptr
+        jsr     reset_data
 
 ; Fall through
 
