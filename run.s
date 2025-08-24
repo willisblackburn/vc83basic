@@ -9,6 +9,8 @@
 
 exec_run:
         jsr     reset_next_line_ptr
+        lda     #PS_RUNNING
+        jsr     reset_program
 
 ; Fall through
 
@@ -26,7 +28,8 @@ exec_clr:
 .assert PS_STOPPED = 0, error
 
 exec_end:
-        jsr     reset_program_state
+        mva     #PS_STOPPED, program_state
+        sta     resume_line_ptr+1       ; Disable CONT
         clc
         rts
 

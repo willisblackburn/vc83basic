@@ -60,7 +60,7 @@ main:
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
-        mva     #0, resume_line_ptr+1   ; Clear high byte of resume_line_ptr to disable CONT
+        jsr     reset_program_stopped   ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
         bcc     @wait_for_input
