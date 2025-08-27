@@ -332,6 +332,7 @@ int_to_fp_common:
         jmp     normalize     
 
 ; Truncates the FP value to a 16-bit integer and returns it in AX.
+; BC SAFE, DE SAFE
 
 truncate_fp_to_int:
         lda     #143                    ; Target exponent is 15, but int_to_fp_common requires target+1
@@ -353,6 +354,7 @@ truncate_fp_to_int:
 ; integer part will now be to the left of the binary point. But because that would push the integer part off the
 ; left end of the significand field, instead we adjust until the exponent is 31, at which point the integer value
 ; will be in the significand field of FP0.
+; BC SAFE, DE SAFE
 
 truncate_fp_to_int32:
         lda     #159                    ; Target exponent value is 31, but int_to_fp_common requires target+1
