@@ -952,10 +952,6 @@ fmul:
 @next_bit:
         lda     FP0t                    ; Test the least significant bit of FP0
         lsr     A                       ; Shift into carry
-        ; lsr     FP1t+3                  ; Shift FP1 significand right              
-        ; ror     FP1t+2
-        ; ror     FP1t+1
-        ; ror     FP1t
         bcc     @skip_add               ; FP0 LSB was 0 so don't need to add anything
         clc                             ; Add significand in FP1 to FPX
         lda     FPX
