@@ -43,7 +43,7 @@ void test_store_fp0(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: store_fp(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
+        fprintf(stderr, "  %s:%d: store_fp0(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FP_FIELDS(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fp0(&value);
