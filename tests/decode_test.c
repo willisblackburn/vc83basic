@@ -29,15 +29,15 @@ void test_decode_number(void) {
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 133, 0xC8000000);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 134, 0xC8000000);
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 139, 0x80800000);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 140, 0x80800000);
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 128, 0xC90FCF81);
+    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 129, 0xC90FCF81);
 }
 
 void test_decode_string(void) {
@@ -106,8 +106,8 @@ int num_count;
 void xh_number(void) {
     decode_number();
     switch (++num_count) {
-        case 1: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 139, 0x80800000); break;
-        case 2: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 128, 0xC0000000); break;
+        case 1: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 140, 0x80800000); break;
+        case 2: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 129, 0xC0000000); break;
     }
 }
 
