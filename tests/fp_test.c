@@ -6,32 +6,35 @@ typedef struct LoadStoreTestCase {
 } LoadStoreTestCase;
 
 const LoadStoreTestCase load_store_test_cases[] = {
-    { { 0x00000000,   0 }, { 0x00000000,   1, POSITIVE } },
-    { { 0x00000000, 127 }, { 0x80000000, 127, POSITIVE } },
-    { { 0x7FFFFFFE, 157 }, { 0xFFFFFFFE, 157, POSITIVE } },
-    { { 0x80000000, 158 }, { 0x80000000, 158, NEGATIVE } },
-    { { 0x08442211, 127 }, { 0x88442211, 127, POSITIVE } },
+    { { 0x00000000,   0 }, { 0x00000000,   0, POSITIVE } },
+    { { 0x00000000, 128 }, { 0x80000000, 128, POSITIVE } },
+    { { 0x7FFFFFFE, 158 }, { 0xFFFFFFFE, 158, POSITIVE } },
+    { { 0x80000000, 159 }, { 0x80000000, 159, NEGATIVE } },
+    { { 0x08442211, 128 }, { 0x88442211, 128, POSITIVE } },
     // Smallest possible normalized exponent
     { { 0x00000000,   1 }, { 0x80000000,   1, POSITIVE } },
-    // Subnormal
-    { { 0x00000400,   0 }, { 0x00000400,   1, POSITIVE } },
 };
 
 void test_load_fp(void) {
     const LoadStoreTestCase* test_case;
     int i;
+    Float malformed_zero = { 0x00000400, 0 };
 
     PRINT_TEST_NAME();
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: load_fp0(t=$%08X, e=$%02X)\n", __FILE__, __LINE__, 
+        fprintf(stderr, "  %s:%d: load_fp0(t=$%08LX, e=$%02X)\n", __FILE__, __LINE__, 
                 test_case->f.t, test_case->f.e);
         load_fp0(&test_case->f);
         ASSERT_FP_FIELDS_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         load_fp1(&test_case->f);
         ASSERT_FP_FIELDS_EQ(FP1, test_case->u.s, test_case->u.e, test_case->u.t);
     }
+
+    // Verify that the entire significand field is cleared if the exponent is 0.
+    load_fp0(&malformed_zero);
+    ASSERT_FP_FIELDS_EQ(FP0, 0, 0, 0);
 }
 
 void test_store_fp0(void) {
@@ -43,7 +46,7 @@ void test_store_fp0(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: store_fp0(t=$%08X, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
+        fprintf(stderr, "  %s:%d: store_fp0(t=$%08LX, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FP_FIELDS(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fp0(&value);
@@ -84,11 +87,10 @@ void test_adjust_exponent(void) {
 
 void call_normalize(char s, char e, unsigned long x, unsigned long t, char b,
                            char expect_e, unsigned long expect_t, int line) {
-    FP0s = s;
-    FP0e = e;
+    SET_FP_FIELDS(FP0, s, e, t);
     FPX = x;
-    FP0t = t;
     B = b;
+    C = 0; // high byte of exponent
     fprintf(stderr, "  %s:%d: normalize(t=$%08LX%08LX e=%02X s=%02X grs=%02X)\n", __FILE__, line, x, t, e, s, b);
     normalize();
     ASSERT_EQ(err, 0);
@@ -99,26 +101,39 @@ void test_normalize(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_normalize(POSITIVE, 0, 0, 0, 0, 1, 0, __LINE__);
+    call_normalize(POSITIVE, 0, 0, 0, 0, 0, 0, __LINE__);
     // 0 significand with any exponent normalizes to 0
-    call_normalize(POSITIVE, 127, 0, 0, 0, 1, 0, __LINE__);
+    call_normalize(POSITIVE, 128, 0, 0, 0, 0, 0, __LINE__);
     // 1
-    call_normalize(POSITIVE, 127, 0x00, 0x00000001, 0x00, 96, 0x80000000, __LINE__);
+    call_normalize(POSITIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // -1
-    call_normalize(NEGATIVE, 127, 0x00, 0x00000001, 0x00, 96, 0x80000000, __LINE__);
+    call_normalize(NEGATIVE, 128, 0x00, 0x00000001, 0x00, 97, 0x80000000, __LINE__);
     // 32,767
-    call_normalize(POSITIVE, 157, 0x00, 0x00007FFF, 0x00, 140, 0xFFFE0000, __LINE__);
+    call_normalize(POSITIVE, 158, 0x00, 0x00007FFF, 0x00, 141, 0xFFFE0000, __LINE__);
     // 2,147,483,647
-    call_normalize(POSITIVE, 158, 0x00, 0x7FFFFFFF, 0x00, 157, 0xFFFFFFFE, __LINE__);
+    call_normalize(POSITIVE, 159, 0x00, 0x7FFFFFFF, 0x00, 158, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
-    call_normalize(NEGATIVE, 158, 0x00, 0x80000000, 0x00, 158, 0x80000000, __LINE__);
+    call_normalize(NEGATIVE, 159, 0x00, 0x80000000, 0x00, 159, 0x80000000, __LINE__);
     // 2,286,166,545
-    call_normalize(POSITIVE, 157, 0x00, 0x88442211, 0x00, 157, 0x88442211, __LINE__);
+    call_normalize(POSITIVE, 158, 0x00, 0x88442211, 0x00, 158, 0x88442211, __LINE__);
     // 4,294,967,296
-    call_normalize(POSITIVE, 158, 0x01, 0x00000000, 0x00, 159, 0x80000000, __LINE__);
-    // Subnormal
-    call_normalize(POSITIVE, 9, 0x00, 0x00001234, 0x00, 1, 0x00123400, __LINE__);
-    call_normalize(POSITIVE, 8, 0x00, 0x00001234, 0x00, 1, 0x00091A00, __LINE__);
+    call_normalize(POSITIVE, 159, 0x01, 0x00000000, 0x00, 160, 0x80000000, __LINE__);
+
+    // If e is already 0 then should fail.
+    SET_FP_FIELDS(FP0, 0x00, 0, 0x80818283);
+    FPX = 0;
+    B = 0;
+    C = 0;
+    normalize();
+    ASSERT_NE(err, 0);
+
+    // If e is >0 but reaches 0 before we finish normalizing, also fail.
+    SET_FP_FIELDS(FP0, 0x00, 5, 0x00008283);
+    FPX = 0;
+    B = 0;
+    C = 0;
+    normalize();
+    ASSERT_NE(err, 0);
 }
 
 typedef struct IntConversionTestCase {
@@ -128,10 +143,10 @@ typedef struct IntConversionTestCase {
 
 const IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 0 } },
-    { 1, { 0x00000000, 127 } },
-    { 32767, { 0x7FFE0000, 141 } },
-    { (int)-32768L, { 0x80000000, 142 } },
-    { 4112, { 0x00800000, 139 } },
+    { 1, { 0x00000000, 128 } },
+    { 32767, { 0x7FFE0000, 142 } },
+    { (int)-32768L, { 0x80000000, 143 } },
+    { 4112, { 0x00800000, 140 } },
 };
 
 void test_int_to_fp(void) {
@@ -154,9 +169,9 @@ void test_truncate_fp_to_int(void) {
     const IntConversionTestCase* test_case;
     int i;
     int result;
-    Float less_than_one = { 0x00000000, 126 };
-    Float too_large = { 0x00000000, 143 };
-    Float much_too_large = { 0x00000000, 196 };
+    Float less_than_one = { 0x00000000, 127 };
+    Float too_large = { 0x00000000, 144 };
+    Float much_too_large = { 0x00000000, 197 };
 
     PRINT_TEST_NAME();
 
@@ -194,11 +209,11 @@ typedef struct Int32ConversionTestCase {
 
 const Int32ConversionTestCase int32_conversion_test_cases[] = {
     { 0, { 0x00000000, 0 } },
-    { 1, { 0x00000000, 127 } },
-    { 2147483647UL, { 0x7FFFFFFE, 157 } },
-    { 2147483648UL, { 0x00000000, 158 } },
-    { 4294967295UL, { 0x7FFFFFFF, 158 } },
-    { 4112, { 0x00800000, 139 } },
+    { 1, { 0x00000000, 128 } },
+    { 2147483647UL, { 0x7FFFFFFE, 158 } },
+    { 2147483648UL, { 0x00000000, 159 } },
+    { 4294967295UL, { 0x7FFFFFFF, 159 } },
+    { 4112, { 0x00800000, 140 } },
 };
 
 void test_int32_to_fp(void) {
@@ -270,33 +285,33 @@ const OperationTestCase fadd_test_cases[] = {
     // 0 + 0
     { { 0x00000000,   0 }, { 0x00000000,   0 }, { 0x00000000,   0 } },
     // 1 + 1
-    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 128 } },
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 129 } },
     // 0.5 + 0.5
-    { { 0x00000000, 126 }, { 0x00000000, 126 }, { 0x00000000, 127 } },
+    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 128 } },
     // -1 + (-1)
-    { { 0x80000000, 127 }, { 0x80000000, 127 }, { 0x80000000, 128 } },
+    { { 0x80000000, 128 }, { 0x80000000, 128 }, { 0x80000000, 129 } },
     // 1 + (-1)
-    { { 0x00000000, 127 }, { 0x80000000, 127 }, { 0x00000000,   0 } },
+    { { 0x00000000, 128 }, { 0x80000000, 128 }, { 0x00000000,   0 } },
     // -2 + 1
-    { { 0x80000000, 128 }, { 0x00000000, 127 }, { 0x80000000, 127 } },
+    { { 0x80000000, 129 }, { 0x00000000, 128 }, { 0x80000000, 128 } },
     // 1 + (-2)
-    { { 0x00000000, 127 }, { 0x80000000, 128 }, { 0x80000000, 127 } },
+    { { 0x00000000, 128 }, { 0x80000000, 129 }, { 0x80000000, 128 } },
     // -1 + 2
-    { { 0x80000000, 127 }, { 0x00000000, 128 }, { 0x00000000, 127 } },
+    { { 0x80000000, 128 }, { 0x00000000, 129 }, { 0x00000000, 128 } },
     // 2 + (-1)
-    { { 0x00000000, 128 }, { 0x80000000, 127 }, { 0x00000000, 127 } },
+    { { 0x00000000, 129 }, { 0x80000000, 128 }, { 0x00000000, 128 } },
     // 1 + 0.0001220703125
-    { { 0x00000000, 127 }, { 0x00000000, 114 }, { 0x00040000, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000, 115 }, { 0x00040000, 128 } },
     // 1 + 3.14159
-    { { 0x00000000, 127 }, { 0x490FCF81, 128 }, { 0x0487E7C1, 129 } },
+    { { 0x00000000, 128 }, { 0x490FCF81, 129 }, { 0x0487E7C1, 130 } },
     // 1 + 0.00000000046566128730
-    { { 0x00000000, 127 }, { 0x00000000,  96 }, { 0x00000001, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000,  97 }, { 0x00000001, 128 } },
     // 1 + 0.00000000011641532182 (should round down)
-    { { 0x00000000, 127 }, { 0x00000000,  94 }, { 0x00000000, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000,  95 }, { 0x00000000, 128 } },
     // 1 + 0.00000000023283064365 (should round up)
-    { { 0x00000000, 127 }, { 0x00000000,  95 }, { 0x00000001, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000,  96 }, { 0x00000001, 128 } },
     // 1 + 0.00000000034924596547 (should round up)
-    { { 0x00000000, 127 }, { 0x40000000,  95 }, { 0x00000001, 127 } },
+    { { 0x00000000, 128 }, { 0x40000000,  96 }, { 0x00000001, 128 } },
 };
 
 TEST_OPERATION(fadd);
@@ -320,52 +335,50 @@ const OperationTestCase fmul_test_cases[] = {
     // 0 * 0
     { { 0x00000000,   0 }, { 0x00000000,   0 }, { 0x00000000,   0 } },
     // 1 * 1
-    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 128 } },
     // 1 * -1
-    { { 0x00000000, 127 }, { 0x80000000, 127 }, { 0x80000000, 127 } },
+    { { 0x00000000, 128 }, { 0x80000000, 128 }, { 0x80000000, 128 } },
     // -1 * 1
-    { { 0x80000000, 127 }, { 0x00000000, 127 }, { 0x80000000, 127 } },
+    { { 0x80000000, 128 }, { 0x00000000, 128 }, { 0x80000000, 128 } },
     // -1 * -1
-    { { 0x80000000, 127 }, { 0x80000000, 127 }, { 0x00000000, 127 } },
+    { { 0x80000000, 128 }, { 0x80000000, 128 }, { 0x00000000, 128 } },
     // 2 * 2
-    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 129 } },
+    { { 0x00000000, 129 }, { 0x00000000, 129 }, { 0x00000000, 130 } },
     // 0.5 * 0.5
-    { { 0x00000000, 126 }, { 0x00000000, 126 }, { 0x00000000, 125 } },
+    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 126 } },
     // 10 * 10
-    { { 0x20000000, 130 }, { 0x20000000, 130 }, { 0x48000000, 133 } },
+    { { 0x20000000, 131 }, { 0x20000000, 131 }, { 0x48000000, 134 } },
     // 100 * 10
-    { { 0x48000000, 133 }, { 0x20000000, 130 }, { 0x7A000000, 136 } },
+    { { 0x48000000, 134 }, { 0x20000000, 131 }, { 0x7A000000, 137 } },
     // 1000 * 10
-    { { 0x7A000000, 136 }, { 0x20000000, 130 }, { 0x1C400000, 140 } },
+    { { 0x7A000000, 137 }, { 0x20000000, 131 }, { 0x1C400000, 141 } },
     // 10000 * 10
-    { { 0x1C400000, 140 }, { 0x20000000, 130 }, { 0x43500000, 143 } },
+    { { 0x1C400000, 141 }, { 0x20000000, 131 }, { 0x43500000, 144 } },
     // 3.14159 * 100000
-    { { 0x490FCF81, 128 }, { 0x43500000, 143 }, { 0x1965E000, 145 } },
-    // 2^-71 * 2^-71 (exponent -142 is out of range, adjust to -126)
-    { { 0x00000000,  56 }, { 0x00000000,  56 }, { 0x00008000,   0 } },
+    { { 0x490FCF81, 129 }, { 0x43500000, 144 }, { 0x1965E000, 146 } },
 };
 
 TEST_OPERATION(fmul);
 
 const OperationTestCase fdiv_test_cases[] = {
     // 1 / 1
-    { { 0x00000000, 127 }, { 0x00000000, 127 }, { 0x00000000, 127 } },
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 128 } },
     // 2 / 1
-    { { 0x00000000, 128 }, { 0x00000000, 127 }, { 0x00000000, 128 } },
+    { { 0x00000000, 129 }, { 0x00000000, 128 }, { 0x00000000, 129 } },
     // 2 / 2
-    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000000, 127 } },
+    { { 0x00000000, 129 }, { 0x00000000, 129 }, { 0x00000000, 128 } },
     // 100 / 10
-    { { 0x48000000, 133 }, { 0x20000000, 130 }, { 0x20000000, 130 } },
+    { { 0x48000000, 134 }, { 0x20000000, 131 }, { 0x20000000, 131 } },
     // 1000 / 10
-    { { 0x7A000000, 136 }, { 0x20000000, 130 }, { 0x48000000, 133 } },
+    { { 0x7A000000, 137 }, { 0x20000000, 131 }, { 0x48000000, 134 } },
     // 10000 / 10
-    { { 0x1C400000, 140 }, { 0x20000000, 130 }, { 0x7A000000, 136 } },
+    { { 0x1C400000, 141 }, { 0x20000000, 131 }, { 0x7A000000, 137 } },
     // 100000 / 10
-    { { 0x43500000, 143 }, { 0x20000000, 130 }, { 0x1C400000, 140 } },
+    { { 0x43500000, 144 }, { 0x20000000, 131 }, { 0x1C400000, 141 } },
     // 1 / 1.025
-    { { 0x00000000, 127 }, { 0x03333333, 127 }, { 0x79C18F9C, 126 } },
+    { { 0x00000000, 128 }, { 0x03333333, 128 }, { 0x79C18F9C, 127 } },
     // 314159 / 100000
-    { { 0x1965E000, 145 }, { 0x43500000, 143 }, { 0x490FCF81, 128 } },
+    { { 0x1965E000, 146 }, { 0x43500000, 144 }, { 0x490FCF81, 129 } },
 };
 
 TEST_OPERATION(fdiv);
@@ -455,39 +468,39 @@ void test_fp_to_string(void) {
     // 0
     call_fp_to_string(POSITIVE, 0, 0x00000000, "0", __LINE__);
     // 1
-    call_fp_to_string(POSITIVE, 127, 0x80000000, "1", __LINE__);
+    call_fp_to_string(POSITIVE, 128, 0x80000000, "1", __LINE__);
     // -1
-    call_fp_to_string(NEGATIVE, 127, 0x80000000, "-1", __LINE__);
+    call_fp_to_string(NEGATIVE, 128, 0x80000000, "-1", __LINE__);
     // 10
-    call_fp_to_string(POSITIVE, 130, 0xA0000000, "10", __LINE__);
+    call_fp_to_string(POSITIVE, 131, 0xA0000000, "10", __LINE__);
     // 25
-    call_fp_to_string(POSITIVE, 131, 0xC8000000, "25", __LINE__);
+    call_fp_to_string(POSITIVE, 132, 0xC8000000, "25", __LINE__);
     // 100
-    call_fp_to_string(POSITIVE, 133, 0xC8000000, "100", __LINE__);
+    call_fp_to_string(POSITIVE, 134, 0xC8000000, "100", __LINE__);
     // -100
-    call_fp_to_string(NEGATIVE, 133, 0xC8000000, "-100", __LINE__);
+    call_fp_to_string(NEGATIVE, 134, 0xC8000000, "-100", __LINE__);
     // 3.14159
-    call_fp_to_string(POSITIVE, 128, 0xC90FCF81, "3.14159", __LINE__);
+    call_fp_to_string(POSITIVE, 129, 0xC90FCF81, "3.14159", __LINE__);
     // 0.0314159
-    call_fp_to_string(POSITIVE, 122, 0x80ADF571, "0.0314159", __LINE__);
+    call_fp_to_string(POSITIVE, 123, 0x80ADF571, "0.0314159", __LINE__);
     // 2,147,483,647
-    call_fp_to_string(POSITIVE, 157, 0xFFFFFFFE, "2147483647", __LINE__);
+    call_fp_to_string(POSITIVE, 158, 0xFFFFFFFE, "2147483647", __LINE__);
     // -2,147,483,648
-    call_fp_to_string(NEGATIVE, 158, 0x80000000, "-2147483648", __LINE__);
+    call_fp_to_string(NEGATIVE, 159, 0x80000000, "-2147483648", __LINE__);
     // 2^36
-    call_fp_to_string(POSITIVE, 163, 0x80000000, "6.87194767E10", __LINE__);
+    call_fp_to_string(POSITIVE, 164, 0x80000000, "6.87194767E10", __LINE__);
     // 2^-120
-    call_fp_to_string(POSITIVE, 7, 0x80000000, "7.52316385E-37", __LINE__);
+    call_fp_to_string(POSITIVE, 8, 0x80000000, "7.52316385E-37", __LINE__);
     // 1.025
-    call_fp_to_string(POSITIVE, 127, 0x83333333, "1.025", __LINE__);
+    call_fp_to_string(POSITIVE, 128, 0x83333333, "1.025", __LINE__);
 
     // Exponent edge cases
     // +/- 1E9 should print without E
     // +/- 1E10 should print in scientific
-    call_fp_to_string(POSITIVE, 156, 0xEE6B2800, "1000000000", __LINE__);
-    call_fp_to_string(NEGATIVE, 156, 0xEE6B2800, "-1000000000", __LINE__);
-    call_fp_to_string(POSITIVE, 160, 0x9502F900, "1E10", __LINE__);
-    call_fp_to_string(NEGATIVE, 160, 0x9502F900, "-1E10", __LINE__);
+    call_fp_to_string(POSITIVE, 157, 0xEE6B2800, "1000000000", __LINE__);
+    call_fp_to_string(NEGATIVE, 157, 0xEE6B2800, "-1000000000", __LINE__);
+    call_fp_to_string(POSITIVE, 161, 0x9502F900, "1E10", __LINE__);
+    call_fp_to_string(NEGATIVE, 161, 0x9502F900, "-1E10", __LINE__);
 }
 
 void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
@@ -510,34 +523,34 @@ void test_string_to_fp(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_string_to_fp("0", POSITIVE, 1, 0x00000000, __LINE__);
+    call_string_to_fp("0", POSITIVE, 0, 0x00000000, __LINE__);
     // 1
-    call_string_to_fp("1", POSITIVE, 127, 0x80000000, __LINE__);
+    call_string_to_fp("1", POSITIVE, 128, 0x80000000, __LINE__);
     // -1
-    call_string_to_fp("-1", NEGATIVE, 127, 0x80000000, __LINE__);
+    call_string_to_fp("-1", NEGATIVE, 128, 0x80000000, __LINE__);
     // 10
-    call_string_to_fp("10", POSITIVE, 130, 0xA0000000, __LINE__);
+    call_string_to_fp("10", POSITIVE, 131, 0xA0000000, __LINE__);
     // 25
-    call_string_to_fp("25", POSITIVE, 131, 0xC8000000, __LINE__);
+    call_string_to_fp("25", POSITIVE, 132, 0xC8000000, __LINE__);
     // 100
-    call_string_to_fp("100", POSITIVE, 133, 0xC8000000, __LINE__);
+    call_string_to_fp("100", POSITIVE, 134, 0xC8000000, __LINE__);
     // -100
-    call_string_to_fp("-100", NEGATIVE, 133, 0xC8000000, __LINE__);
+    call_string_to_fp("-100", NEGATIVE, 134, 0xC8000000, __LINE__);
     // 3.14159
-    call_string_to_fp("3.14159", POSITIVE, 128, 0xC90FCF81, __LINE__);
+    call_string_to_fp("3.14159", POSITIVE, 129, 0xC90FCF81, __LINE__);
     // 0.0314159
-    call_string_to_fp("0.0314159", POSITIVE, 122, 0x80ADF571, __LINE__);
+    call_string_to_fp("0.0314159", POSITIVE, 123, 0x80ADF571, __LINE__);
     // 2,147,483,647
-    call_string_to_fp("2147483647", POSITIVE, 157, 0xFFFFFFFE, __LINE__);
+    call_string_to_fp("2147483647", POSITIVE, 158, 0xFFFFFFFE, __LINE__);
     // -2,147,483,648
-    call_string_to_fp("-2147483648", NEGATIVE, 158, 0x80000000, __LINE__);
+    call_string_to_fp("-2147483648", NEGATIVE, 159, 0x80000000, __LINE__);
     // 1.025
-    call_string_to_fp("1.025", POSITIVE, 127, 0x83333333, __LINE__);
+    call_string_to_fp("1.025", POSITIVE, 128, 0x83333333, __LINE__);
 
     // Verify that string_to_fp stops on non-digit.
-    call_string_to_fp("10X", POSITIVE, 130, 0xA0000000, __LINE__);
-    call_string_to_fp("-100-", NEGATIVE, 133, 0xC8000000, __LINE__);
-    call_string_to_fp("3.14159+", POSITIVE, 128, 0xC90FCF81, __LINE__);
+    call_string_to_fp("10X", POSITIVE, 131, 0xA0000000, __LINE__);
+    call_string_to_fp("-100-", NEGATIVE, 134, 0xC8000000, __LINE__);
+    call_string_to_fp("3.14159+", POSITIVE, 129, 0xC90FCF81, __LINE__);
     
     // Verify that string_to_fp leaves buffer_pos alone when faced with non-numbers.
     fail_string_to_fp("X10", __LINE__);
