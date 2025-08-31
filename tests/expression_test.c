@@ -186,7 +186,7 @@ void test_evaluate_expression_op_precedence(void) {
     Float result_1 = { 0x00000000, 0 };
     // 2-(1-1) = 2
     char line_data_2[] = { '2', TOKEN_OP | OP_SUB, '(', '1', TOKEN_OP | OP_SUB, '1', ')', 0 };
-    Float result_2 = { 0x00000000, 128 };
+    Float result_2 = { 0x00000000, 129 };
 
     PRINT_TEST_NAME();
 

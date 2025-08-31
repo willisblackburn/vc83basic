@@ -94,7 +94,7 @@ void truncate_fp_to_int32(void);
 void fp_to_string(void);
 void string_to_fp(/* AX */ const char* ptr, /* Y */ char pos);
 char char_to_digit(/* A */ char c);
-void adjust_exponent(/* X */ char add, /* Y */ char subtract);
+void adjust_exponent(/* A */ char add, /* Y */ char subtract);
 void normalize(void);
 void fadd(/* AY */ const Float* value);
 void fsub(/* AY */ const Float* value);
