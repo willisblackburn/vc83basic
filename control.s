@@ -190,7 +190,7 @@ exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
         inc     line_pos                ; Skip terminator
         jsr     pop_fp0
-        jsr     fp0_is_zero             ; Check if zero
+        lda     FP0e                    ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
         jsr     dispatch_statement      ; Otherwise execute the THEN
 @done:

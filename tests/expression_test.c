@@ -107,10 +107,9 @@ void test_one_unary_op(char op, const Float* expected0, const Float* expected1) 
 
 void test_evaluate_expression_op(void) {
     const Float value_0 = { 0x00000000, 0 };
-    const Float value_negative_0 = { 0x80000000, 0 };
-    const Float value_1 = { 0x00000000, 127 };
-    const Float value_negative_1 = { 0x80000000, 127 };
-    const Float value_2 = { 0x00000000, 128 };
+    const Float value_1 = { 0x00000000, 128 };
+    const Float value_negative_1 = { 0x80000000, 128 };
+    const Float value_2 = { 0x00000000, 129 };
 
     PRINT_TEST_NAME();
 
@@ -129,7 +128,7 @@ void test_evaluate_expression_op(void) {
     test_one_op(OP_AND, &value_0, &value_0, &value_0, &value_1);
     test_one_op(OP_OR, &value_0, &value_1, &value_1, &value_1);
 
-    test_one_unary_op(UNARY_OP_MINUS, &value_negative_0, &value_negative_1);
+    test_one_unary_op(UNARY_OP_MINUS, &value_0, &value_negative_1);
     test_one_unary_op(UNARY_OP_NOT, &value_1, &value_0);
 }
 
@@ -142,7 +141,7 @@ void test_evaluate_expression_op_precedence(void) {
     Float result_1 = { 0x00000000, 0 };
     // 2-(1-1) = 2
     char line_data_2[] = { '2', TOKEN_OP | OP_SUB, '(', '1', TOKEN_OP | OP_SUB, '1', ')', 0 };
-    Float result_2 = { 0x00000000, 128 };
+    Float result_2 = { 0x00000000, 129 };
 
     PRINT_TEST_NAME();
 
