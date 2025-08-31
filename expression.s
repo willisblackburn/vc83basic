@@ -390,7 +390,7 @@ unary_op_minus:
 unary_op_not:
         jsr     pop_fp0                 ; Get value
         bcs     @error
-        jsr     fp0_is_zero
+        lda     FP0e
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
 
