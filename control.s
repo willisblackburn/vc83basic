@@ -206,7 +206,7 @@ exec_if:
         inc     line_pos                ; Skip terminator
         jsr     pop_fp0
         bcs     @error
-        jsr     fp0_is_zero             ; Check if zero
+        lda     FP0e                    ; Check if zero
         beq     @next_line              ; If zero then don't execute the THEN or any other statements on this line
         jsr     dispatch_statement      ; Otherwise execute the THEN
         clc

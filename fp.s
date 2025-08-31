@@ -8,10 +8,9 @@
 ;
 ; s = sign
 ; t = fractional part of significand, 31 bits, lowest byte first
-; e = exponent, 8 bits, excess-127
-;     If e = 0 and s = 0 then value = 0
-;     If e = 0 and s != 0 then number is subnormal and actual exponent is -126
-;     If e >= 1 then actual exponent is e-127 and actual significand is 1+t (implied 1. before t)
+; e = exponent, 8 bits, excess-128
+;     If e = 0 then value = 0
+;     If e >= 1 then actual exponent is e-128 and actual significand is 1+t (implied 1. before t)
 ;
 ; In this module:
 ; Both B and C are used by the normalize function. B holds the rounding byte. C holds the high byte of the exponent.
@@ -19,7 +18,7 @@
 ; normalizing a subnormal divisor.
 ; D and E are used by the string conversion functions.
 
-BIAS = 127
+BIAS = 128
 MAXDIGITS = 10
 
 ; We make a lot of assumptions about the size of Float in this module.
@@ -29,8 +28,8 @@ MAXDIGITS = 10
 
 ; Floating-point constants
 
-fp_one: .byte $00, $00, $00, $00, 127
-fp_ten: .byte $00, $00, $00, $20, 130
+fp_one: .byte $00, $00, $00, $00, 128
+fp_ten: .byte $00, $00, $00, $20, 131
 
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
@@ -48,34 +47,26 @@ load_fp0:
         ldx     #FP0
 load_fp:
         stay    BC                      ; FP value address into BC
-        ldy     #0                      ; Start with low byte of significand
-        lda     (BC),y
-        sta     UnpackedFloat::t,x
-        iny
-        lda     (BC),y
-        sta     UnpackedFloat::t+1,x
-        iny
+        ldy     #4
+        lda     (BC),y                  ; Exponent
+        sta     UnpackedFloat::e,x      ; Store exponent
+        beq     set_sign_significand_fp ; It was zero so zero out everything else
+        dey
+        lda     (BC),y                  ; High 7 bits of significand plus sign
+        and     #$80                    ; Isolate sign
+        sta     UnpackedFloat::s,x      ; Store sign (only bit 7 is signifncant)
+        lda     (BC),y                  ; Reload the value
+        ora     #$80                    ; Replace sign bit with implied 1
+        sta     UnpackedFloat::t+3,x    ; Store high byte of significand
+        dey
         lda     (BC),y
         sta     UnpackedFloat::t+2,x
-        iny
-        lda     (BC),y                  ; High 7 bits of significand plus sign
-        and     #$80                    ; Isolate high bit
-        sta     UnpackedFloat::s,x      ; Store sign (only bit 7 is signifncant)
-        lda     (BC),y                  ; Reload
-        and     #$7F                    ; Isolate significand
-        sta     UnpackedFloat::t+3,x    ; Store high 7 bits of significand
-        iny     
-        lda     (BC),y                  ; Exponent
-        beq     @subnormal_or_zero      ; Handle as subnormal; significand MSB will be 0 in this case
-        sta     UnpackedFloat::e,x      ; Store exponent
-        lda     #$80                    ; High bit of significand
-        ora     UnpackedFloat::t+3,x    ; OR with high byte
-        sta     UnpackedFloat::t+3,x    ; Save back
-        rts
-
-@subnormal_or_zero:
-        lda     #1                      ; Exponent is -126 (+BIAS = 1)
-        sta     UnpackedFloat::e,x      ; Store exponent
+        dey
+        lda     (BC),y
+        sta     UnpackedFloat::t+1,x
+        dey
+        lda     (BC),y
+        sta     UnpackedFloat::t,x
         rts
 
 ; Stores the value in FP0 as a Float value in memory.
@@ -83,34 +74,24 @@ load_fp:
 ; DE SAFE
 
 store_fp0:
-        ldx     #FP0
         stay    BC                      ; FP value address into BC
-        ldy     #0                      ; Start with low byte of significand
-        lda     UnpackedFloat::t,x
+        ldy     #4
+        lda     FP0e                    ; Exponent
         sta     (BC),y
-        iny
-        lda     UnpackedFloat::t+1,x
-        sta     (BC),y
-        iny
-        lda     UnpackedFloat::t+2,x
-        sta     (BC),y
-        iny
-        lda     UnpackedFloat::t+3,x    ; High byte of significand
-        bpl     @subnormal_or_zero      ; MSB of significand is 0 so this is subnormal or zero
+        dey
+        lda     FP0t+3                  ; High byte of significand
         and     #$7F                    ; Set MSB to 0
-        ora     UnpackedFloat::s,x      ; OR in the sign bit
+        ora     FP0s                    ; Replace with the sign bit
         sta     (BC),y                  ; Save
-        iny
-        lda     UnpackedFloat::e,x
-        sta     (BC),y                  ; Store
-        rts
-
-@subnormal_or_zero:
-        ora     UnpackedFloat::s,x      ; OR in the sign bit
-        sta     (BC),y                  ; Save
-        iny
-        lda     #0
-        sta     (BC),y                  ; Save exponent as zero
+        dey
+        lda     FP0t+2
+        sta     (BC),y
+        dey
+        lda     FP0t+1
+        sta     (BC),y
+        dey
+        lda     FP0t
+        sta     (BC),y
         rts
 
 ; Swaps FP0 and FP1.
@@ -156,37 +137,32 @@ copy_significand_fp0_fp:
 clear_fp0:
         ldx     #FP0
         lda     #0
-        sta     UnpackedFloat::e,x
+        sta     FP0e
+        ldx     #FP0                    ; Fall-throughs require X
+
+set_sign_significand_fp:
         sta     UnpackedFloat::s,x
 
 ; Fall through
 
-; Clears the significand of FP0 or FP1, or FPX.
-; X = either #FP0t, #FP1t, #FPX
+; Sets each byte of the significand of FP0 or FP1, or FPX to the value in A, which is probably zero.
+; X = either #FP0, #FP0t, #FP1, #FP1t, #FPX
 ; Returns 0 in A.
 
-clear_significand_fp:
-        lda     #0
+set_significand_fp:
         sta     0,x
         sta     1,x
         sta     2,x
         sta     3,x
         rts
 
-; Checks if FP0 or FP1 is zero.
-; Returns with the zero flag set and 0 in A if zero, otherwise the zero flag will be clear.
-; X = either #FP0 or #FP1
+; Checks if the FP0 significand is zero.
 
-fp1_is_zero:
-        ldx     #FP1
-        bne     fp_is_zero
-fp0_is_zero:
-        ldx     #FP0
-fp_is_zero:
-        lda     UnpackedFloat::t,x      ; OR all the significand bytes together
-        ora     UnpackedFloat::t+1,x
-        ora     UnpackedFloat::t+2,x
-        ora     UnpackedFloat::t+3,x
+fp0_significand_is_zero:
+        lda     FP0t                    ; OR all the significand bytes together
+        ora     FP0t+1
+        ora     FP0t+2
+        ora     FP0t+3
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
@@ -313,13 +289,13 @@ int_to_fp:
 @positive:
         mva     #0, FP0t                ; Clear two low bytes
         sta     FP0t+1
-        lda     #142                    ; Starting exponent = 15
+        lda     #143                    ; Starting exponent = 15
         bne     int_to_fp_common        ; Unconditional
         
 ; Assumes that the 32-bit value in the FP0 signifcand is an integer and converts it to a float.
 
 int32_to_fp:
-        lda     #158                    ; Starting exponent = 31
+        lda     #159                    ; Starting exponent = 31
 
 ; Performs the part of integer to float conversion common to 16- and 32-bit cases:
 ; clear B, C, and FPX, and normalize.
@@ -335,7 +311,7 @@ int_to_fp_common:
 ; BC SAFE, DE SAFE
 
 truncate_fp_to_int:
-        lda     #143                    ; Target exponent is 15, but int_to_fp_common requires target+1
+        lda     #144                    ; Target exponent is 15, but int_to_fp_common requires target+1
         jsr     truncate_fp_to_int_common
         bcs     @error                  ; Value was too large
         lda     FP0s                    ; Was float value negative?
@@ -357,7 +333,7 @@ truncate_fp_to_int:
 ; BC SAFE, DE SAFE
 
 truncate_fp_to_int32:
-        lda     #159                    ; Target exponent value is 31, but int_to_fp_common requires target+1
+        lda     #160                    ; Target exponent value is 31, but int_to_fp_common requires target+1
 
 ; Performs the part of float to integer conversion common to 16- and 32-bit cases:
 ; adjusts the significand right to reach a target exponent value.
@@ -384,8 +360,8 @@ truncate_fp_to_int_common:
 ; be enough space in the buffer for the write to succeed.
 ; buffer_pos = the write position in buffer
 
-string_max: .byte $00, $00, $00, $00, 159       ; 2^32     (4,294,967,296  )
-string_min: .byte $CC, $CC, $CC, $4C, 155       ; 2^32/10  (  429,496,729.6)
+string_max: .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
+string_min: .byte $CC, $CC, $CC, $4C, 156       ; 2^32/10  (  429,496,729.6)
 
 fp_to_string:
         lda     FP0s                    ; Check for negative value
@@ -401,7 +377,7 @@ fp_to_string:
 @positive:
         mva     #0, E                   ; E keeps track of how much we have scaled up or down
         sta     FP0s                    ; Also set sign to positive since we already printed '-'
-        jsr     fp0_is_zero
+        lda     FP0e                    ; Test if FP0 is zero
         bne     @maybe_scale_up
         ldx     buffer_pos              ; Write index
         lda     #'0'
@@ -549,7 +525,7 @@ fp_to_string:
 generate_digits:
         plstaa  BC                      ; Save return address
 @next_digit:
-        jsr     fp0_is_zero             ; Check if FP0 significand zero; this will never be true the first time
+        jsr     fp0_significand_is_zero ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
         jsr     div10_significand       ; The remainder in A is the digit
         tax                             ; Move remainder into X
@@ -716,13 +692,12 @@ char_to_digit:
         cmp     #10                     ; Sets carry if it's in the 10-255 range
         rts
 
-; Adjusts the 16-bit unsigned biased exponent of FP0 (zero-extended to C) by first adding the value in X
+; Adjusts the 16-bit signed biased exponent of FP0 (zero-extended from FP0e to C) by first adding the value in A
 ; and then subtracting the value in Y.
 
 adjust_exponent:
         clc                             ; Clear carry to prepare for add
-        txa                             ; Get the value to add from X
-        ldx     #0                      ; X is now the high byte
+        ldx     #0                      ; X is the high byte
         adc     FP0e                    ; Add in FP0 exponent
         sta     FP0e                    ; Update FP0 exponent
         bcc     @no_carry               ; If carry clear then don't increment high byte
@@ -736,7 +711,7 @@ adjust_exponent:
         bcs     @no_borrow              ; If not borrowing then don't have to decrement high byte
         dex                             ; Decrement high byte
 @no_borrow:
-        stx     C                       ; Store in C
+        stx     C                       ; Store in C (will be 0, 1, or -1)
         rts
 
 ; Shifts the 40-bit FP0 extended significand one place to the right and re-attempts normalization.
@@ -757,18 +732,17 @@ shift_right_normalize:
 ; normalizes to the 32-bit FP0 significand.
 ; Normalization handles several different cases:
 ;   * If FPX (the high byte of the 40-bit significand) has a value (if the significand is >=2),
-;   then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
-;   addition or subtraction overflowed the 32-bit significand.
+;       then shift right (increase exponent) until the value fits into the 32-bit significand. This may happen if an
+;       addition or subtraction overflowed the 32-bit significand.
 ;   * If the biased exponent is <-31, then return zero. This is an underflow condition; we cannot bring the exponent
-;   within range without shifting all the bits of the exponent away.
-;   * If the biased exponent is <1, then shift right (increase exponent) until it is 1.
+;       within range without shifting all the bits of the exponent away.
 ;   * If the 32-bit significand, and the round register B, are zero, then return zero. This avoids fruitlessly
-;   shifting left in search of a 1 to put in the most-significant bit.
-;   * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand, or the exponent
-;   reaches -126.
+;       shifting left in search of a 1 to put in the most-significant bit.
+;   * Shift left (decrease exponent) until a 1 bit is in the most-significant bit of the significand. If the
+;       biased exponent falls below 1, then return underflow.
 ;   * If the value in the rounding register B is >=128 (MSB is set), then add 1 to the significand.
 ;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
-;   (increase exponent) once again.
+;       (increase exponent) once again.
 ;   * If the exponent is >127, fail with an overflow error. (TODO: need to handle this)
 ; Otherwise, return the final result.
 ; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
@@ -782,28 +756,30 @@ normalize:
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
 ; Entry point if the significand fits within 32 bits.
-; Check if the biased exponent is <1.
+; From here the signifcand can only get larger and the exponent can only get smaller.
+; If the exponent falls below 1 then signal underflow.
 
-        lda     C                       ; High byte of exponent
-        bmi     shift_right_normalize   ; It's negative so definitely too low
-        lda     FP0e                    ; Not negative, but exponent might still be zero
-        beq     shift_right_normalize
+        lda     C                       ; First check that exponent is not already below one
+        bmi     @underflow              ; It's aready negative
 
 ; Check if FP0 is zero. If so then set exponent to lowset possible value and return. If FP0 is not zero then it
 ; means that left normalization is guaranteed to end, since one of the significand bits must be 1.
 
 @check_zero:
-        jsr     fp0_is_zero             ; Check if FP0 is zero
-        bne     @coarse
+        jsr     fp0_significand_is_zero
+        bne     @check_e_is_zero
         ldx     B                       ; Check round
-        bne     @coarse                 ; Round is not zero so we can still find a 1 bit somewhere
-        lda     #1                      ; It's really zero; set lowest possible exponent and return
-        sta     FP0e
+        bne     @check_e_is_zero        ; Round is not zero so we can still find a 1 bit somewhere
+        stx     FP0e                    ; Set exponent to 0
         clc                             ; Signal success
         rts
 
+@check_e_is_zero:
+        lda     FP0e                    ; Significand was not zero, but if e is, it can't be normalized so underflow
+        beq     @underflow              ; TODO: check C
+
 @coarse:
-        ldy     FP0t+3                  ; Get high byte of significand
+        lda     FP0t+3                  ; Get high byte of significand
         bne     @fine                   ; If not 0 then try fine shift
 
 ; The high byte is 0, so shift left 8 bits using byte moves.
@@ -812,8 +788,8 @@ normalize:
         lda     FP0e                    ; Get exponent
         sec
         sbc     #8                      ; Trial subtraction of 8
-        bcc     @fine                   ; If subtracting required a borrow then try fine shift
-        beq     @fine                   ; If it went to 0 then can't apply coarse shift; do fine shift instead
+        bcc     @underflow              ; If subtracting required a borrow then underflow
+        beq     @underflow              ; Going to zero is also a fail
         sta     FP0e                    ; Otherwise update exponent
         lda     FP0t+2
         sta     FP0t+3                  ; Store new high byte
@@ -826,25 +802,26 @@ normalize:
         mva     #0, B                   ; Clear rounding register
         beq     @coarse                 ; Unconditional
 
-@fine_shift:
+@fine:
+        lda     FP0t+3                  ; Get the high byte of significand
+        bmi     @round                  ; Is normalized; proceed to rounding
         asl     B                       ; Shift left one bit starting from rounding register
         jsr     shift_left_from_carry
         dec     FP0e
+        bne     @fine                   ; Exponent is not zero so check if we need to shift some more
 
-@fine:
-        lda     FP0t+3                  ; Get the high byte of significand
-        bmi     @round                  ; Significand is normalized
-        lda     FP0e                    ; Get exponent
-        cmp     #1                      ; Make sure not already minimum value (-126)
-        bne     @fine_shift             ; Okay to shift; otherwise leave as subnormal and fall through
+@underflow:
+        sec
+        rts
 
 ; Round the result, which will possibly require another right shift.
 
 @round:
         asl     B                       ; Shift rounding register high bit into carry
         bcc     @done                   ; If nothing there then no rounding, otherwise round away from zero
+        lda     #0
         ldx     #FP1t
-        jsr     clear_significand_fp
+        jsr     set_significand_fp
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
         beq     @done                   ; If the value written to FPX was 0 then all done
@@ -887,8 +864,8 @@ fadd_fp1:
 
 @equal_exponents:
         lda     FP0s
-        eor     FP1s                    ; XOR signs together
-        bpl     @equal_signs            ; Signs are the same
+        cmp     FP1s                    ; Compare signs
+        beq     @equal_signs            ; Signs are the same
         lda     FP0s                    ; Check the FP0 sign
         bmi     @fp0_negative           ; FP0 is already the negative one
         jsr     swap_fp0_fp1            ; FP1 was negative, but swap them so now FP0 is negative
@@ -932,9 +909,9 @@ fsub:
 
 fmul:
         jsr     load_fp1
-        jsr     fp0_is_zero             ; Is FP0 zero?
+        lda     FP0e                    ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
-        jsr     fp1_is_zero             ; Test FP1
+        lda     FP1e                    ; Test FP1
         bne     @do_multiply
 @return_zero:
         jsr     clear_fp0               ; Return zero
@@ -945,8 +922,9 @@ fmul:
 
 ; Do 32 bit multiplication of FP0 and FP1 significands.
 
+        lda     #0
         ldx     #FPX                    ; Clear the extended significand of FP0
-        jsr     clear_significand_fp
+        jsr     set_significand_fp
         ldy     #32                     ; 32 multiplication cycles
 
 @next_bit:
@@ -996,7 +974,7 @@ fmul:
 
 ; Calculate exponent and sign.
 
-        ldx     FP1e                    ; Add FP1e to FP0e
+        lda     FP1e                    ; Add FP1e to FP0e
         ldy     #BIAS                   ; Subtract bias
         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
         inc     FP0e                    ; Account for the binary point being off by 1
@@ -1011,9 +989,9 @@ fmul:
 fdiv:
         jsr     load_fp1
 fdiv_fp1:
-        jsr     fp0_is_zero             ; Is FP0 zero?
+        lda     FP0e                    ; Is FP0 zero?
         beq     @return_zero            ; Yes, just return
-        jsr     fp1_is_zero             ; Test FP1
+        lda     FP1e                    ; Test FP1
         bne     @initalize
         sec                             ; Error if FP1 is zero
         rts
@@ -1027,7 +1005,6 @@ fdiv_fp1:
         ldx     #FPX                    ; Copy significand into FPX so we can use FP0 to build quotient
         jsr     copy_significand_fp0_fp
         mva     #0, D                   ; Extended significand of FPX will be in D
-        mva     #BIAS, C                ; C keeps track of how much bias to add
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
 ; we'd have to shift the least-significant bit into some other location (presumably B). But the very first thing we
@@ -1058,7 +1035,7 @@ fdiv_fp1:
 ; Calculate exponent and sign.
 
         ldy     FP1e                    ; Subtract FP1e from FP0e
-        ldx     C                       ; Add bias
+        lda     #BIAS                   ; Add bias
         jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
