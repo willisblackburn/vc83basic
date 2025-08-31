@@ -152,6 +152,7 @@ _adjust_exponent:
         tax                             ; Add byte
         pla
         tay                             ; Subtract byte
+        txa                             ; Add byte into A
         jmp     adjust_exponent
 
 _fp_to_string:
