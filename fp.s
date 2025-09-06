@@ -745,8 +745,9 @@ shift_right_normalize:
 ;       (increase exponent) once again.
 ;   * If the exponent is >127, fail with an overflow error. (TODO: need to handle this)
 ; Otherwise, return the final result.
-; This function uses and clobbers all registers, which means that any function that calls it (fadd, fsub, fmul, fdiv,
-; etc.) also clobbers all registers.
+; This function uses and clobbers all registers except DE, which means that any function that calls it (fadd, fsub,
+; fmul, fdiv, etc.) also clobber those registers.
+; DE SAFE
 
 normalize:
 
@@ -835,6 +836,7 @@ normalize:
 
 ; Adds the value referenced by the pointer AY to FP0, leaving the sum in FP0 and possibly modifying FP1.
 ; AY = pointer to the value
+; DE SAFE
 
 fadd:
         jsr     load_fp1
@@ -896,6 +898,7 @@ fadd_fp1:
 
 ; Subtracts the value referenced by the pointer AY from FP0.
 ; AY = pointer to the value
+; DE SAFE
 
 fsub:
         jsr     load_fp1
@@ -906,6 +909,7 @@ fsub:
 
 ; Multiplies FP0 by the value referenced by the pointer AY, leaving the normalized result in FP0.
 ; AY = pointer to the value
+; DE SAFE
 
 fmul:
         jsr     load_fp1
@@ -985,6 +989,7 @@ fmul:
 
 ; Divides FP0 by the value referenced by the pointer AY, returning the quotient in FP0.
 ; AY = pointer to the value
+; DE SAFE
 
 fdiv:
         jsr     load_fp1
@@ -1004,7 +1009,7 @@ fdiv_fp1:
 @initalize:
         ldx     #FPX                    ; Copy significand into FPX so we can use FP0 to build quotient
         jsr     copy_significand_fp0_fp
-        mva     #0, D                   ; Extended significand of FPX will be in D
+        mva     #0, C                   ; Extended significand of FPX will be in C
 
 ; We have to shift the dividend right one place in order to ensure that it is smaller than the divisor. This means
 ; we'd have to shift the least-significant bit into some other location (presumably B). But the very first thing we
@@ -1036,14 +1041,14 @@ fdiv_fp1:
 
         ldy     FP1e                    ; Subtract FP1e from FP0e
         lda     #BIAS                   ; Add bias
-        jsr     adjust_exponent         ; Do the math stuff; C is high byte of exponent
+        jsr     adjust_exponent         ; Do the math stuff; replaces C with the high byte of exponent
         lda     FP0s                    ; Get sign of FP0
         eor     FP1s                    ; If both are pos or neg, then pos, else neg
         sta     FP0s
         mva     #0, FPX                 ; Clear FPX, which normalize will use as the extended significand
         jmp     normalize               ; Normalize and return
 
-; Compare the dividend in FPX (plus the low byte of D) to the divisor FP1.
+; Compare the dividend in FPX+C to the divisor FP1.
 ; If divisor is <= than dividend, shift a 1 bit into quotient byte in B, else shift a 0. Do this until a 1 bit rotates
 ; out of B. The value of B on entry determines how many times this function will carry out this operation. If it is
 ; initialized to 1, then it will loop 8 times.
@@ -1053,10 +1058,10 @@ fdiv_fp1:
         rol     FPX+1
         rol     FPX+2
         rol     FPX+3
-        rol     D
+        rol     C
 @divide_skip_shift:
         sec                             ; If FPX is >0 then divisor FP1 <= dividend FPX so we want carry to be set
-        lda     D                       ; Dividend extended significand
+        lda     C                       ; Dividend extended significand
         bne     @compare_done
         lda     FPX+3
         cmp     FP1t+3                  ; Sets carry (clears borrow) if divisor FP1 <= dividend FPX
@@ -1083,9 +1088,9 @@ fdiv_fp1:
         lda     FPX+3
         sbc     FP1t+3
         sta     FPX+3
-        lda     D                       ; Possibly have to borrow from extended significand
+        lda     C                       ; Possibly have to borrow from extended significand
         sbc     #0                      ; SBC #0 will always leave carry set
-        sta     D
+        sta     C
 @skip_subtract:
         rol     B                       ; Roll the carry left into quotient
         bcc     @divide                 ; Continue if 1 bit has not emerged from B
