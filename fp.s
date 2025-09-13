@@ -28,8 +28,10 @@ MAXDIGITS = 10
 
 ; Floating-point constants
 
-fp_one: .byte $00, $00, $00, $00, 128
-fp_ten: .byte $00, $00, $00, $20, 131
+fp_one:         .byte $00, $00, $00, $00, 128
+fp_ten:         .byte $00, $00, $00, $20, 131
+fp_string_max:  .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
+fp_string_min:  .byte $CC, $CC, $CC, $4C, 156       ; 2^32/10  (  429,496,729.6)
 
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
@@ -360,9 +362,6 @@ truncate_fp_to_int_common:
 ; be enough space in the buffer for the write to succeed.
 ; buffer_pos = the write position in buffer
 
-string_max: .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
-string_min: .byte $CC, $CC, $CC, $4C, 156       ; 2^32/10  (  429,496,729.6)
-
 fp_to_string:
         lda     FP0s                    ; Check for negative value
         bpl     @positive               ; Nope
@@ -390,7 +389,7 @@ fp_to_string:
         jsr     fmul                    ; Multiply FP0 by 10
         dec     E                       ; Have to divide by 10 to get back to original number
 @maybe_scale_up:
-        lday    #string_min             ; Load minimum value
+        lday    #fp_string_min          ; Load minimum value
         jsr     fcmp                    ; Carry clear (borrow set) means FP0 < FP1 so we have to scale up
         bcc     @scale_up
         bcs     @maybe_scale_down       ; Unconditional skip past scale down code
@@ -399,7 +398,7 @@ fp_to_string:
         jsr     fdiv                    ; Divide FP0 by 10
         inc     E                       ; Have to multiply by 10 to get back to original number
 @maybe_scale_down:
-        lday    #string_max             ; Load maximum value
+        lday    #fp_string_max          ; Load maximum value
         jsr     fcmp                    ; Carry set (borrow clear) means FP0 >= FP1 so we have to scale down
         bcs     @scale_down
         jsr     truncate_fp_to_int32    ; Make into a 32-bit integer
