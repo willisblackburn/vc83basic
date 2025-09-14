@@ -33,7 +33,7 @@ fp_ten:         .byte $00, $00, $00, $20, 131
 fp_string_max:  .byte $00, $00, $00, $00, 160       ; 2^32     (4,294,967,296  )
 fp_string_min:  .byte $CC, $CC, $CC, $4C, 156       ; 2^32/10  (  429,496,729.6)
 fp_log_2:       .byte $FA, $17, $72, $31, 127
-fp_sqrt_2:      .byte $33, $F3, $04, $B5, 128
+fp_sqrt_2:      .byte $33, $F3, $04, $35, 128
 
 ; Loads a new Float value from memory into FP0 or FP1.
 ; AY = a pointer to the value to load
@@ -365,7 +365,6 @@ truncate_fp_to_int_common:
 ; buffer_pos = the write position in buffer
 
 fp_to_string:
-        debug $00
         lda     FP0s                    ; Check for negative value
         bpl     @positive               ; Nope
         ldx     buffer_pos              ; Write index
@@ -1214,16 +1213,16 @@ fpoly_odd:
 ; Since t is in the range [1, 2) we divide by sqrt(2) = 1.414 to bring it into the range ~0.707 to ~1.414, then use
 ; a polynomial approximation to generate the natural log of t. The multiplication is necessary because the
 ; approximation is most accurate for values near 1. Having divided by sqrt(2), we have to reverse that by adding
-; log(sqrt(2)) to the result.
+; log(sqrt(2)) (which is log(2)/2) to the result.
 ; Then we just add that to the natural log of the exponential part that we calculated earlier.
 
 fp_log_coefficients:
-        .byte $CD, $CC, $CC, $4C, 125   ; 1/5
-        .byte $AA, $AA, $AA, $2A, 126   ; 1/3
+        .byte $92, $24, $49, $12, 125   ; 1/7 (x^7 / 7)
+        .byte $CD, $CC, $CC, $4C, 125   ; 1/5 (x^5 / 5)
+        .byte $AA, $AA, $AA, $2A, 126   ; 1/3 (x^3 / 3)
         .byte $00, $00, $00, $00, 128   ; 1
 
 flog:
-        debug $10
         lday    #flog_arg               ; Store the original argument
         jsr     store_fp0
         lda     FP0e                    ; Load the exponent into A
@@ -1233,22 +1232,16 @@ flog:
         bcs     @skip_dex               ; If carry ("no borrow") clear, don't borrow from X
         dex                             ; Otherwise decrement X
 @skip_dex:
-        debug $20
         jsr     int_to_fp               ; Promote up to a float
-        debug $21
         lday    #fp_log_2               ; Multiply by log(2) to convert to natural logarithm of exponent part
         jsr     fmul
-        debug $22
         lday    #flog_exp
         jsr     store_fp0               ; Store the result in flog_exp; we'll add it back later
         lday    #flog_arg               ; Get the original argument back
         jsr     load_fp0
-        debug $30
         mva     #BIAS, FP0e             ; Set the exponent to 0 (+BIAS) because we took care of exponent part already
-        debug $31
         lday    #fp_sqrt_2              ; Divide by sqrt(2)
         jsr     fdiv
-        debug $32
         lday    #flog_arg               ; Save the adjusted value back over the original argument
         jsr     store_fp0
         lday    #fp_one                 ; Calculate and save arg + 1
@@ -1262,10 +1255,13 @@ flog:
         lday    #flog_arg_plus_1        ; Calculate (arg - 1) / (arg + 1)
         jsr     fdiv
         ldax    #fp_log_coefficients
-        ldy     #3
+        ldy     #4
         jsr     fpoly_odd
+        inc     FP0e                    ; Increment the exponent to multiply by 2
         lday    #flog_exp               ; Add in the log of the exponent
         jsr     fadd
-        lday    #fp_sqrt_2              ; Since we divided original number by sqrt(2), have to add log(sqrt(2))
-        
-        jmp     fadd
+        lday    #fp_log_2               ; Since we divided original number by sqrt(2), have to add log(sqrt(2))
+        jsr     load_fp1                ; Load log(2) info FP1
+        dec     FP1e                    ; Synthesize log(sqrt(2)) as log(2)/2
+        jsr     fadd_2
+        rts
