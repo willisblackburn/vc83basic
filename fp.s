@@ -839,7 +839,7 @@ normalize:
 
 fadd:
         jsr     load_fp1
-fadd_fp1:
+fadd_2:
         mva     #0, B                   ; Initialize the rounding register to 0
         sta     C                       ; Clear the extended exponent register
         sta     FPX                     ; Also clear FP0 extended significand
@@ -887,7 +887,7 @@ fadd_fp1:
 
 @swap:
         jsr     swap_fp0_fp1            ; Swap FP0 and FP1 in order to get value with larger exponent in FP0
-        jmp     fadd_fp1
+        jmp     fadd_2
 
 ; The difference between exponents is >127, so just return the larger number (identified by N flag).
 
@@ -904,7 +904,7 @@ fsub:
         lda     FP1s
         eor     #$80
         sta     FP1s
-        jmp     fadd_fp1
+        jmp     fadd_2
 
 ; Multiplies FP0 by the value referenced by the pointer AY, leaving the normalized result in FP0.
 ; AY = pointer to the value
