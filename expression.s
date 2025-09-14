@@ -102,6 +102,7 @@ function_vectors:
         .word   fun_peek-1
         .word   fun_adr-1
         .word   fun_usr-1
+        .word   fun_log-1
 
 evaluate_function:
         jsr     decode_byte             ; Return the operator in A

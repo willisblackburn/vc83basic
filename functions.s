@@ -157,6 +157,11 @@ fun_len:
         jsr     int_to_fp               ; Into FP0
         jmp     push_fp0                ; Push return value
 
+fun_log:
+        jsr     pop_fp0
+        jsr     flog
+        jmp     push_fp0
+
 fun_str_s:
         jsr     pop_fp0
         mva     #1, buffer_pos          ; Write at buffer position 1
