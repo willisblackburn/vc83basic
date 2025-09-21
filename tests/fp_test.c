@@ -177,7 +177,7 @@ void test_truncate_fp_to_int(void) {
 
     for (i = 0; i < sizeof int_conversion_test_cases / sizeof *int_conversion_test_cases; i++) {
         test_case = int_conversion_test_cases + i;
-        fprintf(stderr, "  %s:%d: truncate_fp_to_int32(t=$%08LX e=%02X)\n", __FILE__, __LINE__,
+        fprintf(stderr, "  %s:%d: truncate_fp_to_int(t=$%08LX e=%02X)\n", __FILE__, __LINE__,
             test_case->float_value.t, test_case->float_value.e);
         load_fp0(&test_case->float_value);
         result = truncate_fp_to_int();
