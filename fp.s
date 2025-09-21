@@ -168,8 +168,6 @@ fp0_significand_is_zero:
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
-; If calling the negate_significand_16 entry point, which only affects the 2 most significant bytes,
-; ensure the carry is set. 
 ; X SAFE, Y SAFE, BC SAFE, DE SAFE
 
 negate_significand:
@@ -180,7 +178,6 @@ negate_significand:
         lda     #0
         sbc     FP0t+1
         sta     FP0t+1
-negate_significand_16:
         lda     #0
         sbc     FP0t+2
         sta     FP0t+2
@@ -286,8 +283,7 @@ int_to_fp:
         and     #$80                    ; Isolate and store sign bit
         sta     FP0s
         bpl     @positive               ; Flags set by AND
-        sec                             ; Necessary for negate_significand_16
-        jsr     negate_significand_16
+        jsr     negate_significand
 @positive:
         mva     #0, FP0t                ; Clear two low bytes
         sta     FP0t+1
@@ -313,18 +309,26 @@ int_to_fp_common:
 ; BC SAFE, DE SAFE
 
 truncate_fp_to_int:
-        lda     #144                    ; Target exponent is 15, but int_to_fp_common requires target+1
-        jsr     truncate_fp_to_int_common
+        jsr     truncate_fp_to_int32
         bcs     @error                  ; Value was too large
         lda     FP0s                    ; Was float value negative?
         bpl     @positive
-        sec                             ; Necessary for negate_significand_16
-        jsr     negate_significand_16
+        jsr     negate_significand
 @positive:
-        lda     FP0t+2                  ; Load return value into AX
-        ldx     FP0t+3
+        lda     FP0t+1                  ; Load the high byte of the return value
+        tax                             ; Move into X for return
+        rol     A                       ; Rotate high bit into carry: this is the sign of the return value
+        lda     #0
+        adc     FP0t+2                  ; If I add the sign to the top 2 bytes, it must be zero
+        bne     @error
+        adc     FP0t+3
+        bne     @error
+        lda     FP0t+0                  ; Load low byte of return value into A
         clc                             ; Signal success
+        rts
+
 @error:
+        sec
         rts
 
 ; Truncates the FP value to a 32-bit integer and leaves it in the FP0 significand field.
@@ -335,26 +339,51 @@ truncate_fp_to_int:
 ; BC SAFE, DE SAFE
 
 truncate_fp_to_int32:
-        lda     #160                    ; Target exponent value is 31, but int_to_fp_common requires target+1
-
-; Performs the part of float to integer conversion common to 16- and 32-bit cases:
-; adjusts the significand right to reach a target exponent value.
-; A = the target exponent value *plus one* (with bias)
-
-truncate_fp_to_int_common:
-        eor     #$FF                    ; A = (-(target+1)) - 1
-        sec                             ; Set carry to ADC completes the two's complement operation
-        adc     FP0e                    ; A = exponent - (target+1)
-        tay                             ; A = -(number of shifts) - 1, so we pre-increment and check for 0
-        bcc     @decrement              ; If we borrowed to subtract target+1, then E < target+1 or E <= target; ok!
-        rts                             ; Otherwise return with carry set
-
+        lda     FP0e                    ; Exponent
+        sec
+        sbc     #BIAS                   ; Subtract out bias; max unbiased e value is 127
+        bcc     @e_neg_or_zero          ; Carry ("no borrow") clear we had to borrow so e < BIAS meaning e < 0
+        beq     @e_neg_or_zero          ; Exactly 0 so return 1
+        eor     #$FF                    ; A is now -e-1; I want 31-e, so just add 31 and let carry negate the -1
+        adc     #31
+        beq     @done                   ; Result was 0 so we don't have to shift at all
+        bmi     @error                  ; If negative then e was >= 32; max e is 127 so no wraparound issues
+        cmp     #16                     ; Do I need to shift more than 16 places?
+        bcs     @optimized              ; Yes
+        tay                             ; Transfer total shift count into Y: will be between 1 and 15
 @shift:
-        jsr     shift_right             ; Shift right
-@decrement:
-        iny                             ; For example if E was 158 then A = (158-159) = -1, so INY gives 0 and we stop
-        bne     @shift                  ; If not 0 then continue
+        jsr     shift_right             ; Shift right by 1
+        dey
+        bne     @shift
         clc                             ; Signal success
+        rts
+
+@optimized:
+        and     #$0F                    ; The number of fine shifts I need after the byte move
+        mvx     FP0t+3, FP0t+1          ; Do the two-byte move through X to preserve A
+        mvx     FP0t+2, FP0t
+        mvx     #0, FP0t+3
+        stx     FP0t+2
+        tay                             ; Move into Y
+        beq     @done                   ; If no fine shifts required then exit
+@optimized_shift:        
+        lsr     FP0t+1
+        ror     FP0t
+        dey
+        bne     @optimized_shift
+        clc
+        rts
+
+@e_neg_or_zero:
+        jsr     clear_fp0
+        bcc     @done                   ; If unbiased e is exactly 0 then carry will be set and we will return 1
+        inc     FP0t
+@done:
+        clc
+        rts
+
+@error:
+        sec
         rts
 
 ; Converts FP number in FP0 into a string.
