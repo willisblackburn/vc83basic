@@ -49,6 +49,11 @@ fun_fre:
         jsr     int_to_fp               ; Load into FP0
         jmp     push_fp0
 
+fun_int:
+        jsr     pop_fp0
+        jsr     truncate
+        jmp     push_fp0        
+
 fun_left_s:
         jsr     fun_mid_s_setup         ; Requested length in D
         bcs     fun_mid_s_error         ; If setup failed
@@ -161,6 +166,11 @@ fun_log:
         jsr     pop_fp0
         jsr     flog
         jmp     push_fp0
+
+fun_round:
+        jsr     pop_fp0
+        jsr     round
+        jmp     push_fp0        
 
 fun_str_s:
         jsr     pop_fp0

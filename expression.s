@@ -103,6 +103,8 @@ function_vectors:
         .word   fun_adr-1
         .word   fun_usr-1
         .word   fun_log-1
+        .word   fun_int-1
+        .word   fun_round-1
 
 evaluate_function:
         jsr     decode_byte             ; Return the operator in A

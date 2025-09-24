@@ -64,6 +64,8 @@ function_name_table:
 :       .byte   :+ - *, 'A', 'D', 'R' | EOT
 :       .byte   :+ - *, 'U', 'S', 'R' | EOT
 :       .byte   :+ - *, 'L', 'O', 'G' | EOT
+:       .byte   :+ - *, 'I', 'N', 'T' | EOT
+:       .byte   :+ - *, 'R', 'O', 'U', 'N', 'D' | EOT
 :       .byte   0
 
 function_arity_table:
@@ -80,6 +82,8 @@ function_arity_table:
         .byte   1   ; ADR
         .byte   2   ; USR
         .byte   1   ; LOG
+        .byte   1   ; INT
+        .byte   1   ; ROUND
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
