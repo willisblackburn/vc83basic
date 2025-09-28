@@ -42,7 +42,7 @@ clear_variables:
         rts
 
 reset_program_stopped:
-        lda     #PS_STOPPED                      ; Reset state to STOPPED
+        lda     #PS_STOPPED             ; Reset state to STOPPED
         
 ; Sets the program state, resets the stack, clears the resume state, performs RESTORE, and clears variables.
 ; A = the desired program state (RUN sets this to RUNNING)
