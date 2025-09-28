@@ -1292,6 +1292,16 @@ fcmp:
 @done:
         rts                             ; Flags will be set correctly here
 
+flog_x = stack + .sizeof(Float) * 2
+flog_x_plus_1 = stack + .sizeof(Float) * 3
+flog_k = stack + .sizeof(Float) * 4
+
+fp_log_coefficients:
+        .byte $92, $24, $49, $12, 125   ; 1/7     x^7 / 7
+        .byte $CD, $CC, $CC, $4C, 125   ; 1/5   + x^5 / 5
+        .byte $AA, $AA, $AA, $2A, 126   ; 1/3   + x^3 / 3
+        .byte $00, $00, $00, $00, 128   ; 1     + x
+
 ; Calculate the natural logarithm of the argument in FP0.
 ; Strategy:
 ;     FP0 is in the format t * e^2 [note e is the exponent not the natural log base]
@@ -1305,16 +1315,6 @@ fcmp:
 ; approximation is most accurate for values near 1. Having divided by sqrt(2), we have to reverse that by adding
 ; log(sqrt(2)) (which is log(2)/2) to the result.
 ; Then we just add that to the natural log of the exponential part that we calculated earlier.
-
-fp_log_coefficients:
-        .byte $92, $24, $49, $12, 125   ; 1/7     x^7 / 7
-        .byte $CD, $CC, $CC, $4C, 125   ; 1/5   + x^5 / 5
-        .byte $AA, $AA, $AA, $2A, 126   ; 1/3   + x^3 / 3
-        .byte $00, $00, $00, $00, 128   ; 1     + x
-
-flog_x = stack + .sizeof(Float) * 2
-flog_x_plus_1 = stack + .sizeof(Float) * 3
-flog_k = stack + .sizeof(Float) * 4
 
 flog:
         lday    #flog_x                 ; Store the original argument
@@ -1359,6 +1359,16 @@ flog:
         dec     FP1e                    ; Synthesize log(sqrt(2)) as log(2)/2
         jmp     fadd_2
 
+fexp_x = stack + .sizeof(Float) * 2
+fexp_k = stack + .sizeof(Float) * 3
+
+fp_exp_coefficients:
+        .byte $AB, $AA, $AA, $2A, 123   ; 1/4!     x^4 / 4!
+        .byte $AB, $AA, $AA, $2A, 125   ; 1/3!   + x^3 / 3!
+        .byte $00, $00, $00, $00, 127   ; 1/2!   + x^2 / 2!
+        .byte $00, $00, $00, $00, 128   ; 1      + x
+        .byte $00, $00, $00, $00, 128   ; 1      + 1
+
 ; Calculates e raised to the power of the value in FP0.
 ; Strategy:
 ;     exp(x) = exp(k*log(2) + r)
@@ -1371,16 +1381,6 @@ flog:
 ; To find k, convert the input into a base-2 log (divide by log(2)), then round to an integer. Raising 2 to the power
 ; is easy and will get us close to the result. Then convert the remainder back to a natural log (multiply by log(2))
 ; and apply the Taylor series.
-
-fexp_x = stack + .sizeof(Float) * 2
-fexp_k = stack + .sizeof(Float) * 3
-
-fp_exp_coefficients:
-        .byte $AB, $AA, $AA, $2A, 123   ; 1/4!     x^4 / 4!
-        .byte $AB, $AA, $AA, $2A, 125   ; 1/3!   + x^3 / 3!
-        .byte $00, $00, $00, $00, 127   ; 1/2!   + x^2 / 2!
-        .byte $00, $00, $00, $00, 128   ; 1      + x
-        .byte $00, $00, $00, $00, 128   ; 1      + 1
 
 fexp:
         lday    #fexp_x
@@ -1406,20 +1406,6 @@ fexp:
         sta     FP0e
         rts
 
-; Calcuates the cosine of the value in FP0.
-; This is just the sine of FP0 value plus pi/2.
-
-fcos:
-        lday    #fp_pi                  ; Load pi
-        jsr     load_fp1
-        dec     FP1e                    ; Decrement exponent to generate pi/2
-        jsr     fadd_2                  ; Add
-
-; Fall through to sin
-; Calculates the sine of the value in FP0.
-; The only range we have to worry about is -pi/2 to pi/2. Values < -pi or >pi are computed mod pi. Values < -pi/2
-; are computed as -pi - x and values > pi/2 are computed as pi - x.
-
 fsin_x = stack + .sizeof(Float) * 2
 
 fp_sin_coefficients:
@@ -1429,6 +1415,21 @@ fp_sin_coefficients:
         .byte $89, $88, $88, $08, 121   ; 1/5!   + x^5 / 5!
         .byte $AB, $AA, $AA, $AA, 125   ; 1/3!   - x^3 / 3!
         .byte $00, $00, $00, $00, 128   ; 1      + x
+
+; Calcuates the cosine of the value in FP0.
+; This is just the sine of FP0 value plus pi/2.
+
+fcos:
+        lday    #fp_pi                  ; Load pi
+        jsr     load_fp1
+        dec     FP1e                    ; Decrement exponent to generate pi/2
+        jsr     fadd_2                  ; Add
+
+; Fall through
+
+; Calculates the sine of the value in FP0.
+; The only range we have to worry about is -pi/2 to pi/2. Values < -pi or >pi are computed mod pi. Values < -pi/2
+; are computed as -pi - x and values > pi/2 are computed as pi - x.
 
 fsin:
         lday    #fsin_x                 ; Store the argument

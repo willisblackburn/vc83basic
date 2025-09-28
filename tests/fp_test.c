@@ -764,6 +764,19 @@ const FunctionTestCase fsin_test_cases[] = {
 
 TEST_FUNCTION(fsin);
 
+const FunctionTestCase fcos_test_cases[] = {
+    // cos(0) = 1
+    { { 0x00000000,   0 }, { 0x7FFFFF12,   127 } }, // Should be 1, is 0.999999945
+    // cos(pi/2) = 0
+    { { 0x490FDA9E, 128 }, { 0x674D0E59,   116 } }, // Should be 0, is 0.000441171646
+    // cos(pi) = -1
+    { { 0x490FDA9E, 129 }, { 0xFFFFFF11,   127 } }, // Should be -1, is -0.999999945
+    // cos(3pi/2) = 0
+    { { 0x16CBE3F7, 130 }, { 0x05600000,   110 } }, // Should be 0, is 0.0000003974884749
+};
+
+TEST_FUNCTION(fcos);
+
 int make_checksum(void) {
     int sum = 0;
     const char* p = (const char*)0x500;
@@ -799,5 +812,6 @@ int main(void) {
     test_flog();
     test_fexp();
     test_fsin();
+    test_fcos();
     return 0;
 }
