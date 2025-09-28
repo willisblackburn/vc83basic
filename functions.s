@@ -157,6 +157,21 @@ fun_len:
         jsr     int_to_fp               ; Into FP0
         jmp     push_fp0                ; Push return value
 
+fun_peek:
+        jsr     pop_fp0                 ; Get the argument
+        bcs     @done
+        jsr     truncate_fp_to_int      ; Convert it to an address
+        bcs     @done
+        stax    BC                      ; Need it to be a pointer
+        ldy     #0                      ; Index 0
+        lda     (BC),y                  ; Get the value there
+        ldx     #0                      ; High byte is always 0
+        jsr     int_to_fp               ; Into FP0
+        jmp     push_fp0                ; Push return value
+
+@done:
+        rts
+
 fun_str_s:
         jsr     pop_fp0
         mva     #1, buffer_pos          ; Write at buffer position 1
@@ -172,21 +187,6 @@ fun_str_s:
         ldax    #buffer                 ; Source
         jsr     copy_y_from
         jmp     push_string
-
-@done:
-        rts
-
-fun_peek:
-        jsr     pop_fp0                 ; Get the argument
-        bcs     @done
-        jsr     truncate_fp_to_int      ; Convert it to an address
-        bcs     @done
-        stax    BC                      ; Need it to be a pointer
-        ldy     #0                      ; Index 0
-        lda     (BC),y                  ; Get the value there
-        ldx     #0                      ; High byte is always 0
-        jsr     int_to_fp               ; Into FP0
-        jmp     push_fp0                ; Push return value
 
 @done:
         rts
