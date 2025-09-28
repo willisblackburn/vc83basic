@@ -22,6 +22,10 @@ void test_decode_byte(void) {
 
 void test_decode_number(void) {
     const char line_data[] = { '1', '0', '0', ',', '4', '1', '1', '2', ',', '3', '.', '1', '4', '1', '5', '9', ',' };
+    Float result_1 = { 0x48000000, 134 };
+    Float result_2 = { 0x00800000, 140 };
+    Float result_3 = { 0x490FCF81, 129 };
+    Float result;
 
     PRINT_TEST_NAME();
 
@@ -29,15 +33,18 @@ void test_decode_number(void) {
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 134, 0xC8000000);
+    store_fp0(&result);
+    ASSERT_FLOAT_EQ(result, result_1);
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 140, 0x80800000);
+    store_fp0(&result);
+    ASSERT_FLOAT_EQ(result, result_2);
 
     decode_number();
     decode_byte();
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 129, 0xC90FCF81);
+    store_fp0(&result);
+    ASSERT_FLOAT_EQ(result, result_3);
 }
 
 void test_decode_string(void) {
@@ -133,10 +140,13 @@ void xh_operator(void) {
 int num_count;
 
 void xh_number(void) {
+    Float result_1 = { 0x00800000, 140 };
+    Float result_2 = { 0x40000000, 129 };
+    Float result;    
     decode_number();
     switch (++num_count) {
-        case 1: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 140, 0x80800000); break;
-        case 2: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 129, 0xC0000000); break;
+        case 1: store_fp0(&result); ASSERT_FLOAT_EQ(result, result_1); break;
+        case 2: store_fp0(&result); ASSERT_FLOAT_EQ(result, result_2); break;
     }
 }
 
