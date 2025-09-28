@@ -167,10 +167,36 @@ fun_len:
         jsr     int_to_fp               ; Into FP0
         jmp     push_fp0                ; Push return value
 
+fun_peek:
+        jsr     pop_fp0                 ; Get the argument
+        bcs     @done
+        jsr     truncate_fp_to_int      ; Convert it to an address
+        bcs     @done
+        stax    BC                      ; Need it to be a pointer
+        ldy     #0                      ; Index 0
+        lda     (BC),y                  ; Get the value there
+        ldx     #0                      ; High byte is always 0
+        jsr     int_to_fp               ; Into FP0
+        jmp     push_fp0                ; Push return value
+
+@done:
+        rts
+
 fun_round:
         jsr     pop_fp0
         jsr     round
         jmp     push_fp0        
+
+fun_sgn:
+        jsr     pop_fp0
+        lda     FP0e                    ; If exponent is 0 then value is 0; return 0
+        beq     @done
+        ldpha   FP0s                    ; Return the sign of the original value
+        lday    #fp_one
+        jsr     load_fp0                ; Load 1
+        plsta   FP0s                    ; Replace the sign of 1 with the sign of the original number
+@done:
+        jmp     push_fp0
 
 fun_str_s:
         jsr     pop_fp0
@@ -190,32 +216,6 @@ fun_str_s:
 
 @done:
         rts
-
-fun_peek:
-        jsr     pop_fp0                 ; Get the argument
-        bcs     @done
-        jsr     truncate_fp_to_int      ; Convert it to an address
-        bcs     @done
-        stax    BC                      ; Need it to be a pointer
-        ldy     #0                      ; Index 0
-        lda     (BC),y                  ; Get the value there
-        ldx     #0                      ; High byte is always 0
-        jsr     int_to_fp               ; Into FP0
-        jmp     push_fp0                ; Push return value
-
-@done:
-        rts
-
-fun_sgn:
-        jsr     pop_fp0
-        lda     FP0e                    ; If exponent is 0 then value is 0; return 0
-        beq     @done
-        ldpha   FP0s                    ; Return the sign of the original value
-        lday    #fp_one
-        jsr     load_fp0                ; Load 1
-        plsta   FP0s                    ; Replace the sign of 1 with the sign of the original number
-@done:
-        jmp     push_fp0
 
 fun_usr:
         jsr     pop_fp0                 ; Pop the value
