@@ -147,6 +147,7 @@ S1 = FPX+2
 .global fun_peek
 .global fun_round
 .global fun_sgn
+.global fun_sqr
 .global fun_str_s
 .global fun_usr
 .global fun_val

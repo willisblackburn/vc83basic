@@ -198,6 +198,13 @@ fun_sgn:
 @done:
         jmp     push_fp0
 
+fun_sqr:
+        jsr     pop_fp0
+        jsr     flog                    ; Take logarithm
+        dec     FP0e                    ; Decrement exponent to divide by 2
+        jsr     fexp                    ; Raise again
+        jmp     push_fp0
+
 fun_str_s:
         jsr     pop_fp0
         mva     #1, buffer_pos          ; Write at buffer position 1

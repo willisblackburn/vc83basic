@@ -111,6 +111,7 @@ function_vectors:
         .word   fun_tan-1
         .word   fun_abs-1
         .word   fun_sgn-1
+        .word   fun_sqr-1
 
 evaluate_function:
         jsr     decode_byte             ; Return the operator in A

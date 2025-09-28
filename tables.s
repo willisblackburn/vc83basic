@@ -72,6 +72,7 @@ function_name_table:
 :       .byte   :+ - *, 'T', 'A', 'N' | EOT
 :       .byte   :+ - *, 'A', 'B', 'S' | EOT
 :       .byte   :+ - *, 'S', 'G', 'N' | EOT
+:       .byte   :+ - *, 'S', 'Q', 'R' | EOT
 :       .byte   0
 
 function_arity_table:
@@ -96,6 +97,7 @@ function_arity_table:
         .byte   1   ; TAN
         .byte   1   ; ABS
         .byte   1   ; SGN
+        .byte   1   ; SQR
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
