@@ -139,7 +139,7 @@ list_statement:
         tay
         ldax    #operator_name_table
         jsr     list_tokenized_name
-        bcc     @add_whitespace_if_not_end       ; Unconditional because list_tokenized_name always clears carry
+        bcc     @add_whitespace_if_not_end      ; Unconditional because list_tokenized_name always clears carry
 
 @not_operator:
         sbc     #(TOKEN_FUNCTION - TOKEN_OP)
