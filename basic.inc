@@ -134,6 +134,7 @@ S1 = FPX+2
 .global ftan
 
 ; functions.s
+.global fun_abs
 .global fun_adr
 .global fun_asc
 .global fun_chr_s
@@ -145,6 +146,7 @@ S1 = FPX+2
 .global fun_len
 .global fun_peek
 .global fun_round
+.global fun_sgn
 .global fun_str_s
 .global fun_usr
 .global fun_val

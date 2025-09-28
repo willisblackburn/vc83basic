@@ -70,6 +70,8 @@ function_name_table:
 :       .byte   :+ - *, 'S', 'I', 'N' | EOT
 :       .byte   :+ - *, 'C', 'O', 'S' | EOT
 :       .byte   :+ - *, 'T', 'A', 'N' | EOT
+:       .byte   :+ - *, 'A', 'B', 'S' | EOT
+:       .byte   :+ - *, 'S', 'G', 'N' | EOT
 :       .byte   0
 
 function_arity_table:
@@ -92,6 +94,8 @@ function_arity_table:
         .byte   1   ; SIN
         .byte   1   ; COS
         .byte   1   ; TAN
+        .byte   1   ; ABS
+        .byte   1   ; SGN
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.
