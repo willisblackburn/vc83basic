@@ -24,7 +24,7 @@ void test_load_fp(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: load_fp0(t=$%08LX, e=$%02X)\n", __FILE__, __LINE__, 
+        fprintf(stderr, "  %s:%d: load_fp0(t=$%08LX e=$%02X)\n", __FILE__, __LINE__, 
                 test_case->f.t, test_case->f.e);
         load_fp0(&test_case->f);
         ASSERT_FP_FIELDS_EQ(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
@@ -46,7 +46,7 @@ void test_store_fp0(void) {
 
     for (i = 0; i < sizeof load_store_test_cases / sizeof *load_store_test_cases; i++) {
         test_case = load_store_test_cases + i;
-        fprintf(stderr, "  %s:%d: store_fp0(t=$%08LX, e=$%02X, s=$%02X)\n", __FILE__, __LINE__,
+        fprintf(stderr, "  %s:%d: store_fp0(t=$%08LX e=$%02X s=$%02X)\n", __FILE__, __LINE__,
                 test_case->u.t, test_case->u.e, test_case->u.s);
         SET_FP_FIELDS(FP0, test_case->u.s, test_case->u.e, test_case->u.t);
         store_fp0(&value);
@@ -527,9 +527,12 @@ void test_char_to_digit(void) {
     ASSERT_NE(err, 0);
 }
 
-void call_fp_to_string(char s, char e, unsigned long t, const char* expect_string, int line) {
-    fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X s=%02X)\n", __FILE__, line, t, e, s);
-    SET_FP_FIELDS(FP0, s, e, t);
+void call_fp_to_string(unsigned long t, char e, const char* expect_string, int line) {
+    Float value;
+    value.t = t;
+    value.e = e;
+    fprintf(stderr, "  %s:%d: fp_to_string(t=$%08LX e=%02X)\n", __FILE__, line, t, e);
+    load_fp0(&value);
     buffer_pos = 0;
     fp_to_string();
     buffer[buffer_pos] = '\0';
@@ -540,49 +543,54 @@ void test_fp_to_string(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_fp_to_string(POSITIVE, 0, 0x00000000, "0", __LINE__);
+    call_fp_to_string(0x00000000, 0, "0", __LINE__);
     // 1
-    call_fp_to_string(POSITIVE, 128, 0x80000000, "1", __LINE__);
+    call_fp_to_string(0x00000000, 128, "1", __LINE__);
     // -1
-    call_fp_to_string(NEGATIVE, 128, 0x80000000, "-1", __LINE__);
+    call_fp_to_string(0x80000000, 128, "-1", __LINE__);
     // 10
-    call_fp_to_string(POSITIVE, 131, 0xA0000000, "10", __LINE__);
+    call_fp_to_string(0x20000000, 131, "10", __LINE__);
     // 25
-    call_fp_to_string(POSITIVE, 132, 0xC8000000, "25", __LINE__);
+    call_fp_to_string(0x48000000, 132, "25", __LINE__);
     // 100
-    call_fp_to_string(POSITIVE, 134, 0xC8000000, "100", __LINE__);
+    call_fp_to_string(0x48000000, 134, "100", __LINE__);
     // -100
-    call_fp_to_string(NEGATIVE, 134, 0xC8000000, "-100", __LINE__);
+    call_fp_to_string(0xC8000000, 134, "-100", __LINE__);
     // 3.14159
-    call_fp_to_string(POSITIVE, 129, 0xC90FCF81, "3.14159", __LINE__);
+    call_fp_to_string(0x490FCF81, 129, "3.14159", __LINE__);
     // 0.0314159
-    call_fp_to_string(POSITIVE, 123, 0x80ADF571, "0.0314159", __LINE__);
+    call_fp_to_string(0x00ADF571, 123, "0.0314159", __LINE__);
     // 2,147,483,647
-    call_fp_to_string(POSITIVE, 158, 0xFFFFFFFE, "2147483647", __LINE__);
+    call_fp_to_string(0x7FFFFFFE, 158, "2147483647", __LINE__);
     // -2,147,483,648
-    call_fp_to_string(NEGATIVE, 159, 0x80000000, "-2147483648", __LINE__);
+    call_fp_to_string(0x80000000, 159, "-2147483648", __LINE__);
     // 2^36
-    call_fp_to_string(POSITIVE, 164, 0x80000000, "6.87194767E10", __LINE__);
+    call_fp_to_string(0x00000000, 164, "6.87194767E10", __LINE__);
     // 2^-120
-    call_fp_to_string(POSITIVE, 8, 0x80000000, "7.52316385E-37", __LINE__);
+    call_fp_to_string(0x00000000, 8, "7.52316385E-37", __LINE__);
     // 1.025
-    call_fp_to_string(POSITIVE, 128, 0x83333333, "1.025", __LINE__);
+    call_fp_to_string(0x03333333, 128, "1.025", __LINE__);
 
     // Exponent edge cases
     // +/- 1E9 should print without E
     // +/- 1E10 should print in scientific
-    call_fp_to_string(POSITIVE, 157, 0xEE6B2800, "1000000000", __LINE__);
-    call_fp_to_string(NEGATIVE, 157, 0xEE6B2800, "-1000000000", __LINE__);
-    call_fp_to_string(POSITIVE, 161, 0x9502F900, "1E10", __LINE__);
-    call_fp_to_string(NEGATIVE, 161, 0x9502F900, "-1E10", __LINE__);
+    call_fp_to_string(0x6E6B2800, 157, "1000000000", __LINE__);
+    call_fp_to_string(0xEE6B2800, 157, "-1000000000", __LINE__);
+    call_fp_to_string(0x1502F900, 161, "1E10", __LINE__);
+    call_fp_to_string(0x9502F900, 161, "-1E10", __LINE__);
 }
 
-void call_string_to_fp(const char* string, char expect_s, char expect_e, unsigned long expect_t, int line) {
+void call_string_to_fp(const char* string, unsigned long expect_t, char expect_e, int line) {
+    Float expect_result;
+    Float result;
+    expect_result.t = expect_t;
+    expect_result.e = expect_e;
     fprintf(stderr, "  %s:%d: string_to_fp(\"%s\")\n", __FILE__, line, string);
     strcpy(buffer, string);
     string_to_fp(buffer, 0);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, expect_s, expect_e, expect_t);
+    ASSERT_FLOAT_EQ(result, expect_result);
 }
 
 void fail_string_to_fp(const char* string, int line) {
@@ -597,38 +605,38 @@ void test_string_to_fp(void) {
     PRINT_TEST_NAME();
 
     // 0
-    call_string_to_fp("0", POSITIVE, 0, 0x00000000, __LINE__);
+    call_string_to_fp("0", 0x00000000, 0, __LINE__);
     // 1
-    call_string_to_fp("1", POSITIVE, 128, 0x80000000, __LINE__);
+    call_string_to_fp("1", 0x00000000, 128, __LINE__);
     // -1
-    call_string_to_fp("-1", NEGATIVE, 128, 0x80000000, __LINE__);
+    call_string_to_fp("-1", 0x80000000, 128, __LINE__);
     // 10
-    call_string_to_fp("10", POSITIVE, 131, 0xA0000000, __LINE__);
+    call_string_to_fp("10", 0x20000000, 131, __LINE__);
     // 25
-    call_string_to_fp("25", POSITIVE, 132, 0xC8000000, __LINE__);
+    call_string_to_fp("25", 0x48000000, 132, __LINE__);
     // 100
-    call_string_to_fp("100", POSITIVE, 134, 0xC8000000, __LINE__);
+    call_string_to_fp("100", 0x48000000, 134, __LINE__);
     // -100
-    call_string_to_fp("-100", NEGATIVE, 134, 0xC8000000, __LINE__);
+    call_string_to_fp("-100", 0xC8000000, 134, __LINE__);
     // 3.14159
-    call_string_to_fp("3.14159", POSITIVE, 129, 0xC90FCF81, __LINE__);
+    call_string_to_fp("3.14159", 0x490FCF81, 129, __LINE__);
     // 0.0314159
-    call_string_to_fp("0.0314159", POSITIVE, 123, 0x80ADF571, __LINE__);
+    call_string_to_fp("0.0314159", 0x00ADF571, 123, __LINE__);
     // 2,147,483,647
-    call_string_to_fp("2147483647", POSITIVE, 158, 0xFFFFFFFE, __LINE__);
+    call_string_to_fp("2147483647", 0x7FFFFFFE, 158, __LINE__);
     // -2,147,483,648
-    call_string_to_fp("-2147483648", NEGATIVE, 159, 0x80000000, __LINE__);
+    call_string_to_fp("-2147483648", 0x80000000, 159, __LINE__);
     // 1.025
-    call_string_to_fp("1.025", POSITIVE, 128, 0x83333333, __LINE__);
+    call_string_to_fp("1.025", 0x03333333, 128, __LINE__);
     // log(2)                                         
-    call_string_to_fp("0.693147181", POSITIVE, 127, 0xB17217FA, __LINE__);
+    call_string_to_fp("0.693147181", 0x317217FA, 127, __LINE__);
     // sqrt(2)                                         
-    call_string_to_fp("1.414213562", POSITIVE, 128, 0xB504F333, __LINE__);
+    call_string_to_fp("1.414213562", 0x3504F333, 128, __LINE__);
 
     // Verify that string_to_fp stops on non-digit.
-    call_string_to_fp("10X", POSITIVE, 131, 0xA0000000, __LINE__);
-    call_string_to_fp("-100-", NEGATIVE, 134, 0xC8000000, __LINE__);
-    call_string_to_fp("3.14159+", POSITIVE, 129, 0xC90FCF81, __LINE__);
+    call_string_to_fp("10X", 0x20000000, 131, __LINE__);
+    call_string_to_fp("-100-", 0xC8000000, 134, __LINE__);
+    call_string_to_fp("3.14159+", 0x490FCF81, 129, __LINE__);
     
     // Verify that string_to_fp leaves buffer_pos alone when faced with non-numbers.
     fail_string_to_fp("X10", __LINE__);
@@ -643,31 +651,38 @@ void test_fpoly(void) {
     Float coefficients_1[] = {
         { 0x00000000, 128 }
     };
+    Float result_1 = { 0x00000000, 128 };
     // 2x + 1 = 9
     Float coefficients_2[] = {
         { 0x00000000, 129 }, { 0x00000000, 128 }
     };
+    Float result_2 = { 0x10000000, 131 };
     // 3x^2 + 2x + 1 = 57
     Float coefficients_3[] = {
         { 0x40000000, 129 }, { 0x00000000, 129 }, { 0x00000000, 128 }
     };
+    Float result_3 = { 0x64000000, 133 };
+    Float result;
 
     PRINT_TEST_NAME();
 
     load_fp0(&arg);
     fpoly(coefficients_1, 1);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 128, 0x80000000);
+    ASSERT_FLOAT_EQ(result, result_1);
 
     load_fp0(&arg);
     fpoly(coefficients_2, 2);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 131, 0x90000000);
+    ASSERT_FLOAT_EQ(result, result_2);
 
     load_fp0(&arg);
     fpoly(coefficients_3, 3);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 133, 0xE4000000);
+    ASSERT_FLOAT_EQ(result, result_3);
 }
 
 void test_fpoly_odd(void) {
@@ -677,31 +692,38 @@ void test_fpoly_odd(void) {
     Float coefficients_1[] = {
         { 0x00000000, 128 }
     };
+    Float result_1 = { 0x00000000, 130 };
     // 2x^3 + 1x = 132
     Float coefficients_2[] = {
         { 0x00000000, 129 }, { 0x00000000, 128 }
     };
+    Float result_2 = { 0x04000000, 135 };
     // 3x^5 + 2x^3 + 1x = 3204
     Float coefficients_3[] = {
         { 0x40000000, 129 }, { 0x00000000, 129 }, { 0x00000000, 128 }
     };
+    Float result_3 = { 0x48400000, 139 };
+    Float result;
 
     PRINT_TEST_NAME();
 
     load_fp0(&arg);
     fpoly_odd(coefficients_1, 1);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 130, 0x80000000);
+    ASSERT_FLOAT_EQ(result, result_1);
 
     load_fp0(&arg);
     fpoly_odd(coefficients_2, 2);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 135, 0x84000000);
+    ASSERT_FLOAT_EQ(result, result_2);
 
     load_fp0(&arg);
     fpoly_odd(coefficients_3, 3);
+    store_fp0(&result);
     ASSERT_EQ(err, 0);
-    ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 139, 0xC8400000);
+    ASSERT_FLOAT_EQ(result, result_3);
 }
 
 typedef struct FunctionTestCase {
