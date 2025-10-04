@@ -218,7 +218,7 @@ dimension_array:
         ldx     #0                      ; AX is the 16-bit size
         stax    array_element_size
 @next:
-        sty     E                       ; Preserve current write position relative to name_ptr in C
+        sty     E                       ; Preserve current write position relative to name_ptr in E
         jsr     pop_fp0                 ; Get the next value off the stack (preserves DE)
         jsr     truncate_fp_to_int      ; Make it an integer; the value is in AX (preserves DE)
         bcs     @error                  ; Value was too large
