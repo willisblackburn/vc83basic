@@ -8,11 +8,10 @@
 ; execution at the first line of the program.
 
 exec_run:
-        jsr     reset_next_line_ptr
-        lda     #PS_RUNNING
         jsr     reset_program
-
-; Fall through
+        jsr     reset_next_line_ptr
+        jsr     clear_variables
+        raise   PS_RUNNING
 
 ; CLR statement:
 ; Resets the runtime state of the program, but keeps the program in memory.
@@ -25,13 +24,11 @@ exec_clr:
 ; END statement:
 ; Terminates the program.
 
-.assert ERR_READY = 0, error
+.assert PS_READY = 0, error
 
 exec_end:
-        mva     #ERR_READY, program_state
-        sta     resume_line_ptr+1       ; Disable CONT
-        clc
-        rts
+        mva     #0, resume_line_ptr+1   ; Disable CONT
+        raise   A
 
 ; STOP statement:
 ; Stops the program (can be resumed with CONT).
@@ -39,14 +36,11 @@ exec_end:
 exec_stop:
         lda     next_line_ptr+1         ; Check if we're running in immediate mode
         cmp     #>line_buffer
-        beq     @error                  ; If equal then return with carry set
+        raieq   ERR_IMMEDIATE_MODE_STOP
         sta     resume_line_ptr+1
         mva     next_line_ptr, resume_line_ptr  ; Note mva not mvaa
         mva     next_line_pos, resume_line_pos
-        mva     #ERR_STOPPED, program_state
-        clc
-@error:
-        rts
+        raise   PS_STOPPED
 
 ; CONT statement:
 ; Continues the program after STOP.
@@ -54,12 +48,9 @@ exec_stop:
 exec_cont:
         sec                             ; Set in case we take this next branch
         mvaa    resume_line_ptr, next_line_ptr
-        beq     @done                   ; Can't resume because high byte of resume_line_ptr is 0
+        raieq   ERR_CONT_WITHOUT_STOP
         mva     resume_line_pos, next_line_pos
-        mva     #PS_RUNNING, program_state
-        clc
-@done:
-        rts
+        raise   PS_RUNNING
 
 ; NEW statment:
 ; Clears the program from memory, which also has the effect of stopping the program as if END.

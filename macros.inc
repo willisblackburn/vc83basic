@@ -193,14 +193,16 @@
 ; Raises an error.
 
 .macro raise error
+    .if (.not .match ({error}, A))
         lda     #error
+    .endif
         jmp     on_raise
 .endmacro
 
 ; Raises an error if carry is clear.
 
 .macro raicc error
-        bcc     :+
+        bcs     :+
         raise   error
 :
 .endmacro
@@ -209,6 +211,22 @@
 
 .macro raics error
         bcc     :+
+        raise   error
+:
+.endmacro
+
+; Raises an error if the Z flag is set.
+
+.macro raieq error
+        bne     :+
+        raise   error
+:
+.endmacro
+
+; Raises an error if the Z flag is clear.
+
+.macro raine error
+        beq     :+
         raise   error
 :
 .endmacro

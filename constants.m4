@@ -99,12 +99,12 @@ def(PR_OPEN_PAREN,      hex(00))
 
 comment Program states and error codes
 
-def(ERR_READY,                      hex(00))
-def(ERR_STOPPED,                    hex(01))
-def(ERR_SYNTAX_ERROR,               hex(02))
+def(PS_READY,                       hex(00))
+def(PS_STOPPED,                     hex(01))
+def(ERR_INTERNAL_ERROR,             hex(02))
 def(ERR_OUT_OF_MEMORY,              hex(03))
 def(ERR_TYPE_MISMATCH,              hex(04))
-def(ERR_NOT_STOPPED,                hex(05))
+def(ERR_CONT_WITHOUT_STOP,          hex(05))
 def(ERR_OUT_OF_DATA,                hex(06))
 def(ERR_STACK_OVERFLOW,             hex(07))
 def(ERR_STACK_EMPTY,                hex(08))
@@ -119,7 +119,8 @@ def(ERR_EXPRESSION_TOO_COMPLEX,     hex(10))
 def(ERR_FORMAT_ERROR,               hex(11))
 def(ERR_DIVIDE_BY_ZERO,             hex(12))
 def(ERR_ARITY_MISMATCH,             hex(13))
-def(ERR_INTERNAL_ERROR,             hex(14))
+def(ERR_SYNTAX_ERROR,               hex(14))
+def(ERR_IMMEDIATE_MODE_STOP,        hex(15))
 def(PS_RUNNING,                     hex(80))
 
 comment Other constants

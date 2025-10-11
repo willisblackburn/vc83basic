@@ -118,10 +118,10 @@ type_size_table:
 error_message_table:
         .byte :+ - *, "READY"
 :       .byte :+ - *, "STOPPED"
-:       .byte :+ - *, "SYNTAX ERROR"
+:       .byte :+ - *, "INTERNAL ERROR"
 :       .byte :+ - *, "OUT OF MEMORY"
 :       .byte :+ - *, "TYPE MISMATCH"
-:       .byte :+ - *, "NOT STOPPED"
+:       .byte :+ - *, "CONT WITHOUT STOP"
 :       .byte :+ - *, "OUT OF DATA"
 :       .byte :+ - *, "STACK OVERFLOW"
 :       .byte :+ - *, "STACK EMPTY"
@@ -136,5 +136,6 @@ error_message_table:
 :       .byte :+ - *, "FORMAT ERROR"
 :       .byte :+ - *, "DIVIDE BY ZERO"
 :       .byte :+ - *, "ARITY MISMATCH"
-:       .byte :+ - *, "INTERNAL ERROR"
+:       .byte :+ - *, "SYNTAX ERROR"
+:       .byte :+ - *, "IMMEDIATE MODE STOP"
 :       .byte 0

@@ -7,15 +7,12 @@ start_length = * - start_message
 free_message: .byte " BYTES FREE"
 free_length = * - free_message
 
-ready_message: .byte "READY"
-ready_message_length = * - ready_message
-error_message: .byte "ERROR"
-error_message_length = * - error_message
+error_message_prefix: .byte "ERROR: "
+error_message_prefix_length = * - error_message_prefix
 
 ; Verify that the program states are the affected values so we can use flags.
 
-.assert ERR_READY = 0, error
-.assert ERR_INTERNAL_ERROR > 0, error
+.assert PS_READY = 0, error
 .assert PS_RUNNING = $80, error
 
 main:
@@ -24,21 +21,25 @@ main:
         jsr     print_start
         tsx                             ; Remember the stack pointer so we can return to main later
         stx     main_loop_sp
-        jmp     main_loop
+        lda     #PS_READY
 
 on_raise:
-        sta     program_state
-
-main_loop:
-        lda     program_state
-        bmi     @dispatch               ; Program is running; do the next thing
+        sta     program_state           ; Does not set flags but we assume previous LDA did
         ldx     main_loop_sp            ; Restore the stack pointer in case we got here through exception
         txs
-        tay                             ; Look up the message for program_state
+        tay                             ; Prepare to look up the program_state message
+        bmi     @dispatch               ; Program is running; do the next thing
         ldax    #error_message_table
         jsr     get_name
         bcs     @get_command            ; Shouldn't happen, but just in case
         jsr     newline
+        lda     program_state
+        cmp     #ERR_INTERNAL_ERROR
+        bcc     @not_error
+        ldax    #error_message_prefix
+        ldy     #error_message_prefix_length
+        jsr     write
+@not_error:
         sec
         lda     next_name_ptr           ; Length of message is next_name_ptr - name_ptr
         sbc     name_ptr
@@ -58,7 +59,7 @@ main_loop:
 @dispatch:
         ldy     #Line::next_line_offset ; Load the offset of the next line
         lda     (next_line_ptr),y
-        beq     @end                    ; If next line offset is 0 then end
+        raieq   PS_READY                ; If next line offset is 0 then end
         cmp     next_line_pos           ; Is the next line offset also the offset of the next statement?
         beq     @next_line              ; If yes then restart from next line
         mvax    next_line_ptr, line_ptr ; Move to next statement
@@ -66,14 +67,13 @@ main_loop:
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     dispatch_statement
-        bcc     main_loop
-@error:
-        mva     #ERR_INTERNAL_ERROR, program_state
-        bne     main_loop               ; Unconditional
+        bcc     @dispatch               ; If dispatch_statement returned then continue running
 
-@end:
-        mva     #ERR_READY, program_state
-        beq     main_loop               ; Unconditional
+; TODO: remove return value handling
+
+@error:
+        raise   ERR_INTERNAL_ERROR
+
 
 @get_command:
         jsr     readline
@@ -81,7 +81,7 @@ main_loop:
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
-        jsr     reset_program_ready     ; Clear program line pointers
+        jsr     reset_program           ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
         bcc     @get_command
@@ -92,10 +92,9 @@ main_loop:
         beq     @get_command            ; Yes, just ignore input
         ldx     #>line_buffer           ; High byte of the address for the the null line
         jsr     append_null_line
-        mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
         ldax    #line_buffer            ; Reset next_line_ptr to line_buffer
         jsr     reset_next_line_ptr_2
-        bne     @dispatch               ; Unconditional
+        raise   PS_RUNNING
 
 ; Decodes and executes one statement from the token stream.
 

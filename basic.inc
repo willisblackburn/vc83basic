@@ -173,7 +173,6 @@ S1 = FPX+2
 ; main.s
 .global main
 .global on_raise
-.global main_loop
 .global dispatch_statement
 
 ; name.s
