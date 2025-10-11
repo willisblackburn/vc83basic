@@ -52,6 +52,23 @@ match_name:
         sec                             ; Signal error
         rts
 
+; Finds a name entry by its index.
+; AX = pointer to the first entry in the name table
+; Y = the index of the entry to find
+; On success, return carry clear, and name_ptr points to the name table entry.
+; If the function reaches the end of the name table, return carry set, and name_ptr will point to the last 0.
+
+get_name:
+        stax    next_name_ptr           ; This will be copied into name_ptr
+        sty     name_index              ; Track the index in name_index
+@next:
+        jsr     advance_name_ptr        ; Advance to the next entry
+        bcs     @done                   ; Reached end of table
+        dec     name_index
+        bpl     @next                   ; If index >= 0 then continue (this limits name table to 128 entries)
+@done:
+        rts                             ; Will return with carry clear on success
+
 ; Saves a new value (passed in AX) into name_ptr and also resets name_index to 0.
 ; AX = pointer to the start of the name table
 

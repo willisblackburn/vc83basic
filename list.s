@@ -167,14 +167,8 @@ list_statement:
 ; Y = index number
 
 list_tokenized_name:
-        stax    next_name_ptr           ; This will be copied into name_ptr
-        sty     name_index              ; Track the index in name_index
-@next_name:
-        jsr     advance_name_ptr        ; Next name table entry
-        bcs     @not_found              ; Found end of name table; should not happen but will just list nothing
-        dec     name_index
-        bpl     @next_name              ; Keep searching if index is positive (this limits name table to 128 entries)
-@not_found:
+        jsr     get_name                ; Get the statement name
+        bcs     @not_found              ; Shouldn't happen, but just in case
         ldy     #0
         lda     (name_ptr),y
         and     #$7F                    ; In case EOT is set
@@ -190,6 +184,9 @@ list_tokenized_name:
         plp
         bpl     @next_byte
         jmp     rebase_name_ptr         ; Add the name length in Y to name_ptr
+
+@not_found:
+        rts
 
 ; Adds whitespace to the output if necessary.
 ; Whitespace is necessary if buffer_pos > 0 and if buffer[buffer_pos-1] is a name character or is a ')' or '"'.

@@ -44,6 +44,8 @@ void test_advance_name_ptr(void) {
     ASSERT_PTR_EQ(next_name_ptr, name_table + 6 + 10 + 5 + 510);
     advance_name_ptr();
     ASSERT_NE(err, 0);
+    ASSERT_PTR_EQ(name_ptr, name_table + 6 + 10 + 5 + 510);
+    ASSERT_PTR_EQ(next_name_ptr, name_table + 6 + 10 + 5 + 510);
 }
 
 void call_find_name(const char* name, const char* name_table_ptr, char expect_index,
@@ -121,6 +123,39 @@ void test_find_name_operators(void) {
     call_find_name(">", name_table_2, 0, name_table_2 + 2, __LINE__);
     call_find_name(">=", name_table_3, 1, name_table_3 + 5, __LINE__);
     call_find_name(">", name_table_3, 2, name_table_3 + 7, __LINE__);
+}
+
+void test_get_name(void) {
+
+    const char name_table[] = {
+        6, 'R', 'E', 'A', 'D', 'Y',
+        8, 'S', 'T', 'O', 'P', 'P', 'E', 'D',
+        13, 'S', 'Y', 'N', 'T', 'A', 'X', ' ', 'E', 'R', 'R', 'O', 'R',
+        7, 'U', 'N', 'U', 'S', 'E', 'D',
+        0
+    };
+
+    PRINT_TEST_NAME();
+
+    get_name(name_table, 0);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 1);
+
+    get_name(name_table, 1);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 6 + 1);
+
+    get_name(name_table, 2);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 6 + 8 + 1);
+
+    get_name(name_table, 3);
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 6 + 8 + 13 + 1);
+
+    get_name(name_table, 10);
+    ASSERT_NE(err, 0);
+    ASSERT_EQ(name_ptr, name_table + 6 + 8 + 13 + 7);
 }
 
 void test_add_variable(void) {
@@ -456,6 +491,7 @@ int main(void) {
     test_advance_name_ptr();
     test_find_name();
     test_find_name_operators();
+    test_get_name();
     test_add_variable();
     test_imul_16();
     test_dimension_array();

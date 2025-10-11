@@ -177,6 +177,7 @@ S1 = FPX+2
 ; name.s
 .global find_name, find_name_2
 .global match_name
+.global get_name
 .global initialize_name_ptr
 .global advance_name_ptr
 .global rebase_name_ptr
