@@ -14,17 +14,35 @@ error_message_length = * - error_message
 
 ; Verify that the program states are the affected values so we can use flags.
 
-.assert PS_STOPPED = 0, error
-.assert PS_RUNNING = 1, error
+.assert ERR_READY = 0, error
+.assert ERR_INTERNAL_ERROR > 0, error
+.assert PS_RUNNING = $80, error
 
 main:
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
-@loop:
+        tsx                             ; Remember the stack pointer so we can return to main later
+        stx     main_loop_sp
+
+main_loop:
         lda     program_state
-        beq     @get_command
-        bne     @dispatch
+        bmi     @dispatch               ; Program is running; do the next thing
+        ldx     main_loop_sp            ; Restore the stack pointer in case we got here through exception
+        txs
+        tay                             ; Look up the message for program_state
+        ldax    #error_message_table
+        jsr     get_name
+        bcs     @get_command            ; Shouldn't happen, but just in case
+        jsr     newline
+        sec
+        lda     next_name_ptr           ; Length of message is next_name_ptr - name_ptr
+        sbc     name_ptr
+        tay
+        ldax    name_ptr
+        jsr     write
+        jsr     newline
+        jmp     @get_command            ; Not running
 
 ; Program is running; set line_ptr and line_pos to next statement and execute it.
 ; If the next statement is the end of the line, then go to the next statement. This is the *only* place where we
@@ -44,31 +62,30 @@ main:
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     dispatch_statement
-        bcc     @loop
+        bcc     main_loop
 @error:
-        jsr     print_error
-        jsr     exec_stop
-        bcc     @loop                   ; Unconditional
+        mva     #ERR_INTERNAL_ERROR, program_state
+        bne     main_loop               ; Unconditional
 
 @end:
-        mva     #PS_STOPPED, program_state
+        mva     #ERR_READY, program_state
+        beq     main_loop               ; Unconditional
+
 @get_command:
-        jsr     print_ready
-@wait_for_input:
         jsr     readline
         jsr     parse_line
         bcs     @error
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
-        jsr     reset_program_stopped   ; Clear program line pointers
+        jsr     reset_program_ready     ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
         bcs     @error
-        bcc     @wait_for_input
+        bcc     @get_command
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer
         cmp     #.sizeof(Line)          ; Does the "next line" start at the beginning of *this* line?
-        beq     @wait_for_input         ; Yes, just ignore input
+        beq     @get_command            ; Yes, just ignore input
         ldx     #>line_buffer           ; High byte of the address for the the null line
         jsr     append_null_line
         mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
@@ -127,20 +144,5 @@ print_start:
         jsr     print_number
         ldax    #free_message
         ldy     #free_length
-        jsr     write
-        jmp     newline
-
-print_ready:
-        jsr     newline
-        ldax    #ready_message          ; Pass address of message in AX
-        ldy     #ready_message_length   ; Message length
-        jsr     write
-        jmp     newline
-
-; Prints an error message.
-
-print_error:
-        ldax    #error_message          ; Pass address of message in AX
-        ldy     #error_message_length   ; Message length
         jsr     write
         jmp     newline

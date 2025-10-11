@@ -172,6 +172,7 @@ S1 = FPX+2
 
 ; main.s
 .global main
+.global main_loop
 .global dispatch_statement
 
 ; name.s
@@ -210,7 +211,7 @@ S1 = FPX+2
 ; program.s
 .global initialize_program
 .global clear_variables
-.global reset_program, reset_program_stopped
+.global reset_program, reset_program_ready
 .global reset_data
 .global reset_next_line_ptr, reset_next_line_ptr_2
 .global append_null_line
@@ -247,6 +248,7 @@ S1 = FPX+2
 .global function_arity_table
 .global operator_precedence_table
 .global type_size_table
+.global error_message_table
 
 ; util.s
 .global copy, copy_a, copy_y_from

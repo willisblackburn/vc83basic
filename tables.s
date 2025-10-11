@@ -114,3 +114,27 @@ operator_precedence_table:
 type_size_table:
         .byte .sizeof(Float)            ; TYPE_NUMBER
         .byte 2                         ; TYPE_STRING
+
+error_message_table:
+        .byte :+ - *, "READY"
+:       .byte :+ - *, "STOPPED"
+:       .byte :+ - *, "SYNTAX ERROR"
+:       .byte :+ - *, "OUT OF MEMORY"
+:       .byte :+ - *, "TYPE MISMATCH"
+:       .byte :+ - *, "NOT STOPPED"
+:       .byte :+ - *, "OUT OF DATA"
+:       .byte :+ - *, "STACK OVERFLOW"
+:       .byte :+ - *, "STACK EMPTY"
+:       .byte :+ - *, "RETURN WITHOUT GOSUB"
+:       .byte :+ - *, "NEXT WITHOUT FOR"
+:       .byte :+ - *, "LINE NOT FOUND"
+:       .byte :+ - *, "OUT OF RANGE"
+:       .byte :+ - *, "BAD VARIABLE"
+:       .byte :+ - *, "ALREADY DIMENSIONED"
+:       .byte :+ - *, "LINE TOO LONG"
+:       .byte :+ - *, "EXPRESSION TOO COMPLEX"
+:       .byte :+ - *, "FORMAT ERROR"
+:       .byte :+ - *, "DIVIDE BY ZERO"
+:       .byte :+ - *, "ARITY MISMATCH"
+:       .byte :+ - *, "INTERNAL ERROR"
+:       .byte 0

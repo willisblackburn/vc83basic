@@ -97,10 +97,30 @@ def(PR_LOGICAL,         hex(40))
 def(PR_CLOSE_PAREN,     hex(20))
 def(PR_OPEN_PAREN,      hex(00))
 
-comment Program states
+comment Program states and error codes
 
-def(PS_STOPPED,         hex(00))
-def(PS_RUNNING,         hex(01))
+def(ERR_READY,                      hex(00))
+def(ERR_STOPPED,                    hex(01))
+def(ERR_SYNTAX_ERROR,               hex(02))
+def(ERR_OUT_OF_MEMORY,              hex(03))
+def(ERR_TYPE_MISMATCH,              hex(04))
+def(ERR_NOT_STOPPED,                hex(05))
+def(ERR_OUT_OF_DATA,                hex(06))
+def(ERR_STACK_OVERFLOW,             hex(07))
+def(ERR_STACK_EMPTY,                hex(08))
+def(ERR_RETURN_WITHOUT_GOSUB,       hex(09))
+def(ERR_NEXT_WITHOUT_FOR,           hex(0A))
+def(ERR_LINE_NOT_FOUND,             hex(0B))
+def(ERR_OUT_OF_RANGE,               hex(0C))
+def(ERR_BAD_VARIABLE,               hex(0D))
+def(ERR_ALREADY_DIMENSIONED,        hex(0E))
+def(ERR_LINE_TOO_LONG,              hex(0F))
+def(ERR_EXPRESSION_TOO_COMPLEX,     hex(10))
+def(ERR_FORMAT_ERROR,               hex(12))
+def(ERR_DIVIDE_BY_ZERO,             hex(13))
+def(ERR_ARITY_MISMATCH,             hex(14))
+def(ERR_INTERNAL_ERROR,             hex(15))
+def(PS_RUNNING,                     hex(80))
 
 comment Other constants
 

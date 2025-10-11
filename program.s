@@ -15,7 +15,7 @@ initialize_program:
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
         jsr     append_null_line                            ; Build a null line at program_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
-        jsr     reset_program_stopped
+        jsr     reset_program_ready
 
 ; Fall through to clear_variables
 
@@ -41,8 +41,8 @@ clear_variables:
         mvax    himem_ptr, string_ptr   ; Clear string space
         rts
 
-reset_program_stopped:
-        lda     #PS_STOPPED             ; Reset state to STOPPED
+reset_program_ready:
+        lda     #ERR_READY              ; Reset program state to READY
         
 ; Sets the program state, resets the stack, clears the resume state, performs RESTORE, and clears variables.
 ; A = the desired program state (RUN sets this to RUNNING)

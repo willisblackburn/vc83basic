@@ -25,10 +25,10 @@ exec_clr:
 ; END statement:
 ; Terminates the program.
 
-.assert PS_STOPPED = 0, error
+.assert ERR_READY = 0, error
 
 exec_end:
-        mva     #PS_STOPPED, program_state
+        mva     #ERR_READY, program_state
         sta     resume_line_ptr+1       ; Disable CONT
         clc
         rts
@@ -43,7 +43,7 @@ exec_stop:
         sta     resume_line_ptr+1
         mva     next_line_ptr, resume_line_ptr  ; Note mva not mvaa
         mva     next_line_pos, resume_line_pos
-        mva     #PS_STOPPED, program_state
+        mva     #ERR_STOPPED, program_state
         clc
 @error:
         rts

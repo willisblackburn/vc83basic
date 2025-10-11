@@ -172,3 +172,6 @@ word(array_element_size, int)
 
 comment The offset of an element in the array
 word(array_element_offset, int)
+
+comment The value of the stack pointer in main_loop
+byte(main_loop_sp)
