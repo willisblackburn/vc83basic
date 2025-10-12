@@ -218,57 +218,54 @@ add_significands_with_carry:
 
 shift_right:
         clc
-shift_right_from_carry:
+rotate_right:
         ror     FP0t+3
         ror     FP0t+2
         ror     FP0t+1
         ror     FP0t
+        ror     B                       ; Rotate carry into rounding register
         rts
 
 ; Utility function to shift the FP0 significand left by one bit.
 
 shift_left:
         clc
-shift_left_from_carry:
+rotate_left:
         rol     FP0t
         rol     FP0t+1
         rol     FP0t+2
         rol     FP0t+3
+        rol     FPX                     ; Rotate carry into FPX
         rts
 
 ; Multiplies the FP0 significand by 10. Copies the FP0 value into FP1.
-; On return the carry will be set if the multiplication caused an overflow.
-; On overflow, the original value can be recovered from FP1.
 ; Y SAFE, BC SAFE, DE SAFE
 
 mul10_significand:
         ldx     #FP1t
         jsr     copy_significand_fp0_fp
         jsr     shift_left              ; *2
-        bcs     @overflow
-        jsr     shift_left_from_carry   ; *4
-        bcs     @overflow
+        jsr     rotate_left             ; *4
         jsr     add_significands        ; *5
-        bcs     @overflow
-        jsr     shift_left_from_carry   ; *10
-@overflow:
+        jsr     rotate_left             ; *10
         rts
 
 ; Divides the FP0 significand by 10.
-; Returns the remainder in A.
+; Returns the remainder in FPX.
 ; Uses X to keep track of the shift count.
 ; Y SAFE, BC SAFE, DE SAFE
 
 div10_significand:
-        lda     #0                      ; Initialize remainder to 0
+        mva     #0, FPX                 ; Initialize remainder to 0
         ldx     #32                     ; 32 bits
 @next_bit:
         jsr     shift_left              ; LSB of FP0 significand is now 0
-        rol     A                       ; Bits from significand move into A
-        cmp     #10                     ; C ("don't borrow") set if A>=10
+        lda     FPX                     ; Bits from significand move into FPX
+        sec
+        sbc     #10                     ; C ("don't borrow") set if FPX>=10
         bcc     @not_10                 ; It's <10
         inc     FP0t                    ; Increment quotient
-        sbc     #10                     ; C will still be set here
+        sta     FPX                     ; Write updated value back
 @not_10:
         dex
         bne     @next_bit               ; More bits to shift
@@ -617,11 +614,11 @@ generate_digits:
 @next_digit:
         jsr     fp0_significand_is_zero ; Check if FP0 significand zero; this will never be true the first time
         beq     @no_more_digits         ; If zero then done generating digits; go to output
-        jsr     div10_significand       ; The remainder in A is the digit
-        tax                             ; Move remainder into X
+        jsr     div10_significand       ; The remainder in FPX is the digit
+        lda     FPX
         ora     D                       ; Or with number of digits; tests if both are zero
         beq     @skip_zero              ; If so then skip this zero
-        txa                             ; Otherwise get the digit back
+        lda     FPX                     ; Otherwise get the digit back
         clc                     
         adc     #'0'                    ; Convert to ASCII
         pha                             ; Use stack to store digits
@@ -684,6 +681,7 @@ string_to_fp:
         jsr     find_printable_character    ; Skip any whitespace        
         sty     E                       ; Save starting position in E
         jsr     clear_fp0               ; Reset to zero (including sign)
+        sta     FPX                     ; Also clear FPX in order to detect overflows
         mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
         lda     (read_ptr),y
         cmp     #'-'                    ; Check if it's negative; note that '-' will never have EOT set
@@ -715,17 +713,21 @@ string_to_fp:
         pha                             ; Park digit on stack
         jsr     mul10_significand
         pla                             ; Recover digit from stack (does not affect carry)
-        bcs     @err_overflow
         inc     D                       ; Increment digits after '.'
         adc     FP0t                    ; Add digit to LSB (carry will be clear)
         sta     FP0t
-        bcc     @check_eot              ; If no carry then next character
+        bcc     @check_overflow         ; If no carry then next character
         inc     FP0t+1                  ; Otherwise increment next byte
-        bne     @check_eot              ; etc,
+        bne     @check_overflow         ; etc,
         inc     FP0t+2
-        bne     @check_eot
+        bne     @check_overflow
         inc     FP0t+3
-        bne     @check_eot              ; If the last byte wrapped to zero then overflow
+        bne     @check_overflow
+        inc     FPX
+
+@check_overflow:
+        lda     FPX                     ; If there's anything in FPX then we overflowed
+        beq     @check_eot
 
 @err_multiple_decimals:
 @err_overflow:
@@ -809,8 +811,7 @@ adjust_exponent:
 
 shift_right_normalize:
         lsr     FPX                     ; Shift FPX right
-        jsr     shift_right_from_carry  ; Shift the remaining 32 bits; output in carry
-        ror     B                       ; Rotate carry into rounding register
+        jsr     rotate_right            ; Shift the remaining 32 bits; output in carry
         inc     FP0e                    ; Increase exponent
         bne     normalize               ; Skip increment of exponent high byte FP0e did not roll over
         inc     C                       ; Increment high byte
@@ -837,6 +838,7 @@ shift_right_normalize:
 ; Otherwise, return the final result with carry clear. Carry set indicates error.
 ; This function uses and clobbers all registers except DE, which means that any function that calls it (fadd, fsub,
 ; fmul, fdiv, etc.) also clobber those registers.
+; Leaves the low byte of FPX clear.
 ; DE SAFE
 
 normalize:
@@ -846,8 +848,8 @@ normalize:
         lda     FPX                     ; Check first extension byte
         bne     shift_right_normalize   ; There are significant bits, so shift right and try again
 
-; Entry point if the significand fits within 32 bits.
-; From here the signifcand can only get larger and the exponent can only get smaller.
+; The significand fits within 32 bits.
+; From here the significand can only get larger and the exponent can only get smaller.
 ; If the exponent falls below 1 then signal underflow.
 
         lda     C                       ; First check that exponent is not already below one
@@ -882,6 +884,8 @@ normalize:
         bcc     @underflow              ; If subtracting required a borrow then underflow
         beq     @underflow              ; Going to zero is also a fail
         sta     FP0e                    ; Otherwise update exponent
+        lda     FP0t+3
+        sta     FPX
         lda     FP0t+2
         sta     FP0t+3                  ; Store new high byte
         lda     FP0t+1                  ; Shift other bytes
@@ -897,7 +901,7 @@ normalize:
         lda     FP0t+3                  ; Get the high byte of significand
         bmi     @round                  ; Is normalized; proceed to rounding
         asl     B                       ; Shift left one bit starting from rounding register
-        jsr     shift_left_from_carry
+        jsr     rotate_left
         dec     FP0e
         bne     @fine                   ; Exponent is not zero so check if we need to shift some more
 
@@ -916,8 +920,8 @@ normalize:
         sta     B                       ; Also clear rounding register since it has been used to round up
         jsr     add_significands_with_carry
         beq     @done                   ; If the value written to FPX was 0 then all done
-        sec                             ; Only 1 bit can possibly in FPX, so don't need to shift FPX
-        jsr     shift_right_from_carry  ; Otherwise have to shift right again
+        lsr     FPX                     ; This has the dual effect of clearing FPX and setting carry
+        jsr     rotate_right            ; Otherwise have to shift right again
         inc     FP0e                    ; Increase exponent
 
 @done:
@@ -946,7 +950,6 @@ fadd_2:
 
 @align:
         jsr     shift_right
-        ror     B                       ; Rotate carry into rounding register
         inc     FP0e
         dex
         bne     @align
