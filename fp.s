@@ -137,7 +137,6 @@ copy_significand_fp0_fp:
 ; Sets FP0 to zero.
 
 clear_fp0:
-        ldx     #FP0
         lda     #0
         sta     FP0e
         ldx     #FP0                    ; Fall-throughs require X
