@@ -135,6 +135,7 @@ copy_significand_fp0_fp:
         rts
 
 ; Sets FP0 to zero.
+; Y SAFE, BC SAFE, DE SAFE
 
 clear_fp0:
         lda     #0
@@ -371,9 +372,11 @@ truncate_fp_to_int32:
         rts
 
 @e_neg_or_zero:
+        ldy     FP0s                    ; Remember the sign of the original value in case we return 1
         jsr     clear_fp0
-        bcc     @done                   ; If unbiased e is exactly 0 then carry will be set and we will return 1
+        bcc     @done                   ; Exponent was <1 so return 0, else return 1
         inc     FP0t
+        sty     FP0s                    ; Restore the sign in case it was -1
 @done:
         clc
         rts
