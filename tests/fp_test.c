@@ -144,6 +144,7 @@ typedef struct IntConversionTestCase {
 const IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 0 } },
     { 1, { 0x00000000, 128 } },
+    { -1, { 0x80000000, 128 } },
     { 32767, { 0x7FFE0000, 142 } },
     { (int)-32768L, { 0x80000000, 143 } },
     { 4112, { 0x00800000, 140 } },
@@ -763,7 +764,7 @@ TEST_FUNCTION(flog);
 
 const FunctionTestCase fexp_test_cases[] = {
     // exp(0.693147181) = 2
-    { { 0x317217FA, 127 }, { 0x00000000, 129 } },   // TODO: wrong, should be 0x317217FA
+    { { 0x317217FA, 127 }, { 0x00000000, 129 } },
     // exp(8) = 2980.957987
     { { 0x00000000, 131 }, { 0x3A5101DA, 139 } },
 };
