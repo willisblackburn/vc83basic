@@ -144,6 +144,7 @@ typedef struct IntConversionTestCase {
 const IntConversionTestCase int_conversion_test_cases[] = {
     { 0, { 0x00000000, 0 } },
     { 1, { 0x00000000, 128 } },
+    { -1, { 0x80000000, 128 } },
     { 32767, { 0x7FFE0000, 142 } },
     { (int)-32768L, { 0x80000000, 143 } },
     { 4112, { 0x00800000, 140 } },
