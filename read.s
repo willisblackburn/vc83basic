@@ -24,11 +24,10 @@ exec_read:
 ;   4. At the start of a non-DATA line, such as the first line of the program: try next line
 ;   5. At the null line at the end of the program: return an error
 
-        sec                             ; Set carry in case this next check fails
         ldy     #Line::next_line_offset ; Check if data_line_ptr is at end of program (case 5)
         lda     (data_line_ptr),y
         tax                             ; Remember in X in case I need it to go to next line
-        beq     @done
+        raieq   ERR_OUT_OF_DATA
         ldy     #.sizeof(Line) + 1      ; Check for DATA (add 1 to skip next statement offset)
         lda     (data_line_ptr),y
         cmp     #ST_DATA
