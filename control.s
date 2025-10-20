@@ -106,9 +106,9 @@ exec_for:
         jsr     decode_name             ; Get the name (now in decode_name_ptr)
         sec                             ; Set carry for error return if type check goes wrong
         lda     decode_name_type        ; No string variables please
-        bne     @error
+        bne     @invalid_variable
         lda     decode_name_arity       ; Or arrays
-        bmi     @error
+        bmi     @invalid_variable
         inc     line_pos                ; Skip terminator following name
         ldx     stack_pos               ; Get stack pointer to store name
         lda     decode_name_ptr         ; Store pointer to variable name
@@ -141,6 +141,9 @@ exec_for:
 @error:
         rts
 
+@invalid_variable:
+        raise   ERR_INVALID_VARIABLE
+
 ; NEXT statement:
 
 exec_next:
@@ -157,7 +160,7 @@ exec_next:
         beq     @error                  ; If it was zero then top of stack is GOSUB not FOR
         sta     name_ptr+1
         jsr     match_name              ; Make sure it's the right name
-        bcs     @error
+        bcs     @invalid_variable
         jsr     evaluate_decoded_variable   ; Continue with evaluation of variable decoded above
         bcs     @error
         jsr     pop_fp0                 ; Variable value is now in FP0
@@ -188,6 +191,9 @@ exec_next:
 
 @error:
         raise   ERR_NEXT_WITHOUT_FOR                            
+
+@invalid_variable:
+        raise   ERR_INVALID_VARIABLE
 
 ; POP statement:
 ; Returns with the popped stack pointer still in X so caller can use.
