@@ -172,7 +172,6 @@ S1 = FPX+2
 
 ; main.s
 .global main
-.global on_raise
 .global dispatch_statement
 
 ; name.s
@@ -257,6 +256,8 @@ S1 = FPX+2
 .global invoke_indexed_vector
 .global read_argument_separator
 .global find_printable_character
+.global install_exception_handler
+.global on_raise
 
 ; target/*
 .global startup, initialize_target, readline, write, putch, newline

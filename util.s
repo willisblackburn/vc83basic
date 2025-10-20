@@ -170,3 +170,27 @@ find_printable_character:
         beq     continue_find_printable_character
 @done:
         rts
+
+; Installs an exception handler.
+; The exception handler itself is the function that calls this function. Whenever the program performs
+; "raise X" (or loads X into A and jumps to on_raise), this function will appear to return with that value in A.
+; The caller can check it is handling an exception, or just returning from the initial call, by checking the carry.
+; If carry is clear, then it is the initial call, and if set, then handling an exception.
+
+install_exception_handler:
+        tay                             ; Remember the value of A; will be restored before returning
+        plstaa  exception_handler       ; Remember return address of this function as the exception handler
+        tsx
+        stx     exception_handler_sp    ; Remember the stack pointer after popping the address
+        clc                             ; Clear carry to signal we're returning from original call
+        bcc     on_raise_2              ; Unconditional; execute on_raise code but with carry clear
+
+on_raise:
+        sec                             ; Signal this was caused by raise invocation
+        tay                             ; Save the exception value
+on_raise_2:
+        ldx     exception_handler_sp    ; Restore the stack pointer that we saved in install_exception_handler
+        txs
+        ldphaa  exception_handler       ; Restore the return address
+        tya                             ; Return the exception number in A
+        rts

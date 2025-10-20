@@ -138,8 +138,7 @@ add_variable:
         pha                             ; Preserve length while we call grow
         ldy     #array_name_table_ptr   ; Grow variable name table by moving array_name_table_ptr up
         jsr     grow_a                  ; Do the grow
-        pla                             ; Length back into A before w check error return
-        bcs     @error
+        pla                             ; Length back into A
         ldy     #0                      ; Start writing length to name_ptr starting at offset 0
         sta     (name_ptr),y
         iny
@@ -148,16 +147,11 @@ add_variable:
         ldy     type_size_table,x
         iny                             ; Clear one more byte to recreate the 0 that terminates the name table
         ldax    name_ptr
-        jsr     clear_memory            ; Clear the variable data
-@done:
-        clc                             ; Signal success
-@error:
-        rts
+        jmp     clear_memory            ; Clear the variable data
 
 ; Finds a variable, or adds it.
 ; decode_name_ptr = pointer to the variable name
 ; decode_name_length = the length of the variable
-; Returns carry clear if find_name or add_variable succeeded, or carry set on error.
 
 find_or_add_variable:
         lda     decode_name_arity       ; Is it an array?
@@ -261,10 +255,6 @@ dimension_array:
         lda     #ARRAY_TRIAL_GROW_SIZE
         ldy     #free_ptr
         jsr     grow_a
-        bcc     @trial_grow_ok
-        rts
-
-@trial_grow_ok:
         lda     #ARRAY_TRIAL_GROW_SIZE  ; Cheaper in terms of space to shrink, rather than save/restore free_ptr
         ldy     #free_ptr
         jsr     shrink_a
@@ -346,7 +336,6 @@ dimension_array:
         ldax    size
         ldy     #free_ptr
         jsr     grow                    ; Grow to accommodate the entire array; clobbers size and DE
-        bcs     @error                  ; Oops, too big
         mvax    BC, dst_ptr             ; Prepare to clear array data from address stored in BC
         ldy     #0                      ; Initialize Y to 0
         tya                             ; Set with 0
@@ -363,7 +352,7 @@ dimension_array:
 @no_remaining_bytes:
         clc                             ; Signal success
 @error:
-        rts                             ; Carry is clear here because ADC of array_element_size cannot overflow
+        rts
 
 ; Copies the decoded name into the name table, ending at a character with the EOT bit set.
 ; decode_name_ptr = copy source

@@ -20,13 +20,10 @@ main:
         jsr     initialize_program
         jsr     print_start
         tsx                             ; Remember the stack pointer so we can return to main later
-        stx     main_loop_sp
-        lda     #PS_READY
-
-on_raise:
-        sta     program_state           ; Does not set flags but we assume previous LDA did
-        ldx     main_loop_sp            ; Restore the stack pointer in case we got here through exception
-        txs
+        stx     exception_handler_sp
+        lda     #PS_READY               ; Will be passed through install_exception_handler
+        jsr     install_exception_handler
+        sta     program_state           ; Whatever comes back from exception handler is new state
         tay                             ; Prepare to look up the program_state message
         bmi     @dispatch               ; Program is running; do the next thing
         ldax    #error_message_table
@@ -56,8 +53,7 @@ on_raise:
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
         jsr     reset_program           ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
-        bcs     @error
-        bcc     @get_command
+        jmp     @get_command
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer

@@ -162,20 +162,17 @@ insert_or_update_line:
         lda     line_buffer+Line::next_line_offset  ; Load length of line which should be <= 255
         tax                             ; Save in X since we'll need it again
         cmp     #.sizeof(Line)          ; Compare next line offset with the offset of the data field
-        beq     @finish                 ; If they're the same, line is blank, nothing to insert
+        beq     @done                   ; If they're the same, line is blank, nothing to insert
         ldphaa  next_line_ptr           ; Push next_line_ptr onto stack so we can get it back later
         txa                             ; Copy line length back into A as the amount to grow
         ldy     #next_line_ptr          ; Select next_line_ptr as the pointer to move
         jsr     grow_a                  ; Create space for the new line
-        plstaa  dst_ptr                 ; Restore the previous next_line_ptr into dst_ptr (even if grow failed)
-        bcs     @error                  ; Don't copy if grow failed
+        plstaa  dst_ptr                 ; Restore the previous next_line_ptr into dst_ptr
         ldax    #line_buffer            ; Set up copy source
         ldy     line_buffer+Line::next_line_offset  ; Length of the new line
-        jsr     copy_y_from             ; Copy the line into the program
+        jmp     copy_y_from             ; Copy the line into the program
 
-@finish:
-        clc
-@error:
+@done:
         rts
 
 ; Grows a section of memory by increasing one of the zero-page pointers, and all subsequent pointers up to (but
@@ -195,20 +192,21 @@ grow:
         tax                             ; Low byte into X
         lda     E                       ; Re-load high byte of size from E
         adc     free_ptr+1              ; Add high byte of free_ptr
-        bcs     @done                   ; If carry is set after high byte add then address has overflowed
+        bcs     @error                  ; If carry is set after high byte add then address has overflowed
         cmp     string_ptr+1            ; Test new high byte of free_ptr
         bcc     @continue               ; Less, everything okay, return
-        bne     @done                   ; Not equal so greater, return with carry set
+        bne     @error                  ; Not equal so greater, return with carry set
         txa                             ; High bytes are equal; compare low bytes
         cmp     string_ptr
         bcc     @continue               ; Same logic for low byte
-        bne     @done
+        bne     @error
 @continue:
         jsr     grow_shrink_common
         jsr     reverse_copy            ; Copy data up to the higher address
-        clc                             ; Success
-@done:
         rts
+
+@error:
+        raise   ERR_OUT_OF_MEMORY
 
 ; Shrinks memory by decreasing one of the zero-page pointers, and all subsequent pointers up to (but not including)
 ; himem_ptr, by some amount.
@@ -233,7 +231,6 @@ shrink:
 @skip_increment:
         jsr     grow_shrink_common
         jsr     copy
-        clc
         rts
 
 ; Adds the value in DE to the pointer identified by Y, and all subsequent pointers up to (but not including)

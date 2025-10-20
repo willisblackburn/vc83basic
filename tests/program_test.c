@@ -105,6 +105,13 @@ void test_grow(void) {
     ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + 1);
     ASSERT_EQ(*array_name_table_ptr, 0);
     ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1 + 0x400);
+
+    // Grow by 16K 4 times. The last one should definitely fail.
+    grow(&free_ptr, 0x4000);
+    grow(&free_ptr, 0x4000);
+    grow(&free_ptr, 0x4000);
+    grow(&free_ptr, 0x4000);
+    ASSERT_EQ(err, ERR_OUT_OF_MEMORY);
 }
 
 void test_shrink(void) {
@@ -144,14 +151,12 @@ void test_shrink(void) {
     // Now shrink each section, each time checking that no data is corrupted.
 
     shrink(&variable_name_table_ptr, 0x10);
-    ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + sizeof (Line) + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data);
     ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + sizeof variable_name_table_data);
     ASSERT_PTR_EQ(free_ptr, array_name_table_ptr + 1);
 
     shrink(&array_name_table_ptr, 4);
-    ASSERT_EQ(err, 0);
     ASSERT_PTR_EQ(variable_name_table_ptr, (char*)next_line_ptr + sizeof (Line) + 0x400 - 0x10);
     ASSERT_MEMORY_EQ(variable_name_table_ptr, variable_name_table_data, sizeof variable_name_table_data - 4);
     ASSERT_PTR_EQ(array_name_table_ptr, variable_name_table_ptr + sizeof variable_name_table_data - 4);
@@ -218,6 +223,8 @@ void test_insert_or_update_line(void) {
     const char line_5_data[] = { 'E', 'N', 'D' };
     const char line_10_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '1' };
     const char line_200_data[] = { 'P', 'R', 'I', 'N', 'T', ' ', '3', '.', '1', '4', '1', '5', '9' };
+    const char line_n_data[240];
+    int n;
 
     PRINT_TEST_NAME();
 
@@ -277,7 +284,14 @@ void test_insert_or_update_line(void) {
     ASSERT_EQ(next_line_ptr->number, 10);    
     advance_next_line_ptr();
     ASSERT_EQ(next_line_ptr->number, -1);    
-    ASSERT_EQ(next_line_ptr->next_line_offset, 0);    
+    ASSERT_EQ(next_line_ptr->next_line_offset, 0);
+    
+    // Add enough lines to fill up memory.
+    for (n = 0; n < 256; n++) {
+        set_line(n, line_n_data, sizeof line_n_data);
+        insert_or_update_line();
+    }
+    ASSERT_EQ(err, ERR_OUT_OF_MEMORY);
 }
 
 int main(void) {

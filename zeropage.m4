@@ -173,5 +173,8 @@ word(array_element_size, int)
 comment The offset of an element in the array
 word(array_element_offset, int)
 
-comment The value of the stack pointer in main_loop
-byte(main_loop_sp)
+comment The value of the stack pointer to restore in the exception handler
+byte(exception_handler_sp)
+
+comment The exception handler itself
+word(exception_handler, void*)

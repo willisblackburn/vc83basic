@@ -431,17 +431,27 @@ _advance_next_line_ptr:
 
 _insert_or_update_line:
 .export _insert_or_update_line
+        jsr     install_exception_handler
+        bcs     @error
         jsr     insert_or_update_line
-        jmp     set_err
+        lda     #0
+@error:
+        sta     _err
+        rts
 
 _grow:
 .export _grow
         stax    BC                      ; Save size temporarily
+        jsr     install_exception_handler
+        bcs     @error
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
         jsr     grow
-        jmp     set_err
+        lda     #0
+@error:
+        sta     _err
+        rts
 
 _shrink:
 .export _shrink
