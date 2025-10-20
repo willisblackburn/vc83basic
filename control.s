@@ -194,11 +194,10 @@ exec_pop:
         sec                             ; Set carry so can return error if csp = 0
         ldx     stack_pos               ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
-        beq     @done                   ; Yep
+        raieq   ERR_STACK_EMPTY
         lda     #.sizeof(Control)       ; Free the control record
         jsr     stack_free
         clc                             ; Success
-@done:
         rts
 
 exec_if:
