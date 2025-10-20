@@ -80,20 +80,21 @@ exec_on:
 ; RETURN statement:
 
 exec_return:
-        jsr     exec_pop                ; RETURN is just POP except we do something with the popped value
-        bcs     @done
-        sec                             ; If we take this next branch then carry will be set to signal error
+        ldx     stack_pos               ; Check stack pointer
+        cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
+        beq     @error
         lda     stack+Control::variable_name_ptr+1,x    ; Check if high byte of variable name pointer is 0
-        bne     @done                   ; Variable was not GOSUB signal
+        bne     @error                   ; Variable was not GOSUB signal
         lda     stack+Control::next_line_ptr,x
         sta     next_line_ptr           ; Restore next_line_ptr value
         lda     stack+Control::next_line_ptr+1,x
         sta     next_line_ptr+1
         lda     stack+Control::next_line_pos,x
         sta     next_line_pos           ; Restore next_line_pos value
-        clc                             ; Signal success
-@done:
-        rts
+        jmp     exec_pop_2
+
+@error:
+        raise   ERR_RETURN_WITHOUT_GOSUB
 
 ; FOR statement:
 
@@ -149,7 +150,6 @@ exec_next:
         jsr     decode_name             ; Sets decode_name_ptr
         ldx     stack_pos               ; Load stack position
         cpx     #PRIMARY_STACK_SIZE     ; Check if stack empty
-        sec                             ; Set carry in case one of these two BEQs fails
         beq     @error                  ; If so then fail
         lda     stack+Control::variable_name_ptr,x  ; Point name_ptr to name at top of control stack
         sta     name_ptr
@@ -174,7 +174,7 @@ exec_next:
         ldy     #>stack
         jsr     fcmp                    ; Compare the current value (still in FP0) with the end value
         bcc     @return_to_for          ; Current value < end value so continue
-        bne     exec_pop                ; If not equal then value > end value so stop; else continue
+        bne     exec_pop_2              ; If not equal then value > end value so stop; else continue
 @return_to_for:
         ldx     stack_pos               ; Get stack pointer once again
         lda     stack+Control::next_line_ptr,x
@@ -184,17 +184,19 @@ exec_next:
         lda     stack+Control::next_line_pos,x
         sta     next_line_pos           ; Restore next_line_pos value
         clc                             ; Signal success
+        rts
+
 @error:
-        rts                            
+        raise   ERR_NEXT_WITHOUT_FOR                            
 
 ; POP statement:
 ; Returns with the popped stack pointer still in X so caller can use.
 
 exec_pop:
-        sec                             ; Set carry so can return error if csp = 0
         ldx     stack_pos               ; Check stack pointer
         cpx     #PRIMARY_STACK_SIZE     ; Stack empty?
         raieq   ERR_STACK_EMPTY
+exec_pop_2:
         lda     #.sizeof(Control)       ; Free the control record
         jsr     stack_free
         clc                             ; Success
