@@ -210,6 +210,7 @@ S1 = FPX+2
 ; program.s
 .global initialize_program
 .global clear_variables
+.global reset_stack_pointers
 .global reset_program
 .global reset_data
 .global reset_next_line_ptr, reset_next_line_ptr_2

@@ -172,10 +172,12 @@ find_printable_character:
         rts
 
 ; Installs an exception handler.
-; The exception handler itself is the function that calls this function. Whenever the program performs
-; "raise X" (or loads X into A and jumps to on_raise), this function will appear to return with that value in A.
-; The caller can check it is handling an exception, or just returning from the initial call, by checking the carry.
+; The exception handler itself is the code after the call to this function. Whenever the program performs
+; "raise n" (or loads n into A and jumps to on_raise), this function will appear to return with that value in A.
+; The caller can check if it is handling an exception, or just returning from the initial call, by checking the carry.
 ; If carry is clear, then it is the initial call, and if set, then handling an exception.
+; The caller should not return while there is still a chance that the program will jump to on_raise, in order to avoid
+; its being re-entered from on_raise with the stack in an unknown state. 
 ; BC SAFE, DE SAFE
 
 install_exception_handler:

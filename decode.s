@@ -24,7 +24,6 @@ decode_expression:
 @dispatch:
         ldax    decode_expression_vector_table_ptr  ; Remember what vector table we're using
         jsr     invoke_indexed_vector   ; Invoke the vector for the type of token we found
-        bcs     @error                  ; The handler failed
 @start:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
@@ -60,10 +59,7 @@ decode_expression:
         iny                             ; Subexpression start
         cmp     #<('(' - '`')
         beq     @dispatch
-@end:
-        clc                             ; None of the above; probably ')' or ',' or ';' so return success
-@error:
-        rts
+        rts                             ; None of the above; probably ')' or ',' or ';' so just return
 
 ; Decodes a number and returns it in FP0.
 ; BC SAFE, DE SAFE

@@ -39,19 +39,26 @@ clear_variables:
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     (array_name_table_ptr),y    ; Initialize array name table to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
+
+; Fall through to reset_stack_pointers
+
+; Resets the expression stack pointers. This doesn't have to be done after clear_variables, but it's a convenient
+; place for it, as we want it done as part of initialize_program and also before handling each statement.
+
+reset_stack_pointers:
+        mva     #OP_STACK_SIZE, op_stack_pos
+        mva     #PRIMARY_STACK_SIZE, stack_pos
         rts
 
 ; Resets the stack, clears the resume state, and performs RESTORE.
 ; A = the desired program state (RUN sets this to RUNNING)
 
 reset_program:
-        mva     #OP_STACK_SIZE, op_stack_pos    ; Initialize stack positions
-        mva     #PRIMARY_STACK_SIZE, stack_pos
         mva     #0, resume_line_ptr+1           ; Initialize resume_line_ptr high byte to 0 to disable CONT
 
 ; Fall through to reset_data
 
-; Set the program state to STOPPED and reset the pointers used by CONT and READ.
+; Reset the pointers used by CONT and READ.
 ; These point into the program, so we have to invalidate them whenever the program changes.
 
 reset_data:

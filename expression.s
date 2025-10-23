@@ -30,7 +30,6 @@ evaluate_expression:
         jsr     push_operator
         ldax    #evaluate_vectors
         jsr     decode_expression
-        bcs     @error                  ; Expression evaluation failed
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
         jsr     process_operators       ; May fail with carry set
 @error:
@@ -168,14 +167,11 @@ evaluate_string:
         jmp     push_string
 
 push_operator:
-        sec                             ; Set carry so can just return failure if stack pointer is 0
         ldx     op_stack_pos
-        beq     @done                   ; If already zero then fail
+        raieq   ERR_EXPRESSION_TOO_COMPLEX   ; If already zero then fail
         dex                             ; Grow down
         sta     op_stack,x              ; Store operator
         stx     op_stack_pos            ; Update stack pointer
-        clc                             ; Success
-@done:
         rts
 
 operator_vectors:

@@ -23,6 +23,9 @@ main:
         stx     exception_handler_sp
         lda     #PS_READY               ; Will be passed through install_exception_handler
         jsr     install_exception_handler
+
+; Exception handler: control reaches here following "raise" or JMP to on_raise.
+
         sta     program_state           ; Whatever comes back from exception handler is new state
         tay                             ; Prepare to look up the program_state message
         bmi     @dispatch               ; Program is running; do the next thing
@@ -90,10 +93,10 @@ main:
 @error:
         raise   ERR_INTERNAL_ERROR
 
-
 ; Decodes and executes one statement from the token stream.
 
 dispatch_statement:
+        jsr     reset_stack_pointers    ; Make sure stack pointers are reset in case there was an exception earlier
         jsr     decode_byte             ; Get statement number
         tay
         ldax    #statement_exec_vectors

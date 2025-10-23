@@ -84,8 +84,14 @@ _encode_byte:
 
 _evaluate_expression:
 .export _evaluate_expression
-        jsr     evaluate_expression
-        jmp     set_err
+        mvx     #0, _err                ; Clear error
+        jsr     install_exception_handler
+        bcs     @error
+        jmp     evaluate_expression
+
+@error:
+        sta     _err
+        rts
 
 _evaluate_argument_list:
 .export _evaluate_argument_list
