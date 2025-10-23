@@ -28,7 +28,6 @@ exec_gosub:
 exec_gosub_line_number:
         stax    line_number             ; Store the line number before calling find_line
         jsr     push_next_line_ptr      ; Save return address
-        bcs     @done                   ; Stack overflow
         lda     #0                      ; Set variable field to an invalid pointer
         sta     stack+Control::variable_name_ptr+1,x
         jsr     find_line_2             ; Find the line (already in line_number)
@@ -102,7 +101,6 @@ exec_return:
 
 exec_for:
         jsr     push_next_line_ptr      ; Save return address
-        bcs     @error                  ; Stack overflow
         jsr     decode_name             ; Get the name (now in decode_name_ptr)
         sec                             ; Set carry for error return if type check goes wrong
         lda     decode_name_type        ; No string variables please
