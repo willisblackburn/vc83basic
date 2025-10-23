@@ -25,6 +25,8 @@ encode_zero:
 
 encode_byte:
         ldx     line_pos
+        cpx     #MAX_LINE_LENGTH
+        raieq   ERR_LINE_TOO_LONG
         sta     line_buffer,x
         inc     line_pos
         rts
