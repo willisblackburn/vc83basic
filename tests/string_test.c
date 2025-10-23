@@ -284,9 +284,9 @@ void test_compact_with_expression(void) {
     string_alloc(20);
     ASSERT_EQ(err, 0);
     hello = string_alloc(5);
-    push_string();
     ASSERT_EQ(err, 0);
     memcpy(hello->data, "HELLO", 5);
+    push_string();
     world = string_alloc(5);
     ASSERT_EQ(err, 0);
     memcpy(world->data, "WORLD", 5);
