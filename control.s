@@ -12,8 +12,7 @@
 exec_goto:
         jsr     get_line_number         ; Go get the line number
 exec_goto_line_number:
-        jsr     find_line               ; Find the program line
-        rts                             ; Either next_line_ptr is set or carry (error) is set
+        jmp     find_line               ; Find the line; either next_line_ptr is set or carry (error) is set
 
 ; ON...GOTO statement:
 
@@ -30,8 +29,8 @@ exec_gosub_line_number:
         jsr     push_next_line_ptr      ; Save return address
         lda     #0                      ; Set variable field to an invalid pointer
         sta     stack+Control::variable_name_ptr+1,x
-        jsr     find_line_2             ; Find the line (already in line_number)
-        bcs     @done
+        jmp     find_line_2             ; Find the line; either next_line_ptr is set or carry (error) is set
+
 @done:
         rts
 
