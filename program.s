@@ -99,7 +99,6 @@ append_null_line:
 
 find_line:
         stax    line_number
-find_line_2:
         jsr     reset_next_line_ptr     ; Set next_line_ptr to beginning of program
         jmp     @test_line              ; Skip over first advance_line_ptr call
 @next_line:      
@@ -118,6 +117,13 @@ find_line_2:
         clc                             ; If it was the line then return with carry clear
 @not_found:        
         rts     
+
+; get_line is the same as find_line, except raises an exception if the line was not found.
+
+get_line:
+        jsr     find_line
+        raics   ERR_LINE_NOT_FOUND
+        rts
 
 ; Advances next_line_ptr to the next line.
 ; next_line_ptr = current next line (updated)

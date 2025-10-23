@@ -214,7 +214,7 @@ S1 = FPX+2
 .global reset_data
 .global reset_next_line_ptr, reset_next_line_ptr_2
 .global append_null_line
-.global find_line, find_line_2
+.global find_line, get_line
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a

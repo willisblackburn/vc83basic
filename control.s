@@ -12,7 +12,7 @@
 exec_goto:
         jsr     get_line_number         ; Go get the line number
 exec_goto_line_number:
-        jmp     find_line               ; Find the line; either next_line_ptr is set or carry (error) is set
+        jmp     get_line                ; Find the line; either next_line_ptr is set or raises exception
 
 ; ON...GOTO statement:
 
@@ -25,14 +25,12 @@ exec_on_goto:
 exec_gosub:
         jsr     get_line_number         ; GOSUB line number
 exec_gosub_line_number:
-        stax    line_number             ; Store the line number before calling find_line
+        phax                            ; Save line number
         jsr     push_next_line_ptr      ; Save return address
         lda     #0                      ; Set variable field to an invalid pointer
         sta     stack+Control::variable_name_ptr+1,x
-        jmp     find_line_2             ; Find the line; either next_line_ptr is set or carry (error) is set
-
-@done:
-        rts
+        plax                            ; Recover line number
+        jmp     get_line                ; Find the line; either next_line_ptr is set or raises exception
 
 ; ON...GOSUB statement:
 
