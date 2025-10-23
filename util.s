@@ -176,6 +176,7 @@ find_printable_character:
 ; "raise X" (or loads X into A and jumps to on_raise), this function will appear to return with that value in A.
 ; The caller can check it is handling an exception, or just returning from the initial call, by checking the carry.
 ; If carry is clear, then it is the initial call, and if set, then handling an exception.
+; BC SAFE, DE SAFE
 
 install_exception_handler:
         tay                             ; Remember the value of A; will be restored before returning

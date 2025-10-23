@@ -115,8 +115,14 @@ _pop_string:
 
 _stack_alloc:
 .export _stack_alloc
-        jsr     stack_alloc
-        jmp     set_err
+        mvx     #0, _err                ; Clear error
+        jsr     install_exception_handler
+        bcs     @error
+        jmp     stack_alloc
+
+@error:
+        sta     _err
+        rts
 
 _stack_free:
 .export _stack_free
@@ -442,13 +448,14 @@ _insert_or_update_line:
 _grow:
 .export _grow
         stax    BC                      ; Save size temporarily
+        mva     #0, _err                ; Clear error
         jsr     install_exception_handler
         bcs     @error
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
         ldax    BC                      ; Get the size again
-        jsr     grow
-        lda     #0
+        jmp     grow
+
 @error:
         sta     _err
         rts

@@ -175,7 +175,6 @@ find_or_add_variable:
         jsr     load_fp0                ; Set FP0 to 10
 @push:
         jsr     push_fp0
-        bcs     @error
         dec     D
         bne     @push                   ; Push one more
         jsr     dimension_array         ; Returns with name_ptr set to array data

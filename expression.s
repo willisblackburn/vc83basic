@@ -74,7 +74,6 @@ evaluate_decoded_variable:
         jsr     find_or_add_variable
         bcs     @error                  ; No memory for new variable
         jsr     stack_alloc_value
-        bcs     @error
         tay                             ; Stack position into Y to set type
         lda     decode_name_type        ; Set type of value on stack
         sta     stack+Value::type,y
@@ -409,7 +408,6 @@ unary_op_not:
 
 ; Push the value in FP0 onto the value stack.
 ; FP0 = the value to push
-; Returns carry clear if the push was successful, or carry set if there was no room on the stack.
 ; DE SAFE
 
 push_value_0:
@@ -422,7 +420,6 @@ push_value_1:
 
 push_fp0:
         jsr     stack_alloc_value       ; Returns with A set to the offset
-        bcs     @done                   ; Fail if overflow
         tay                             ; Stack offset into Y
         lda     #TYPE_NUMBER            ; Assign the number type
         sta     stack+Value::type,y
@@ -430,7 +427,6 @@ push_fp0:
         ldy     #>stack                 ; Stack page
         jsr     store_fp0               ; Store FP0 in the AY address
         clc                             ; Signal success
-@done:
         rts
 
 ; Pops a value from the stack into an FP register.
@@ -451,12 +447,10 @@ pop_fp0:
 
 ; Pushes the string referenced by string_ptr onto the stack. This works because this function is only called after
 ; we have generated a new string.
-; Returns carry clear on success, carry set on failure.
 ; DE SAFE
 
 push_string:
         jsr     stack_alloc_value
-        bcs     @error   
         tay
         lda     #TYPE_STRING            ; Assign the string type
         sta     stack+Value::type,y
@@ -464,7 +458,6 @@ push_string:
         sta     stack+Value::string_value_ptr,y     ; Save low and high byte of string address
         lda     string_ptr+1            ; High byte
         sta     stack+Value::string_value_ptr+1,y   ; Carry still clear for return
-@error:
         rts
 
 ; Pops the string value from the stack and returns the address in AY.
@@ -487,10 +480,9 @@ stack_alloc_value:
 stack_alloc:
         clc
         sbc     stack_pos               ; Do A - stack_pos - 1
-        bcs     @done                   ; Fail if stack has stack is grown too low
+        raics   ERR_STACK_OVERFLOW      ; Fail if stack has stack is grown too low
         eor     #$FF                    ; It's already 1 less than we want so inverting gives two's complement
         sta     stack_pos               ; Update the stack pointer
-@done:
         rts
 
 ; Frees space on the stack by moving the stack pointer up.

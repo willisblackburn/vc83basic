@@ -228,7 +228,6 @@ exec_if:
 push_next_line_ptr:
         lda     #.sizeof(Control)       ; Allocate this much space for the control record
         jsr     stack_alloc
-        bcs     @done                   ; Stack overflow
         tax                             ; Stack pointer into X to use as index
         lda     next_line_ptr           ; Store next_line_ptr on stack
         sta     stack+Control::next_line_ptr,x
@@ -239,7 +238,6 @@ push_next_line_ptr:
         lda     #TYPE_CONTROL           ; Identify this as Control not Value
         sta     stack+Control::type
         txa                             ; Move stack pointer back to A
-@done:
         rts
 
 get_line_number:
