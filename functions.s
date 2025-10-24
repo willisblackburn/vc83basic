@@ -61,14 +61,12 @@ fun_int:
 
 fun_left_s:
         jsr     fun_mid_s_setup         ; Requested length in D
-        bcs     fun_mid_s_error         ; If setup failed
         jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
         lda     #0                      ; Starting position
         jmp     fun_mid_s_finish        ; Finish as MID
 
 fun_right_s:
         jsr     fun_mid_s_setup         ; Requested length in D
-        bcs     fun_mid_s_error         ; If setup failed
         jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
         sec
         sbc     D                       ; Subtract requested length from string length to get starting position
@@ -76,13 +74,12 @@ fun_right_s:
 
 fun_mid_s:
         jsr     fun_mid_s_setup         ; Requested length in D
-        bcs     fun_mid_s_error         ; If setup failed
         jsr     pop_fp0                 ; Pop the starting position
         jsr     truncate_fp_to_int
+        bmi     fun_mid_out_of_range    ; Don't allow negative starting position
         sec
-        bmi     fun_mid_s_error         ; Don't allow negative starting position
         sbc     #1                      ; Subtract 1 to make it 0-based; carry is already set
-        bmi     fun_mid_s_error         ; Fail if that made it negative (i.e., don't allow starting position to be 0)
+        bmi     fun_mid_out_of_range    ; Fail if that made it negative (i.e., don't allow starting position to be 0)
         pha                             ; Push starting position on stack
         jsr     fun_mid_s_pop_string    ; String length in E and requested length <= string length in D
         pla                             ; Starting position in A
@@ -130,6 +127,9 @@ fun_mid_s_error:
 fun_mid_s_done:
         rts
 
+fun_mid_out_of_range:
+        raise   ERR_OUT_OF_RANGE
+
 ; Do some stuff that is common to LEFT$, RIGHT$, MID$: set D to the requested length.
 
 fun_mid_s_setup:
@@ -137,14 +137,10 @@ fun_mid_s_setup:
         lda     #255
         jsr     string_alloc            ; Allocate a 255-byte string; if success then we know we can alloc later
         plstaa  string_ptr              ; Restore string_ptr
-        bcs     @done                   ; If allocation failed then skip the rest
         jsr     pop_fp0                 ; Requested length
         jsr     truncate_fp_to_int      ; Length of string returned in A
-        sec
-        bmi     @done                   ; Don't allow negative length
+        bmi     fun_mid_out_of_range    ; Don't allow negative length
         sta     D                       ; Save in D
-        clc                             ; Signal success
-@done:
         rts
 
 ; Go get the string, set E to its length, and also return length in A.

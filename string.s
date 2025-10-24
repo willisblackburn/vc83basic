@@ -45,7 +45,7 @@ read_string:
         sty     B                       ; Read position relative to read_ptr
         ldax    #(255 + STRING_EXTRA + STRING_EXTRA)    ; Allocate space for 2 strings with total length of 255
         jsr     string_alloc_memory
-        bcs     @done
+        bcs     out_of_memory
         ldy     B
         lda     (read_ptr),y            ; Get first character
         iny                             ; Skip past it in case it's a double quote
@@ -99,6 +99,9 @@ read_string:
 @done:
         rts                             ; If we reached here via @finish, carry guaranteed to be clear by ADC
 
+out_of_memory:
+        raise   ERR_OUT_OF_MEMORY
+
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in string_ptr and in AY (to make it easy to pass to load_s0/s1).
@@ -113,11 +116,10 @@ string_alloc:
         inx                             ; Otherwise it's 1
 @skip_inx:
         jsr     string_alloc_memory     ; Allocate memory
+        bcs     out_of_memory
         pla                             ; Get size we saved earlier
-        bcs     @error                  ; Allocation failed
         ldy     #0
         sta     (string_ptr),y          ; Set the length of the allocated string
-@error:
         lday    string_ptr              ; Return pointer in AY
         rts
 
