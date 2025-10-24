@@ -202,7 +202,6 @@ find_array_element:
 @next:
         jsr     pop_fp0                 ; Get the next value off the stack
         jsr     truncate_fp_to_int      ; Make it an integer; the value is in AX (preserves BC)
-        bcs     @error                  ; Value was too large
         jsr     imul_16                 ; Multiply it by the value in array_element_size
         sta     E                       ; Park low byte in E
         ldy     #0                      ; Read next dimension value starting at name_ptr
@@ -216,10 +215,10 @@ find_array_element:
         txa                             ; Compare the multiplication result (currently in EX) with the limit
         cmp     array_element_size+1    ; Result high byte < limit high byte?
         bcc     @ok                     ; <
-        bne     @error                  ; >, otherwise =
+        bne     out_of_range            ; >, otherwise =
         lda     E                       ; Same with low byte
         cmp     array_element_size
-        bcs     @error                  ; >=
+        bcs     out_of_range            ; >=
 @ok:
         lda     E                       ; Result still in EX; make sure we have low byte of result in A
         adc     array_element_offset    ; Add result to array_element_offset; carry will always be clear
@@ -236,8 +235,10 @@ find_array_element:
         lda     name_ptr+1
         adc     array_element_offset+1
         sta     name_ptr+1
-@error:
         rts
+
+out_of_range:
+        raise   ERR_OUT_OF_RANGE
 
 ARRAY_TRIAL_GROW_SIZE = $80
 
@@ -284,16 +285,14 @@ dimension_array:
         sty     E                       ; Preserve current write position relative to name_ptr in E
         jsr     pop_fp0                 ; Get the next value off the stack (preserves DE)
         jsr     truncate_fp_to_int      ; Make it an integer; the value is in AX (preserves DE)
-        bcs     @error                  ; Value was too large
         clc
         adc     #1                      ; Add one because DIM(n) creates n+1 elements from 0 to n
         bcc     @skip_inx
         inx
 @skip_inx:
         jsr     imul_16                 ; Multiply the current element size by the new value
-        bcs     @error                  ; Size >= 64K
-        sec                             ; In case next check fails
-        bmi     @error                  ; Size >= 32K
+        bcs     out_of_range            ; Size >= 64K
+        bmi     out_of_range            ; Size >= 32K
         stax    array_element_size
         ldy     E                       ; Write position
         sta     (name_ptr),y            ; The value we're writing is the size of the array so far
@@ -326,7 +325,7 @@ dimension_array:
         tay                             ; Will need 0 in Y too
         adc     array_element_size+1
         sta     size+1
-        bmi     @error                  ; It can't be >= 64K but might be >= 32K
+        bmi     out_of_range            ; It can't be >= 64K but might be >= 32K
         ora     #$80                    ; High bit was clear before; now it's set
         sta     (dst_ptr),y             ; Store high byte of length with high bit set
         iny
@@ -349,8 +348,6 @@ dimension_array:
         iny                             ; Increment so we also set 0 at the end of the name table
         jsr     set_memory
 @no_remaining_bytes:
-        clc                             ; Signal success
-@error:
         rts
 
 ; Copies the decoded name into the name table, ending at a character with the EOT bit set.

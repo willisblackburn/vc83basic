@@ -20,7 +20,6 @@ parse_line:
         sty     buffer_pos              ; Initialize buffer_pos to wherever the number ended
         bcs     @no_line_number         ; Line number was provided so store it
         jsr     truncate_fp_to_int      ; Truncate line number to integer
-        bcs     @done                   ; Out of range
         bcc     @store_line_number
 @no_line_number:
         lda     #$FF                    ; Otherwise store -1 ($FFFF) instead

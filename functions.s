@@ -171,7 +171,6 @@ fun_peek:
         jsr     pop_fp0                 ; Get the argument
         bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an address
-        bcs     @done
         stax    BC                      ; Need it to be a pointer
         ldy     #0                      ; Index 0
         lda     (BC),y                  ; Get the value there
@@ -228,12 +227,10 @@ fun_usr:
         jsr     pop_fp0                 ; Pop the value
         bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an integer
-        bcs     @done
         stax    DE                      ; Store in DE because pop_fp0 preserves it
         jsr     pop_fp0                 ; Pop the address
         bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an address
-        bcs     @done
         stax    BC                      ; Store it so I can use it as a pointer
         ldax    DE                      ; Recover the value
         jsr     @jump_to_user_function

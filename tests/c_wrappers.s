@@ -12,8 +12,8 @@
 
 .bss
 
-; The wrappers for functions that use the carry bit to flag errors return the carry and use these fields to
-; save the register values returned from the function.
+; Wrappers use these fields to save register values prior to calling the delegate function and also to return values
+; from that function to the caller.
 
 _AX:
 _A: .res 1
@@ -47,6 +47,24 @@ set_err:
         sta     _err
         pla                             ; Restore return value
         rts
+
+; Generates the wrapper prologue.
+; The prologue preserves registers in _A, _X, and _Y, installs the exception handler, and restores the registers.
+; The wrapper can then JSR or JMP to the delegate function. If that function raises an exception, control returns to
+; the prologue, which saves the error code in _err and returns.
+
+.macro startwrap
+        stax    _AX                     ; Save values
+        sty     _Y
+        mva     #0, _err                ; Clear error
+        jsr     install_exception_handler
+        bcc     :+                      ; Wrapper installed; continue on to call function
+        sta     _err                    ; Save the error value
+        rts
+:
+        ldax    _AX                     ; Recover values
+        ldy     _Y
+.endmacro
 
 ; Function wrappers
 
@@ -84,14 +102,8 @@ _encode_byte:
 
 _evaluate_expression:
 .export _evaluate_expression
-        mvx     #0, _err                ; Clear error
-        jsr     install_exception_handler
-        bcs     @error
+        startwrap
         jmp     evaluate_expression
-
-@error:
-        sta     _err
-        rts
 
 _evaluate_argument_list:
 .export _evaluate_argument_list
@@ -121,14 +133,8 @@ _pop_string:
 
 _stack_alloc:
 .export _stack_alloc
-        mvx     #0, _err                ; Clear error
-        jsr     install_exception_handler
-        bcs     @error
+        startwrap
         jmp     stack_alloc
-
-@error:
-        sta     _err
-        rts
 
 _stack_free:
 .export _stack_free
@@ -168,13 +174,13 @@ _int32_to_fp:
 
 _truncate_fp_to_int:
 .export _truncate_fp_to_int
-        jsr     truncate_fp_to_int
-        jmp     set_err
+        startwrap
+        jmp     truncate_fp_to_int
 
 _truncate_fp_to_int32:
 .export _truncate_fp_to_int32
-        jsr     truncate_fp_to_int32
-        jmp     set_err
+        startwrap
+        jmp     truncate_fp_to_int32
 
 _truncate:
 .export _truncate
@@ -443,37 +449,24 @@ _advance_next_line_ptr:
 
 _insert_or_update_line:
 .export _insert_or_update_line
-        jsr     install_exception_handler
-        bcs     @error
-        jsr     insert_or_update_line
-        lda     #0
-@error:
-        sta     _err
-        rts
+        startwrap
+        jmp     insert_or_update_line
 
 _grow:
 .export _grow
-        stax    BC                      ; Save size temporarily
-        mva     #0, _err                ; Clear error
-        jsr     install_exception_handler
-        bcs     @error
+        startwrap
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
-        ldax    BC                      ; Get the size again
+        ldax    _AX                     ; Recover the original AX values (still in _AX)
         jmp     grow
-
-@error:
-        sta     _err
-        rts
 
 _shrink:
 .export _shrink
-        stax    BC                      ; Save size temporarily
+        startwrap
         jsr     popax                   ; Get ptr (ignore high byte in X)
         tay                             ; Store in Y
-        ldax    BC                      ; Get the size again
-        jsr     shrink
-        jmp     set_err
+        ldax    _AX                     ; Recover the original AX values (still in _AX)
+        jmp     shrink
 
 ; string.s
 
