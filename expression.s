@@ -55,15 +55,12 @@ evaluate_argument_list:
         inc     line_pos                ; Skip the comma
 @no_comma:
         jsr     evaluate_expression     ; Read the next expression
-        bcs     @error                  ; Possibly type error in expression
         tsx                             ; Get ready to access stack
         dec     $101,x                  ; Decrement the number of arguments
         jmp     @next                   ; Continue on
 
 @done:
         inc     line_pos                ; Skip over the terminating byte
-        clc
-@error:
         pla                             ; Return number of arguments read
         rts
 
@@ -119,13 +116,9 @@ evaluate_function:
         lda     function_arity_table,x  ; How many arguments?
         jsr     evaluate_argument_list
         pla                             ; Recover the function number
-        bcs     @done                   ; Argument evaluation failed
         tay
         ldax    #function_vectors
         jmp     invoke_indexed_vector
-
-@done:
-        rts
 
 evaluate_number:
         jsr     decode_number           ; Returns number in FP0
@@ -363,18 +356,12 @@ call_binary_operator:
         phax                            ; Push operator handler address -1 onto the stack so we can RTS to it
         lda     #TYPE_NUMBER            ; Make sure that the first value is a number
         jsr     stack_free_value_with_type
-        bcs     @error                  ; Type didn't match
         txa                             ; Original value of stack_pos, returned in X
         pha                             ; Save on stack
         jsr     pop_fp0                 ; Second value into FP0
         pla                             ; Get stack address of first value
         ldy     #>stack                 ; Stack page
-        bcc     @done                   ; If pop_fp0 succeeded them jump straight to RTS
-@error:
-        pla                             ; Remove the operator handler address from the stack
-        pla
-@done:
-        rts                             ; If PLAs not skipped, this does JMP to the operator handler, else return
+        rts                             ; JMP to the operator handler
 
 ; Invokes a binary operator and pushes the result back.
 
@@ -385,21 +372,14 @@ call_binary_operator_push:
 
 unary_op_minus:
         jsr     pop_fp0                 ; Get value at top of stack
-        bcs     @error
         jsr     fneg                    ; Negate it
         jmp     push_fp0                ; Return to stack
 
-@error:
-        rts
-
 unary_op_not:
         jsr     pop_fp0                 ; Get value
-        bcs     @error
         lda     FP0e
         bne     push_value_0            ; Value was not zero so we should return 0
         beq     push_value_1
-
-@error:
         rts
 
 ; Push the value in FP0 onto the value stack.
@@ -421,9 +401,7 @@ push_fp0:
         sta     stack+Value::type,y
         tya                             ; Low byte of store address
         ldy     #>stack                 ; Stack page
-        jsr     store_fp0               ; Store FP0 in the AY address
-        clc                             ; Signal success
-        rts
+        jmp     store_fp0               ; Store FP0 in the AY address
 
 ; Pops a value from the stack into an FP register.
 ; DE SAFE
@@ -433,13 +411,9 @@ push_fp0:
 pop_fp0:
         lda     #TYPE_NUMBER            ; Make sure it's a number
         jsr     stack_free_value_with_type
-        bcs     @error                  ; Wrong type
         txa                             ; Original stack position into A to use as low byte of pointer
         ldy     #>stack                 ; Stack page
-        jsr     load_fp0                ; Load value into FP0
-        clc                             ; Success
-@error:
-        rts
+        jmp     load_fp0                ; Load value into FP0
 
 ; Pushes the string referenced by string_ptr onto the stack. This works because this function is only called after
 ; we have generated a new string.
@@ -496,15 +470,13 @@ stack_free:
 ; Frees the space used on the stack by one value and checks the type of that value.
 ; A = the type to check
 ; On success, carry will be clear and X will point to the previous value of stack_pos (where the freed value was).
-; On error, carry set will be set.
 ; Y SAFE, BC SAFE, DE SAFE
 
 stack_free_value_with_type:
         ldx     stack_pos               ; Get stack pointer
         cmp     stack+Value::type,x     ; Test the type
         beq     stack_free_value        ; Type check succeeded so remove value from stack
-        sec                             ; Return error
-        rts
+        raise   ERR_TYPE_MISMATCH       ; Not the expected type
 
 op_and:
         jsr     set_up_logical_op
@@ -531,11 +503,7 @@ op_or:
 
 set_up_logical_op:
         jsr     pop_fp0
-        bcs     @error
         jsr     truncate_fp_to_int
         stax    DE                      ; Store returned value in DE
         jsr     pop_fp0
-        bcs     @error
-        jsr     truncate_fp_to_int
-@error:
-        rts                             ; Return with value in DE
+        jmp     truncate_fp_to_int

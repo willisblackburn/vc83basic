@@ -8,14 +8,10 @@ fun_abs:
 
 fun_adr:
         jsr     pop_string
-        bcs     @done
         jsr     load_s0
         ldax    S0
         jsr     int_to_fp
         jmp     push_fp0
-
-@done:
-        rts
 
 fun_asc:
         jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
@@ -33,13 +29,9 @@ fun_chr_s:
         lda     #1                      ; Allocate space for a 1-byte string
         jsr     string_alloc
         pla                             ; Pop the character back
-        bcs     @done                   ; Memory must be *very* low!
         ldy     #1                      ; Write to string position 1
         sta     (string_ptr),y          ; Set the character in the string
         jmp     push_string
-
-@done:
-        rts
 
 fun_fre:
         jsr     compact                 ; GC strings
@@ -165,7 +157,6 @@ fun_len:
 
 fun_peek:
         jsr     pop_fp0                 ; Get the argument
-        bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an address
         stax    BC                      ; Need it to be a pointer
         ldy     #0                      ; Index 0
@@ -173,9 +164,6 @@ fun_peek:
         ldx     #0                      ; High byte is always 0
         jsr     int_to_fp               ; Into FP0
         jmp     push_fp0                ; Push return value
-
-@done:
-        rts
 
 fun_round:
         jsr     pop_fp0
@@ -221,20 +209,15 @@ fun_str_s:
 
 fun_usr:
         jsr     pop_fp0                 ; Pop the value
-        bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an integer
         stax    DE                      ; Store in DE because pop_fp0 preserves it
         jsr     pop_fp0                 ; Pop the address
-        bcs     @done
         jsr     truncate_fp_to_int      ; Convert it to an address
         stax    BC                      ; Store it so I can use it as a pointer
         ldax    DE                      ; Recover the value
         jsr     @jump_to_user_function
         jsr     int_to_fp               ; Convert return value in AX back to FP
         jmp     push_fp0
-
-@done:
-        rts
 
 @jump_to_user_function:
         jmp     (BC)

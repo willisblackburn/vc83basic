@@ -117,6 +117,7 @@ _push_fp0:
 
 _pop_fp0:
 .export _pop_fp0
+        startwrap
         jmp     pop_fp0
 
 _push_string:
@@ -126,6 +127,7 @@ _push_string:
 
 _pop_string:
 .export _pop_string
+        startwrap
         jsr     pop_string
         sty     B                       ; Pointer is returned in AY instead of AX
         ldx     B
@@ -369,8 +371,8 @@ _dimension_array:
 
 _find_array_element:
 .export _find_array_element
-        jsr     find_array_element
-        jmp     set_err
+        startwrap
+        jmp     find_array_element
 
 _imul_16:
 .export _imul_16

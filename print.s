@@ -18,7 +18,6 @@ exec_print:
         cmp     #','
         beq     @tab
         jsr     evaluate_expression     ; Leaves value on stack
-        bcs     @done
         ldx     stack_pos               ; Get the current stack pointer
         lda     stack+Value::type,x     ; Get the type of the variable
         beq     exec_print_number
@@ -41,8 +40,6 @@ exec_print:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
         bne     @continue               ; It's not the end of the PRINT so continue
-        clc
-@done:
         rts                             ; Otherwise return without printing a carriage return
 
 ; Prints the value in FP0 to standard output.
@@ -70,5 +67,4 @@ print_string:
 print_newline:
         jsr     newline
         mva     #0, print_column
-        clc
         rts

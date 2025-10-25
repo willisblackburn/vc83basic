@@ -44,7 +44,6 @@ exec_on:
         jsr     evaluate_expression     ; Evaluate the "ON" expression
         inc     line_pos                ; Skip past the terminator
         jsr     pop_fp0
-        bcs     @error
         jsr     truncate_fp_to_int      ; FP0 -> integer in AX
         sta     on_value
         sec                             ; Set carry in case this next check fails
@@ -112,15 +111,11 @@ exec_for:
         sta     stack+Control::variable_name_ptr+1,x
         jsr     evaluate_expression     ; Start value (may clobber decode_name_ptr)
         inc     line_pos                ; Skip terminator
-        bcs     @error
         jsr     find_or_add_variable
-        bcs     @error
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
         inc     line_pos                ; Skip terminator
-        bcs     @error
         jsr     pop_fp0                 ; Get the evaluated value
-        bcs     @error
         lda     stack_pos               ; Stack pointer
         adc     #Control::end_value     ; Add the offset of the end value; carry is clear
         ldy     #>stack                 ; Stack page
@@ -132,8 +127,6 @@ exec_for:
         adc     #Control::step_value    ; Add the offset of the step value
         ldy     #>stack
         jsr     store_fp0               ; Store the step value
-        clc
-@error:
         rts
 
 @invalid_variable:
@@ -159,7 +152,6 @@ exec_next:
         jsr     evaluate_decoded_variable   ; Continue with evaluation of variable decoded above
         bcs     @error
         jsr     pop_fp0                 ; Variable value is now in FP0
-        bcs     @error
         lda     stack_pos               ; Get stack position again
         adc     #Control::step_value    ; Add offset of step value to stack pointer (carry will be clear)
         ldy     #>stack                 ; Stack page
@@ -199,26 +191,18 @@ exec_pop:
         raieq   ERR_STACK_EMPTY
 exec_pop_2:
         lda     #.sizeof(Control)       ; Free the control record
-        jsr     stack_free
-        clc                             ; Success
-        rts
+        jmp     stack_free
 
 exec_if:
         jsr     evaluate_expression     ; Evaluate the expression
         inc     line_pos                ; Skip terminator
         jsr     pop_fp0
-        bcs     @error
         lda     FP0e                    ; Check if zero
         beq     @next_line              ; If zero then don't execute the THEN or any other statements on this line
-        jsr     dispatch_statement      ; Otherwise execute the THEN
-        clc
-@error:
-        rts
+        jmp     dispatch_statement      ; Otherwise execute the THEN
 
 @next_line:
-        jsr     advance_next_line_ptr   ; Unconditionally go to the next line
-        clc
-        rts
+        jmp     advance_next_line_ptr   ; Unconditionally go to the next line
 
 push_next_line_ptr:
         lda     #.sizeof(Control)       ; Allocate this much space for the control record

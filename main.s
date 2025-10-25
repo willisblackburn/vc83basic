@@ -86,7 +86,7 @@ main:
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     dispatch_statement
-        bcc     @dispatch               ; If dispatch_statement returned then continue running
+        jmp     @dispatch               ; Keep on truckin
 
 ; TODO: remove return value handling
 

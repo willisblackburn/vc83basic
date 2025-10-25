@@ -6,12 +6,10 @@
 exec_let:
         jsr     decode_name             ; Sets decode_name_ptr and decode_name_length
         jsr     find_or_add_variable
-        bcs     assign_variable_error
         inc     line_pos                ; Skip terminator
         ldphaa  name_ptr                ; Remember name_ptr 
         jsr     evaluate_expression     ; Value is now on the evaluation stack
         plstaa  name_ptr                ; Restore name so we can assign it
-        bcs     assign_variable_error
 
 ; Fall through
 
@@ -24,10 +22,7 @@ assign_variable:
         tax                             ; While we're here, load the size of the variable type into Y
         ldy     type_size_table,x       ; Replace Y with the size of the type
         jsr     stack_free_value_with_type
-        bcs     assign_variable_error
         txa                             ; Becomes low byte of source address
         ldx     #>stack                 ; Stack page
         jsr     copy_y_from             ; Copy from stack into variable data
-        clc                             ; Success
-assign_variable_error:
         rts
