@@ -833,7 +833,7 @@ shift_right_normalize:
 ;   * If adding 1 to the significand for rounding caused the significand to increase to be >=2, then shift right
 ;       (increase exponent) once again.
 ;   * If the exponent is >127, fail with an overflow error. (TODO: need to handle this)
-; Otherwise, return the final result with carry clear. Carry set indicates error.
+; Otherwise, return the final result.
 ; This function uses and clobbers all registers except DE, which means that any function that calls it (fadd, fsub,
 ; fmul, fdiv, etc.) also clobber those registers.
 ; Leaves the low byte of FPX clear.
@@ -851,7 +851,7 @@ normalize:
 ; If the exponent falls below 1 then signal underflow.
 
         lda     C                       ; First check that exponent is not already below one
-        bmi     @underflow              ; It's aready negative
+        bmi     @out_of_range           ; It's aready negative
 
 ; Check if FP0 is zero. If so then set exponent to lowset possible value and return. If FP0 is not zero then it
 ; means that left normalization is guaranteed to end, since one of the significand bits must be 1.
@@ -867,7 +867,7 @@ normalize:
 
 @check_e_is_zero:
         lda     FP0e                    ; Significand was not zero, but if e is, it can't be normalized so underflow
-        beq     @underflow              ; TODO: check C
+        beq     @out_of_range           ; TODO: check C
 
 @coarse:
         lda     FP0t+3                  ; Get high byte of significand
@@ -879,8 +879,8 @@ normalize:
         lda     FP0e                    ; Get exponent
         sec
         sbc     #8                      ; Trial subtraction of 8
-        bcc     @underflow              ; If subtracting required a borrow then underflow
-        beq     @underflow              ; Going to zero is also a fail
+        bcc     @out_of_range           ; If subtracting required a borrow then underflow
+        beq     @out_of_range           ; Going to zero is also a fail
         sta     FP0e                    ; Otherwise update exponent
         lda     FP0t+3
         sta     FPX
@@ -903,9 +903,8 @@ normalize:
         dec     FP0e
         bne     @fine                   ; Exponent is not zero so check if we need to shift some more
 
-@underflow:
-        sec
-        rts
+@out_of_range:
+        raise   ERR_OUT_OF_RANGE
 
 ; Round the result, which will possibly require another right shift.
 
