@@ -59,26 +59,20 @@ parse_line:
 ; Returns carry clear if buffer was a valid statement, or carry set if it was not.
 
 parse_statement:
-        mva     #0, name_ptr+1          ; Set high byte of name_ptr to 0 so I can check if a match was attempted
         ldax    #statement_name_table
         jsr     initialize_name_ptr
 @next:
         jsr     parse_next_statement    ; Will restore parser state on failure
-        bcc     @done
-        lda     name_ptr+1              ; If high byte of name_ptr is still 0 it means no name found in buffer
-        beq     @done                   ; In that case finish with carry set
-        ldy     #0                      ; Check if we failed because we reached the end of the name table
-        lda     (next_name_ptr),y
-        bne     @next                   ; Continue if there's at least one more name; otherwise return the carry set
+        bcs     @next                   ; Failed; try again; will raise exception if we run out of names
 @done:
-        rts
+        rts                             ; Will either return here with carry clear or raise exception
 
 ; Try to parse the buffer starting with the name table entry at name_ptr.
 
 parse_next_statement:
         jsr     save_parser_state
         jsr     parse_tokenized_name_2
-        bcs     @error
+        bcs     syntax_error            ; Fail: either can't parse a name or can't find it in name table at all
         jsr     encode_byte             ; Encode statement token
 @after_directive:
         jsr     skip_whitespace         ; Skip whitespace after the keyword and after a directive
@@ -119,6 +113,9 @@ parse_next_statement:
 @success:
         clc
         rts
+
+syntax_error:
+        raise ERR_SYNTAX_ERROR
 
 parse_argument_type_vectors:
         .word   parse_variable-1            ; NT_VAR
