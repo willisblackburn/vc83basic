@@ -7,8 +7,11 @@ start_length = * - start_message
 free_message: .byte " BYTES FREE"
 free_length = * - free_message
 
-error_message_prefix: .byte "ERROR: "
-error_message_prefix_length = * - error_message_prefix
+error_message: .byte "ERROR: "
+error_message_length = * - error_message
+
+error_message_2: .byte " AT LINE "
+error_message_2_length = * - error_message_2
 
 ; Verify that the program states are the affected values so we can use flags.
 
@@ -36,8 +39,8 @@ main:
         lda     program_state
         cmp     #ERR_INTERNAL_ERROR
         bcc     @not_error
-        ldax    #error_message_prefix
-        ldy     #error_message_prefix_length
+        ldax    #error_message
+        ldy     #error_message_length
         jsr     write
 @not_error:
         sec
@@ -46,6 +49,18 @@ main:
         tay
         ldax    name_ptr
         jsr     write
+        ldy     #Line::number+1         ; Print line number if >= 0, else we're in immediate mode
+        lda     (line_ptr),y
+        bmi     @no_line_number
+        ldax    #error_message_2
+        ldy     #error_message_2_length
+        jsr     write
+        mva     #0, buffer_pos
+        jsr     line_number_to_string
+        ldy     buffer_pos
+        ldax    #buffer
+        jsr     write
+@no_line_number:
         jsr     newline
 
 @get_command:

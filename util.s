@@ -171,6 +171,18 @@ find_printable_character:
 @done:
         rts
 
+; Outputs the line number from line_ptr into buffer.
+; buffer_pos = something reasonable, like zero.
+
+line_number_to_string:
+        ldy     #Line::number+1         ; Load line number high byte
+        lda     (line_ptr),y
+        tax                             ; Move into X
+        dey                             ; Position of line number low byte
+        lda     (line_ptr),y
+        jsr     int_to_fp
+        jmp     fp_to_string            ; Format into buffer
+
 ; Installs an exception handler.
 ; The exception handler itself is the code after the call to this function. Whenever the program performs
 ; "raise n" (or loads n into A and jumps to on_raise), this function will appear to return with that value in A.

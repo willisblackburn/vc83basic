@@ -257,6 +257,7 @@ S1 = FPX+2
 .global invoke_indexed_vector
 .global read_argument_separator
 .global find_printable_character
+.global line_number_to_string
 .global install_exception_handler
 .global on_raise
 

@@ -43,13 +43,7 @@ list_line:
         mvy     #0, buffer_pos          ; Initialize write position in buffer (also set Y to next_line_offset)
         lda     (line_ptr),y            ; Next line offset into A
         beq     @done                   ; If it's the null statement then we're at the end of the program
-        ldy     #Line::number+1         ; Load line number high byte
-        lda     (line_ptr),y
-        tax                             ; Move into X
-        dey                             ; Position of line number low byte
-        lda     (line_ptr),y
-        jsr     int_to_fp
-        jsr     fp_to_string            ; Format into buffer
+        jsr     line_number_to_string
         mva     #.sizeof(Line), next_line_pos   ; Initialize read position to start of data
         bne     @first_statement        ; Unconditionally skip over code to write separator
 
