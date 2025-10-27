@@ -553,35 +553,35 @@ skip_whitespace:
 ;                       return address of caller (2 bytes) (where RTS from this function goes)
 
 save_parser_state:
-    stax    BC                          ; Arguments
-    plstaa  DE                          ; Return address
-    phzp    PARSER_STATE, PARSER_STATE_SIZE
-    jsr     @continue_begin_parse       ; This JSR will return to begin_parse caller
+        stax    BC                      ; Arguments
+        plstaa  DE                      ; Return address
+        phzp    PARSER_STATE, PARSER_STATE_SIZE
+        jsr     @continue_begin_parse   ; This JSR will return to begin_parse caller
 
 ; This is the epilogue that runs after the caller does RTS.
 ;
 ; Stack:                return address of caller's caller
 ;                       parser state
 
-    stax    BC                          ; Return value
-    bcc     @success
-    plzp    PARSER_STATE, PARSER_STATE_SIZE
-    bcs     @done                       ; Unconditional
+        stax    BC                      ; Return value
+        bcc     @success
+        plzp    PARSER_STATE, PARSER_STATE_SIZE
+        bcs     @done                   ; Unconditional
 
 @success:
-    tsx                                 ; Just add PARSER_STATE_SIZE to stack pointer to clear the stack
-    txa
-    adc     #PARSER_STATE_SIZE          ; Carry is already clear and this cannot set it
-    tax
-    txs
+        tsx                             ; Just add PARSER_STATE_SIZE to stack pointer to clear the stack
+        txa
+        adc     #PARSER_STATE_SIZE      ; Carry is already clear and this cannot set it
+        tax
+        txs
 @done:
-    ldax    BC
-    rts
+        ldax    BC
+        rts
 
 ; By executing JSR to here, save_parser_state puts the address of the epilogue on the stack.
 ; Restore the original return address and also restore the arguments.
 
 @continue_begin_parse:
-    ldphaa  DE
-    ldax    BC
-    rts
+        ldphaa  DE
+        ldax    BC
+        rts
