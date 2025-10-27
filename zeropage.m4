@@ -168,10 +168,10 @@ comment Is reset to 0 by printing the banner message and/or READY.
 byte(print_column)
 
 comment The size of the array element. Used to calculate array offsets.
-word(array_element_size, int)
+word(array_element_size)
 
 comment The offset of an element in the array
-word(array_element_offset, int)
+word(array_element_offset)
 
 comment The value of the stack pointer to restore in the exception handler
 byte(exception_handler_sp)
