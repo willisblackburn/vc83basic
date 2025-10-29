@@ -595,24 +595,27 @@ new_parse_statement:
 
 parse_pvm:
         stax    pvm_program_ptr
+        jsr     reset_stack_pointers    ; Parser uses the stack for backtracking
 @next_instruction:
         ldy     #0
         lda     (pvm_program_ptr),y     ; Load PVM instruction
+        debug $00
         sta     B                       ; Park in B
 
 ; Look at the last three bits to figure out what arguments follow the instruction and load them.
 
         and     #$03                    ; Mask off bottom two bits
         beq     @address_argument       ; If no argument then go check if we need an address
-        cmp     #$11                    ; Check if it's expecting a string
+        cmp     #$03                    ; Check if it's expecting a string
         beq     @string                 ; If so go do it, otherwise, A is the number of arguments
-        stx     C                       ; C is the number of arguments to parse and is either 1 or 2
-        stx     pvm_arg+1               ; If X is 1 then we very conveniently need pvm_arg+1 to also be 1
+        sta     C                       ; C is the number of arguments to parse and is either 1 or 2
+        sta     pvm_arg+1               ; If X is 1 then we very conveniently need pvm_arg+1 to also be 1
         ldx     #0                      ; Reset X so we can use it to index pvm_arg
 @next_argument:
         iny
         lda     (pvm_program_ptr),y     ; Get argument
         sta     pvm_arg,x               ; Save
+        debug $A0
         inx
         cpx     C
         bne     @next_argument
@@ -626,6 +629,7 @@ parse_pvm:
 @string_next:
         iny
         lda     (pvm_program_ptr),y
+        debug $50
         bpl     @string_next     
         iny                             ; Skip the last one character
         bne     @match                  ; Unconditional since the string will never be 256 bytes long
@@ -648,21 +652,29 @@ parse_pvm:
         ldx     buffer_pos              ; Definitely going to need this
         lda     B                       ; Recover the instruction from B
         bpl     @instruction            ; Not a matching instruction, so skip the matching logic
+        debug $10
         and     #$03                    ; Get address type again
-        beq     @instruction            ; Is a "match any" instruction, so don't need to do anything
+        debug $11
+        beq     @match_any              ; Is a "match any" instruction, so don't need to match anything
         cmp     #$03                    ; Is it "match string?"
+        debug $12
         beq     @match_string           ; Yep, go do it
         lda     buffer,x                ; It's "match char" or "match range;" get character from the buffer
+        debug $13
         sec
         sbc     pvm_arg                 ; Check if it's in range
+        debug $14
         bcc     @instruction
         cmp     pvm_arg+1
+        debug $15
         bcs     @instruction
+@match_any:
         inc     C                       ; Increment the match flag, making it true
         bne     @instruction            ; Unconditional
 
 @match_string:
         lda     (pvm_arg),y             ; Load the next value from the string to match
+        debug $20
         bmi     @match_string_last      ; Handle the last character
         cmp     buffer,x                ; Otherwise compare with character in buffer
         bne     @instruction            ; No match
@@ -673,107 +685,146 @@ parse_pvm:
 @match_string_last:
         and     #$7F                    ; Clear the high bit
         cmp     buffer,x                ; Compare
+        debug $21
         bne     @instruction            ; No match
         inc     C                       ; The whole string matched, so increment the match flag
 
 @instruction:
+        lda     buffer,x
         lda     B                       ; Reload instruction again
         and     #$7F                    ; Clear high bit
         lsr     A                       ; Shift right to leave the instruction number in bits 0-3
         lsr     A
         lsr     A
         tay                             ; Instruction number into Y
-        ldax    pvm_instruction_vectors
-        jsr     invoke_indexed_vector   ; Invoke handler
+        mvaa    #pvm_instruction_vectors, vector_table_ptr  ; Preserve X for handler
+        jsr     invoke_indexed_vector_2 ; Invoke handler
         jmp     @next_instruction       ; No exception so continue
 
 pvm_instruction_vectors:
-        .word   pvm_test-1
-        .word   pvm_match-1
-        .word   pvm_match_emit-1
-        .word   pvm_emm-1
-        .word   pvm_emi-1
-        .word   pvm_choice-1
-        .word   pvm_commit-1
-        .word   pvm_stcap-1
-        .word   pvm_emcap-1
-        .word   pvm_set7-1
-        .word   pvm_dkw-1
-        .word   pvm_jmp-1
-        .word   pvm_call-1
-        .word   pvm_ret-1
-        .word   pvm_fail-1
+        .word   ins_test-1
+        .word   ins_match-1
+        .word   ins_match_emit-1
+        .word   ins_emit-1
+        .word   ins_emch-1
+        .word   ins_choice-1
+        .word   ins_commit-1
+        .word   ins_stcap-1
+        .word   ins_emcap-1
+        .word   ins_set7-1
+        .word   ins_dkw-1
+        .word   ins_jmp-1
+        .word   ins_call-1
+        .word   ins_ret-1
+        .word   ins_fail-1
 
-pvm_test:
+ins_test:
+        lda     C                       ; Match?
+        bne     ins_jmp                 ; Did match, so treat as JMP
         rts
 
-pvm_match:
+ins_match:
+        lda     C                       ; Match?
+        beq     ins_fail                ; No match, treat as FAIL
+        stx     buffer_pos              ; Consume the matched string
         rts
 
-pvm_match_emit:
+ins_match_emit:
+        lda     C                       ; Just do same as ins_match
+        beq     ins_fail                ; No match, treat as FAIL, else fall through to EMIT
+        stx     buffer_pos              ; Consume the matched string
+
+ins_emit:
+
         rts
 
-pvm_emm:
+ins_emch:
         rts
 
-pvm_emi:
+ins_choice:
         rts
 
-pvm_choice:
+ins_commit:
         rts
 
-pvm_commit:
+ins_stcap:
         rts
 
-pvm_stcap:
+ins_emcap:
         rts
 
-pvm_emcap:
+ins_set7:
         rts
 
-pvm_set7:
+ins_dkw:
         rts
 
-pvm_dkw:
+ins_jmp:
+        mva     pvm_program_ptr, pvm_address_arg
         rts
 
-pvm_jmp:
-        rts
+ins_call:
+        lda     #.sizeof(Savepoint)
+        jsr     stack_alloc             ; Allocate space for the savepoint
+        tax
+        lda     pvm_program_ptr
+        sta     stack+Savepoint::pvm_program_ptr,x
+        lda     pvm_program_ptr+1
+        sta     stack+Savepoint::pvm_program_ptr+1,x
+        mvaa    pvm_address_arg, pvm_program_ptr
+        rts     
 
-pvm_call:
-        rts
+ins_ret:
+        pla                             ; Pop the ins_ret return value off the stack
+        pla
+        rts                             ; This breaks instruction-processing loop and returns from parse_pvm
 
-pvm_ret:
-        rts
-
-pvm_fail:
-        rts
-
+ins_fail:
+        raise   ERR_SYNTAX_ERROR        ; All parser errors are syntax errors
 
 ; PVM macros
 
+; Encodes string using .byte and sets bit 7 (EOT) on the last character.
+
+.macro encode_string s
+    length = .strlen(s)
+
+    .if (length > 0)
+        ; Output all characters *except* the last one, if any.
+        .if (length > 1)
+            .repeat length - 1, i
+                .byte   .strat(s, i)
+            .endrep
+        .endif
+        
+        ; Output the last character, bitwise OR'd with EOT
+        .byte   .strat(s, length - 1) | EOT
+    .endif
+.endmacro
+
 .macro TANY address
-        .byte $84,<address,>address
+        .byte   $84, <address, >address
 .endmacro
 
 .macro MCH c
-        .byte $89,c
+        .byte   $89, c
 .endmacro
 
 .macro MST s
-        .byte $8B,s
+        .byte   $8B
+        encode_string s
 .endmacro
 
 .macro RET
-        .byte $68
+        .byte   $68
 .endmacro
 
 ; PVM program
 
 pvm_program_start:
-        MST "PRINT"
-        MCH ' '
-        MCH '1'
+        MST     "PRINT"
+        MCH     ' '
+        MCH     '1'
         RET
 
 ; TANY	    1000 0100 aaaa
@@ -788,8 +839,8 @@ pvm_program_start:
 ; MEMCH	    1001 0001 nn
 ; MEMRG	    1001 0010 bb ee
 ; MEMST	    1001 0011 ccc
-; EMM	    0001 1000
-; EMI	    0010 0001 nn
+; EMIT	    0001 1000
+; EMCH	    0010 0001 nn
 ; CHOICE	0010 1100 aaaa
 ; COMMIT	0011 0100 aaaa
 ; STCAP	    0011 1000

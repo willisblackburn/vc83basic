@@ -40,6 +40,12 @@
     type .res 1
 .endstruct
 
+.struct Savepoint 
+    type .res 1
+    buffer_pos .res 1
+    pvm_program_ptr .res 2
+.endstruct
+
 ; Zero Page
 
 .include "zeropage.inc"
@@ -255,7 +261,7 @@ S1 = FPX+2
 .global copy, copy_a, copy_y_from
 .global reverse_copy
 .global clear_memory, set_memory
-.global invoke_indexed_vector
+.global invoke_indexed_vector, invoke_indexed_vector_2
 .global read_argument_separator
 .global find_printable_character
 .global line_number_to_string
