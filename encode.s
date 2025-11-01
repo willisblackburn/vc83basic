@@ -6,9 +6,6 @@
 ; All functions return carry clear if ok or carry set if out of space.
 ; All functions clobber X, so save it if you need it.
 
-; Maximum line length we're willing to encode (leave 16 bytes at end for END statement in immediate mode)
-MAX_LINE_LENGTH = 240
-
 ; Make sure Line didn't get too big
 .assert .sizeof(Line) < 256 - MAX_LINE_LENGTH, error
 

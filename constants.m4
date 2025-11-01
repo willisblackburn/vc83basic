@@ -132,3 +132,6 @@ def(PATTERN_ERROR, hex(81))
 def(PRIMARY_STACK_SIZE, 192)
 def(OP_STACK_SIZE, 16)
 def(STRING_EXTRA, 3)
+
+comment Maximum line length we're willing to encode (leave 16 bytes at end for END statement in immediate mode
+def(MAX_LINE_LENGTH, 240)

@@ -433,9 +433,11 @@ void call_new_parse_statement(const char* s, const char* expect_line_data, size_
 
 void test_new_parse_statement(void) {
 
-    const char line_data_1[] = { ST_RUN };
+    const char line_data_1[] = { ST_PRINT, ' ', '1' };
 
     PRINT_TEST_NAME();
+
+    HEXDUMP(pvm_program_start, 32);
 
     call_new_parse_statement("PRINT 1", line_data_1, sizeof line_data_1, __LINE__);
 }

@@ -591,7 +591,7 @@ new_parse_statement:
         rts
 
 
-; Invokes parsing virtual machine (PVM) starting 
+; Invokes parsing virtual machine (PVM).
 
 parse_pvm:
         stax    pvm_program_ptr
@@ -599,8 +599,8 @@ parse_pvm:
 @next_instruction:
         ldy     #0
         lda     (pvm_program_ptr),y     ; Load PVM instruction
-        debug $00
         sta     B                       ; Park in B
+        iny                             ; Move past instruction
 
 ; Look at the last three bits to figure out what arguments follow the instruction and load them.
 
@@ -612,85 +612,75 @@ parse_pvm:
         sta     pvm_arg+1               ; If X is 1 then we very conveniently need pvm_arg+1 to also be 1
         ldx     #0                      ; Reset X so we can use it to index pvm_arg
 @next_argument:
-        iny
         lda     (pvm_program_ptr),y     ; Get argument
         sta     pvm_arg,x               ; Save
-        debug $A0
+        iny
         inx
         cpx     C
         bne     @next_argument
         beq     @address_argument       ; Unconditional
 
 @string:
-        iny                             ; Skip over the instruction and update pvm_program_ptr
         jsr     rebase_pvm_program_ptr
         mvaa    pvm_program_ptr, pvm_arg    ; So we can save it into pvm_arg
         ldy     #$FF                    ; Now go looking for the character with bit 7 set that ends the string
 @string_next:
         iny
         lda     (pvm_program_ptr),y
-        debug $50
         bpl     @string_next     
-        iny                             ; Skip the last one character
-        bne     @match                  ; Unconditional since the string will never be 256 bytes long
+        iny                             ; Skip the last one character and fall through to check address argument
 
 @address_argument:
         lda     B
         and     #$04                    ; If bit 2 is set then an address argument follows
-        iny
+        beq     @match                  ; No address argument, carry on to match
         lda     (pvm_program_ptr),y
         sta     pvm_address_arg
         iny
         lda     (pvm_program_ptr),y
         sta     pvm_address_arg+1
+        iny
 
 ; The arguments are parsed and Y points to the next PVM instruction.
 
 @match:
         jsr     rebase_pvm_program_ptr  ; Catch up pvm_program_ptr to where Y is pointing to free up Y
         mvy     #0, C                   ; Now C is the match flag, default to false
-        ldx     buffer_pos              ; Definitely going to need this
+        mvx     buffer_pos, D           ; Definitely going to need this: store in D as beginning of match region
         lda     B                       ; Recover the instruction from B
         bpl     @instruction            ; Not a matching instruction, so skip the matching logic
-        debug $10
         and     #$03                    ; Get address type again
-        debug $11
         beq     @match_any              ; Is a "match any" instruction, so don't need to match anything
         cmp     #$03                    ; Is it "match string?"
-        debug $12
         beq     @match_string           ; Yep, go do it
         lda     buffer,x                ; It's "match char" or "match range;" get character from the buffer
-        debug $13
         sec
         sbc     pvm_arg                 ; Check if it's in range
-        debug $14
         bcc     @instruction
         cmp     pvm_arg+1
-        debug $15
         bcs     @instruction
 @match_any:
         inc     C                       ; Increment the match flag, making it true
+        inx                             ; Move past the matched character
         bne     @instruction            ; Unconditional
 
 @match_string:
         lda     (pvm_arg),y             ; Load the next value from the string to match
-        debug $20
         bmi     @match_string_last      ; Handle the last character
         cmp     buffer,x                ; Otherwise compare with character in buffer
         bne     @instruction            ; No match
-        inx                             ; Move to the next character
-        iny
+        iny                             ; Move to the next character
+        inx
         bne     @match_string           ; Unconditional
 
 @match_string_last:
         and     #$7F                    ; Clear the high bit
         cmp     buffer,x                ; Compare
-        debug $21
         bne     @instruction            ; No match
         inc     C                       ; The whole string matched, so increment the match flag
+        inx                             ; Skip over the last matched character
 
 @instruction:
-        lda     buffer,x
         lda     B                       ; Reload instruction again
         and     #$7F                    ; Clear high bit
         lsr     A                       ; Shift right to leave the instruction number in bits 0-3
@@ -735,10 +725,30 @@ ins_match_emit:
         stx     buffer_pos              ; Consume the matched string
 
 ins_emit:
-
+        ldx     D                       ; Restore the beginning of the match
+@emit_next:
+        lda     buffer,x
+        jsr     write_to_line_buffer
+        inx
+        cpx     buffer_pos              ; Caught up with read position?
+        bne     @emit_next
         rts
 
 ins_emch:
+        lda     pvm_arg
+
+; Fall through
+
+; Writes one byte to line_buffer.
+; X SAFE
+
+write_to_line_buffer:
+        ldy     line_pos
+        debug $40
+        cpy     #MAX_LINE_LENGTH
+        raieq   ERR_LINE_TOO_LONG
+        sta     line_buffer,y
+        inc     line_pos
         rts
 
 ins_choice:
@@ -775,6 +785,8 @@ ins_call:
         rts     
 
 ins_ret:
+        
+
         pla                             ; Pop the ins_ret return value off the stack
         pla
         rts                             ; This breaks instruction-processing loop and returns from parse_pvm
@@ -806,13 +818,59 @@ ins_fail:
         .byte   $84, <address, >address
 .endmacro
 
+.macro TCH c, address
+        .byte   $85, c, <address, >address
+.endmacro
+
+.macro TRG c, n, address
+        .byte   $86, c, n, <address, >address
+.endmacro
+
+.macro TST s, address
+        .byte   $87
+        encode_string s
+        .byte   <address, >address
+
+.macro MANY
+        .byte   $88
+.endmacro
+
 .macro MCH c
         .byte   $89, c
+.endmacro
+
+.macro MRG c, n
+        .byte   $8A, c, n
 .endmacro
 
 .macro MST s
         .byte   $8B
         encode_string s
+.endmacro
+
+.macro MEMANY
+        .byte   $90
+.endmacro
+
+.macro MEMCH c
+        .byte   $91, c
+.endmacro
+
+.macro MEMRG c, n
+        .byte   $92, c, n
+.endmacro
+
+.macro MEMST s
+        .byte   $93
+        encode_string s
+.endmacro
+
+.macro EMIT
+        .byte   $18
+.endmacro
+
+.macro EMCH c
+        .byte   $21, c
 .endmacro
 
 .macro RET
@@ -823,8 +881,9 @@ ins_fail:
 
 pvm_program_start:
         MST     "PRINT"
-        MCH     ' '
-        MCH     '1'
+        EMCH    ST_PRINT
+        MEMCH   ' '
+        MEMCH   '1'
         RET
 
 ; TANY	    1000 0100 aaaa

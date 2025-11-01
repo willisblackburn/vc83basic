@@ -36,6 +36,7 @@ _err: .res 1
 .export _line_buffer = line_buffer
 
 .export _statement_name_table = statement_name_table
+.export _pvm_program_start = pvm_program_start
 
 .code
 
