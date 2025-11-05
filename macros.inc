@@ -11,9 +11,9 @@
 ; Loads or stores a 16-bit value to/from AX.
 
 .macro ldax address
-    .if (.match (.left (1, {address}), #))
-        lda     #<(.right (.tcount ({address})-1, {address}))
-        ldx     #>(.right (.tcount ({address})-1, {address}))
+    .if (.match(.left(1, {address}), #))
+        lda     #<(.right(.tcount({address})-1, {address}))
+        ldx     #>(.right(.tcount({address})-1, {address}))
     .else
         lda     address
         ldx     address+1
@@ -21,9 +21,9 @@
 .endmacro
 
 .macro lday address
-    .if (.match (.left (1, {address}), #))
-        lda     #<(.right (.tcount ({address})-1, {address}))
-        ldy     #>(.right (.tcount ({address})-1, {address}))
+    .if (.match(.left(1, {address}), #))
+        lda     #<(.right(.tcount({address})-1, {address}))
+        ldy     #>(.right(.tcount({address})-1, {address}))
     .else
         lda     address
         ldy     address+1
@@ -60,10 +60,10 @@
 ; Moves a 16-bit value through A.
 
 .macro mvaa from, to
-    .if (.match (.left (1, {from}), #))
-        lda     #<(.right (.tcount ({from})-1, {from}))
+    .if (.match(.left(1, {from}), #))
+        lda     #<(.right(.tcount({from})-1, {from}))
         sta     to
-        lda     #>(.right (.tcount ({from})-1, {from}))
+        lda     #>(.right(.tcount({from})-1, {from}))
         sta     to+1
     .else
         lda     from
@@ -193,7 +193,7 @@
 ; Raises an error.
 
 .macro raise error
-    .if (.not .match ({error}, A))
+    .if (.not .match({error}, A))
         lda     #error
     .endif
         jmp     on_raise
