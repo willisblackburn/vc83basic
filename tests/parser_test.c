@@ -433,13 +433,15 @@ void call_new_parse_statement(const char* s, const char* expect_line_data, size_
 
 void test_new_parse_statement(void) {
 
-    const char line_data_1[] = { ST_PRINT, ' ', '1' };
+    const char line_data_1[] = { ST_PRINT, '1' };
+    const char line_data_2[] = { ST_PRINT, '2', '5' };
 
     PRINT_TEST_NAME();
 
-    HEXDUMP(pvm_program_start, 32);
+    HEXDUMP(pvm_start, 32);
 
     call_new_parse_statement("PRINT 1", line_data_1, sizeof line_data_1, __LINE__);
+    call_new_parse_statement("PRINT 25", line_data_2, sizeof line_data_2, __LINE__);
 }
 
 int main(void) {

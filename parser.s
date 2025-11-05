@@ -586,7 +586,7 @@ save_parser_state:
 
 
 new_parse_statement:
-        ldax    #pvm_program_start
+        ldax    #pvm_start
         jsr     parse_pvm
         rts
 
@@ -609,7 +609,7 @@ parse_pvm:
         cmp     #$03                    ; Check if it's expecting a string
         beq     @string                 ; If so go do it, otherwise, A is the number of arguments
         sta     C                       ; C is the number of arguments to parse and is either 1 or 2
-        sta     pvm_arg+1               ; If X is 1 then we very conveniently need pvm_arg+1 to also be 1
+        sta     pvm_arg+1               ; If number of arguments is 1 this will leave pvm_arg+1 set to 1
         ldx     #0                      ; Reset X so we can use it to index pvm_arg
 @next_argument:
         lda     (pvm_program_ptr),y     ; Get argument
@@ -646,9 +646,9 @@ parse_pvm:
 @match:
         jsr     rebase_pvm_program_ptr  ; Catch up pvm_program_ptr to where Y is pointing to free up Y
         mvy     #0, C                   ; Now C is the match flag, default to false
-        mvx     buffer_pos, D           ; Definitely going to need this: store in D as beginning of match region
         lda     B                       ; Recover the instruction from B
         bpl     @instruction            ; Not a matching instruction, so skip the matching logic
+        mvx     buffer_pos, D           ; Definitely going to need this: store in D as beginning of match region
         and     #$03                    ; Get address type again
         beq     @match_any              ; Is a "match any" instruction, so don't need to match anything
         cmp     #$03                    ; Is it "match string?"
@@ -703,14 +703,14 @@ pvm_instruction_vectors:
         .word   ins_emcap-1
         .word   ins_set7-1
         .word   ins_dkw-1
-        .word   ins_jmp-1
+        .word   ins_jump-1
         .word   ins_call-1
-        .word   ins_ret-1
+        .word   ins_return-1
         .word   ins_fail-1
 
 ins_test:
         lda     C                       ; Match?
-        bne     ins_jmp                 ; Did match, so treat as JMP
+        bne     ins_jump                ; Did match, so treat as JMP
         rts
 
 ins_match:
@@ -723,6 +723,8 @@ ins_match_emit:
         lda     C                       ; Just do same as ins_match
         beq     ins_fail                ; No match, treat as FAIL, else fall through to EMIT
         stx     buffer_pos              ; Consume the matched string
+
+; Fall through
 
 ins_emit:
         ldx     D                       ; Restore the beginning of the match
@@ -744,33 +746,36 @@ ins_emch:
 
 write_to_line_buffer:
         ldy     line_pos
-        debug $40
         cpy     #MAX_LINE_LENGTH
         raieq   ERR_LINE_TOO_LONG
         sta     line_buffer,y
         inc     line_pos
         rts
 
+ins_fail:
+        ldx     stack_pos               ; Check if stack is empty
+        cpx     #PRIMARY_STACK_SIZE
+        bne     retore_savepoint        ; There is a savepoint so restore it
+        raise   ERR_SYNTAX_ERROR        ; No savepoint so raise syntax error
+
 ins_choice:
+        lda     #.sizeof(Savepoint)
+        jsr     stack_alloc             ; Allocate space for the savepoint
+        tax
+        lda     pvm_address_arg
+        sta     stack+Savepoint::pvm_program_ptr,x
+        lda     pvm_address_arg+1
+        sta     stack+Savepoint::pvm_program_ptr+1,x
         rts
 
 ins_commit:
-        rts
+        lda     #.sizeof(Savepoint)     ; Discard the savepoint
+        jsr     stack_free
 
-ins_stcap:
-        rts
+; Fall through
 
-ins_emcap:
-        rts
-
-ins_set7:
-        rts
-
-ins_dkw:
-        rts
-
-ins_jmp:
-        mva     pvm_program_ptr, pvm_address_arg
+ins_jump:
+        mva     pvm_address_arg, pvm_program_ptr
         rts
 
 ins_call:
@@ -784,15 +789,34 @@ ins_call:
         mvaa    pvm_address_arg, pvm_program_ptr
         rts     
 
-ins_ret:
-        
-
+ins_return:
+        ldx     stack_pos
+        cpx     #PRIMARY_STACK_SIZE     ; If stack is empty then this RET from the top-level rule
+        bne     retore_savepoint
         pla                             ; Pop the ins_ret return value off the stack
         pla
         rts                             ; This breaks instruction-processing loop and returns from parse_pvm
 
-ins_fail:
-        raise   ERR_SYNTAX_ERROR        ; All parser errors are syntax errors
+retore_savepoint:
+        lda     #.sizeof(Savepoint)     ; Pop the savepoint off the stack
+        jsr     stack_free
+        lda     stack+Savepoint::pvm_program_ptr,x      ; Return to the savepoint
+        sta     pvm_program_ptr
+        lda     stack+Savepoint::pvm_program_ptr+1,x
+        sta     pvm_program_ptr+1
+        rts
+
+ins_stcap:
+        rts
+
+ins_emcap:
+        rts
+
+ins_set7:
+        rts
+
+ins_dkw:
+        rts
 
 ; PVM macros
 
@@ -831,60 +855,93 @@ ins_fail:
         encode_string s
         .byte   <address, >address
 
-.macro MANY
+.macro MATCH_ANY
         .byte   $88
 .endmacro
 
-.macro MCH c
-        .byte   $89, c
-.endmacro
-
-.macro MRG c, n
-        .byte   $8A, c, n
-.endmacro
-
-.macro MST s
+.macro MATCH m, n
+    .if (.match(m, *))
+        .byte   $88
+    .elseif (.match(m, ""))
         .byte   $8B
-        encode_string s
+        encode_string m
+    .elseif (.not .blank(n))
+        .byte   $8A, m, n
+    .else
+        .byte   $89, m
+    .endif
 .endmacro
 
 .macro MEMANY
         .byte   $90
 .endmacro
 
-.macro MEMCH c
-        .byte   $91, c
-.endmacro
-
-.macro MEMRG c, n
-        .byte   $92, c, n
-.endmacro
-
-.macro MEMST s
+.macro MATCH_EMIT m, n
+    .if (.match(m, ""))
         .byte   $93
-        encode_string s
+        encode_string m
+    .elseif (.not .blank(n))
+        .byte   $92, m, n
+    .else
+        .byte   $91, m
+    .endif
 .endmacro
 
 .macro EMIT
         .byte   $18
 .endmacro
 
-.macro EMCH c
-        .byte   $21, c
+.macro EMIT_BYTE b
+        .byte   $21, b
 .endmacro
 
-.macro RET
+.macro CHOICE address
+        .byte   $2C, <address, >address
+.endmacro
+
+.macro COMMIT address
+        .byte   $34, <address, >address
+.endmacro
+
+.macro JUMP address
+        .byte   $5C, <address, >address
+.endmacro
+
+.macro CALL address
+        .byte   $64, <address, >address
+.endmacro
+
+.macro RETURN
         .byte   $68
 .endmacro
 
 ; PVM program
 
-pvm_program_start:
-        MST     "PRINT"
-        EMCH    ST_PRINT
-        MEMCH   ' '
-        MEMCH   '1'
-        RET
+pvm_start:
+        MATCH "PRINT"
+        EMIT_BYTE ST_PRINT
+        CALL pvm_whitespace
+        CALL pvm_number
+        RETURN
+
+pvm_whitespace:
+        CHOICE @done
+        MATCH ' '
+        COMMIT pvm_whitespace
+@done:
+        RETURN
+
+pvm_number:
+        MATCH '0', 10
+        EMIT
+@next_digit:
+        CHOICE @done
+        MATCH '0', 10
+        EMIT
+        COMMIT @next_digit
+@done:
+        RETURN
+        
 
 ; TANY	    1000 0100 aaaa
 ; TCH	    1000 0101 nn aaaa
@@ -906,9 +963,9 @@ pvm_program_start:
 ; EMCAP	    0100 0001 nn
 ; SET7	    0100 1000
 ; DKW	    0101 0100 aaaa
-; JMP	    0101 1100 aaaa
+; JUMP	    0101 1100 aaaa
 ; CALL	    0110 0100 aaaa
-; RET	    0110 1000
+; RETURN    0110 1000
 ; FAIL	    0111 0000
 ; ?         0111 1000
 

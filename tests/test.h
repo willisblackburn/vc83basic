@@ -71,7 +71,7 @@ extern char buffer[];
 extern Line line_buffer;
 
 extern const char statement_name_table[];
-extern const char pvm_program_start[];
+extern const char pvm_start[];
 
 // Prototypes for C wrapper functions
 
