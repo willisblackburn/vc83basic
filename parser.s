@@ -961,7 +961,11 @@ pvm_expression:
         CALL pvm_string
         COMMIT @done
 @number:
-        JUMP pvm_number
+        CHOICE @variable
+        CALL pvm_number
+        COMMIT @done
+@variable:
+        CALL pvm_variable
 @done:
         RETURN
 
@@ -986,8 +990,22 @@ pvm_string:
         TEST @second_quote, '"'
         RETURN
 
-
-
+pvm_variable:
+        MATCH_EMIT 'A', 26
+@next:
+        CHOICE @digit
+        MATCH_EMIT 'A', 26
+        COMMIT @next
+@digit:
+        CHOICE @underscore
+        MATCH_EMIT '0', 10
+        COMMIT @next
+@underscore:
+        CHOICE @done
+        MATCH_EMIT '_'
+        COMMIT @next        
+@done:
+        RETURN
 
 ; TANY	    1000 0100 aaaa
 ; TCH	    1000 0101 nn aaaa
