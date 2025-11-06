@@ -40,9 +40,9 @@
     type .res 1
 .endstruct
 
-.struct Savepoint 
-    type .res 1
+.struct ParserState 
     buffer_pos .res 1
+    line_pos .res 1                 ; MAX_LINE_LENGTH means this is a CALL return point, otherwise a CHOICE savepoint
     pvm_program_ptr .res 2
 .endstruct
 

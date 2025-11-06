@@ -592,6 +592,11 @@ new_parse_statement:
 
 
 ; Invokes parsing virtual machine (PVM).
+; CALL pushes a ParserState on the stack that can be retored with RETURN.
+;   RETURN fails if the ParserState on the top of the stack did not come from CALL.
+; CHOICE pushes a ParserState on the stack that will be restored with FAIL and discarded with COMMIT.
+;   FAIL discards ParserStates created by CALL.
+;   COMMIT fails if the ParserState on the top of the stack did not come from CHOICE.
 
 parse_pvm:
         stax    pvm_program_ptr
@@ -698,7 +703,7 @@ pvm_instruction_vectors:
         .word   ins_match-1
         .word   ins_match_emit-1
         .word   ins_emit-1
-        .word   ins_emch-1
+        .word   ins_emit_byte-1
         .word   ins_choice-1
         .word   ins_commit-1
         .word   ins_stcap-1
@@ -738,7 +743,7 @@ ins_emit:
         bne     @emit_next
         rts
 
-ins_emch:
+ins_emit_byte:
         lda     pvm_arg
 
 ; Fall through
@@ -757,22 +762,29 @@ write_to_line_buffer:
 ins_fail:
         ldx     stack_pos               ; Check if stack is empty
         cpx     #PRIMARY_STACK_SIZE
-        bne     retore_savepoint        ; There is a savepoint so restore it
-        raise   ERR_SYNTAX_ERROR        ; No savepoint so raise syntax error
+        raieq   ERR_SYNTAX_ERROR        ; No CHOICE, so this FAIL fails the entire parse with syntax error
+        jsr     pop_parser_state
+        bcs     ins_fail                ; Parser state is from CALL; we should ignore
+        bcc     retore_pvm_program_ptr  ; Unconditional
 
 ins_choice:
-        lda     #.sizeof(Savepoint)
+        lda     #.sizeof(ParserState)
         jsr     stack_alloc             ; Allocate space for the savepoint
         tax
+        lda     buffer_pos
+        sta     stack+ParserState::buffer_pos,x
+        lda     line_pos
+        sta     stack+ParserState::line_pos,x
         lda     pvm_address_arg
-        sta     stack+Savepoint::pvm_program_ptr,x
+        sta     stack+ParserState::pvm_program_ptr,x
         lda     pvm_address_arg+1
-        sta     stack+Savepoint::pvm_program_ptr+1,x
+        sta     stack+ParserState::pvm_program_ptr+1,x
         rts
 
 ins_commit:
-        lda     #.sizeof(Savepoint)     ; Discard the savepoint
-        jsr     stack_free
+        ldx     stack_pos
+        jsr     pop_parser_state
+        raics   ERR_INTERNAL_ERROR      ; Parser state was from CALL
 
 ; Fall through
 
@@ -781,31 +793,51 @@ ins_jump:
         rts
 
 ins_call:
-        lda     #.sizeof(Savepoint)
-        jsr     stack_alloc             ; Allocate space for the savepoint
+        lda     #.sizeof(ParserState)
+        jsr     stack_alloc             ; Allocate space to save the return address
         tax
+        lda     #MAX_LINE_LENGTH        ; line_pos cannot be >= MAX_LINE_LENGTH so this indicates a CALL
+        sta     stack+ParserState::line_pos,x
         lda     pvm_program_ptr
-        sta     stack+Savepoint::pvm_program_ptr,x
+        sta     stack+ParserState::pvm_program_ptr,x
         lda     pvm_program_ptr+1
-        sta     stack+Savepoint::pvm_program_ptr+1,x
+        sta     stack+ParserState::pvm_program_ptr+1,x
         mvaa    pvm_address_arg, pvm_program_ptr
         rts     
 
 ins_return:
         ldx     stack_pos
         cpx     #PRIMARY_STACK_SIZE     ; If stack is empty then this RET from the top-level rule
-        bne     retore_savepoint
-        pla                             ; Pop the ins_ret return value off the stack
+        bne     return_from_call
+        pla                             ; Pop the ins_return return value off the stack
         pla
         rts                             ; This breaks instruction-processing loop and returns from parse_pvm
 
-retore_savepoint:
-        lda     #.sizeof(Savepoint)     ; Pop the savepoint off the stack
-        jsr     stack_free
-        lda     stack+Savepoint::pvm_program_ptr,x      ; Return to the savepoint
+return_from_call:
+        jsr     pop_parser_state
+        raicc   ERR_INTERNAL_ERROR      ; Parser state was from CHOICE
+
+; Fall through
+
+; Updates pvm_program_ptr from the ParserState saved on the stack.
+; X=value of stack_pos
+
+retore_pvm_program_ptr:
+        lda     stack+ParserState::pvm_program_ptr,x    ; Return to the savepoint
         sta     pvm_program_ptr
-        lda     stack+Savepoint::pvm_program_ptr+1,x
+        lda     stack+ParserState::pvm_program_ptr+1,x
         sta     pvm_program_ptr+1
+        rts
+
+; Pop the parser state from the stack and test line_pos vs. MAX_LINE_LENGTH:
+; If this test returns with carry clear, then this parser state came from CHOICE, and if set, then from CALL.
+; X=value of stack_pos
+
+pop_parser_state:
+        lda     #.sizeof(ParserState)   ; Pop the savepoint off the stack
+        jsr     stack_free
+        lda     stack+ParserState::line_pos,x
+        cmp     #MAX_LINE_LENGTH        ; Return with carry clear (<MAX_LINE_LENGTH) or set (>=MAX_LINE_LENGTH)
         rts
 
 ins_stcap:
@@ -848,9 +880,9 @@ ins_dkw:
         .byte   <address, >address
         encode_string s
     .elseif (.not .blank(n))
-        .byte   $86, <address, >address, c, n
+        .byte   $86, <address, >address, m, n
     .else
-        .byte   $85, <address, >address, c
+        .byte   $85, <address, >address, m
     .endif
 .endmacro
 
@@ -914,7 +946,7 @@ pvm_start:
         MATCH "PRINT"
         EMIT_BYTE ST_PRINT
         CALL pvm_whitespace
-        CALL pvm_number
+        CALL pvm_expression
         RETURN
 
 pvm_whitespace:
@@ -924,17 +956,38 @@ pvm_whitespace:
 @done:
         RETURN
 
-pvm_number:
-        MATCH '0', 10
-        EMIT
-@next_digit:
-        CHOICE @done
-        MATCH '0', 10
-        EMIT
-        COMMIT @next_digit
+pvm_expression:
+        CHOICE @number
+        CALL pvm_string
+        COMMIT @done
+@number:
+        JUMP pvm_number
 @done:
         RETURN
-        
+
+pvm_number:
+        MATCH_EMIT '0', 10
+@next:
+        CHOICE @done
+        MATCH_EMIT '0', 10
+        COMMIT @next
+@done:
+        RETURN
+
+pvm_string:
+        MATCH_EMIT '"'
+@next:
+        TEST @first_quote, '"'
+@second_quote:
+        MATCH_EMIT *
+        JUMP @next
+@first_quote:
+        MATCH_EMIT *
+        TEST @second_quote, '"'
+        RETURN
+
+
+
 
 ; TANY	    1000 0100 aaaa
 ; TCH	    1000 0101 nn aaaa
