@@ -16,7 +16,8 @@ def(NT_TEXT,            hex(16))
 
 comment Tokenized form constants
 
-def(TOKEN_UNARY_OP,     hex(08)) comment OR with OP_UNARY_*
+def(TOKEN_UNARY_OP,     hex(04)) comment OR with OP_UNARY_*
+def(TOKEN_KW,           hex(08)) comment OR with KW_*
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
 def(TOKEN_FUNCTION,     hex(60)) comment OR with index of function
 
@@ -48,6 +49,31 @@ def(ST_READ,           22)
 def(ST_RESTORE,        23)
 def(ST_POKE,           24)
 
+def(ST_NEW_END,             0)
+def(ST_NEW_RUN,             1)
+def(ST_NEW_PRINT,           2)
+def(ST_NEW_LET,             3)
+def(ST_NEW_INPUT,           4)
+def(ST_NEW_LIST,            5)
+def(ST_NEW_GOTO,            6)
+def(ST_NEW_GOSUB,           7)
+def(ST_NEW_RETURN,          8)
+def(ST_NEW_POP,             9)
+def(ST_NEW_ON,             10)
+def(ST_NEW_FOR,            11)
+def(ST_NEW_NEXT,           12)
+def(ST_NEW_STOP,           13)
+def(ST_NEW_CONT,           14)
+def(ST_NEW_IF_THEN,        15)
+def(ST_NEW_NEW,            16)
+def(ST_NEW_CLR,            17)
+def(ST_NEW_DIM,            18)
+def(ST_NEW_REM,            19)
+def(ST_NEW_DATA,           20)
+def(ST_NEW_READ,           21)
+def(ST_NEW_RESTORE,        22)
+def(ST_NEW_POKE,           23)
+
 comment Binary operator tokens: combine with TOKEN_OP
 
 def(OP_ADD,             0)
@@ -69,6 +95,14 @@ comment Binary operator tokens: combine with TOKEN_UNARY_OP
 
 def(UNARY_OP_MINUS,     0)
 def(UNARY_OP_NOT,       1)
+
+comment Non-statement keywords
+
+def(KW_TO,              0)
+def(KW_STEP,            1)
+def(KW_GOTO,            2)
+def(KW_GOSUB,           3)
+def(KW_THEN,            4)
 
 comment Expression decode handlers
 

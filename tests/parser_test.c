@@ -439,10 +439,12 @@ void test_new_parse_statement(void) {
     const char line_data_4[] = { ST_PRINT, 'I', 'D', 'X', '_', '2' | EOT };
     const char line_data_5[] = { ST_PRINT, '1', TOKEN_OP | OP_ADD, '1', TOKEN_OP | OP_ADD, '1' };
     const char line_data_6[] = { ST_PRINT, '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')' };
+    const char line_data_7[] = { ST_NEW_LET, 'X' | EOT, '=', '1', '0', '0' };
+    const char line_data_8[] = { ST_NEW_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_KW | KW_THEN, ST_GOTO, '1', '0' };
 
     PRINT_TEST_NAME();
 
-    HEXDUMP(pvm_start, 32);
+    HEXDUMP(pvm_statement, 32);
 
     call_new_parse_statement("PRINT 1", line_data_1, sizeof line_data_1, __LINE__);
     call_new_parse_statement("PRINT 25", line_data_2, sizeof line_data_2, __LINE__);
@@ -450,6 +452,8 @@ void test_new_parse_statement(void) {
     call_new_parse_statement("PRINT IDX_2", line_data_4, sizeof line_data_4, __LINE__);
     call_new_parse_statement("PRINT 1+1+1", line_data_5, sizeof line_data_5, __LINE__);
     call_new_parse_statement("PRINT 1+(1+1)", line_data_6, sizeof line_data_6, __LINE__);
+    call_new_parse_statement("LET X=100", line_data_7, sizeof line_data_7, __LINE__);
+    call_new_parse_statement("IF X=1 THEN GOTO 10", line_data_8, sizeof line_data_8, __LINE__);
 }
 
 int main(void) {

@@ -204,7 +204,7 @@ S1 = FPX+2
 .global parse_number
 .global parse_argument_separator
 .global new_parse_statement
-.global pvm_start
+.global pvm_statement
 
 ; poke.s
 .global exec_poke

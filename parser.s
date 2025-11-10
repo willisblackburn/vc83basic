@@ -586,7 +586,7 @@ save_parser_state:
 
 
 new_parse_statement:
-        ldax    #pvm_start
+        ldax    #pvm_statement
         jsr     parse_pvm
         rts
 
@@ -892,61 +892,76 @@ rebase_pvm_program_ptr:
 
 ; Encodes string using .byte and sets bit 7 (EOT) on the last character.
 
-.macro encode_string s
-    .local length
-    length = .strlen(s)
+.macro name s
+    .local @length
+    @length = .strlen(s)
 
-    .if (length > 0)
+    .if (@length > 0)
         ; Output all characters *except* the last one, if any.
-        .if (length > 1)
-            .repeat length - 1, i
+        .if (@length > 1)
+            .repeat @length - 1, i
                 .byte   .strat(s, i)
             .endrep
         .endif
         
         ; Output the last character, bitwise OR'd with EOT
-        .byte   .strat(s, length - 1) | EOT
+        .byte   .strat(s, @length - 1) | EOT
     .endif
 .endmacro
 
-.macro TEST address, m, n
+.macro name_table_entry s
+        .byte   :+ - *
+        name s
+.endmacro
+
+.macro name_table_end
+        .byte   0
+.endmacro
+
+.macro TEST m, address
     .if (.match(m, *))
         .byte   $84, <address, >address
     .elseif (.match(m, ""))
         .byte   $87
         .byte   <address, >address
-        encode_string m
-    .elseif (.not .blank(n))
-        .byte   $86, <address, >address, m, n
+        name m
     .else
         .byte   $85, <address, >address, m
     .endif
 .endmacro
 
-.macro MATCH m, n
+.macro TEST_RANGE m, n, address
+    .byte   $86, <address, >address, m, n
+.endmacro
+
+.macro MATCH m
     .if (.match(m, *))
         .byte   $88
     .elseif (.match(m, ""))
         .byte   $8B
-        encode_string m
-    .elseif (.not .blank(n))
-        .byte   $8A, m, n
+        name m
     .else
         .byte   $89, m
     .endif
 .endmacro
 
-.macro MATCH_EMIT m, n
+.macro MATCH_RANGE m, n
+    .byte   $8A, m, n
+.endmacro
+
+.macro MATCH_EMIT m
     .if (.match(m, *))
         .byte   $90
     .elseif (.match(m, ""))
         .byte   $93
-        encode_string m
-    .elseif (.not .blank(n))
-        .byte   $92, m, n
+        name m
     .else
         .byte   $91, m
     .endif
+.endmacro
+
+.macro MATCH_RANGE_EMIT m, n
+    .byte   $92, m, n
 .endmacro
 
 .macro EMIT
@@ -993,6 +1008,10 @@ rebase_pvm_program_ptr:
         .byte   $51, b
 .endmacro
 
+.macro FAIL
+        .byte   $70
+.endmacro
+
 
 ; TEST	            1000 0100 aaaa
 ; TEST	            1000 0101 aaaa nn
@@ -1023,29 +1042,129 @@ rebase_pvm_program_ptr:
 
 ; PVM program
 
-pvm_start:
+pvm_statement:
+        CALL pvm_whitespace
         BEGIN_KEYWORD
         CALL pvm_name
-        TOKENIZE_KEYWORD pvm_statement_table
-        CALL pvm_whitespace
+        TOKENIZE_KEYWORD pvm_statement_name_table
         JUMP_KEYWORD
 
-pvm_statement_table:
-        .byte   :+ - *
-        encode_string "END"
-:       .byte   :+ - *
-        encode_string "RUN"
-:       .byte   :+ - *
-        encode_string "PRINT"
+pvm_statement_name_table:
+        name_table_entry "END"
+            RETURN
+:
+        name_table_entry "RUN"
+            RETURN
+:
+        name_table_entry "PRINT"
             JUMP pvm_expression
-:       .byte   0
+:
+        name_table_entry "LET"
+            CALL pvm_variable
+            MATCH_EMIT '='
+            JUMP pvm_expression
+:
+        name_table_entry "INPUT"
+            JUMP pvm_variable_list
+:
+        name_table_entry "LIST"
+            RETURN
+:
+        name_table_entry "GOTO"
+            JUMP pvm_number
+:
+        name_table_entry "GOSUB"
+            JUMP pvm_number
+:
+        name_table_entry "RETURN"
+            RETURN
+:
+        name_table_entry "POP"
+            RETURN
+:
+        name_table_entry "ON"
+            JUMP pvm_on
+:
+        name_table_entry "FOR"
+            JUMP pvm_for
+:
+        name_table_entry "NEXT"
+            JUMP pvm_variable
+:
+        name_table_entry "STOP"
+            RETURN
+:
+        name_table_entry "CONT"
+            RETURN
+:
+        name_table_entry "IF"
+            JUMP pvm_if
+:
+        name_table_entry "NEW"
+            RETURN
+:
+        name_table_entry "CLR"
+            RETURN
+:
+        name_table_entry "DIM"
+            JUMP pvm_variable
+:
+        name_table_entry "REM"
+:
+        name_table_entry "DATA"
+:
+        name_table_entry "READ"
+            JUMP pvm_variable_list
+:
+        name_table_entry "RESTORE"
+            JUMP pvm_number
+:
+        name_table_entry "POKE"
+:
+        name_table_end
 
-pvm_whitespace:
-        CHOICE @done
-        MATCH ' '
-        COMMIT pvm_whitespace
-@done:
-        RETURN
+keyword_name_table:
+        name_table_entry "TO"
+:
+        name_table_entry "STEP"
+:
+        name_table_entry "GOTO"
+:
+        name_table_entry "GOSUB"
+:
+        name_table_entry "THEN"
+:
+        name_table_end
+
+pvm_on:
+        CALL pvm_expression    
+        CALL pvm_whitespace
+        TEST "GO", @go
+        FAIL
+@go:
+        CALL pvm_keyword
+        JUMP pvm_number_list
+
+pvm_for:
+        CALL pvm_variable
+        CALL pvm_whitespace
+        MATCH_EMIT '='
+        CALL pvm_expression
+        CALL pvm_whitespace
+        TEST "TO", @to
+        FAIL
+@to:
+        CALL pvm_keyword
+        JUMP pvm_expression
+
+pvm_if:
+        CALL pvm_expression
+        CALL pvm_whitespace
+        TEST "THEN", @then
+        FAIL
+@then:
+        CALL pvm_keyword
+        JUMP pvm_statement
 
 pvm_expression:
         CALL pvm_primary_expression
@@ -1055,10 +1174,15 @@ pvm_expression:
 @done:
         RETURN
 
+; pvm_primary_expression does not discard whitespace.
+; The component that can be a primary expression discard whitespace.
+
 pvm_primary_expression:
         CHOICE @string
+        CALL pvm_whitespace
         MATCH_EMIT '('
         CALL pvm_expression
+        CALL pvm_whitespace
         MATCH_EMIT ')'
         COMMIT @done
 @string:
@@ -1075,40 +1199,89 @@ pvm_primary_expression:
         RETURN
 
 pvm_number:
-        MATCH_EMIT '0', 10
+        CALL pvm_whitespace
+        MATCH_RANGE_EMIT '0', 10
 @next:
         CHOICE @done
-        MATCH_EMIT '0', 10
+        MATCH_RANGE_EMIT '0', 10
         COMMIT @next
 @done:
         RETURN
 
+pvm_number_list:
+        CALL pvm_number
+@next:
+        CHOICE @done
+        CALL pvm_whitespace
+        MATCH_EMIT ','
+        CALL pvm_number
+        JUMP @next
+@done:
+        RETURN
+
 pvm_string:
+        CALL pvm_whitespace
         MATCH_EMIT '"'
 @next:
-        TEST @first_quote, '"'
+        TEST '"', @first_quote
 @second_quote:
         MATCH_EMIT *
         JUMP @next
 @first_quote:
         MATCH_EMIT *
-        TEST @second_quote, '"'
+        TEST '"', @second_quote
         RETURN
 
 pvm_variable:
+        CALL pvm_whitespace
         CALL pvm_name
         COMPOSE EOT
         RETURN
 
+pvm_variable_list:
+        CALL pvm_variable
+@next:
+        CHOICE @done
+        MATCH_EMIT ','
+        CALL pvm_variable
+        COMMIT @next
+@done:
+        RETURN
+
+pvm_operator:
+        CALL pvm_whitespace
+        BEGIN_KEYWORD
+        MATCH_RANGE_EMIT ' ', 32
+        CHOICE @end
+        MATCH_RANGE_EMIT '<', 3
+        COMMIT @end
+@end:
+        TOKENIZE_KEYWORD operator_name_table
+        COMPOSE TOKEN_OP
+        RETURN        
+
+; pvm_keyword does not discard whitespace.
+; Callers test for the correct keyword before calling and should discard whitespace at that point.
+
+pvm_keyword:
+        BEGIN_KEYWORD
+        CALL pvm_name
+        TOKENIZE_KEYWORD keyword_name_table
+        COMPOSE TOKEN_KW
+        RETURN
+
+; pvm_name does not discard whitespace.
+; Its only job is to capture an alphanumeric "name."
+
 pvm_name:
-        MATCH_EMIT 'A', 26
+        MATCH_RANGE_EMIT 'A', 26
 @next:
         CHOICE @digit
-        MATCH_EMIT 'A', 26
+        MATCH_RANGE_EMIT 'A', 26
         COMMIT @next
 @digit:
         CHOICE @underscore
-        MATCH_EMIT '0', 10
+        MATCH_RANGE_EMIT '0', 10
         COMMIT @next
 @underscore:
         CHOICE @done
@@ -1117,13 +1290,10 @@ pvm_name:
 @done:
         RETURN
 
-pvm_operator:
-        BEGIN_KEYWORD
-        MATCH_EMIT ' ', 32
-        CHOICE @end
-        MATCH_EMIT '<', 3
-        COMMIT @end
-@end:
-        TOKENIZE_KEYWORD operator_name_table
-        COMPOSE TOKEN_OP
-        RETURN        
+pvm_whitespace:
+        CHOICE @done
+        MATCH ' '
+        COMMIT pvm_whitespace
+@done:
+        RETURN
+
