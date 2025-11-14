@@ -655,7 +655,8 @@ parse_pvm:
         mvy     #0, C                   ; Now C is the match flag, default to false
         lda     B                       ; Recover the instruction from B
         bpl     @instruction            ; Not a matching instruction, so skip the matching logic
-        mvx     buffer_pos, D           ; Definitely going to need this: store in D as beginning of match region
+        mvx     line_pos, E             ; Remember buffer_pos and line_pos in DE
+        mvx     buffer_pos, D
         and     #$03                    ; Get address type again
         beq     @match_any              ; Is a "match any" instruction, so don't need to match anything
         cmp     #$03                    ; Is it "match string?"
@@ -701,9 +702,9 @@ parse_pvm:
 pvm_instruction_vectors:
         .word   ins_test-1
         .word   ins_match-1
-        .word   ins_match_emit-1
-        .word   ins_emit-1
-        .word   ins_emit_byte-1
+        .word   ins_discard-1
+        .word   0
+        .word   0
         .word   ins_try-1
         .word   ins_commit-1
         .word   ins_begin_keyword-1
@@ -724,29 +725,18 @@ ins_match:
         lda     C                       ; Match?
         beq     ins_fail                ; No match, treat as FAIL
         stx     buffer_pos              ; Consume the matched string
-        rts
-
-ins_match_emit:
-        lda     C                       ; Just do same as ins_match
-        beq     ins_fail                ; No match, treat as FAIL, else fall through to EMIT
-        stx     buffer_pos              ; Consume the matched string
-
-; Fall through
-
-ins_emit:
         ldx     D                       ; Restore the beginning of the match
-@emit_next:
+@write_next:
         lda     buffer,x
         jsr     write_to_line_buffer
         inx
         cpx     buffer_pos              ; Caught up with read position?
-        bne     @emit_next
+        bne     @write_next
         rts
 
-ins_emit_byte:
-        lda     pvm_arg
-
-; Fall through
+ins_discard:
+        mva     E, line_pos             ; Move line_pos back to where it was before
+        rts
 
 ; Writes one byte to line_buffer.
 ; X SAFE
@@ -777,6 +767,7 @@ ins_commit:
         ldx     stack_pos
         jsr     pop_parser_state
         raics   ERR_INTERNAL_ERROR      ; Parser state was from CALL
+        ; rts
 
 ; Fall through
 
@@ -858,7 +849,7 @@ ins_tokenize_keyword:
         ldx     decode_name_ptr
         sta     line_buffer,x           ; Write the token to line_buffer
         inx
-        stx     line_pos                ; Reset line_pos to the space after teh token
+        stx     line_pos                ; Reset line_pos to the space after the token
         rts
 
 ins_jump_keyword:
@@ -949,27 +940,8 @@ rebase_pvm_program_ptr:
     .byte   $8A, m, n
 .endmacro
 
-.macro MATCH_EMIT m
-    .if (.match(m, *))
-        .byte   $90
-    .elseif (.match(m, ""))
-        .byte   $93
-        name m
-    .else
-        .byte   $91, m
-    .endif
-.endmacro
-
-.macro MATCH_RANGE_EMIT m, n
-    .byte   $92, m, n
-.endmacro
-
-.macro EMIT
-        .byte   $18
-.endmacro
-
-.macro EMIT_BYTE b
-        .byte   $21, b
+.macro DISCARD
+    .byte   $10
 .endmacro
 
 .macro TRY address
@@ -1021,12 +993,9 @@ rebase_pvm_program_ptr:
 ; MATCH	            1000 1001 nn
 ; MATCH	            1000 1010 bb ee
 ; MATCH	            1000 1011 ccc
-; MATCH_EMIT	    1001 0000
-; MATCH_EMIT	    1001 0001 nn
-; MATCH_EMIT	    1001 0010 bb ee
-; MATCH_EMIT	    1001 0011 ccc
-; EMIT	            0001 1000
-; EMIT_BYTE	        0010 0001 nn
+; DISCARD     	    0001 0000
+; (unused) 	        0001 1xxx
+; (unused)	        0010 0xxx
 ; TRY     	        0010 1100 aaaa
 ; COMMIT	        0011 0100 aaaa
 ; BEGIN_KEYWORD	    0011 1000
@@ -1061,7 +1030,7 @@ pvm_statement_name_table:
 :
         name_table_entry "LET"
             CALL pvm_variable
-            MATCH_EMIT '='
+            MATCH '='
             JUMP pvm_expression
 :
         name_table_entry "INPUT"
@@ -1150,7 +1119,7 @@ pvm_on:
 pvm_for:
         CALL pvm_variable
         CALL pvm_whitespace
-        MATCH_EMIT '='
+        MATCH '='
         CALL pvm_expression
         CALL pvm_whitespace
         TEST "TO", @to
@@ -1183,7 +1152,7 @@ pvm_optional_arg_2:
 @arg_2:
         TRY @done
         CALL pvm_whitespace
-        MATCH_EMIT ','
+        MATCH ','
         CALL pvm_expression
         COMMIT @done
 @done:
@@ -1196,7 +1165,7 @@ pvm_arg_list:
 @next:
         TRY @done
         CALL pvm_whitespace
-        MATCH_EMIT ','
+        MATCH ','
         CALL pvm_expression
         COMMIT @next
 @done:
@@ -1218,10 +1187,10 @@ pvm_expression:
 pvm_primary_expression:
         TRY @string
         CALL pvm_whitespace
-        MATCH_EMIT '('
+        MATCH '('
         CALL pvm_expression
         CALL pvm_whitespace
-        MATCH_EMIT ')'
+        MATCH ')'
         COMMIT @done
 @string:
         TRY @number
@@ -1237,15 +1206,15 @@ pvm_primary_expression:
         BEGIN_KEYWORD
         CALL pvm_name
         TRY @tokenize_function
-        MATCH_EMIT '$'
+        MATCH '$'
         COMMIT @tokenize_function
 @tokenize_function:
         TOKENIZE_KEYWORD function_name_table
         COMPOSE TOKEN_FUNCTION
-        MATCH_EMIT '('
+        MATCH '('
         CALL pvm_arg_list
         CALL pvm_whitespace
-        MATCH_EMIT ')'
+        MATCH ')'
         COMMIT @done
 @variable:
         CALL pvm_variable
@@ -1259,7 +1228,7 @@ pvm_number:
         TEST '.', @initial_decimal
         CALL pvm_digits
         TRY @optional_e
-        MATCH_EMIT '.'
+        MATCH '.'
         COMMIT @digits_after_decimal
 @digits_after_decimal:
         TRY @optional_e
@@ -1267,11 +1236,11 @@ pvm_number:
         COMMIT @optional_e
 @optional_e:
         TRY @done
-        MATCH_EMIT 'E'
+        MATCH 'E'
         CALL pvm_digits
         COMMIT @done
 @initial_decimal:
-        MATCH_EMIT *
+        MATCH *
         TRY @optional_e
         CALL pvm_digits
         COMMIT @optional_e
@@ -1282,10 +1251,10 @@ pvm_number:
 ; It is only used from pvm_number.
 
 pvm_digits:
-        MATCH_RANGE_EMIT '0', 10
+        MATCH_RANGE '0', 10
 @next:
         TRY @done
-        MATCH_RANGE_EMIT '0', 10
+        MATCH_RANGE '0', 10
         COMMIT @next
 @done:
         RETURN
@@ -1296,7 +1265,7 @@ pvm_number_list:
 @next:
         TRY @done
         CALL pvm_whitespace
-        MATCH_EMIT ','
+        MATCH ','
         CALL pvm_number
         COMMIT @next
 @done:
@@ -1304,14 +1273,14 @@ pvm_number_list:
 
 pvm_string:
         CALL pvm_whitespace
-        MATCH_EMIT '"'
+        MATCH '"'
 @next:
         TEST '"', @first_quote
 @second_quote:
-        MATCH_EMIT *
+        MATCH *
         JUMP @next
 @first_quote:
-        MATCH_EMIT *
+        MATCH *
         TEST '"', @second_quote
         RETURN
 
@@ -1319,16 +1288,16 @@ pvm_variable:
         CALL pvm_whitespace
         CALL pvm_name
         TRY @eot
-        MATCH_EMIT '$'
+        MATCH '$'
         COMMIT @eot
 @eot:
         COMPOSE EOT
         TEST '(', @array
         RETURN
 @array:
-        MATCH_EMIT *
+        MATCH *
         CALL pvm_arg_list
-        MATCH_EMIT ')'
+        MATCH ')'
         RETURN
 
 pvm_variable_list:
@@ -1336,7 +1305,7 @@ pvm_variable_list:
 @next:
         TRY @done
         CALL pvm_whitespace
-        MATCH_EMIT ','
+        MATCH ','
         CALL pvm_variable
         COMMIT @next
 @done:
@@ -1345,9 +1314,9 @@ pvm_variable_list:
 pvm_operator:
         CALL pvm_whitespace
         BEGIN_KEYWORD
-        MATCH_RANGE_EMIT ' ', 32
+        MATCH_RANGE ' ', 32
         TRY @end
-        MATCH_RANGE_EMIT '<', 3
+        MATCH_RANGE '<', 3
         COMMIT @end
 @end:
         TOKENIZE_KEYWORD operator_name_table
@@ -1368,18 +1337,18 @@ pvm_keyword:
 ; Its only job is to capture an alphanumeric "name."
 
 pvm_name:
-        MATCH_RANGE_EMIT 'A', 26
+        MATCH_RANGE 'A', 26
 @next:
         TRY @digit
-        MATCH_RANGE_EMIT 'A', 26
+        MATCH_RANGE 'A', 26
         COMMIT @next
 @digit:
         TRY @underscore
-        MATCH_RANGE_EMIT '0', 10
+        MATCH_RANGE '0', 10
         COMMIT @next
 @underscore:
         TRY @done
-        MATCH_EMIT '_'
+        MATCH '_'
         COMMIT @next        
 @done:
         RETURN
@@ -1387,6 +1356,7 @@ pvm_name:
 pvm_whitespace:
         TRY @done
         MATCH ' '
+        DISCARD
         COMMIT pvm_whitespace
 @done:
         RETURN
