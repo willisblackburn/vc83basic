@@ -1228,8 +1228,24 @@ pvm_primary_expression:
         CALL pvm_string
         COMMIT @done
 @number:
-        CHOICE @variable
+        CHOICE @function
         CALL pvm_number
+        COMMIT @done
+@function:
+        CHOICE @variable
+        CALL pvm_whitespace
+        BEGIN_KEYWORD
+        CALL pvm_name
+        CHOICE @tokenize_function
+        MATCH_EMIT '$'
+        COMMIT @tokenize_function
+@tokenize_function:
+        TOKENIZE_KEYWORD function_name_table
+        COMPOSE TOKEN_FUNCTION
+        MATCH_EMIT '('
+        CALL pvm_arg_list
+        CALL pvm_whitespace
+        MATCH_EMIT ')'
         COMMIT @done
 @variable:
         CALL pvm_variable
