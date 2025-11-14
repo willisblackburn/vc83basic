@@ -42,7 +42,7 @@
 
 .struct ParserState 
     buffer_pos .res 1
-    line_pos .res 1                 ; MAX_LINE_LENGTH means this is a CALL return point, otherwise a CHOICE savepoint
+    line_pos .res 1                 ; MAX_LINE_LENGTH means this is a CALL return point, otherwise a TRY savepoint
     pvm_program_ptr .res 2
 .endstruct
 

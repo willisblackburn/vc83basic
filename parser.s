@@ -594,9 +594,9 @@ new_parse_statement:
 ; Invokes parsing virtual machine (PVM).
 ; CALL pushes a ParserState on the stack that can be retored with RETURN.
 ;   RETURN fails if the ParserState on the top of the stack did not come from CALL.
-; CHOICE pushes a ParserState on the stack that will be restored with FAIL and discarded with COMMIT.
+; TRY pushes a ParserState on the stack that will be restored with FAIL and discarded with COMMIT.
 ;   FAIL discards ParserStates created by CALL.
-;   COMMIT fails if the ParserState on the top of the stack did not come from CHOICE.
+;   COMMIT fails if the ParserState on the top of the stack did not come from TRY.
 
 parse_pvm:
         stax    pvm_program_ptr
@@ -704,7 +704,7 @@ pvm_instruction_vectors:
         .word   ins_match_emit-1
         .word   ins_emit-1
         .word   ins_emit_byte-1
-        .word   ins_choice-1
+        .word   ins_try-1
         .word   ins_commit-1
         .word   ins_begin_keyword-1
         .word   ins_tokenize_keyword-1
@@ -759,7 +759,7 @@ write_to_line_buffer:
         inc     line_pos
         rts
 
-ins_choice:
+ins_try:
         lda     #.sizeof(ParserState)
         jsr     stack_alloc             ; Allocate space for the savepoint
         tax
@@ -787,10 +787,10 @@ ins_jump:
 ins_fail:
         ldx     stack_pos               ; Check if stack is empty
         cpx     #PRIMARY_STACK_SIZE
-        raieq   ERR_SYNTAX_ERROR        ; No CHOICE, so this FAIL fails the entire parse with syntax error
+        raieq   ERR_SYNTAX_ERROR        ; No TRY, so this FAIL fails the entire parse with syntax error
         jsr     pop_parser_state
         bcs     ins_fail                ; Parser state is from CALL; we should ignore
-        lda     stack+ParserState::buffer_pos,x     ; Restore state from CHOICE
+        lda     stack+ParserState::buffer_pos,x     ; Restore state from TRY
         sta     buffer_pos
         lda     stack+ParserState::line_pos,x
         sta     line_pos
@@ -819,7 +819,7 @@ ins_return:
 
 return_from_call:
         jsr     pop_parser_state
-        raicc   ERR_INTERNAL_ERROR      ; Parser state was from CHOICE
+        raicc   ERR_INTERNAL_ERROR      ; Parser state was from TRY
 
 ; Fall through
 
@@ -834,7 +834,7 @@ retore_pvm_program_ptr:
         rts
 
 ; Pop the parser state from the stack and test line_pos vs. MAX_LINE_LENGTH:
-; If this test returns with carry clear, then this parser state came from CHOICE, and if set, then from CALL.
+; If this test returns with carry clear, then this parser state came from TRY, and if set, then from CALL.
 ; X = value of stack_pos
 
 pop_parser_state:
@@ -972,7 +972,7 @@ rebase_pvm_program_ptr:
         .byte   $21, b
 .endmacro
 
-.macro CHOICE address
+.macro TRY address
         .byte   $2C, <address, >address
 .endmacro
 
@@ -1027,7 +1027,7 @@ rebase_pvm_program_ptr:
 ; MATCH_EMIT	    1001 0011 ccc
 ; EMIT	            0001 1000
 ; EMIT_BYTE	        0010 0001 nn
-; CHOICE	        0010 1100 aaaa
+; TRY     	        0010 1100 aaaa
 ; COMMIT	        0011 0100 aaaa
 ; BEGIN_KEYWORD	    0011 1000
 ; TOKENIZE_KEYWORD	0100 0100 aaaa
@@ -1177,11 +1177,11 @@ pvm_if:
 ; Argument lists
 
 pvm_optional_arg_2:
-        CHOICE @done
+        TRY @done
         CALL pvm_expression
         COMMIT @arg_2
 @arg_2:
-        CHOICE @done
+        TRY @done
         CALL pvm_whitespace
         MATCH_EMIT ','
         CALL pvm_expression
@@ -1194,7 +1194,7 @@ pvm_optional_arg_2:
 pvm_arg_list:
         CALL pvm_expression
 @next:
-        CHOICE @done
+        TRY @done
         CALL pvm_whitespace
         MATCH_EMIT ','
         CALL pvm_expression
@@ -1206,7 +1206,7 @@ pvm_arg_list:
 
 pvm_expression:
         CALL pvm_primary_expression
-        CHOICE @done
+        TRY @done
         CALL pvm_operator
         COMMIT pvm_expression
 @done:
@@ -1216,7 +1216,7 @@ pvm_expression:
 ; The component that can be a primary expression discard whitespace.
 
 pvm_primary_expression:
-        CHOICE @string
+        TRY @string
         CALL pvm_whitespace
         MATCH_EMIT '('
         CALL pvm_expression
@@ -1224,19 +1224,19 @@ pvm_primary_expression:
         MATCH_EMIT ')'
         COMMIT @done
 @string:
-        CHOICE @number
+        TRY @number
         CALL pvm_string
         COMMIT @done
 @number:
-        CHOICE @function
+        TRY @function
         CALL pvm_number
         COMMIT @done
 @function:
-        CHOICE @variable
+        TRY @variable
         CALL pvm_whitespace
         BEGIN_KEYWORD
         CALL pvm_name
-        CHOICE @tokenize_function
+        TRY @tokenize_function
         MATCH_EMIT '$'
         COMMIT @tokenize_function
 @tokenize_function:
@@ -1258,21 +1258,21 @@ pvm_number:
         CALL pvm_whitespace
         TEST '.', @initial_decimal
         CALL pvm_digits
-        CHOICE @optional_e
+        TRY @optional_e
         MATCH_EMIT '.'
         COMMIT @digits_after_decimal
 @digits_after_decimal:
-        CHOICE @optional_e
+        TRY @optional_e
         CALL pvm_digits
         COMMIT @optional_e
 @optional_e:
-        CHOICE @done
+        TRY @done
         MATCH_EMIT 'E'
         CALL pvm_digits
         COMMIT @done
 @initial_decimal:
         MATCH_EMIT *
-        CHOICE @optional_e
+        TRY @optional_e
         CALL pvm_digits
         COMMIT @optional_e
 @done:
@@ -1284,7 +1284,7 @@ pvm_number:
 pvm_digits:
         MATCH_RANGE_EMIT '0', 10
 @next:
-        CHOICE @done
+        TRY @done
         MATCH_RANGE_EMIT '0', 10
         COMMIT @next
 @done:
@@ -1294,7 +1294,7 @@ pvm_digits:
 pvm_number_list:
         CALL pvm_number
 @next:
-        CHOICE @done
+        TRY @done
         CALL pvm_whitespace
         MATCH_EMIT ','
         CALL pvm_number
@@ -1318,7 +1318,7 @@ pvm_string:
 pvm_variable:
         CALL pvm_whitespace
         CALL pvm_name
-        CHOICE @eot
+        TRY @eot
         MATCH_EMIT '$'
         COMMIT @eot
 @eot:
@@ -1334,7 +1334,7 @@ pvm_variable:
 pvm_variable_list:
         CALL pvm_variable
 @next:
-        CHOICE @done
+        TRY @done
         CALL pvm_whitespace
         MATCH_EMIT ','
         CALL pvm_variable
@@ -1346,7 +1346,7 @@ pvm_operator:
         CALL pvm_whitespace
         BEGIN_KEYWORD
         MATCH_RANGE_EMIT ' ', 32
-        CHOICE @end
+        TRY @end
         MATCH_RANGE_EMIT '<', 3
         COMMIT @end
 @end:
@@ -1370,22 +1370,22 @@ pvm_keyword:
 pvm_name:
         MATCH_RANGE_EMIT 'A', 26
 @next:
-        CHOICE @digit
+        TRY @digit
         MATCH_RANGE_EMIT 'A', 26
         COMMIT @next
 @digit:
-        CHOICE @underscore
+        TRY @underscore
         MATCH_RANGE_EMIT '0', 10
         COMMIT @next
 @underscore:
-        CHOICE @done
+        TRY @done
         MATCH_EMIT '_'
         COMMIT @next        
 @done:
         RETURN
 
 pvm_whitespace:
-        CHOICE @done
+        TRY @done
         MATCH ' '
         COMMIT pvm_whitespace
 @done:
