@@ -436,10 +436,18 @@ void test_new_parse_statement(void) {
     const char simple_line_data_1[] = { ST_NEW_RUN };
     const char number_line_data_1[] = { ST_NEW_PRINT, '1' };
     const char number_line_data_2[] = { ST_NEW_PRINT, '2', '5' };
+    const char number_line_data_3[] = { ST_NEW_PRINT, '3', '.', '1', '4', '1', '5', '9' };
+    const char number_line_data_4[] = { ST_NEW_PRINT, '1', '0', '.' };
+    const char number_line_data_5[] = { ST_NEW_PRINT, '.', '1', '2', '5' };
     const char string_line_data_1[] = { ST_NEW_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"' };
+    const char string_line_data_2[] = { ST_NEW_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
+        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' };
     const char variable_line_data_1[] = { ST_NEW_PRINT, 'I', 'D', 'X', '_', '2' | EOT };
+    const char variable_line_data_2[] = { ST_NEW_PRINT, 'A', '$' | EOT };
+    const char variable_line_data_3[] = { ST_NEW_PRINT, 'X' | EOT, '(', '5', ')' };
     const char expression_line_data_1[] = { ST_NEW_PRINT, '1', TOKEN_OP | OP_ADD, '1', TOKEN_OP | OP_ADD, '1' };
     const char expression_line_data_2[] = { ST_NEW_PRINT, '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')' };
+    const char expression_line_data_3[] = { ST_NEW_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', TOKEN_OP | OP_CONCAT, '"', ',', ' ', 'W', 'O', 'R', 'L', 'D', '"' };
     const char let_line_data_1[] = { ST_NEW_LET, 'X' | EOT, '=', '1', '0', '0' };
     const char if_line_data_1[] = { ST_NEW_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_KW | KW_THEN, ST_GOTO, '1', '0' };
     const char input_line_data_1[] = { ST_NEW_INPUT, 'A' | EOT };
@@ -460,16 +468,23 @@ void test_new_parse_statement(void) {
     // Number
     call_new_parse_statement("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
     call_new_parse_statement("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
+    call_new_parse_statement("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
+    call_new_parse_statement("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
+    call_new_parse_statement("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
 
     // String
     call_new_parse_statement("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
+    call_new_parse_statement("PRINT \"BUG OR \"\"FEATURE?\"\"\"", string_line_data_2, sizeof string_line_data_2, __LINE__);
 
     // Variable
     call_new_parse_statement("PRINT IDX_2", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
+    call_new_parse_statement("PRINT A$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
+    call_new_parse_statement("PRINT X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
 
-    // Simple expression
+    // Expression
     call_new_parse_statement("PRINT 1+1+1", expression_line_data_1, sizeof expression_line_data_1, __LINE__);
     call_new_parse_statement("PRINT 1+(1+1)", expression_line_data_2, sizeof expression_line_data_2, __LINE__);
+    call_new_parse_statement("PRINT \"HELLO\" & \", WORLD\"", expression_line_data_3, sizeof expression_line_data_3, __LINE__);
 
     // LET
     call_new_parse_statement("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);

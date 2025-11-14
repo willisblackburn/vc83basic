@@ -1068,7 +1068,7 @@ pvm_statement_name_table:
             JUMP pvm_variable_list
 :
         name_table_entry "LIST"
-            JUMP pvm_arg_2
+            JUMP pvm_optional_arg_2
 :
         name_table_entry "GOTO"
             JUMP pvm_number
@@ -1170,7 +1170,7 @@ pvm_if:
 
 ; Argument lists
 
-pvm_arg_2:
+pvm_optional_arg_2:
         CHOICE @done
         CALL pvm_expression
         COMMIT @arg_2
@@ -1180,6 +1180,19 @@ pvm_arg_2:
         MATCH_EMIT ','
         CALL pvm_expression
         COMMIT @done
+@done:
+        RETURN
+
+; pvm_arg_list is list of 1-N expressions (but not 0).
+
+pvm_arg_list:
+        CALL pvm_expression
+@next:
+        CHOICE @done
+        CALL pvm_whitespace
+        MATCH_EMIT ','
+        CALL pvm_expression
+        COMMIT @next
 @done:
         RETURN
 
@@ -1221,6 +1234,32 @@ pvm_primary_expression:
 
 pvm_number:
         CALL pvm_whitespace
+        TEST '.', @initial_decimal
+        CALL pvm_digits
+        CHOICE @optional_e
+        MATCH_EMIT '.'
+        COMMIT @digits_after_decimal
+@digits_after_decimal:
+        CHOICE @optional_e
+        CALL pvm_digits
+        COMMIT @optional_e
+@optional_e:
+        CHOICE @done
+        MATCH_EMIT 'E'
+        CALL pvm_digits
+        COMMIT @done
+@initial_decimal:
+        MATCH_EMIT *
+        CHOICE @optional_e
+        CALL pvm_digits
+        COMMIT @optional_e
+@done:
+        RETURN
+
+; pvm_digits does not remove whitespace.
+; It is only used from pvm_number.
+
+pvm_digits:
         MATCH_RANGE_EMIT '0', 10
 @next:
         CHOICE @done
@@ -1228,6 +1267,7 @@ pvm_number:
         COMMIT @next
 @done:
         RETURN
+
 
 pvm_number_list:
         CALL pvm_number
@@ -1256,7 +1296,17 @@ pvm_string:
 pvm_variable:
         CALL pvm_whitespace
         CALL pvm_name
+        CHOICE @eot
+        MATCH_EMIT '$'
+        COMMIT @eot
+@eot:
         COMPOSE EOT
+        TEST '(', @array
+        RETURN
+@array:
+        MATCH_EMIT *
+        CALL pvm_arg_list
+        MATCH_EMIT ')'
         RETURN
 
 pvm_variable_list:
