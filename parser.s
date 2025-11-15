@@ -610,7 +610,7 @@ parse_pvm:
 ; Check for an address argument.
 
         and     #$04                    ; If bit 2 is set then an address argument follows
-        beq     @argument               ; No address argument, check for match argument
+        beq     @arguments              ; No address argument, check for arguments
         lda     (pvm_program_ptr),y
         sta     pvm_address_arg
         iny
@@ -620,7 +620,7 @@ parse_pvm:
 
 ; Look at the last three bits to figure out what arguments follow the instruction and load them.
 
-@argument:
+@arguments:
         lda     B
         and     #$03                    ; Mask off bottom two bits
         beq     @match                  ; If no argument then go on to match logic
@@ -654,7 +654,8 @@ parse_pvm:
         jsr     rebase_pvm_program_ptr  ; Catch up pvm_program_ptr to where Y is pointing to free up Y
         mvy     #0, C                   ; Now C is the match flag, default to false
         lda     B                       ; Recover the instruction from B
-        bpl     @instruction            ; Not a matching instruction, so skip the matching logic
+        cmp     #$10                    ; If "less than" the discard function, it's TEST or MATCH
+        bcs     @instruction            ; Not TEST or MATCH, so skip the matching logic
         mvx     line_pos, E             ; Remember buffer_pos and line_pos in DE
         mvx     buffer_pos, D
         and     #$03                    ; Get address type again
@@ -915,33 +916,33 @@ rebase_pvm_program_ptr:
 
 .macro TEST m, address
     .if (.match(m, *))
-        .byte   $84, <address, >address
+        .byte   $04, <address, >address
     .elseif (.match(m, ""))
-        .byte   $87
+        .byte   $07
         .byte   <address, >address
         name m
     .else
-        .byte   $85, <address, >address, m
+        .byte   $05, <address, >address, m
     .endif
 .endmacro
 
 .macro TEST_RANGE m, n, address
-    .byte   $86, <address, >address, m, n
+    .byte   $06, <address, >address, m, n
 .endmacro
 
 .macro MATCH m
     .if (.match(m, *))
-        .byte   $88
+        .byte   $08
     .elseif (.match(m, ""))
-        .byte   $8B
+        .byte   $0B
         name m
     .else
-        .byte   $89, m
+        .byte   $09, m
     .endif
 .endmacro
 
 .macro MATCH_RANGE m, n
-    .byte   $8A, m, n
+    .byte   $0A, m, n
 .endmacro
 
 .macro DISCARD
@@ -993,14 +994,14 @@ rebase_pvm_program_ptr:
 .endmacro
 
 
-; TEST	            1000 0100 aaaa
-; TEST	            1000 0101 aaaa nn
-; TEST	            1000 0110 aaaa bb ee
-; TEST	            1000 0111 aaaa ccc
-; MATCH	            1000 1000
-; MATCH	            1000 1001 nn
-; MATCH	            1000 1010 bb ee
-; MATCH	            1000 1011 ccc
+; TEST	            0000 0100 aaaa
+; TEST	            0000 0101 aaaa nn
+; TEST	            0000 0110 aaaa bb ee
+; TEST	            0000 0111 aaaa ccc
+; MATCH	            0000 1000
+; MATCH	            0000 1001 nn
+; MATCH	            0000 1010 bb ee
+; MATCH	            0000 1011 ccc
 ; DISCARD     	    0001 0000
 ; EMIT   	        0001 1001 nn
 ; (unused)	        0010 0xxx
