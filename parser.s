@@ -703,7 +703,7 @@ pvm_instruction_vectors:
         .word   ins_test-1
         .word   ins_match-1
         .word   ins_discard-1
-        .word   0
+        .word   ins_emit-1
         .word   0
         .word   ins_try-1
         .word   ins_commit-1
@@ -726,21 +726,32 @@ ins_match:
         beq     ins_fail                ; No match, treat as FAIL
         stx     buffer_pos              ; Consume the matched string
         ldx     D                       ; Restore the beginning of the match
-        ldy     line_pos                ; Start writing at line_pos
 @write_next:
-        cpy     #MAX_LINE_LENGTH
-        raieq   ERR_LINE_TOO_LONG
         lda     buffer,x
-        sta     line_buffer,y
+        jsr     write_to_line_buffer
         inx
-        iny
         cpx     buffer_pos              ; Caught up with read position?
         bne     @write_next
-        sty     line_pos                ; Update line_pos
         rts
 
 ins_discard:
         mva     E, line_pos             ; Move line_pos back to where it was before
+        rts
+
+ins_emit:
+        lda     pvm_arg
+
+; Fall through
+
+; Write a single byte to line_buffer, checking for the maximum line length.
+; X SAFE, BC SAFE, DE SAFE
+
+write_to_line_buffer:
+        ldy     line_pos                ; Write at line_pos
+        cpy     #MAX_LINE_LENGTH
+        raieq   ERR_LINE_TOO_LONG
+        sta     line_buffer,y
+        inc     line_pos
         rts
 
 ins_try:
@@ -937,6 +948,10 @@ rebase_pvm_program_ptr:
     .byte   $10
 .endmacro
 
+.macro EMIT b
+    .byte   $19, b
+.endmacro
+
 .macro TRY address
         .byte   $2C, <address, >address
 .endmacro
@@ -987,7 +1002,7 @@ rebase_pvm_program_ptr:
 ; MATCH	            1000 1010 bb ee
 ; MATCH	            1000 1011 ccc
 ; DISCARD     	    0001 0000
-; (unused) 	        0001 1xxx
+; EMIT   	        0001 1001 nn
 ; (unused)	        0010 0xxx
 ; TRY     	        0010 1100 aaaa
 ; COMMIT	        0011 0100 aaaa
