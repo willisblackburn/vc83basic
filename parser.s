@@ -726,27 +726,21 @@ ins_match:
         beq     ins_fail                ; No match, treat as FAIL
         stx     buffer_pos              ; Consume the matched string
         ldx     D                       ; Restore the beginning of the match
+        ldy     line_pos                ; Start writing at line_pos
 @write_next:
+        cpy     #MAX_LINE_LENGTH
+        raieq   ERR_LINE_TOO_LONG
         lda     buffer,x
-        jsr     write_to_line_buffer
+        sta     line_buffer,y
         inx
+        iny
         cpx     buffer_pos              ; Caught up with read position?
         bne     @write_next
+        sty     line_pos                ; Update line_pos
         rts
 
 ins_discard:
         mva     E, line_pos             ; Move line_pos back to where it was before
-        rts
-
-; Writes one byte to line_buffer.
-; X SAFE
-
-write_to_line_buffer:
-        ldy     line_pos
-        cpy     #MAX_LINE_LENGTH
-        raieq   ERR_LINE_TOO_LONG
-        sta     line_buffer,y
-        inc     line_pos
         rts
 
 ins_try:
@@ -767,7 +761,6 @@ ins_commit:
         ldx     stack_pos
         jsr     pop_parser_state
         raics   ERR_INTERNAL_ERROR      ; Parser state was from CALL
-        ; rts
 
 ; Fall through
 
