@@ -722,13 +722,13 @@ ins_test:
 ins_match:
         lda     C                       ; Match?
         beq     ins_fail                ; No match, treat as FAIL
-        stx     D                       ; Save end position of match
+        stx     C                       ; Re-use C to save the match end position
         ldx     buffer_pos              ; Go back to beginning
 @write_next:
         lda     buffer,x
         jsr     write_to_line_buffer
         inx
-        cpx     D                       ; Caught up with read position?
+        cpx     C                       ; Caught up with end position?
         bne     @write_next
         stx     buffer_pos              ; Update buffer_pos
         rts
