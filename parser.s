@@ -651,11 +651,11 @@ parse_pvm:
 
 @match:
         jsr     rebase_pvm_program_ptr  ; Catch up pvm_program_ptr to where Y is pointing to free up Y
+        ldx     buffer_pos              ; Load up buffer position
         mvy     #0, C                   ; Now C is the match flag, default to false
         lda     B                       ; Recover the instruction from B
         cmp     #$10                    ; If "less than" the discard function, it's TEST or MATCH
         bcs     @instruction            ; Not TEST or MATCH, so skip the matching logic
-        mvx     buffer_pos, D           ; Remember buffer_pos in D
         and     #$03                    ; Get address type again
         cmp     #$03                    ; Is it "match string?"
         beq     @match_string           ; Yep, go do it
@@ -722,14 +722,15 @@ ins_test:
 ins_match:
         lda     C                       ; Match?
         beq     ins_fail                ; No match, treat as FAIL
-        stx     buffer_pos              ; Consume the matched string
-        ldx     D                       ; Restore the beginning of the match
+        stx     D                       ; Save end position of match
+        ldx     buffer_pos              ; Go back to beginning
 @write_next:
         lda     buffer,x
         jsr     write_to_line_buffer
         inx
-        cpx     buffer_pos              ; Caught up with read position?
+        cpx     D                       ; Caught up with read position?
         bne     @write_next
+        stx     buffer_pos              ; Update buffer_pos
         rts
 
 ins_emit:
