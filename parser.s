@@ -625,21 +625,21 @@ parse_pvm:
         and     #$03                    ; Mask off bottom two bits
         cmp     #$03                    ; Check if it's expecting a string
         beq     @string                 ; If so go do it, otherwise, A is the number of arguments
-        mvx     #1, pvm_arg             ; Default args are 1, 254
-        mvx     #254, pvm_arg+1
+        mvx     #1, D                   ; Default args are 1, 254
+        mvx     #254, E
         tax                             ; X is now number of arguments to read
 @next_argument:
         beq     @match                  ; No arguments
-        mva     pvm_arg, pvm_arg+1      ; Move previous arg over
+        mva     D, E                    ; Move previous arg over
         lda     (pvm_program_ptr),y     ; Get argument
-        sta     pvm_arg                 ; Replace first arg
+        sta     D                       ; Replace first arg
         iny
         dex
         jmp     @next_argument
 
 @string:
         jsr     rebase_pvm_program_ptr
-        mvaa    pvm_program_ptr, pvm_arg    ; So we can save it into pvm_arg
+        mvaa    pvm_program_ptr, DE     ; Save address of string as argument
         ldy     #$FF                    ; Now go looking for the character with bit 7 set that ends the string
 @string_next:
         iny
@@ -661,9 +661,9 @@ parse_pvm:
         beq     @match_string           ; Yep, go do it
         lda     buffer,x                ; It's "match char" or "match range;" get character from the buffer
         sec
-        sbc     pvm_arg                 ; Check if it's in range
+        sbc     D                       ; Check if it's in range
         bcc     @instruction
-        cmp     pvm_arg+1
+        cmp     E
         bcs     @instruction
 @match_any:
         inc     C                       ; Increment the match flag, making it true
@@ -671,7 +671,7 @@ parse_pvm:
         bne     @instruction            ; Unconditional
 
 @match_string:
-        lda     (pvm_arg),y             ; Load the next value from the string to match
+        lda     (DE),y                  ; Load the next value from the string to match
         bmi     @match_string_last      ; Handle the last character
         cmp     buffer,x                ; Otherwise compare with character in buffer
         bne     @instruction            ; No match
@@ -734,7 +734,7 @@ ins_match:
         rts
 
 ins_emit:
-        lda     pvm_arg
+        lda     D
 
 ; Fall through
 
@@ -861,7 +861,7 @@ ins_jump_keyword:
         rts
 
 ins_compose:
-        lda     pvm_arg
+        lda     D
 compose_with_last_byte:
         ldx     line_pos                ; Current line_pos
         ora     line_buffer-1,x         ; Subtract one since we want last character
