@@ -11,7 +11,7 @@ exec_print_number:
 exec_print:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
-        beq     @end_line               ; Found 0
+        beq     @newline                ; Found 0
 @continue:
         cmp     #';'
         beq     @empty_space
@@ -25,9 +25,6 @@ exec_print:
         jsr     print_string
         jmp     exec_print
 
-@end_line:
-        jmp     print_newline
-
 @tab:
         lda     #' '
         jsr     putch
@@ -40,7 +37,13 @@ exec_print:
         ldy     line_pos                ; Read line_pos into Y
         lda     (line_ptr),y            ; Peek at next character
         bne     @continue               ; It's not the end of the PRINT so continue
-        rts                             ; Otherwise return without printing a carriage return
+        beq     @done                   ; Unconditional
+        
+@newline:
+        jsr     newline
+        mva     #0, print_column
+@done:
+        jmp     next_statement
 
 ; Prints the value in FP0 to standard output.
 
@@ -63,8 +66,3 @@ print_string:
         sta     print_column
         ldax    S0                      ; Load string address into AX
         jmp     write
-        
-print_newline:
-        jsr     newline
-        mva     #0, print_column
-        rts

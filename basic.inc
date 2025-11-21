@@ -190,9 +190,11 @@ S1 = FPX+2
 ; parser.s
 .global parse_line
 .global parse_statements
-.global pvm_statements
-.global new_statement_name_table
+.global statement_name_table
 .global extra_name_table
+.global operator_name_table
+.global unary_operator_name_table
+.global function_name_table
 
 ; poke.s
 .global exec_poke
@@ -201,7 +203,6 @@ S1 = FPX+2
 .global exec_print
 .global print_number
 .global print_string
-.global print_newline
 
 ; program.s
 .global initialize_program
@@ -212,6 +213,7 @@ S1 = FPX+2
 .global reset_next_line_ptr, reset_next_line_ptr_2
 .global append_null_line
 .global find_line, get_line
+.global next_statement
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
@@ -237,10 +239,6 @@ S1 = FPX+2
 .global compact
 
 ; tables.s
-.global statement_name_table
-.global operator_name_table
-.global unary_operator_name_table
-.global function_name_table
 .global function_arity_table
 .global operator_precedence_table
 .global type_size_table

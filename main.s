@@ -30,7 +30,6 @@ main:
 ; Exception handler: control reaches here following "raise" or JMP to on_raise.
 
         sta     program_state           ; Whatever comes back from exception handler is new state
-        debug $30
         tay                             ; Prepare to look up the program_state message
         bmi     @dispatch               ; Program is running; do the next thing
         ldax    #error_message_table
@@ -68,7 +67,6 @@ main:
         jsr     readline
         jsr     parse_line
         lda     line_buffer+Line::number+1  ; Get high byte of line number
-        debug $10
         bmi     @immediate_mode         ; If line number is negative then we're in immediate mode
         jsr     reset_program           ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
@@ -76,7 +74,6 @@ main:
 
 @immediate_mode:
         lda     line_buffer+Line::next_line_offset  ; See if there is any data in the buffer
-        debug $20
         cmp     #.sizeof(Line)          ; Does the "next line" start at the beginning of *this* line?
         beq     @get_command            ; Yes, just ignore input
         ldx     #>line_buffer           ; High byte of the address for the the null line
@@ -90,19 +87,12 @@ main:
 ; move to the next line; during normal execution we can assume that next_line_ptr = line_ptr unless it has been
 ; modified by a control statement.
 
-@next_line:
-        jsr     advance_next_line_ptr   ; Otherwise go to next line
 @dispatch:
         ldy     #Line::next_line_offset ; Load the offset of the next line
         lda     (next_line_ptr),y
         raieq   PS_READY                ; If next line offset is 0 then end
-        cmp     next_line_pos           ; Is the next line offset also the offset of the next statement?
-        beq     @next_line              ; If yes then restart from next line
         mvax    next_line_ptr, line_ptr ; Move to next statement
         mva     next_line_pos, line_pos
-        jsr     decode_byte             ; The next byte is the next statement offset
-        sta     next_line_pos           ; By default the "next line" is the next statement on this line
-        debug $40
         jsr     dispatch_statement
         jmp     @dispatch               ; Keep on truckin'
 
@@ -114,7 +104,6 @@ main:
 dispatch_statement:
         jsr     reset_stack_pointers    ; Make sure stack pointers are reset in case there was an exception earlier
         jsr     decode_byte             ; Get statement number
-        debug $50
         tay
         ldax    #statement_exec_vectors
         jmp     invoke_indexed_vector

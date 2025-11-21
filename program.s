@@ -132,6 +132,20 @@ get_line:
         raics   ERR_LINE_NOT_FOUND
         rts
 
+; Moves line_pos forward to find the next statement and assigns to next_line_pos.
+; If it finds NUL first, moves to the next line.
+
+next_statement:
+        ldy     line_pos
+@next:
+        lda     (line_ptr),y            ; Get the next byte
+        beq     advance_next_line_ptr   ; If EOL then go to the next line
+        iny                             ; We'll eat it no matter what it is
+        cmp     #TOKEN_MISC | MISC_STATEMENT
+        bne     @next
+        sty     next_line_pos           ; Y now points to the next statement, so save it
+        rts
+
 ; Advances next_line_ptr to the next line.
 ; next_line_ptr = current next line (updated)
 ; X SAFE, BC SAFE, DE SAFE

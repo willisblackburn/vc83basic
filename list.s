@@ -12,7 +12,6 @@
 ; on the stack and restore it after so we can resume execution after the LIST statement.
 
 exec_list:
-        debug $A0
         ldphaa  next_line_ptr
         ldpha   next_line_pos
         jsr     reset_next_line_ptr
@@ -22,6 +21,7 @@ exec_list:
         lda     (line_ptr),y            ; Next line offset into A
         beq     @done                   ; If it's the null statement then we're at the end of the program
         jsr     line_number_to_string
+        mva     #.sizeof(Line), line_pos
         jsr     list_statements
         ldax    #buffer
         ldy     buffer_pos              ; buffer_pos will be the amount of data written to the buffer
@@ -33,8 +33,7 @@ exec_list:
 @done:
         plsta   next_line_pos
         plstaa  next_line_ptr
-        clc                             ; LIST always succeeds
-        rts
+        jmp     next_statement
 
 ; Outputs all of the statements on a line.
 
@@ -45,7 +44,7 @@ exec_list:
 list_statements:
         jsr     decode_byte             ; Get statement token
         tay                             ; Set up for list_tokenized_name
-        ldax    #new_statement_name_table
+        ldax    #statement_name_table
 @token:
         jsr     expand_tokenized_name
         ldy     line_pos                ; Exit w/o adding whitespace if there's no more data on the line

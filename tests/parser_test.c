@@ -1,547 +1,122 @@
 #include "test.h"
 
-void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
-        char expect_buffer_pos, int line) {
-    fprintf(stderr, "  %s:%d: parse_name(\"%s\")\n", __FILE__, line, s);
-    strcpy(buffer, s);
-    buffer_pos = set_buffer_pos;
-    line_pos = offsetof(Line, data);
-    parse_name();
-    ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-}
-
-void test_parse_name(void) {
-
-    const char print_line_data[] = { 'P', 'R', 'I', 'N', 'T' | EOT };
-    const char printx_line_data[] = { 'P', 'R', 'I', 'N', 'T', 'X' | EOT };
-    const char print10_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0' | EOT };
-    const char print10x_line_data[] = { 'P', 'R', 'I', 'N', 'T', '1', '0', 'X' | EOT };
-    const char x_line_data[] = { 'X' | EOT  };
-    const char goto_line_data[] = { 'G', 'O', 'T', 'O' | EOT  };
-
-    PRINT_TEST_NAME();
-
-    call_parse_name("PRINT", 0, print_line_data, sizeof print_line_data, 5, __LINE__);
-
-    // Start at the space to verify that it skips whitespace.
-    call_parse_name("10 PRINT", 2, print_line_data, sizeof print_line_data, 8, __LINE__);
-
-    call_parse_name("10 PRINT X", 3, print_line_data, sizeof print_line_data, 8, __LINE__);
-
-    call_parse_name("10 PRINTX", 3, printx_line_data, sizeof printx_line_data, 9, __LINE__);
-
-    call_parse_name("10 PRINT10", 3, print10_line_data, sizeof print10_line_data, 10, __LINE__);
-
-    call_parse_name("10 PRINT10X", 3, print10x_line_data, sizeof print10x_line_data, 11, __LINE__);
-
-    // Start parse at space.
-    call_parse_name("ON X/2 GOTO 10,20", 2, x_line_data, sizeof x_line_data, 4, __LINE__);
-    call_parse_name("ON X/2 GOTO 10,20", 6, goto_line_data, sizeof goto_line_data, 11, __LINE__);
-
-    // Digits are not names.
-    strcpy(buffer, "10");
-    buffer_pos = 0;
-    parse_name();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-
-    // buffer_pos will reflect skipped whitespace even if parse fails.
-    strcpy(buffer, "  ");
-    buffer_pos = 0;
-    parse_name();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 2);
-
-    strcpy(buffer, "");
-    buffer_pos = 0;
-    parse_name();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-}
-
-void call_parse_number(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,
-        char expect_buffer_pos, int line) {
-    fprintf(stderr, "  %s:%d: parse_number(\"%s\")\n", __FILE__, line, s);
-    strcpy(buffer, s);
-    buffer_pos = set_buffer_pos;
-    line_pos = offsetof(Line, data);
-    parse_number();
-    ASSERT_EQ(err, 0);
-    ASSERT_PTR_EQ(decode_name_ptr, line_buffer.data);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-}
-
-void test_parse_number(void) {
-
-    const char number_10_line_data[] = { '1', '0' };
-    const char number_20_line_data[] = { '2', '0' };
-    const char pi_line_data[] = { '3', '.', '1', '4', '1', '5', '9' };
-    const char e_line_data[] = { '1', '.', '2', 'E', '-', '9' };
-    const char zero_line_data_1[] = { '.' };
-    const char zero_line_data_2[] = { '0', '.' };
-    const char zero_line_data_3[] = { '.', '0' };
-    const char zero_line_data_4[] = { '-', '.' };
-    const char zero_line_data_5[] = { '-', '0', '.' };
-    const char zero_line_data_6[] = { '-', '.', '0' };
-
-    PRINT_TEST_NAME();
-
-    call_parse_number("10 PRINT X", 0, number_10_line_data, sizeof number_10_line_data, 2, __LINE__);
-
-    // The function should honor the current read position.
-    call_parse_number("1020 PRINT X", 2, number_20_line_data, sizeof number_20_line_data, 4, __LINE__);
-
-    call_parse_number("3.14159", 0, pi_line_data, sizeof pi_line_data, 7, __LINE__);
-    call_parse_number("1.2E-9", 0, e_line_data, sizeof e_line_data, 6, __LINE__);
-
-    // The function should return carry set if an invalid number.
-    strcpy(buffer, "invalid");
-    buffer_pos = 0;
-    parse_number();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-
-    strcpy(buffer, "");
-    buffer_pos = 0;
-    parse_number();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-
-    // Minus by itself is not a number
-    strcpy(buffer, "-");
-    buffer_pos = 0;
-    parse_number();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-
-    // But '.' by itself and other encodings of zero are allowed
-    call_parse_number(".", 0, zero_line_data_1, sizeof zero_line_data_1, 1, __LINE__);
-    call_parse_number("0.", 0, zero_line_data_2, sizeof zero_line_data_2, 2, __LINE__);
-    call_parse_number(".0", 0, zero_line_data_3, sizeof zero_line_data_3, 2, __LINE__);
-    call_parse_number("-.", 0, zero_line_data_4, sizeof zero_line_data_4, 2, __LINE__);
-    call_parse_number("-0.", 0, zero_line_data_5, sizeof zero_line_data_5, 3, __LINE__);
-    call_parse_number("-.0", 0, zero_line_data_6, sizeof zero_line_data_6, 3, __LINE__);
-}
-
-void call_parse_expression(const char* s, const char* expect_line_data, size_t expect_line_data_size, int line) {
+void call_parse_statements(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
     size_t expect_buffer_pos;
-    fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
+    fprintf(stderr, "  %s:%d: parse_statements(\"%s\")\n", __FILE__, line, s);
     expect_buffer_pos = strlen(s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_expression();
-    ASSERT_EQ(err, 0);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_size);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_size);
-}
-
-void test_parse_expression(void) {
-    
-    const char line_data_1[] = { '1' };
-    const char line_data_2[] = { '-', '1' };
-    const char line_data_3[] = { 'X' | EOT };
-    const char line_data_4[] = { 'X' | EOT, TOKEN_OP | OP_ADD, '1' };
-    const char line_data_5[] = { '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
-        TOKEN_OP | OP_MUL, 'Y' | EOT };
-    const char line_data_6[] = { TOKEN_UNARY_OP | UNARY_OP_MINUS, 'X' | EOT };
-    const char line_data_7[] = { 'X' | EOT, TOKEN_OP | OP_EQ, '3', TOKEN_OP | OP_OR, 
-        'X' | EOT, TOKEN_OP | OP_LE, 'Y' | EOT };
-    const char line_data_8[] = { TOKEN_UNARY_OP | UNARY_OP_NOT, '(', 'X' | EOT, TOKEN_OP | OP_EQ, 
-        '3', TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT,
-        TOKEN_UNARY_OP | UNARY_OP_MINUS, 'Y' | EOT, ')' };
-    const char line_data_9[] = { '"', 'H', 'E', 'L', 'L', 'O', '"' };
-    const char line_data_10[] = { '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
-        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"' };
-    const char line_data_11[] = { 'A', '$' | EOT, TOKEN_OP | OP_CONCAT, '"', 'A', 'B', 'C', '"' };
-    const char line_data_12[] = { 'X' | EOT, '(', '2', ',', '5', ')' };
-    const char line_data_13[] = { 'A', '$' | EOT, '(', '1', ')' };
-    const char line_data_14[] = { 0 | TOKEN_FUNCTION, '"', 'H', 'E', 'L', 'L', 'O', '"', ')' };
-    const char line_data_15[] = { 1 | TOKEN_FUNCTION, '2', '5', ')' };
-    const char line_data_16[] = { 8 | TOKEN_FUNCTION, ')' };
-    const char line_data_17[] = { 8 | TOKEN_FUNCTION, ')', TOKEN_OP | OP_MUL, '2', '0' };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    call_parse_expression("1", line_data_1, sizeof line_data_1, __LINE__);
-    call_parse_expression("-1", line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_expression("X", line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_expression("X+1", line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_expression("(X+3)*Y", line_data_5, sizeof line_data_5, __LINE__);
-    call_parse_expression("-X", line_data_6, sizeof line_data_6, __LINE__);
-    call_parse_expression("X=3 OR X<=Y", line_data_7, sizeof line_data_7, __LINE__);
-    call_parse_expression("NOT (X=3 OR NOT -Y)", line_data_8, sizeof line_data_8, __LINE__);
-    call_parse_expression("\"HELLO\"", line_data_9, sizeof line_data_9, __LINE__);
-    call_parse_expression("\"BUG OR \"\"FEATURE?\"\"\"", line_data_10, sizeof line_data_10, __LINE__);
-    call_parse_expression("A$ & \"ABC\"", line_data_11, sizeof line_data_11, __LINE__);
-    call_parse_expression("X(2,5)", line_data_12, sizeof line_data_12, __LINE__);
-    call_parse_expression("A$(1)", line_data_13, sizeof line_data_13, __LINE__);
-    call_parse_expression("LEN(\"HELLO\")", line_data_14, sizeof line_data_14, __LINE__);
-    call_parse_expression("STR$(25)", line_data_15, sizeof line_data_15, __LINE__);
-    call_parse_expression("FRE()", line_data_16, sizeof line_data_16, __LINE__);
-    call_parse_expression("FRE()*20", line_data_17, sizeof line_data_17, __LINE__);
-}
-
-void test_parse_argument_separator(void) {
-
-    PRINT_TEST_NAME();
-
-    strcpy(buffer, ",");
-    buffer_pos = 0;
-    parse_argument_separator();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 1);
-
-    strcpy(buffer, "  ,");
-    buffer_pos = 0;
-    parse_argument_separator();
-    ASSERT_NE(err, 0);
-    ASSERT_EQ(buffer_pos, 3);
-
-    strcpy(buffer, "x");
-    buffer_pos = 0;
-    parse_argument_separator();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, 0);
-
-    strcpy(buffer, ",");
-    buffer_pos = 1;
-    parse_argument_separator();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, 1);
-}
-
-void call_parse_argument_list(const char* s, char count, const char* expect_line_data, size_t expect_line_data_length, 
-        char expect_remaining, int line) {
-    size_t expect_buffer_pos;
-    char remaining;
-    fprintf(stderr, "  %s:%d: parse_argument_list(\"%s\", %d)\n", __FILE__, line, s, count);
-    expect_buffer_pos = strlen(s);
-    strcpy(buffer, s);
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    remaining = parse_argument_list(count);
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
-    ASSERT_EQ(remaining, expect_remaining);
-}
-
-void test_parse_argument_list(void) {
-
-    const char line_data_1[] = { '1', ',', 'X' | EOT };
-    const char line_data_2[] = { '1' };
-
-    PRINT_TEST_NAME();
-
-    call_parse_argument_list("1,X", 2, line_data_1, sizeof line_data_1, 0, __LINE__);
-    call_parse_argument_list("1", 1, line_data_2, sizeof line_data_2, 0, __LINE__);
-    call_parse_argument_list("1,X", 1, line_data_1, sizeof line_data_1, -1, __LINE__);
-    call_parse_argument_list("1", 2, line_data_2, sizeof line_data_2, 1, __LINE__);
-    call_parse_argument_list("", 1, NULL, 0, 1, __LINE__);
-}
-
-void call_parse_directive(const char* s, char directive, const char* expect_line_data, size_t expect_line_data_length, 
-        int line) {
-    size_t expect_buffer_pos;
-    fprintf(stderr, "  %s:%d: parse_directive(\"%s\", %d)\n", __FILE__, line, s, directive);
-    expect_buffer_pos = strlen(s);
-    strcpy(buffer, s);
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    parse_directive(directive);
+    parse_statements();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
 
-void test_parse_directive(void) {
+void test_parse_statements(void) {
 
-    const char line_data_1[] = { '1' };
-    const char line_data_2[] = { 'X' | EOT };
-    const char line_data_3[] = { 'X' | EOT, ',', 'Y' | EOT };
-    const char line_data_4[] = { '1', '0', };
-    const char line_data_5[] = { '1', '0', ',', '2', '0' };
-    const char line_data_6[] = { 'X' | EOT };
-    const char line_data_7[] = { 'X' | EOT, ',', '1' };
-    const char line_data_8[] = { 'X' | EOT, ';', '1' };
-    const char line_data_9[] = { ',', ',', 'X' | EOT, ';', '1', ',', 'Y' | EOT, ';' };
-    const char line_data_10[] = { 'T', 'E', 'X', 'T', ' ', ' ' };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    call_parse_directive("1", 1, line_data_1, sizeof line_data_1, __LINE__);
-    call_parse_directive("X", 1, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_directive("X", NT_VAR, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_directive("X", NT_RPT_VAR, line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_directive("X,Y", NT_RPT_VAR, line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_directive("10", NT_NUMBER, line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_directive("10,20", NT_RPT_NUMBER, line_data_5, sizeof line_data_5, __LINE__);
-    call_parse_directive("X", NT_PRINT_EXP, line_data_6, sizeof line_data_6, __LINE__);
-    call_parse_directive("X,1", NT_PRINT_EXP, line_data_7, sizeof line_data_7, __LINE__);
-    call_parse_directive("X;1", NT_PRINT_EXP, line_data_8, sizeof line_data_8, __LINE__);
-    call_parse_directive(",,X;1,Y;", NT_PRINT_EXP, line_data_9, sizeof line_data_9, __LINE__);
-    call_parse_directive("  TEXT  ", NT_TEXT, line_data_10, sizeof line_data_10, __LINE__);
-}
-
-void call_parse_statement(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
-    size_t expect_buffer_pos;
-    fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
-    expect_buffer_pos = strlen(s);
-    strcpy(buffer, s);
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    parse_statement();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
-}
-
-void test_parse_statement(void) {
-
-    const char line_data_1[] = { ST_RUN };
-    const char line_data_2[] = { ST_PRINT, '8', 0 };
-    const char line_data_3[] = { ST_LET, 'X' | EOT, 0, '1', '0', '0', 0 };
-    const char line_data_4[] = { ST_INPUT, 'X' | EOT, ',', 'Y' | EOT, 0 };
-    // obsolete 5
-    const char line_data_6[] = { ST_PRINT, '(', 'X' | EOT, TOKEN_OP | OP_ADD, '3', ')',
-        TOKEN_OP | OP_MUL, 'Y' | EOT, 0 };
-    const char line_data_7[] = { ST_ON_GOTO, 'X' | EOT, TOKEN_OP | OP_DIV, '2', 0,
-        '1', '0', ',', '2', '0', ',', '3', '0', 0 };
-    const char line_data_8[] = { ST_ON_GOSUB, 'X' | EOT, 0,
-        '1', '0', ',', '2', '0', ',', '3', '0', 0 };
-    const char line_data_9[] = { ST_IF_THEN, 'X' | EOT, TOKEN_OP | OP_LT, '1', '0', 0, ST_PRINT, 'X' | EOT, 0, 0 };
-    const char line_data_10[] = { ST_DATA, 'H', 'E', 'L', 'L', 'O', ' ', 0 };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    call_parse_statement("RUN", line_data_1, sizeof line_data_1, __LINE__);
-    call_parse_statement("PRINT 8", line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_statement("LET X=100", line_data_3, sizeof line_data_3, __LINE__);
-    call_parse_statement("INPUT X,Y", line_data_4, sizeof line_data_4, __LINE__);
-    call_parse_statement("PRINT (X+3)*Y", line_data_6, sizeof line_data_6, __LINE__);
-    call_parse_statement("ON X/2 GOTO 10,20,30", line_data_7, sizeof line_data_7, __LINE__);
-
-    // Test that the parser can differentiate between ON...GOTO and ON...GOSUB.
-
-    call_parse_statement("ON X GOSUB 10,20,30", line_data_8, sizeof line_data_8, __LINE__);
-
-    // Conditionals
-
-    call_parse_statement("IF X<10 THEN PRINT X", line_data_9, sizeof line_data_9, __LINE__);
-
-    // DATA should retain spaces.
-
-    call_parse_statement("DATA  HELLO ", line_data_10, sizeof line_data_10, __LINE__);
-
-    // Test that adding spaces here and there doesn't mix up the parser.
-
-    call_parse_statement("PRINT    8", line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_statement("PRINT 8  ", line_data_2, sizeof line_data_2, __LINE__);
-    call_parse_statement("LET   X  =  100  ", line_data_3, sizeof line_data_3, __LINE__);
-
-    // Make sure the parser doesn't match continued names.
-
-    strcpy(buffer, "PRINTX");
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    parse_statement();
-    ASSERT_EQ(err, ERR_SYNTAX_ERROR);
-    ASSERT_EQ(buffer_pos, 6);
-}
-
-void test_parse_line(void) {
-
-    const char line_data_1[] = { 11, ST_LET, 'X' | EOT, 0, '1', '0', '0', 0 };
-    const char line_data_2[] = { 11, ST_LET, 'X' | EOT, 0, '1', '0', '0', 0, 15, ST_PRINT, 'X' | EOT, 0 };
-    const char line_data_3[] = { 5, ST_RUN };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    // Happy path with line number
-
-    strcpy(buffer, "10 LET X=100");
-    parse_line();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_buffer.next_line_offset, offsetof(Line, data) + sizeof line_data_1);
-    ASSERT_EQ(line_buffer.number, 10);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_1, sizeof line_data_1);
-
-    // Happy path with multiple statements
-
-    strcpy(buffer, "10 LET X=100:PRINT X");
-    parse_line();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_buffer.next_line_offset, offsetof(Line, data) + sizeof line_data_2);
-    ASSERT_EQ(line_buffer.number, 10);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_2, sizeof line_data_2);
-
-    // Happy path immediate mode
-
-    strcpy(buffer, "RUN");
-    parse_line();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(line_buffer.next_line_offset,  offsetof(Line, data) + sizeof line_data_3);
-    ASSERT_EQ(line_buffer.number, -1);
-    ASSERT_MEMORY_EQ(line_buffer.data, line_data_3, sizeof line_data_3);
-
-    // Empty line
-
-    strcpy(buffer, "");
-    parse_line();
-    ASSERT_EQ(err, 0);
-    strcpy(buffer, "  ");
-    parse_line();
-    ASSERT_EQ(err, 0);
-
-    // Test that the parser rejects statements that continue past the point where they're supposed to end.
-
-    strcpy(buffer, "LET X=100,5");
-    parse_line();
-    ASSERT_NE(err, 0);
-}
-
-void call_new_parse_line(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
-    size_t expect_buffer_pos;
-    fprintf(stderr, "  %s:%d: new_parse_line(\"%s\")\n", __FILE__, line, s);
-    expect_buffer_pos = strlen(s);
-    strcpy(buffer, s);
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    new_parse_line();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(buffer_pos, expect_buffer_pos);
-    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
-    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
-}
-
-void test_new_parse_line(void) {
-
-    const char simple_line_data_1[] = { ST_NEW_RUN, 0 };
-    const char number_line_data_1[] = { ST_NEW_PRINT, '1', 0 };
-    const char number_line_data_2[] = { ST_NEW_PRINT, '2', '5', 0 };
-    const char number_line_data_3[] = { ST_NEW_PRINT, '3', '.', '1', '4', '1', '5', '9', 0 };
-    const char number_line_data_4[] = { ST_NEW_PRINT, '1', '0', '.', 0 };
-    const char number_line_data_5[] = { ST_NEW_PRINT, '.', '1', '2', '5', 0 };
-    const char string_line_data_1[] = { ST_NEW_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
-    const char string_line_data_2[] = { ST_NEW_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
+    const char simple_line_data_1[] = { ST_RUN, 0 };
+    const char number_line_data_1[] = { ST_PRINT, '1', 0 };
+    const char number_line_data_2[] = { ST_PRINT, '2', '5', 0 };
+    const char number_line_data_3[] = { ST_PRINT, '3', '.', '1', '4', '1', '5', '9', 0 };
+    const char number_line_data_4[] = { ST_PRINT, '1', '0', '.', 0 };
+    const char number_line_data_5[] = { ST_PRINT, '.', '1', '2', '5', 0 };
+    const char string_line_data_1[] = { ST_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
+    const char string_line_data_2[] = { ST_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
-    const char variable_line_data_1[] = { ST_NEW_PRINT, 'I', 'D', 'X', '_', '2' | EOT, 0 };
-    const char variable_line_data_2[] = { ST_NEW_PRINT, 'A', '$' | EOT, 0 };
-    const char variable_line_data_3[] = { ST_NEW_PRINT, 'X' | EOT, '(', '5', ')', 0 };
-    const char variable_line_data_4[] = { ST_NEW_PRINT, 'X', 'Y', 'Z', 'Z', 'Y', '$' | EOT, '(', '1', ',', '1', '0', ')', 0 };
-    const char function_line_data_1[] = { ST_NEW_PRINT, TOKEN_FUNCTION | 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')', 0 };
-    const char function_line_data_2[] = { ST_NEW_PRINT, TOKEN_FUNCTION | 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')', 0 };
-    const char expression_line_data_1[] = { ST_NEW_PRINT, '1', TOKEN_OP | OP_ADD, '1', TOKEN_OP | OP_ADD, '1', 0 };
-    const char expression_line_data_2[] = { ST_NEW_PRINT, '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')', 0 };
-    const char expression_line_data_3[] = { ST_NEW_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', TOKEN_OP | OP_CONCAT, '"', ',', ' ', 'W', 'O', 'R', 'L', 'D', '"', 0 };
-    const char for_line_data_1[] = { ST_NEW_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '5', 0 };
-    const char for_line_data_2[] = { ST_NEW_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '2', '0', TOKEN_MISC | MISC_STEP, '2', 0 };
-    const char let_line_data_1[] = { ST_NEW_LET, 'X' | EOT, '=', '1', '0', '0', 0 };
-    const char if_line_data_1[] = { ST_NEW_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_MISC | MISC_THEN, ST_GOTO, '1', '0', 0 };
-    const char input_line_data_1[] = { ST_NEW_INPUT, 'A' | EOT, 0 };
-    const char input_line_data_2[] = { ST_NEW_INPUT, 'A' | EOT, ',', 'B' | EOT, ',', 'C' | EOT, 0 };
-    const char on_line_data_1[] = { ST_NEW_ON, '1', TOKEN_MISC | MISC_GOTO, '1', '0', 0 };
-    const char on_line_data_2[] = { ST_NEW_ON, '1', TOKEN_MISC | MISC_GOSUB, '1', '0', 0 };
-    const char on_line_data_3[] = { ST_NEW_ON, 'X' | EOT, TOKEN_MISC | MISC_GOSUB, '1', '0', ',', '2', '0', ',', '3', '0', 0 };
-    const char next_line_data_1[] = { ST_NEW_NEXT, 'X' | EOT, 0 };
-    const char list_line_data_1[] = { ST_NEW_LIST, 0 };
-    const char list_line_data_2[] = { ST_NEW_LIST, '1', '0', '0', 0 };
-    const char list_line_data_3[] = { ST_NEW_LIST, '1', '0', '0', ',', '5', '0', '0', 0 };
-    const char data_line_data_1[] = { ST_NEW_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5', 0 };
-    const char multi_line_data_1[] = { ST_NEW_LET, 'X' | EOT, '=', '1', '0', '0', TOKEN_MISC | MISC_STATEMENT, ST_NEW_PRINT, 'X' | EOT, 0 };
+    const char variable_line_data_1[] = { ST_PRINT, 'I', 'D', 'X', '_', '2' | EOT, 0 };
+    const char variable_line_data_2[] = { ST_PRINT, 'A', '$' | EOT, 0 };
+    const char variable_line_data_3[] = { ST_PRINT, 'X' | EOT, '(', '5', ')', 0 };
+    const char variable_line_data_4[] = { ST_PRINT, 'X', 'Y', 'Z', 'Z', 'Y', '$' | EOT, '(', '1', ',', '1', '0', ')', 0 };
+    const char function_line_data_1[] = { ST_PRINT, TOKEN_FUNCTION | 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')', 0 };
+    const char function_line_data_2[] = { ST_PRINT, TOKEN_FUNCTION | 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')', 0 };
+    const char expression_line_data_1[] = { ST_PRINT, '1', TOKEN_OP | OP_ADD, '1', TOKEN_OP | OP_ADD, '1', 0 };
+    const char expression_line_data_2[] = { ST_PRINT, '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')', 0 };
+    const char expression_line_data_3[] = { ST_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', TOKEN_OP | OP_CONCAT, '"', ',', ' ', 'W', 'O', 'R', 'L', 'D', '"', 0 };
+    const char for_line_data_1[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '5', 0 };
+    const char for_line_data_2[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '2', '0', TOKEN_MISC | MISC_STEP, '2', 0 };
+    const char let_line_data_1[] = { ST_LET, 'X' | EOT, '=', '1', '0', '0', 0 };
+    const char if_line_data_1[] = { ST_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_MISC | MISC_THEN, ST_GOTO, '1', '0', 0 };
+    const char input_line_data_1[] = { ST_INPUT, 'A' | EOT, 0 };
+    const char input_line_data_2[] = { ST_INPUT, 'A' | EOT, ',', 'B' | EOT, ',', 'C' | EOT, 0 };
+    const char on_line_data_1[] = { ST_ON, '1', TOKEN_MISC | MISC_GOTO, '1', '0', 0 };
+    const char on_line_data_2[] = { ST_ON, '1', TOKEN_MISC | MISC_GOSUB, '1', '0', 0 };
+    const char on_line_data_3[] = { ST_ON, 'X' | EOT, TOKEN_MISC | MISC_GOSUB, '1', '0', ',', '2', '0', ',', '3', '0', 0 };
+    const char next_line_data_1[] = { ST_NEXT, 'X' | EOT, 0 };
+    const char list_line_data_1[] = { ST_LIST, 0 };
+    const char list_line_data_2[] = { ST_LIST, '1', '0', '0', 0 };
+    const char list_line_data_3[] = { ST_LIST, '1', '0', '0', ',', '5', '0', '0', 0 };
+    const char data_line_data_1[] = { ST_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5', 0 };
+    const char multi_line_data_1[] = { ST_LET, 'X' | EOT, '=', '1', '0', '0', TOKEN_MISC | MISC_STATEMENT, ST_PRINT, 'X' | EOT, 0 };
 
     PRINT_TEST_NAME();
 
     // Simple statement (covers all single-keyword statements)
-    call_new_parse_line("RUN", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
+    call_parse_statements("RUN", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
 
     // Number
-    call_new_parse_line("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
-    call_new_parse_line("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
-    call_new_parse_line("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
-    call_new_parse_line("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
-    call_new_parse_line("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
+    call_parse_statements("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
+    call_parse_statements("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
+    call_parse_statements("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
+    call_parse_statements("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
+    call_parse_statements("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
 
     // String
-    call_new_parse_line("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
-    call_new_parse_line("PRINT \"BUG OR \"\"FEATURE?\"\"\"", string_line_data_2, sizeof string_line_data_2, __LINE__);
+    call_parse_statements("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
+    call_parse_statements("PRINT \"BUG OR \"\"FEATURE?\"\"\"", string_line_data_2, sizeof string_line_data_2, __LINE__);
 
     // Variable
-    call_new_parse_line("PRINT IDX_2", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
-    call_new_parse_line("PRINT A$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
-    call_new_parse_line("PRINT X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
-    call_new_parse_line("PRINT XYZZY$(1,10)", variable_line_data_4, sizeof variable_line_data_4, __LINE__);
+    call_parse_statements("PRINT IDX_2", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
+    call_parse_statements("PRINT A$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
+    call_parse_statements("PRINT X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
+    call_parse_statements("PRINT XYZZY$(1,10)", variable_line_data_4, sizeof variable_line_data_4, __LINE__);
 
     // Function
-    call_new_parse_line("PRINT LEN(\"HELLO\")", function_line_data_1, sizeof function_line_data_1, __LINE__);
-    call_new_parse_line("PRINT MID$(\"HELLO\",2,3)", function_line_data_2, sizeof function_line_data_2, __LINE__);
+    call_parse_statements("PRINT LEN(\"HELLO\")", function_line_data_1, sizeof function_line_data_1, __LINE__);
+    call_parse_statements("PRINT MID$(\"HELLO\",2,3)", function_line_data_2, sizeof function_line_data_2, __LINE__);
 
     // Expression
-    call_new_parse_line("PRINT 1+1+1", expression_line_data_1, sizeof expression_line_data_1, __LINE__);
-    call_new_parse_line("PRINT 1+(1+1)", expression_line_data_2, sizeof expression_line_data_2, __LINE__);
-    call_new_parse_line("PRINT \"HELLO\"&\", WORLD\"", expression_line_data_3, sizeof expression_line_data_3, __LINE__);
+    call_parse_statements("PRINT 1+1+1", expression_line_data_1, sizeof expression_line_data_1, __LINE__);
+    call_parse_statements("PRINT 1+(1+1)", expression_line_data_2, sizeof expression_line_data_2, __LINE__);
+    call_parse_statements("PRINT \"HELLO\"&\", WORLD\"", expression_line_data_3, sizeof expression_line_data_3, __LINE__);
 
     // FOR
-    call_new_parse_line("FOR X=1 TO 5", for_line_data_1, sizeof for_line_data_1, __LINE__);
-    call_new_parse_line("FOR X=1 TO 20 STEP 2", for_line_data_2, sizeof for_line_data_2, __LINE__);
+    call_parse_statements("FOR X=1 TO 5", for_line_data_1, sizeof for_line_data_1, __LINE__);
+    call_parse_statements("FOR X=1 TO 20 STEP 2", for_line_data_2, sizeof for_line_data_2, __LINE__);
 
     // LET
-    call_new_parse_line("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);
+    call_parse_statements("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);
 
     // IF
-    call_new_parse_line("IF X=1 THEN GOTO 10", if_line_data_1, sizeof if_line_data_1, __LINE__);
+    call_parse_statements("IF X=1 THEN GOTO 10", if_line_data_1, sizeof if_line_data_1, __LINE__);
 
     // INPUT (covers READ)
-    call_new_parse_line("INPUT A", input_line_data_1, sizeof input_line_data_1, __LINE__);
-    call_new_parse_line("INPUT A,B,C", input_line_data_2, sizeof input_line_data_2, __LINE__);
+    call_parse_statements("INPUT A", input_line_data_1, sizeof input_line_data_1, __LINE__);
+    call_parse_statements("INPUT A,B,C", input_line_data_2, sizeof input_line_data_2, __LINE__);
 
     // ON
-    call_new_parse_line("ON 1 GOTO 10", on_line_data_1, sizeof on_line_data_1, __LINE__);
-    call_new_parse_line("ON 1 GOSUB 10", on_line_data_2, sizeof on_line_data_2, __LINE__);
-    call_new_parse_line("ON X GOSUB 10,20,30", on_line_data_3, sizeof on_line_data_3, __LINE__);
+    call_parse_statements("ON 1 GOTO 10", on_line_data_1, sizeof on_line_data_1, __LINE__);
+    call_parse_statements("ON 1 GOSUB 10", on_line_data_2, sizeof on_line_data_2, __LINE__);
+    call_parse_statements("ON X GOSUB 10,20,30", on_line_data_3, sizeof on_line_data_3, __LINE__);
 
     // NEXT
-    call_new_parse_line("NEXT X", next_line_data_1, sizeof next_line_data_1, __LINE__);
+    call_parse_statements("NEXT X", next_line_data_1, sizeof next_line_data_1, __LINE__);
 
     // LIST
-    call_new_parse_line("LIST", list_line_data_1, sizeof list_line_data_1, __LINE__);
-    call_new_parse_line("LIST 100", list_line_data_2, sizeof list_line_data_2, __LINE__);
-    call_new_parse_line("LIST 100,500", list_line_data_3, sizeof list_line_data_3, __LINE__);
+    call_parse_statements("LIST", list_line_data_1, sizeof list_line_data_1, __LINE__);
+    call_parse_statements("LIST 100", list_line_data_2, sizeof list_line_data_2, __LINE__);
+    call_parse_statements("LIST 100,500", list_line_data_3, sizeof list_line_data_3, __LINE__);
 
     // DATA
-    call_new_parse_line("DATA HELLO,\"X,Y\",5", data_line_data_1, sizeof data_line_data_1, __LINE__);
+    call_parse_statements("DATA HELLO,\"X,Y\",5", data_line_data_1, sizeof data_line_data_1, __LINE__);
 
     // Multiple statements
-    call_new_parse_line("LET X=100:PRINT X", multi_line_data_1, sizeof multi_line_data_1, __LINE__);
+    call_parse_statements("LET X=100:PRINT X", multi_line_data_1, sizeof multi_line_data_1, __LINE__);
 }
 
 int main(void) {
     initialize_target();
-    // test_parse_name();
-    // test_parse_number();
-    // test_parse_expression();
-    // test_parse_argument_separator();
-    // test_parse_argument_list();
-    // test_parse_directive();
-    // test_parse_statement();
-    // test_parse_line();
-    test_new_parse_line();
+    test_parse_statements();
     return 0;
 }

@@ -505,7 +505,7 @@ pvm_statement:
         CALL pvm_whitespace
         BEGIN_KEYWORD
         CALL pvm_name
-        TOKENIZE_KEYWORD new_statement_name_table
+        TOKENIZE_KEYWORD statement_name_table
         JUMP_KEYWORD
 
 ; Argument lists
@@ -742,7 +742,7 @@ pvm_whitespace:
 @done:
         RETURN
 
-new_statement_name_table:
+statement_name_table:
         name_table_entry "END"
             RETURN
 :       name_table_entry "RUN"

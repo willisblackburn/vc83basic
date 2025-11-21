@@ -36,7 +36,6 @@ _err: .res 1
 .export _line_buffer = line_buffer
 
 .export _statement_name_table = statement_name_table
-.export _pvm_statement = pvm_statement
 
 .code
 
@@ -380,50 +379,10 @@ _parse_line:
         startwrap
         jmp     parse_line
 
-_parse_statement:
-.export _parse_statement
+_parse_statements:
+.export _parse_statements
         startwrap
-        jmp     parse_statement
-
-_parse_directive:
-.export _parse_directive
-        jsr     parse_directive
-        jmp     set_err
-
-_parse_variable:
-.export _parse_variable
-        jsr     parse_variable
-        jmp     set_err
-
-_parse_argument_list:
-.export _parse_argument_list
-        jsr     parse_argument_list
-        jmp     set_err
-
-_parse_expression:
-.export _parse_expression
-        jsr     parse_expression
-        jmp     set_err
-
-_parse_name:
-.export _parse_name
-        jsr     parse_name
-        jmp     set_err
-
-_parse_number:
-.export _parse_number
-        jsr     parse_number
-        jmp     set_err
-
-_parse_argument_separator:
-.export _parse_argument_separator
-        jsr     parse_argument_separator
-        jmp     set_err
-
-_new_parse_line:
-.export _new_parse_line
-        startwrap
-        jmp     new_parse_line
+        jmp     parse_statements
 
 ; program.s
 
@@ -443,6 +402,10 @@ _find_line:
 .export _find_line
         jsr     find_line
         jmp     set_err
+
+_next_statement:
+.export _next_statement
+        jmp     next_statement
 
 _advance_next_line_ptr:
 .export _advance_next_line_ptr

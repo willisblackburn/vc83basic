@@ -71,7 +71,6 @@ extern char buffer[];
 extern Line line_buffer;
 
 extern const char statement_name_table[];
-extern const char pvm_statement[];
 
 // Prototypes for C wrapper functions
 
@@ -137,21 +136,14 @@ int imul_16(/* AX */ int value);
 
 // parser.s
 void parse_line(void);
-void parse_statement(void);
-void parse_directive(/* A */ char directive);
-void parse_variable(void);
-char parse_argument_list(/* A */ char count);
-void parse_expression(void);
-void parse_name(void);
-void parse_number(void);
-void parse_argument_separator(void);
-void new_parse_line(void);
+void parse_statements(void);
 
 // program.s
 void initialize_target(void);
 void initialize_program(void);
 void reset_next_line_ptr(void);
 void find_line(/* AX */ int line_number);
+void next_statement(void);
 void advance_next_line_ptr(void);
 void insert_or_update_line(void);
 void grow(/* Y */ void* ptr, /* AX */ size_t size);
@@ -254,11 +246,9 @@ void set_line(int line, const char* data, size_t length) {
 void parse_and_decode_name(const char* name) {
     // Parse given name, then decodes it from line_buffer, in order to set up decode_name_ptr, decode_name_length,
     // and high bit on final character.
-    strcpy(buffer, name);
-    buffer_pos = 0;
-    line_pos = offsetof(Line, data);
-    parse_name();
-    ASSERT_EQ(err, 0);
+    size_t length = strlen(name);
+    memcpy(line_buffer.data, name, length);
+    line_buffer.data[length - 1] |= EOT; 
     line_ptr = &line_buffer;
     line_pos = offsetof(Line, data);
     decode_name();
