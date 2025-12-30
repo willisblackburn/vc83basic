@@ -89,6 +89,7 @@ advance_name_ptr:
 
 rebase_name_ptr:
         tya                             ; Move offset into A and add to name_ptr
+        ldy     #0                      ; Reset Y
         clc                             ; Not sure if carry is set or not so clear it now
         adc     name_ptr                ; Add to name_ptr
         sta     name_ptr
@@ -132,7 +133,7 @@ add_variable:
         ldy     #0                      ; Start writing length to name_ptr starting at offset 0
         sta     (name_ptr),y
         iny
-        jsr     rebase_name_ptr         ; Add Y to name_ptr
+        jsr     rebase_name_ptr         ; Add Y to name_ptr; resets Y to 0
         ldy     #0                      ; Start copying name at offset 0
 @copy_next_character:
         lda     (decode_name_ptr),y     ; Get name character
