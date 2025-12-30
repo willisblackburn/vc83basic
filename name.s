@@ -96,6 +96,7 @@ advance_name_ptr:
 
 rebase_name_ptr:
         tya                             ; Move offset into A and add to name_ptr
+        ldy     #0                      ; Reset Y
         clc                             ; Not sure if carry is set or not so clear it now
         adc     name_ptr                ; Add to name_ptr
         sta     name_ptr
@@ -199,8 +200,7 @@ dimension_array:
 
         mvax    name_ptr, dst_ptr       ; Remember name_ptr in dst_ptr so we can update the length later
         ldy     #2                      ; We don't know the length yet so just skip over it
-        jsr     copy_name
-        ldy     #0                      ; name_ptr now points past end of name; start copying at offset 0
+        jsr     copy_name               ; name_ptr now points past end of name; resets Y to 0
         lda     decode_name_arity       ; Copy arity into name table
         sta     (name_ptr),y            ; This will be the byte after the name
         sta     D                       ; D = arity countdown
@@ -356,8 +356,7 @@ find_array_element:
 ; Returns with name_ptr pointing to the byte after the name.
 
 copy_name:
-        jsr     rebase_name_ptr         ; Add Y to name_ptr
-        ldy     #0                      ; Start copying name at offset 0
+        jsr     rebase_name_ptr         ; Add Y to name_ptr; resets Y to 0
 @copy_next_character:
         lda     (decode_name_ptr),y     ; Get name character
         sta     (name_ptr),y            ; Store into name table
