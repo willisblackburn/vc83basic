@@ -183,7 +183,9 @@ S1 = FPX+2
 
 ; parser.s
 .global parse_line
-.global parse_statements
+.global parse_pvm
+.global pvm_statements
+.global pvm_expression
 .global statement_name_table
 .global extra_name_table
 .global operator_name_table

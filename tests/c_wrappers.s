@@ -35,7 +35,8 @@ _err: .res 1
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
-.export _statement_name_table = statement_name_table
+.export _pvm_statements = pvm_statements;
+.export _pvm_expression = pvm_expression;
 
 .code
 
@@ -379,10 +380,10 @@ _parse_line:
         startwrap
         jmp     parse_line
 
-_parse_statements:
-.export _parse_statements
+_parse_pvm:
+.export _parse_pvm
         startwrap
-        jmp     parse_statements
+        jmp     parse_pvm
 
 ; program.s
 

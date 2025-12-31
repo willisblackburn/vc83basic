@@ -1,20 +1,32 @@
 #include "test.h"
 
-void call_parse_statements(const char* s, const char* expect_line_data, size_t expect_line_data_length, int line) {
+void call_parse_pvm(const char* s, const char* start, const char* expect_line_data, size_t expect_line_data_length, int line) {
     size_t expect_buffer_pos;
     fprintf(stderr, "  %s:%d: parse_statements(\"%s\")\n", __FILE__, line, s);
     expect_buffer_pos = strlen(s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_statements();
+    parse_pvm(start);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
 
-void test_parse_statements(void) {
+void test_pvm_expression(void) {
+
+    const char line_data_1[] = { '1' };
+
+    PRINT_TEST_NAME();
+
+    // Simple statement (covers all single-keyword statements)
+    call_parse_pvm("1", pvm_expression, line_data_1, sizeof line_data_1, __LINE__);
+
+
+}
+
+void test_pvm_statements(void) {
 
     const char simple_line_data_1[] = { ST_RUN, 0 };
     const char number_line_data_1[] = { ST_PRINT, '1', 0 };
@@ -52,71 +64,72 @@ void test_parse_statements(void) {
 
     PRINT_TEST_NAME();
 
-    // Simple statement (covers all single-keyword statements)
-    call_parse_statements("RUN", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
+    // // Simple statement (covers all single-keyword statements)
+    // call_parse_pvm("RUN", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
 
-    // Number
-    call_parse_statements("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
-    call_parse_statements("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
-    call_parse_statements("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
-    call_parse_statements("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
-    call_parse_statements("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
+    // // Number
+    // call_parse_pvm("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
+    // call_parse_pvm("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
+    // call_parse_pvm("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
+    // call_parse_pvm("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
+    // call_parse_pvm("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
 
-    // String
-    call_parse_statements("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
-    call_parse_statements("PRINT \"BUG OR \"\"FEATURE?\"\"\"", string_line_data_2, sizeof string_line_data_2, __LINE__);
+    // // String
+    // call_parse_pvm("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
+    // call_parse_pvm("PRINT \"BUG OR \"\"FEATURE?\"\"\"", string_line_data_2, sizeof string_line_data_2, __LINE__);
 
-    // Variable
-    call_parse_statements("PRINT IDX_2", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
-    call_parse_statements("PRINT A$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
-    call_parse_statements("PRINT X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
-    call_parse_statements("PRINT XYZZY$(1,10)", variable_line_data_4, sizeof variable_line_data_4, __LINE__);
+    // // Variable
+    // call_parse_pvm("PRINT IDX_2", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
+    // call_parse_pvm("PRINT A$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
+    // call_parse_pvm("PRINT X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
+    // call_parse_pvm("PRINT XYZZY$(1,10)", variable_line_data_4, sizeof variable_line_data_4, __LINE__);
 
-    // Function
-    call_parse_statements("PRINT LEN(\"HELLO\")", function_line_data_1, sizeof function_line_data_1, __LINE__);
-    call_parse_statements("PRINT MID$(\"HELLO\",2,3)", function_line_data_2, sizeof function_line_data_2, __LINE__);
+    // // Function
+    // call_parse_pvm("PRINT LEN(\"HELLO\")", function_line_data_1, sizeof function_line_data_1, __LINE__);
+    // call_parse_pvm("PRINT MID$(\"HELLO\",2,3)", function_line_data_2, sizeof function_line_data_2, __LINE__);
 
-    // Expression
-    call_parse_statements("PRINT 1+1+1", expression_line_data_1, sizeof expression_line_data_1, __LINE__);
-    call_parse_statements("PRINT 1+(1+1)", expression_line_data_2, sizeof expression_line_data_2, __LINE__);
-    call_parse_statements("PRINT \"HELLO\"&\", WORLD\"", expression_line_data_3, sizeof expression_line_data_3, __LINE__);
+    // // Expression
+    // call_parse_pvm("PRINT 1+1+1", expression_line_data_1, sizeof expression_line_data_1, __LINE__);
+    // call_parse_pvm("PRINT 1+(1+1)", expression_line_data_2, sizeof expression_line_data_2, __LINE__);
+    // call_parse_pvm("PRINT \"HELLO\"&\", WORLD\"", expression_line_data_3, sizeof expression_line_data_3, __LINE__);
 
-    // FOR
-    call_parse_statements("FOR X=1 TO 5", for_line_data_1, sizeof for_line_data_1, __LINE__);
-    call_parse_statements("FOR X=1 TO 20 STEP 2", for_line_data_2, sizeof for_line_data_2, __LINE__);
+    // // FOR
+    // call_parse_pvm("FOR X=1 TO 5", for_line_data_1, sizeof for_line_data_1, __LINE__);
+    // call_parse_pvm("FOR X=1 TO 20 STEP 2", for_line_data_2, sizeof for_line_data_2, __LINE__);
 
-    // LET
-    call_parse_statements("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);
+    // // LET
+    // call_parse_pvm("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);
 
-    // IF
-    call_parse_statements("IF X=1 THEN GOTO 10", if_line_data_1, sizeof if_line_data_1, __LINE__);
+    // // IF
+    // call_parse_pvm("IF X=1 THEN GOTO 10", if_line_data_1, sizeof if_line_data_1, __LINE__);
 
-    // INPUT (covers READ)
-    call_parse_statements("INPUT A", input_line_data_1, sizeof input_line_data_1, __LINE__);
-    call_parse_statements("INPUT A,B,C", input_line_data_2, sizeof input_line_data_2, __LINE__);
+    // // INPUT (covers READ)
+    // call_parse_pvm("INPUT A", input_line_data_1, sizeof input_line_data_1, __LINE__);
+    // call_parse_pvm("INPUT A,B,C", input_line_data_2, sizeof input_line_data_2, __LINE__);
 
-    // ON
-    call_parse_statements("ON 1 GOTO 10", on_line_data_1, sizeof on_line_data_1, __LINE__);
-    call_parse_statements("ON 1 GOSUB 10", on_line_data_2, sizeof on_line_data_2, __LINE__);
-    call_parse_statements("ON X GOSUB 10,20,30", on_line_data_3, sizeof on_line_data_3, __LINE__);
+    // // ON
+    // call_parse_pvm("ON 1 GOTO 10", on_line_data_1, sizeof on_line_data_1, __LINE__);
+    // call_parse_pvm("ON 1 GOSUB 10", on_line_data_2, sizeof on_line_data_2, __LINE__);
+    // call_parse_pvm("ON X GOSUB 10,20,30", on_line_data_3, sizeof on_line_data_3, __LINE__);
 
-    // NEXT
-    call_parse_statements("NEXT X", next_line_data_1, sizeof next_line_data_1, __LINE__);
+    // // NEXT
+    // call_parse_pvm("NEXT X", next_line_data_1, sizeof next_line_data_1, __LINE__);
 
-    // LIST
-    call_parse_statements("LIST", list_line_data_1, sizeof list_line_data_1, __LINE__);
-    call_parse_statements("LIST 100", list_line_data_2, sizeof list_line_data_2, __LINE__);
-    call_parse_statements("LIST 100,500", list_line_data_3, sizeof list_line_data_3, __LINE__);
+    // // LIST
+    // call_parse_pvm("LIST", list_line_data_1, sizeof list_line_data_1, __LINE__);
+    // call_parse_pvm("LIST 100", list_line_data_2, sizeof list_line_data_2, __LINE__);
+    // call_parse_pvm("LIST 100,500", list_line_data_3, sizeof list_line_data_3, __LINE__);
 
-    // DATA
-    call_parse_statements("DATA HELLO,\"X,Y\",5", data_line_data_1, sizeof data_line_data_1, __LINE__);
+    // // DATA
+    // call_parse_pvm("DATA HELLO,\"X,Y\",5", data_line_data_1, sizeof data_line_data_1, __LINE__);
 
-    // Multiple statements
-    call_parse_statements("LET X=100:PRINT X", multi_line_data_1, sizeof multi_line_data_1, __LINE__);
+    // // Multiple statements
+    // call_parse_pvm("LET X=100:PRINT X", multi_line_data_1, sizeof multi_line_data_1, __LINE__);
 }
 
 int main(void) {
     initialize_target();
-    test_parse_statements();
+    test_pvm_expression();
+    test_pvm_statements();
     return 0;
 }

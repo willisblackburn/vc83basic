@@ -70,7 +70,8 @@ extern int S1;
 extern char buffer[];
 extern Line line_buffer;
 
-extern const char statement_name_table[];
+extern const char pvm_statements[];
+extern const char pvm_expression[];
 
 // Prototypes for C wrapper functions
 
@@ -136,7 +137,7 @@ int imul_16(/* AX */ int value);
 
 // parser.s
 void parse_line(void);
-void parse_statements(void);
+void parse_pvm(const char *start);
 
 // program.s
 void initialize_target(void);
