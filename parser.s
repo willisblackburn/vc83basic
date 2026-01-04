@@ -509,7 +509,18 @@ pvm_arg_list:
 pvm_expression:
         CALL pvm_primary_expression
         TRY @done
-        CALL pvm_operator
+        WS
+        BEGIN
+        TRY @not_operator_name
+        CALL pvm_name
+        JUMP @tokenize_operator
+@not_operator_name:
+        MATCH_RANGE '&', '?'
+        TRY @tokenize_operator
+        MATCH_RANGE '<', '>'
+@tokenize_operator:
+        TOKENIZE operator_name_table
+        COMPOSE TOKEN_OP
         ACCEPT
         JUMP pvm_expression
 @done:
@@ -536,9 +547,18 @@ pvm_primary_expression:
         RETURN
 @not_number:
         TRY @not_unary_operator
-        CALL pvm_unary_operator
-        CALL pvm_primary_expression
-        RETURN
+        WS
+        BEGIN
+        TRY @not_unary_operator_name
+        CALL pvm_name
+        JUMP @tokenize_unary_operator
+@not_unary_operator_name:
+        BEGIN
+        MATCH '-'
+@tokenize_unary_operator:
+        TOKENIZE unary_operator_name_table
+        COMPOSE TOKEN_UNARY_OP
+        JUMP pvm_primary_expression
 @not_unary_operator:
         TRY @not_function
         WS
@@ -657,35 +677,6 @@ pvm_variable_list:
         JUMP pvm_variable_list
 @done:
         RETURN
-
-pvm_operator:
-        WS
-        BEGIN
-        TRY @not_name
-        CALL pvm_name
-        JUMP @end
-@not_name:
-        MATCH_RANGE '&', '?'
-        TRY @end
-        MATCH_RANGE '<', '>'
-@end:
-        TOKENIZE operator_name_table
-        COMPOSE TOKEN_OP
-        RETURN        
-
-pvm_unary_operator:
-        WS
-        BEGIN
-        TRY @not_name
-        CALL pvm_name
-        JUMP @end
-@not_name:
-        BEGIN
-        MATCH '-'
-@end:
-        TOKENIZE unary_operator_name_table
-        COMPOSE TOKEN_UNARY_OP
-        RETURN        
 
 ; Captures all text to EOL.
 
