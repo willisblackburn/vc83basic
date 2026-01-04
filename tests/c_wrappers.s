@@ -35,7 +35,7 @@ _err: .res 1
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
-.export _pvm_statements = pvm_statements;
+.export _pvm_statement = pvm_statement;
 .export _pvm_expression = pvm_expression;
 .export _pvm_number = pvm_number
 .export _pvm_string = pvm_string

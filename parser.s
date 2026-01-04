@@ -201,10 +201,7 @@ ins_call:
         stax    BC                      ; Temporarily park the address
         jsr     rebase_pvm_program_ptr
         ldphaa  pvm_program_ptr         ; Save return address
-        ldax    BC
-
-do_call:
-        stax    pvm_program_ptr
+        mvax    BC, pvm_program_ptr
         jsr     run_pvm                 ; Go do it
         plstaa  pvm_program_ptr         ; Restore the program pointer from the stack
         bcs     ins_fail                ; CALL exited with FAIL; propagate failure
@@ -238,9 +235,8 @@ ins_tokenize:
 ; DISPATCH: CALL the instruction following the end of the matched name in the name table
 
 ins_dispatch:
-        ldphaa  pvm_program_ptr         ; Save return address
-        ldax    name_ptr                ; CALL to name_ptr
-        bne     do_call                 ; Unconditional because high byte of name_ptr can't be 0
+        mvax    name_ptr, pvm_program_ptr   ; JUMP to name_ptr
+        rts
 
 ; COMPOSE: OR the next byte value into the last byte written to the output
 
@@ -416,12 +412,12 @@ pvm_statements:
 ;         EMIT 0
 ;         RETURN
 
-; pvm_statement:
-;         CALL pvm_whitespace
-;         BEGIN_KEYWORD
-;         CALL pvm_name
-;         TOKENIZE_KEYWORD statement_name_table
-;         JUMP_KEYWORD
+pvm_statement:
+        CALL pvm_whitespace
+        BEGIN
+        CALL pvm_name
+        TOKENIZE statement_name_table
+        DISPATCH
 
 ; ; Argument lists
 
@@ -494,8 +490,8 @@ pvm_primary_expression:
 @tokenize_function:
         TOKENIZE function_name_table
         COMPOSE TOKEN_FUNCTION
+        ACCEPT                          ; Recognized the function name so arg list is now mandatory
         MATCH '('
-        ACCEPT
         CALL pvm_arg_list
         CALL pvm_whitespace
         MATCH ')'
@@ -586,7 +582,7 @@ pvm_variable:
         COMPOSE EOT
         TRY @not_array
         MATCH '('
-        ACCEPT
+        ACCEPT                          ; Saw the ')' so now must read the arg list
         CALL pvm_arg_list
         MATCH ')'
 @not_array:
@@ -688,11 +684,11 @@ pvm_whitespace:
 
 statement_name_table:
         name_table_entry "END"
-;             RETURN
-; :       name_table_entry "RUN"
-;             RETURN
-; :       name_table_entry "PRINT"
-;             JUMP pvm_expression
+            RETURN
+:       name_table_entry "RUN"
+            RETURN
+:       name_table_entry "PRINT"
+            JUMP pvm_expression
 ; :       name_table_entry "LET"
 ;             CALL pvm_variable
 ;             MATCH '='

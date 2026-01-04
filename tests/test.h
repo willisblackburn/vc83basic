@@ -70,7 +70,7 @@ extern int S1;
 extern char buffer[];
 extern Line line_buffer;
 
-extern const char pvm_statements[];
+extern const char pvm_statement[];
 extern const char pvm_expression[];
 extern const char pvm_number[];
 extern const char pvm_string[];

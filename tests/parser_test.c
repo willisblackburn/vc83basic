@@ -150,17 +150,10 @@ void test_pvm_expression(void) {
     call_parse_pvm("MID$(\"HELLO\",2,3)", pvm_expression, function_line_data_2, sizeof function_line_data_2, __LINE__);
 }
 
-void test_pvm_statements(void) {
+void test_pvm_statement(void) {
 
-    const char simple_line_data_1[] = { ST_RUN, 0 };
-    const char number_line_data_1[] = { ST_PRINT, '1', 0 };
-    const char number_line_data_2[] = { ST_PRINT, '2', '5', 0 };
-    const char number_line_data_3[] = { ST_PRINT, '3', '.', '1', '4', '1', '5', '9', 0 };
-    const char number_line_data_4[] = { ST_PRINT, '1', '0', '.', 0 };
-    const char number_line_data_5[] = { ST_PRINT, '.', '1', '2', '5', 0 };
-    const char string_line_data_1[] = { ST_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
-    const char string_line_data_2[] = { ST_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
-        'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
+    const char line_data_1[] = { ST_END };
+    const char line_data_2[] = { ST_PRINT, '1' };
     const char variable_line_data_1[] = { ST_PRINT, 'I', 'D', 'X', '_', '2' | EOT, 0 };
     const char variable_line_data_2[] = { ST_PRINT, 'A', '$' | EOT, 0 };
     const char variable_line_data_3[] = { ST_PRINT, 'X' | EOT, '(', '5', ')', 0 };
@@ -187,15 +180,8 @@ void test_pvm_statements(void) {
 
     PRINT_TEST_NAME();
 
-    // // Simple statement (covers all single-keyword statements)
-    // call_parse_pvm("RUN", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
-
-    // // Number
-    // call_parse_pvm("PRINT 1", number_line_data_1, sizeof number_line_data_1, __LINE__);
-    // call_parse_pvm("PRINT 25", number_line_data_2, sizeof number_line_data_2, __LINE__);
-    // call_parse_pvm("PRINT 3.14159", number_line_data_3, sizeof number_line_data_3, __LINE__);
-    // call_parse_pvm("PRINT 10.", number_line_data_4, sizeof number_line_data_4, __LINE__);
-    // call_parse_pvm("PRINT .125", number_line_data_5, sizeof number_line_data_5, __LINE__);
+    call_parse_pvm("END", pvm_statement, line_data_1, sizeof line_data_1, __LINE__);
+    call_parse_pvm("PRINT 1", pvm_statement, line_data_2, sizeof line_data_2, __LINE__);
 
     // // String
     // call_parse_pvm("PRINT \"HELLO\"", string_line_data_1, sizeof string_line_data_1, __LINE__);
@@ -257,6 +243,6 @@ int main(void) {
     test_pvm_string();
     test_pvm_name();
     test_pvm_expression();
-    test_pvm_statements();
+    test_pvm_statement();
     return 0;
 }
