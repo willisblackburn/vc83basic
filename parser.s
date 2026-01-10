@@ -639,18 +639,16 @@ pvm_string:
         WS
         MATCH '"'
 @next:
-        TRY @not_quote
-        MATCH '"'
-        TRY @done
-        MATCH '"'
-        ACCEPT @again
-@again:
+        TRY @end_quote
+        MATCH .sprintf("%c%c", '"', '"')
         ACCEPT @next
-@not_quote:
+@end_quote:
+        TRY @non_quote
+        MATCH '"'
+        RETURN
+@non_quote:
         MATCH *
         JUMP @next
-@done:
-        RETURN
 
 pvm_variable:
         WS
