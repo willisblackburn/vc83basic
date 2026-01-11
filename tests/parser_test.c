@@ -160,6 +160,7 @@ void test_pvm_statement(void) {
     const char list_line_data_3[] = { ST_LIST, '1', '0', '0', ',', '5', '0', '0' };
     const char data_line_data_1[] = { ST_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5' };
     const char poke_line_data_1[] = { ST_POKE, '7', '1', '0', ',', '0' };
+    const char dim_line_data_1[] = { ST_DIM, 'A' | EOT, '(', '5', ')'  };
 
     PRINT_TEST_NAME();
 
@@ -201,6 +202,9 @@ void test_pvm_statement(void) {
 
     // POKE
     call_parse_pvm("POKE 710, 0", pvm_statement, poke_line_data_1, sizeof poke_line_data_1, __LINE__);
+
+    // DIM
+    call_parse_pvm("DIM A(5)", pvm_statement, dim_line_data_1, sizeof dim_line_data_1, __LINE__);
 }
 
 void call_parse_line(const char* s, const Line* expect_line, int line) {

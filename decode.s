@@ -28,6 +28,7 @@ decode_expression:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
         and     #$7F                    ; Clear high bit if set
+        debug $00
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
         sbc     #TOKEN_UNARY_OP
@@ -100,6 +101,7 @@ decode_name:
         sty     decode_name_arity       ; Default to arity 0 meaning not an array
 @next:
         lda     (decode_name_ptr),y
+        debug $10
         bmi     @last
         iny
         bne     @next

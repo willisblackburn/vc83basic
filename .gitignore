@@ -3,6 +3,7 @@
 *.code-workspace
 *.o
 *.d
+*.dbg
 *.map
 basic_*
 *_test

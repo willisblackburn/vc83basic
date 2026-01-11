@@ -53,15 +53,15 @@ TARGET_$1_OBJECTS = $$(TARGET_$1_SOURCES:.s=.o)
 TARGET_$1_COMMON_OBJECTS = $(COMMON_SOURCES:%.s=$1/%.o)
 
 basic_$1: $$(TARGET_$1_OBJECTS) $$(TARGET_$1_COMMON_OBJECTS)
-	cl65 -t $1 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^
+	ld65 -C $1/$1.cfg $$(LDFLAGS) -o $$@ $$^ $1.lib
 
 # Builds a target-specific object from a common source
 $1/%.o: %.s constants.inc zeropage.inc basic.inc
-	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
+	ca65 -t $1 $$(ASMFLAGS) -o $$@ $$<
 
 # Builds a target-specific object from a target-specific source
 $1/%.o: $1/%.s constants.inc zeropage.inc basic.inc
-	cl65 -t $1 -C $1/$1.cfg -c $$(ASMFLAGS) -o $$@ $$<
+	ca65 -t $1 $$(ASMFLAGS) -o $$@ $$<
 
 -include $$(TARGET_$1_SOURCES:.s=.d)
 
@@ -78,7 +78,7 @@ run_$1: tests/$1
 	sim65 tests/$1
 
 tests/$1: tests/$1.o $$(TEST_COMMON_OBJECTS) $$(COMMON_OBJECTS)
-	cl65 -t $$(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(TEST_LDFLAGS) -o $$@ $$^
+	ld65 -C $(TEST_TARGET)/$(TEST_TARGET).cfg $$(TEST_LDFLAGS) -o $$@ --dbgfile $$@.dbg $$^ $(TEST_TARGET).lib
 
 -include $1.d
 
@@ -131,11 +131,12 @@ $(foreach TEST,$(EXPECT_TESTS),$(eval $(call create-expect-test,$(TEST))))
 
 # Builds a common object from a common assembly language source; used by tests
 %.o: %.s constants.inc zeropage.inc basic.inc
-	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_ASMFLAGS) -o $@ $<
+	ca65 -g -t $(TEST_TARGET) $(TEST_ASMFLAGS) -o $@ $<
 
 # Same but for a C source
 %.o: %.c constants.h zeropage.h tests/test.h
-	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(TEST_CFLAGS) -o $@ $<
+	cc65 -g -t $(TEST_TARGET) $(TEST_CFLAGS) -o $*.s $<
+	ca65 -g -t $(TEST_TARGET) $(TEST_CFLAGS) -o $@ $*.s
 
 -include $$(COMMON_SOURCES:.s=.d)
 

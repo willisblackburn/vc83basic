@@ -1,5 +1,5 @@
 ; cc65 runtime
-.importzp sp
+.importzp c_sp
 
 ; sim65 vectors
 .import exit
@@ -17,6 +17,6 @@ startup:
         cld                             ; Clear decimal flag
         ldx     #$FF
         txs                             ; Initialize the stack to $FF
-        mvax    #(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__), sp
+        mvax    #(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__), c_sp
         jsr     main        
         jmp     exit                    ; Return 0 from sim65
