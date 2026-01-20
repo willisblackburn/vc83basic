@@ -7,6 +7,7 @@
 *.map
 basic_*
 *_test
+*_test.s
 constants.inc
 constants.h
 zeropage.inc
