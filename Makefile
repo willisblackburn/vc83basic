@@ -135,8 +135,7 @@ $(foreach TEST,$(EXPECT_TESTS),$(eval $(call create-expect-test,$(TEST))))
 
 # Same but for a C source
 %.o: %.c constants.h zeropage.h tests/test.h
-	cc65 -g -t $(TEST_TARGET) $(TEST_CFLAGS) -o $*.s $<
-	ca65 -g -t $(TEST_TARGET) $(TEST_CFLAGS) -o $@ $*.s
+	cl65 -c -g -t $(TEST_TARGET) $(TEST_CFLAGS) -o $@ $<
 
 -include $$(COMMON_SOURCES:.s=.d)
 
