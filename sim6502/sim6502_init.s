@@ -47,7 +47,7 @@ flag_indicators: .res 8
 
 .code
 
-format: .byte "$%02X: A=%02X X=%02X Y=%02X BCDE=%08LX SP=%02X %.8s FPX:FP0t=%08LX:%08LX e=%02X s=%02X FP1t=%08LX e=%02X s=%02X pvm_program_ptr=%04X buffer_pos=%04X, line_pos=%02X", $0A, $00
+format: .byte "$%02X: A=%02X X=%02X Y=%02X BCDE=%08LX SP=%02X %.8s FPX:FP0t=%08LX:%08LX e=%02X s=%02X FP1t=%08LX e=%02X s=%02X src_ptr=%04X dst_ptr=%04X, line_pos=%02X", $0A, $00
 flag_names: .byte "NV-BDIZC"
 
 ; Prints the register values to stderr.
@@ -131,11 +131,12 @@ debug_handler:
         jsr     pusha0
         lda     FP1s                    ; FP0 sign, ...
         jsr     pusha0
-        lda     pvm_program_ptr         ; pvm_program_ptr, ...
-        ldx     pvm_program_ptr+1
+        lda     src_ptr                 ; src_ptr, ...
+        ldx     src_ptr+1
         jsr     pushax
-        lda     buffer_pos              ; buffer_pos, ...
-        jsr     pusha0
+        lda     dst_ptr                 ; dst_ptr, ...
+        ldx     dst_ptr+1
+        jsr     pushax
         lda     line_pos                ; line_pos, ...
         jsr     pusha0
         ldy     #46                     ; 46 bytes on the C stack

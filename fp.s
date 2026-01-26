@@ -1026,15 +1026,13 @@ fpoly_2:
 @next:
         dec     D                       ; Finished with one coefficient
         beq     @done                   ; If no more coefficients then exit with result in FP0
-        lda     stack_pos
-
         lday    #fpoly_x                ; Multiply by argument
         jsr     fmul
         clc                             ; Advance to the next coefficient
         lda     src_ptr
         adc     #.sizeof(Float)
         sta     src_ptr
-        bne     @skip_inc
+        bcc     @skip_inc
         inc     src_ptr+1
 @skip_inc:
         lday    src_ptr                 ; Add the next coefficient
