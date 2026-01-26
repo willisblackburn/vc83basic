@@ -327,9 +327,9 @@ _ftan:
 
 ; list.s
 
-_list_statements:
-.export _list_statements
-        jsr     list_statements
+_list_statement:
+.export _list_statement
+        jsr     list_statement
         jmp     set_err
 
 ; name.s
@@ -406,10 +406,6 @@ _find_line:
 .export _find_line
         jsr     find_line
         jmp     set_err
-
-_next_statement:
-.export _next_statement
-        jmp     next_statement
 
 _advance_next_line_ptr:
 .export _advance_next_line_ptr

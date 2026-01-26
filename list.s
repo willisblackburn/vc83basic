@@ -22,7 +22,7 @@ exec_list:
         beq     @done                   ; If it's the null statement then we're at the end of the program
         jsr     line_number_to_string
         mva     #.sizeof(Line), line_pos
-        jsr     list_statements
+        jsr     list_statement
         ldax    #buffer
         ldy     buffer_pos              ; buffer_pos will be the amount of data written to the buffer
         jsr     write
@@ -33,15 +33,13 @@ exec_list:
 @done:
         plsta   next_line_pos
         plstaa  next_line_ptr
-        jmp     next_statement
+        rts
 
-; Outputs all of the statements on a line.
+; Outputs a statement.
 
-.assert MISC_STATEMENT = 0, error
-.assert MISC_THEN = 1, error
-.assert MISC_GOTO = 2, error
+.assert CLAUSE_THEN = 0, error
 
-list_statements:
+list_statement:
         jsr     decode_byte             ; Get statement token
         tay                             ; Set up for list_tokenized_name
         ldax    #statement_name_table
@@ -58,23 +56,22 @@ list_statements:
         sec                             ; Prepare to look for tokens
         sbc     #$04                    ; Unary operator
         cmp     #4
-        bcs     @try_misc
+        bcs     @try_clause
         tay
         ldax    #unary_operator_name_table
         bcc     @token
-@try_misc:
+@try_clause:
         sbc     #$08 - $04              ; Clause
         cmp     #8
         bcs     @try_operator
         tay
-        pha                             ; Remember the value to check for STATEMENT and THEN later
-        ldax    #misc_name_table
-        jsr     expand_tokenized_name   ; Call directly in order to handle STATEMENT and THEN
-        jsr     add_whitespace          ; Can just add because there's always something after a misc token
+        pha                             ; Remember the value to check for THEN later
+        ldax    #clause_name_table
+        jsr     expand_tokenized_name
+        jsr     add_whitespace          ; Can just add because there's always something after a clause token
         pla
-        cmp     #MISC_GOTO              ; Less than GOTO means STATEMENT or THEN
-        bcc     list_statements         ; If so then start listing statements all over again
-        bcs     @next                   ; Unconditional
+        beq     list_statement          ; If it was 0 (THEN), restart statement
+        bne     @next                   ; Unconditional
 @try_operator:
         sbc     #$10 - $08              ; Binary operator
         cmp     #16

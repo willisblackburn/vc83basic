@@ -43,7 +43,7 @@ exec_print:
         jsr     newline
         mva     #0, print_column
 @done:
-        jmp     next_statement
+        rts
 
 ; Prints the value in FP0 to standard output.
 

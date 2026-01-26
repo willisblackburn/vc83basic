@@ -145,16 +145,16 @@ void test_pvm_statement(void) {
 
     const char simple_line_data_1[] = { ST_END };
     const char print_line_data_1[] = { ST_PRINT, '1' };
-    const char for_line_data_1[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '5' };
-    const char for_line_data_2[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_MISC | MISC_TO, '2', '0', TOKEN_MISC | MISC_STEP, '2' };
+    const char for_line_data_1[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_CLAUSE | CLAUSE_TO, '5' };
+    const char for_line_data_2[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_CLAUSE | CLAUSE_TO, '2', '0', TOKEN_CLAUSE | CLAUSE_STEP, '2' };
     const char next_line_data_1[] = { ST_NEXT, 'X' | EOT };
     const char let_line_data_1[] = { ST_LET, 'X' | EOT, '=', '1', '0', '0' };
-    const char if_line_data_1[] = { ST_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_MISC | MISC_THEN, ST_GOTO, '1', '0',};
+    const char if_line_data_1[] = { ST_IF_THEN, 'X' | EOT, TOKEN_OP | OP_EQ, '1', TOKEN_CLAUSE | CLAUSE_THEN, ST_GOTO, '1', '0',};
     const char input_line_data_1[] = { ST_INPUT, 'A' | EOT };
     const char input_line_data_2[] = { ST_INPUT, 'A' | EOT, ',', 'B' | EOT, ',', 'C' | EOT };
-    const char on_line_data_1[] = { ST_ON, '1', TOKEN_MISC | MISC_GOTO, '1', '0' };
-    const char on_line_data_2[] = { ST_ON, '1', TOKEN_MISC | MISC_GOSUB, '1', '0' };
-    const char on_line_data_3[] = { ST_ON, 'X' | EOT, TOKEN_MISC | MISC_GOSUB, '1', '0', ',', '2', '0', ',', '3', '0' };
+    const char on_line_data_1[] = { ST_ON, '1', TOKEN_CLAUSE | CLAUSE_GOTO, '1', '0' };
+    const char on_line_data_2[] = { ST_ON, '1', TOKEN_CLAUSE | CLAUSE_GOSUB, '1', '0' };
+    const char on_line_data_3[] = { ST_ON, 'X' | EOT, TOKEN_CLAUSE | CLAUSE_GOSUB, '1', '0', ',', '2', '0', ',', '3', '0' };
     const char list_line_data_1[] = { ST_LIST };
     const char list_line_data_2[] = { ST_LIST, '1', '0', '0' };
     const char list_line_data_3[] = { ST_LIST, '1', '0', '0', ',', '5', '0', '0' };
@@ -211,6 +211,7 @@ void call_parse_line(const char* s, const Line* expect_line, int line) {
     fprintf(stderr, "  %s:%d: parse_line(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
     parse_line();
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, strlen(s));
     ASSERT_MEMORY_EQ(&line_buffer, expect_line, expect_line->next_line_offset);
     ASSERT_EQ(line_pos, expect_line->next_line_offset);
@@ -218,15 +219,19 @@ void call_parse_line(const char* s, const Line* expect_line, int line) {
 
 void test_parse_line(void) {
 
-    const Line line_1 = { 9, -1, { ST_LET, 'X' | EOT, '=', '1', '0', '0' } };
-    const Line line_2 = { 12, -1, { ST_LET, 'X' | EOT, '=', '1', '0', '0', TOKEN_MISC | MISC_STATEMENT, ST_PRINT, 'X' | EOT } };
-    const Line line_3 = { 5, 10, { ST_PRINT, '1' } };
+    const Line line_1 = { 6, -1, { 6, ST_POP, 0 } };
+    const Line line_2 = { 9, -1, { 6, ST_POP, 0, 9, ST_POP, 0 } };
+    const Line line_3 = { 11, -1, { 11, ST_LET, 'X' | EOT, '=', '1', '0', '0', 0 } };
+    const Line line_4 = { 15, -1, { 11, ST_LET, 'X' | EOT, '=', '1', '0', '0', 0, 15, ST_PRINT, 'X' | EOT, 0 } };
+    const Line line_5 = { 7, 10, { 7, ST_PRINT, '1', 0 } };
 
     PRINT_TEST_NAME();
 
-    call_parse_line("LET X=100", &line_1, __LINE__);
-    call_parse_line("LET X=100:PRINT X", &line_2, __LINE__);
-    call_parse_line("10 PRINT 1", &line_3, __LINE__);
+    call_parse_line("POP", &line_1, __LINE__);
+    call_parse_line("POP:POP", &line_2, __LINE__);
+    call_parse_line("LET X=100", &line_3, __LINE__);
+    call_parse_line("LET X=100:PRINT X", &line_4, __LINE__);
+    call_parse_line("10 PRINT 1", &line_5, __LINE__);
 }
 
 int main(void) {

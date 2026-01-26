@@ -46,50 +46,6 @@ void test_advance_next_line_ptr(void) {
     ASSERT_PTR_EQ(next_line_ptr, (char*)program_ptr + 10 + 250);
 }
 
-void test_next_statement(void) {
-    const char line_10_data[] = { ST_PRINT, '1', 0 };
-    const char line_20_data[] = { ST_IF_THEN, 'X', TOKEN_OP | OP_EQ, '3', TOKEN_MISC | MISC_THEN, ST_LIST, TOKEN_MISC | MISC_STATEMENT, ST_STOP, 0 };
-    const char line_30_data[] = { ST_LET, 'X', '=', '1', 0 };
-
-    PRINT_TEST_NAME();
-
-    initialize_program();
-
-    reset_next_line_ptr();
-    next_line_ptr->number = 10;
-    next_line_ptr->next_line_offset = sizeof (Line) + sizeof line_10_data;
-    memcpy(next_line_ptr->data, line_10_data, sizeof line_10_data);
-    advance_next_line_ptr();
-    next_line_ptr->number = 20;
-    next_line_ptr->next_line_offset = sizeof (Line) + sizeof line_20_data;
-    memcpy(next_line_ptr->data, line_20_data, sizeof line_20_data);
-    advance_next_line_ptr();
-    next_line_ptr->number = 30;
-    next_line_ptr->next_line_offset = sizeof (Line) + sizeof line_30_data;
-    memcpy(next_line_ptr->data, line_30_data, sizeof line_30_data);
-    advance_next_line_ptr();
-    next_line_ptr->next_line_offset = 0;
-
-    reset_next_line_ptr();
-    ASSERT_EQ(next_line_ptr->number, 10);
-    ASSERT_EQ(next_line_pos, sizeof (Line));
-    line_ptr = next_line_ptr;
-    line_pos = next_line_pos;
-    next_statement();
-    ASSERT_EQ(next_line_ptr->number, 20);
-    ASSERT_EQ(next_line_pos, sizeof (Line));
-    line_ptr = next_line_ptr;
-    line_pos = next_line_pos;
-    next_statement();
-    ASSERT_EQ(next_line_ptr->number, 20);
-    ASSERT_EQ(next_line_pos, sizeof (Line) + 7);
-    line_ptr = next_line_ptr;
-    line_pos = next_line_pos;
-    next_statement();
-    ASSERT_EQ(next_line_ptr->number, 30);
-    ASSERT_EQ(next_line_pos, sizeof (Line));
-}
-
 void test_grow(void) {
 
     PRINT_TEST_NAME();
@@ -343,7 +299,6 @@ int main(void) {
     test_initalize_program();
     test_reset_next_line_ptr();
     test_advance_next_line_ptr();
-    test_next_statement();
     test_grow();
     test_shrink();
     test_find_line();

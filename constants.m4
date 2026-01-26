@@ -17,7 +17,7 @@ def(NT_TEXT,            hex(16))
 comment Tokenized form constants
 
 def(TOKEN_UNARY_OP,     hex(04)) comment OR with OP_UNARY_*
-def(TOKEN_MISC,         hex(08)) comment OR with MISC_*
+def(TOKEN_CLAUSE,       hex(08)) comment OR with CLAUSE_*
 def(TOKEN_OP,           hex(10)) comment OR with OP_*
 def(TOKEN_FUNCTION,     hex(60)) comment OR with index of function
 
@@ -72,12 +72,11 @@ def(UNARY_OP_NOT,       1)
 
 comment Non-statement extras
 
-def(MISC_STATEMENT,     0)
-def(MISC_THEN,          1)
-def(MISC_GOTO,          2)
-def(MISC_GOSUB,         3)
-def(MISC_TO,            4)
-def(MISC_STEP,          5)
+def(CLAUSE_THEN,        0)
+def(CLAUSE_GOTO,        1)
+def(CLAUSE_GOSUB,       2)
+def(CLAUSE_TO,          3)
+def(CLAUSE_STEP,        4)
 
 comment Expression decode handlers
 
@@ -150,6 +149,8 @@ def(PVM_INT,                        hex(69))
 def(PVM_EOL,                        hex(6A))
 def(PVM_WS,                         hex(6B))
 def(PVM_ARGSEP,                     hex(6C))
+def(PVM_LINK,                       hex(6D))
+def(PVM_DISCARD,                    hex(6E))
 def(PVM_TRY_BASE,                   hex(80))
 def(PVM_ACCEPT_BASE,                hex(C0))
 

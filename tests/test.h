@@ -128,7 +128,7 @@ void fsin(void);
 void ftan(void);
 
 // list.s
-void list_statements(void);
+void list_statement(void);
 
 // name.s
 char find_name(/* AX */ const char* name_table_ptr);
@@ -149,7 +149,6 @@ void initialize_target(void);
 void initialize_program(void);
 void reset_next_line_ptr(void);
 void find_line(/* AX */ int line_number);
-void next_statement(void);
 void advance_next_line_ptr(void);
 void insert_or_update_line(void);
 void grow(/* Y */ void* ptr, /* AX */ size_t size);

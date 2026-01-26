@@ -13,11 +13,10 @@
 
 parse_line:
         mva     #0, buffer_pos          ; Initialize the read pointer
-        mva     #Line::number, line_pos ; Initialize write pointer
+        sta     line_pos                ; Initialize write pointer
         ldax    #pvm_line
-        jsr     parse_pvm
-        mva     line_pos, line_buffer+Line::next_line_offset    ; Write position is next line offset
-        rts
+
+; Fall through
 
 ; Invokes parsing virtual machine (PVM).
 ; AX = address of first PVM instruction
@@ -166,7 +165,7 @@ ins_call:
         mvax    BC, pvm_program_ptr
         jsr     run_pvm                 ; Go do it
         plstaa  pvm_program_ptr         ; Restore the program pointer from the stack
-        bcs     ins_fail                ; CALL exited with FAIL; propagate failure
+        bcs     ins_fail                ; Exited with FAIL; propagate failure
         lda     B                       ; If success, make sure we got here from RETURN
         cmp     #PVM_RETURN
         raine   ERR_INTERNAL_ERROR      ; Throw exception if ACCEPT without TRY
@@ -233,7 +232,7 @@ ins_emit:
 
 ins_compose:
         ldy     #0
-        lda     (pvm_program_ptr),y     ; Get the address of the name table
+        lda     (pvm_program_ptr),y     ; Get argument
         jsr     compose_with_last_byte
         iny
         jmp     rebase_pvm_program_ptr  ; Advance past byte
@@ -242,6 +241,26 @@ compose_with_last_byte:
         ldx     line_pos                ; Current line_pos
         ora     line_buffer-1,x         ; Subtract one since we want last character
         sta     line_buffer-1,x
+        rts
+
+; LINK: save space for link byte, resume, write length on success
+
+ins_link:
+        ldpha   line_pos                ; Push current line_pos
+        inc     line_pos                ; Output from next position
+        jsr     run_pvm
+        pla                             ; Original line_pos into A
+        tay                             ; And Y
+        lda     line_pos                ; Current line_pos
+        sta     line_buffer,y           ; Save into the link position
+        pla                             ; Propagate return with carry unchanged
+        pla
+        rts
+
+; DISCARD: discards the previously-emitted byte
+
+ins_discard:
+        dec     line_pos
         rts
 
 ; WS: skip over whitespace
@@ -337,6 +356,8 @@ pvm_instruction_vectors:
         .word   ins_eol-1
         .word   ins_ws-1
         .word   ins_argsep-1
+        .word   ins_link-1
+        .word   ins_discard-1
 
 ; PVM macros
 
@@ -435,6 +456,14 @@ pvm_instruction_vectors:
         .byte   PVM_ARGSEP
 .endmacro
 
+.macro LINK
+        .byte   PVM_LINK
+.endmacro
+
+.macro DISCARD
+        .byte   PVM_DISCARD
+.endmacro
+
 ; Use (* + 1) because we add offset to address after skipping the instruction byte. 
 
 .macro TRY address
@@ -450,6 +479,7 @@ pvm_instruction_vectors:
 ; PVM program
 
 pvm_line:
+        LINK
         WS
         TRY @immediate
         INT
@@ -461,18 +491,22 @@ pvm_line:
 @done:
         RETURN
 @statement:
-        CALL pvm_statement
+        CALL pvm_line_statement
         TRY @done
         WS
-        BEGIN
         MATCH ':'
-        TOKENIZE misc_name_table
-        COMPOSE TOKEN_MISC
+        DISCARD
         ACCEPT @statement
 @immediate:
         EMIT $FF                        ; Write -1 as line number
         EMIT $FF
         JUMP @first_statement
+
+pvm_line_statement:
+        LINK
+        CALL pvm_statement
+        EMIT 0
+        RETURN
 
 pvm_statement:
         WS
@@ -736,8 +770,8 @@ statement_name_table:
             BEGIN
             MATCH "GO"
             CALL pvm_name
-            TOKENIZE misc_name_table
-            COMPOSE TOKEN_MISC
+            TOKENIZE clause_name_table
+            COMPOSE TOKEN_CLAUSE
             JUMP pvm_number_list
 :       name_table_entry "FOR"
             CALL pvm_variable
@@ -747,8 +781,8 @@ statement_name_table:
             WS
             BEGIN
             MATCH "TO"
-            TOKENIZE misc_name_table
-            COMPOSE TOKEN_MISC
+            TOKENIZE clause_name_table
+            COMPOSE TOKEN_CLAUSE
             CALL pvm_expression
             WS
             TRY @for_done
@@ -756,8 +790,8 @@ statement_name_table:
             MATCH "STEP"
             ACCEPT @tokenize_step
 @tokenize_step:
-            TOKENIZE misc_name_table
-            COMPOSE TOKEN_MISC
+            TOKENIZE clause_name_table
+            COMPOSE TOKEN_CLAUSE
             JUMP pvm_expression
 @for_done:
             RETURN
@@ -772,8 +806,8 @@ statement_name_table:
             WS
             BEGIN
             MATCH "THEN"
-            TOKENIZE misc_name_table
-            COMPOSE TOKEN_MISC
+            TOKENIZE clause_name_table
+            COMPOSE TOKEN_CLAUSE
             JUMP pvm_statement
 :       name_table_entry "NEW"
             RETURN
@@ -793,8 +827,7 @@ statement_name_table:
             JUMP pvm_arg_2
 :       name_table_end
 
-misc_name_table:
-        name_table_entry ":"
+clause_name_table:
 :       name_table_entry "THEN"
 :       name_table_entry "GOTO"
 :       name_table_entry "GOSUB"

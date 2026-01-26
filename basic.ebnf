@@ -1,3 +1,9 @@
+/*
+    BASIC EBNF
+
+    Syntax is compatible wtih Railroad Diagram Generator (https://www.bottlecaps.de/rr/ui).
+*/
+
 /* 
     Whitespace strategy: consume whitespace
         1. Before a statement keyword (parse_statement)

@@ -87,12 +87,18 @@ main:
 ; move to the next line; during normal execution we can assume that next_line_ptr = line_ptr unless it has been
 ; modified by a control statement.
 
+@next_line:
+        jsr     advance_next_line_ptr   ; Otherwise go to next line
 @dispatch:
         ldy     #Line::next_line_offset ; Load the offset of the next line
         lda     (next_line_ptr),y
         raieq   PS_READY                ; If next line offset is 0 then end
+        cmp     next_line_pos           ; Is the next line offset also the offset of the next statement?
+        beq     @next_line              ; If yes then restart from next line
         mvax    next_line_ptr, line_ptr ; Move to next statement
         mva     next_line_pos, line_pos
+        jsr     decode_byte             ; The next byte is the next statement offset
+        sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     dispatch_statement
         jmp     @dispatch               ; Keep on truckin'
 

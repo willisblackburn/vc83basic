@@ -162,7 +162,7 @@ S1 = FPX+2
 
 ; list.s
 .global exec_list
-.global list_statements
+.global list_statement
 
 ; main.s
 .global main
@@ -191,7 +191,7 @@ S1 = FPX+2
 .global pvm_string
 .global pvm_name
 .global statement_name_table
-.global misc_name_table
+.global clause_name_table
 .global operator_name_table
 .global unary_operator_name_table
 .global function_name_table
@@ -213,7 +213,6 @@ S1 = FPX+2
 .global reset_next_line_ptr, reset_next_line_ptr_2
 .global append_null_line
 .global find_line, get_line
-.global next_statement
 .global advance_next_line_ptr
 .global insert_or_update_line
 .global grow, grow_a, shrink, shrink_a
