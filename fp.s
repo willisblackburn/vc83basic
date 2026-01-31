@@ -1372,7 +1372,10 @@ fexp_x = stack + .sizeof(Float) * 2
 fexp_k = stack + .sizeof(Float) * 3
 
 fp_exp_coefficients:
-        .byte $AB, $AA, $AA, $2A, 123   ; 1/4!     x^4 / 4!
+        .byte $D0, $00, $0D, $50, 115   ; 1/7!     x^7 / 7!
+        .byte $B6, $60, $0B, $36, 118   ; 1/6!   + x^6 / 6!
+        .byte $89, $88, $88, $08, 121   ; 1/5!   + x^5 / 5!
+        .byte $AB, $AA, $AA, $2A, 123   ; 1/4!   + x^4 / 4!
         .byte $AB, $AA, $AA, $2A, 125   ; 1/3!   + x^3 / 3!
         .byte $00, $00, $00, $00, 127   ; 1/2!   + x^2 / 2!
         .byte $00, $00, $00, $00, 128   ; 1      + x
@@ -1408,7 +1411,7 @@ fexp:
         jsr     load_fp0
         jsr     fsub_2                  ; Subtract the natural log version if k from the original argument
         ldax    #fp_exp_coefficients
-        ldy     #5
+        ldy     #8
         jsr     fpoly                   ; Apply the polynomial to get exp(r); clears carry
         lda     FP0e                    ; Now multiply by 2^k, which just means increasing by exponent by k
         adc     E                       ; Leaves carry clear
