@@ -757,7 +757,7 @@ void test_function(const char* f_name, void (*f)(void), const FunctionTestCase* 
 
 const FunctionTestCase flog_test_cases[] = {
     // log(2) = 0.693147181
-    { { 0x00000000, 129 }, { 0x3172187A, 127 } },   // TODO: wrong, should be 0x317217FA
+    { { 0x00000000, 129 }, { 0x317217FF, 127 } },
 };
 
 TEST_FUNCTION(flog);
