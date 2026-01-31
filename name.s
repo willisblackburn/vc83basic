@@ -176,7 +176,7 @@ find_or_add_variable:
         jsr     push_fp0
         dec     D
         bne     @push                   ; Push one more
-        jmp     dimension_array         ; Returns with name_ptr set to array data
+        jsr     dimension_array         ; Returns with name_ptr set to array data
 
 ; Fall through
 
