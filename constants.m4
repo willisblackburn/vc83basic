@@ -139,7 +139,7 @@ def(PVM_FAR_CALL,                   hex(02))
 def(PVM_FAR_JUMP,                   hex(03))
 def(PVM_WS,                         hex(04))
 def(PVM_MATCH_RANGE,                hex(05))
-def(PVM_MATCH_ANY  ,                hex(06))
+def(PVM_MATCH_ANY,                  hex(06))
 
 
 def(PVM_MATCH,                      hex(20))

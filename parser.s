@@ -28,9 +28,6 @@ parse_pvm:
         mvax    #buffer, read_ptr       ; Set up read_ptr so parsing primitives in util module work
         jsr     run_pvm
         raics   ERR_SYNTAX_ERROR        ; If returning with carry set, raise syntax error
-        lda     B
-        cmp     #PVM_RETURN             ; Make sure we exited via RETURN
-        raine   ERR_INTERNAL_ERROR
         rts
 
 ; Resume parsing instructions.
@@ -38,11 +35,6 @@ parse_pvm:
 ; Returns carry clear if the parse succeeded, or carry set if it failed.
 ; Returns with pvm_program_ptr pointing to the instruction after the the one that caused run_pvm to exit,
 ; and that instruction in B.
-
-iny_rebase_and_run_pvm:
-        iny
-rebase_and_run_pvm:
-        jsr     rebase_pvm_program_ptr
 
 run_pvm:
 
@@ -63,9 +55,14 @@ run_pvm:
         lda     #0
         pha
         pha
+        beq     next_pvm                ; Unconditional
+
+iny_rebase_and_next_pvm:
+        iny
+rebase_and_next_pvm:
+        jsr     rebase_pvm_program_ptr
 
 next_pvm:
-        ldx     buffer_pos              ; Prepare to load the next character from the input
         ldy     #0
         lda     (pvm_program_ptr),y     ; Load PVM instruction
         sta     B                       ; Park instruction in B
@@ -94,7 +91,7 @@ next_pvm:
         stx     C                       ; Need X for the stack
         tsx
         sta     $102,x                  ; Savepoint low byte
-        txa
+        lda     C                       ; Get high byte back from C
         sta     $101,x                  ; Savepoint low byte
         lda     line_pos
         sta     $103,x
@@ -105,14 +102,14 @@ next_pvm:
 @not_try:
         cmp     #PVM_MATCH
         bcc     @not_match
+        ldx     buffer_pos              ; Buffer position
         cmp     buffer,x
         bne     ins_fail                ; If no match, act like FAIL
-        lda     buffer,x                ; Load and move past the matched character
-        inc     buffer_pos
-        jsr     write_to_line_buffer    ; Write it to the output
+        jsr     write_current_to_line_buffer
         jmp     next_pvm
 
 @not_match:
+        tay                             ; Move instruction into Y: clobbers 0 that is there
         ldax    #pvm_instruction_vectors
         jmp     invoke_indexed_vector   ; Go do the instruction
 
@@ -153,7 +150,7 @@ ins_fail:
         sta     buffer_pos
         lda     #0
         sta     $101,x                  ; Zero out handler high address so future FAIL will actually fail
-        jmp     run_pvm                 ; Continue
+        jmp     next_pvm                ; Continue
 
 ; RETURN: resume at the instruction following last call
 
@@ -176,9 +173,9 @@ call:
         lda     B
         stax    pvm_program_ptr
         jsr     run_pvm                 ; Go do it
-        plstaa  pvm_program_ptr         ; Restore the program pointer from the stack
+        plax                            ; Restore the program pointer from the stack
+        bcs     ins_fail                ; If carry set, keep failing (the CALL failed)
         bcc     jump
-        rts                             ; Return with carry set if CALL failed
 
 ; FAR_JUMP: read address, replace pvm_program_ptr
 
@@ -201,12 +198,14 @@ ins_ws:
 ; one matches or none match (producing FAIL).
 
 ins_match_range:
+        ldy     #0                      ; Reload Y with 0
         lda     (pvm_program_ptr),y     ; Length
         bne     @test
-        jmp     iny_rebase_and_run_pvm
+        jmp     iny_rebase_and_next_pvm
 
 @test:
         sta     C                       ; Store the range
+        ldx     buffer_pos              ; Buffer position
         lda     buffer,x                ; Get character
         sec
         iny
@@ -216,9 +215,10 @@ ins_match_range:
         bcs     ins_fail
         iny
         jsr     rebase_pvm_program_ptr  ; Add 2 to pvm_program_ptr
+        jsr     write_current_to_line_buffer
         jmp     ins_match_range         ; Keep matching
 
-        
+
 
 ; ; INT: parse and encode a 16-bit integer.
 
@@ -319,12 +319,16 @@ ins_match_range:
 ;         ldy     buffer_pos
 ;         jsr     read_argument_separator
 ;         bcc     @found
-;         jmp     ins_fail                ; Too far to branch, but saves JSR to write_line_buffer
+;         jmp     ins_fail                ; Too far to branch, but saves JSR to write_to_line_buffer
 ; @found:
 ;         sty     buffer_pos
 ;         lda     #','
 
-; Fall through
+
+write_current_to_line_buffer:
+        ldx     buffer_pos
+        inc     buffer_pos
+        lda     buffer,x
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
@@ -353,11 +357,11 @@ read_address:
         rts
 
 ; Calculates the address of a TRY or relative CALL or JUMP instruction.
+; A = the instruction byte
 
 calculate_address:
         ldx     #0                      ; High byte of address offset
-        lda     B                       ; Load the instruction, with includes a 6-bit offset field
-        and     #$3F                    ; Ignore top two bits
+        and     #$3F                    ; Ignore top two bits of instruction byte
         cmp     #$20                    ; Test bit 5, which is the sign bit of the offset field
         bcc     @positive               ; Was positive so just leave it
         ora     #$C0                    ; Sign extend to bits 6 and 7
@@ -374,6 +378,7 @@ calculate_address:
 
 ; Rebases pvm_program_ptr by adding Y.
 ; Exits with Y=0.
+; X SAFE, BC SAFE, DE SAFE
 
 rebase_pvm_program_ptr:
         tya                             ; Move offset into A and add to pvm_program_ptr
@@ -439,7 +444,7 @@ rebase_pvm_program_ptr:
     .endif
 
     ; 3. Output the current pair.
-    .byte (end1 - start1), start1
+    .byte (end1 - start1) + 1, start1
 
     ; 4. Recursively call the macro with the remaining arguments.
     MATCH_RANGE_PAIRS start2, end2, start3, end3, start4, end4, start5, end5, start6, end6
@@ -454,7 +459,7 @@ rebase_pvm_program_ptr:
 
 .macro TRY address
         .assert (address - (* + 1)) >= 0 .and (address - *) <= 31, error, "Address offset out of range"
-        .byte   PVM_TRY + (<(address - (* + 1)) & $3F)
+        .byte   PVM_TRY + (<(address - (* + 1)) & $1F)
 .endmacro
 
 .macro JUMP address
