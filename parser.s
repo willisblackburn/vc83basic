@@ -55,12 +55,6 @@ run_pvm:
         lda     #0
         pha
         pha
-        beq     next_pvm                ; Unconditional
-
-iny_rebase_and_next_pvm:
-        iny
-rebase_and_next_pvm:
-        jsr     rebase_pvm_program_ptr
 
 next_pvm:
         ldy     #0
@@ -120,7 +114,7 @@ pvm_instruction_vectors:
         .word   ins_far_jump-1
         .word   ins_ws-1
         .word   ins_match_range-1
-
+        .word   ins_match_any-1
 
 
         ; .word   ins_begin-1
@@ -152,17 +146,6 @@ ins_fail:
         sta     $101,x                  ; Zero out handler high address so future FAIL will actually fail
         jmp     next_pvm                ; Continue
 
-; RETURN: resume at the instruction following last call
-
-ins_return:
-        clc                             ; Carry clear = success
-return_carry:
-        pla                             ; Discard savepoint
-        pla
-        pla
-        pla
-        rts
-
 ; FAR_CALL: save parser state on the stack, then perform JUMP
 
 ins_far_call:
@@ -185,14 +168,6 @@ jump:
         stax    pvm_program_ptr
         jmp     next_pvm
 
-; WS: skip over whitespace
-
-ins_ws:
-        ldy     buffer_pos
-        jsr     skip_whitespace
-        sty     buffer_pos
-        jmp     next_pvm
-
 ; MATCH_RANGE: Range match
 ; First byte is the length of the range. If 0, stop. Second byte is the start of the range. Attempts ranges until
 ; one matches or none match (producing FAIL).
@@ -201,7 +176,9 @@ ins_match_range:
         ldy     #0                      ; Reload Y with 0
         lda     (pvm_program_ptr),y     ; Length
         bne     @test
-        jmp     iny_rebase_and_next_pvm
+        iny
+        jsr     rebase_pvm_program_ptr
+        jmp     next_pvm
 
 @test:
         sta     C                       ; Store the range
@@ -218,6 +195,31 @@ ins_match_range:
         jsr     write_current_to_line_buffer
         jmp     ins_match_range         ; Keep matching
 
+ins_match_any:
+        ldx     buffer_pos
+        lda     buffer,x
+        beq     ins_fail                ; The 0 at the end of the line never matches
+        jsr     write_current_to_line_buffer
+        jmp     next_pvm
+
+; RETURN: resume at the instruction following last call
+
+ins_return:
+        clc                             ; Carry clear = success
+return_carry:
+        pla                             ; Discard savepoint
+        pla
+        pla
+        pla
+        rts
+
+; WS: skip over whitespace
+
+ins_ws:
+        ldy     buffer_pos
+        jsr     skip_whitespace
+        sty     buffer_pos
+        jmp     next_pvm
 
 
 ; ; INT: parse and encode a 16-bit integer.
@@ -431,7 +433,7 @@ rebase_pvm_program_ptr:
     .endif
 .endmacro
 
-.macro MATCH_RANGE_bytes start, end
+.macro MATCH_RANGE_write start, end
         .byte (end - start) + 1, start
 .endmacro
 
@@ -443,7 +445,7 @@ rebase_pvm_program_ptr:
     .endif
 
     ; Output the current pair.
-    MATCH_RANGE_bytes r1
+    MATCH_RANGE_write r1
 
     ; Recursively call the macro with the remaining arguments.
     MATCH_RANGE_args {r2}, {r3}, {r4}
@@ -733,19 +735,19 @@ pvm_opt_digits:
 ;         RETURN
 
 pvm_string:
-;         WS
-;         MATCH '"'
-; @next:
-;         TRY @end_quote
-;         MATCH .sprintf("%c%c", '"', '"')
-;         ACCEPT @next
-; @end_quote:
-;         TRY @non_quote
-;         MATCH '"'
-;         RETURN
-; @non_quote:
-;         MATCH *
-;         JUMP @next
+        WS
+        MATCH '"'
+@next:
+        TRY @non_quote
+        MATCH '"'
+        TRY @done
+        MATCH '"'
+        JUMP @next
+@non_quote:
+        MATCH *
+        JUMP @next
+@done:
+        RETURN
 
 ; pvm_variable:
 ;         WS

@@ -237,7 +237,7 @@ void test_parse_line(void) {
 int main(void) {
     initialize_target();
     test_pvm_number();
-    // test_pvm_string();
+    test_pvm_string();
     // test_pvm_name();
     // test_pvm_expression();
     // test_pvm_statement();
