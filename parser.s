@@ -50,9 +50,9 @@ run_pvm:
 ;     SP+1      TRY handler high byte
 ;     SP        Current stack pointer       
 
-        ldpha   buffer_pos              ; Save buffer_pos and line_pos and set TRY savepoint to 0
-        ldpha   line_pos
-        lda     #0
+        lda     #0                      ; Empty savepoint
+        pha
+        pha
         pha
         pha
 
@@ -84,9 +84,9 @@ next_pvm:
         jsr     calculate_address
         stx     C                       ; Need X for the stack
         tsx
-        sta     $102,x                  ; Savepoint low byte
+        sta     $102,x                  ; Handler low byte
         lda     C                       ; Get high byte back from C
-        sta     $101,x                  ; Savepoint low byte
+        sta     $101,x                  ; Handler low byte
         lda     line_pos
         sta     $103,x
         lda     buffer_pos
@@ -99,7 +99,8 @@ next_pvm:
         ldx     buffer_pos              ; Buffer position
         cmp     buffer,x
         bne     ins_fail                ; If no match, act like FAIL
-        jsr     write_current_to_line_buffer
+        inc     buffer_pos
+        jsr     write_to_line_buffer
         jmp     next_pvm
 
 @not_match:
@@ -115,16 +116,15 @@ pvm_instruction_vectors:
         .word   ins_ws-1
         .word   ins_match_range-1
         .word   ins_match_any-1
-
+        .word   ins_compose-1
+        .word   ins_argsep-1
 
         ; .word   ins_begin-1
         ; .word   ins_tokenize-1
         ; .word   ins_dispatch-1
         ; .word   ins_emit-1
-        ; .word   ins_compose-1
         ; .word   ins_int-1
         ; .word   ins_eol-1
-        ; .word   ins_argsep-1
         ; .word   ins_link-1
         ; .word   ins_discard-1
 
@@ -152,6 +152,7 @@ ins_far_call:
         jsr     read_address
 call:
         sta     B                       ; Temporarily park the call address
+        jsr     rebase_pvm_program_ptr
         ldphaa  pvm_program_ptr         ; Save return address
         lda     B
         stax    pvm_program_ptr
@@ -196,14 +197,15 @@ ins_match_range:
 @done:
         iny
         jsr     rebase_pvm_program_ptr  ; Update pvm_program_ptr
-        jsr     write_current_to_line_buffer
-        jmp     next_pvm                ; Keep matching
+
+; Fall through
 
 ins_match_any:
         ldx     buffer_pos
         lda     buffer,x
         beq     ins_fail                ; The 0 at the end of the line never matches
-        jsr     write_current_to_line_buffer
+        inc     buffer_pos
+        jsr     write_to_line_buffer
         jmp     next_pvm
 
 ; RETURN: resume at the instruction following last call
@@ -224,6 +226,23 @@ ins_ws:
         jsr     skip_whitespace
         sty     buffer_pos
         jmp     next_pvm
+
+; COMPOSE: OR the next byte value into the last byte written to the output
+
+ins_compose:
+        ldy     #0
+        lda     (pvm_program_ptr),y     ; Get argument
+        jsr     compose_with_last_byte
+        iny
+        jsr     rebase_pvm_program_ptr  ; Advance past byte
+        jmp     next_pvm
+        
+compose_with_last_byte:
+        ldx     line_pos                ; Current line_pos
+        ora     line_buffer-1,x         ; Subtract one since we want last character
+        sta     line_buffer-1,x
+        rts
+
 
 
 ; ; INT: parse and encode a 16-bit integer.
@@ -283,21 +302,6 @@ ins_ws:
 ;         ldy     #1
 ;         jmp     rebase_pvm_program_ptr
 
-; ; COMPOSE: OR the next byte value into the last byte written to the output
-
-; ins_compose:
-;         ldy     #0
-;         lda     (pvm_program_ptr),y     ; Get argument
-;         jsr     compose_with_last_byte
-;         iny
-;         jmp     rebase_pvm_program_ptr  ; Advance past byte
-        
-; compose_with_last_byte:
-;         ldx     line_pos                ; Current line_pos
-;         ora     line_buffer-1,x         ; Subtract one since we want last character
-;         sta     line_buffer-1,x
-;         rts
-
 ; ; LINK: save space for link byte, resume, write length on success
 
 ; ins_link:
@@ -319,22 +323,18 @@ ins_ws:
 ;         rts
 
 
-; ; SEP: skip over argument separator ','
+; ARGSEP: skip over argument separator ','
 
-; ins_argsep:
-;         ldy     buffer_pos
-;         jsr     read_argument_separator
-;         bcc     @found
-;         jmp     ins_fail                ; Too far to branch, but saves JSR to write_to_line_buffer
-; @found:
-;         sty     buffer_pos
-;         lda     #','
-
-
-write_current_to_line_buffer:
-        ldx     buffer_pos
-        inc     buffer_pos
-        lda     buffer,x
+ins_argsep:
+        ldy     buffer_pos
+        jsr     read_argument_separator
+        bcc     @found
+        jmp     ins_fail
+@found:
+        sty     buffer_pos
+        lda     #','
+        jsr     write_to_line_buffer
+        jmp     next_pvm
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
@@ -497,6 +497,14 @@ rebase_pvm_program_ptr:
         .byte   PVM_WS
 .endmacro
 
+.macro COMPOSE b
+        .byte   PVM_COMPOSE, b
+.endmacro
+
+.macro ARGSEP
+        .byte   PVM_ARGSEP
+.endmacro
+
 
 
 
@@ -517,20 +525,12 @@ rebase_pvm_program_ptr:
 ;         .byte   PVM_EMIT, b
 ; .endmacro
 
-; .macro COMPOSE b
-;         .byte   PVM_COMPOSE, b
-; .endmacro
-
 ; .macro INT
 ;         .byte   PVM_INT
 ; .endmacro
 
 ; .macro EOL
 ;         .byte   PVM_EOL
-; .endmacro
-
-; .macro ARGSEP
-;         .byte   PVM_ARGSEP
 ; .endmacro
 
 ; .macro LINK
@@ -580,36 +580,42 @@ pvm_statement:
 ;         TOKENIZE statement_name_table
 ;         DISPATCH
 
-; ; Argument lists
+; Argument lists
 
-; pvm_arg_2:
-;         CALL pvm_expression
-;         ARGSEP
-;         JUMP pvm_expression
+pvm_arg_2:
+        CALL pvm_expression
+        ARGSEP
+        JUMP pvm_expression
 
-; pvm_optional_arg_2:
-;         TRY @done
-;         CALL pvm_expression
-;         TRY @done
-;         ARGSEP
-;         CALL pvm_expression
-; @done:
-;         RETURN
+pvm_opt_arg_2:
+        TRY @done
+        CALL pvm_expression
+        ARGSEP
+        TRY @fail                       ; Parsed the argument separator so must read another argument
+        CALL pvm_expression
+@done:
+        RETURN
+@fail:
+        FAIL
 
-; ; pvm_arg_list is list of 1-N (but not 0) expressions.
+; pvm_arg_list is list of 1-N (but not 0) expressions.
 
-; pvm_arg_list:
-;          CALL pvm_expression
-;         TRY @done
-;         ARGSEP
-;         ACCEPT pvm_arg_list
-; @done:
-;         RETURN
+pvm_arg_list:
+        CALL pvm_expression
+        TRY @done
+        ARGSEP
+        TRY @fail                       ; Parsed the argument separator so must read another argument
+        JUMP pvm_arg_list
+@done:
+        RETURN
+@fail:
+        FAIL
 
-; ; Expressions
+; Expressions
 
 pvm_expression:
-;         CALL pvm_primary_expression
+        CALL pvm_primary_expression
+        RETURN
 ;         TRY @done
 ;         WS
 ;         BEGIN
@@ -627,10 +633,17 @@ pvm_expression:
 ; @done:
 ;         RETURN
 
-; ; pvm_primary_expression does not discard whitespace at the top level.
-; ; Each primary expression alternative discards whitespace.
+; pvm_primary_expression does not discard whitespace at the top level.
+; Each primary expression alternative discards whitespace.
 
-; pvm_primary_expression:
+pvm_primary_expression:
+        TRY @variable
+        FAR_CALL pvm_number
+        RETURN
+@variable:
+        FAR_CALL pvm_variable
+        RETURN
+
 ;         TRY @string
 ;         WS
 ;         MATCH '('
@@ -753,22 +766,20 @@ pvm_string:
 @done:
         RETURN
 
-; pvm_variable:
-;         WS
-;         CALL pvm_name
-;         TRY @array_paren
-;         MATCH '$'
-;         ACCEPT @array_paren
-; @array_paren:
-;         COMPOSE EOT
-;         TRY @done
-;         MATCH '('
-;         ACCEPT @args                    ; Saw the ')' so now must read the arg list
-; @args:
-;         CALL pvm_arg_list
-;         MATCH ')'
-; @done:
-;         RETURN
+pvm_variable:
+        WS
+        CALL pvm_name
+        TRY @array_paren
+        MATCH '$'
+@array_paren:
+        COMPOSE EOT
+        TRY @done
+        MATCH '('
+        FAR_CALL pvm_arg_list
+        MATCH ')'
+@done:
+        RETURN
+
 
 ; ; pvm_variable_list is list of 1-N (but not 0) variables.
 
@@ -816,7 +827,7 @@ statement_name_table:
 ; :       name_table_entry "INPUT"
 ;             JUMP pvm_variable_list
 ; :       name_table_entry "LIST"
-;             JUMP pvm_optional_arg_2
+;             JUMP pvm_opt_arg_2
 ; :       name_table_entry "GOTO"
 ;             JUMP pvm_number
 ; :       name_table_entry "GOSUB"
