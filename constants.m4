@@ -140,6 +140,7 @@ def(PVM_MATCH_RANGE,                hex(03))
 def(PVM_MATCH_ANY,                  hex(04))
 def(PVM_COMPOSE,                    hex(05))
 def(PVM_ARGSEP,                     hex(06))
+def(PVM_TOKENIZE,                   hex(07))
 
 
 def(PVM_MATCH,                      hex(20))
@@ -153,7 +154,6 @@ def(PVM_ACCEPT,                     hex(C0))
 
 
 def(PVM_BEGIN,                      hex(64))
-def(PVM_TOKENIZE,                   hex(65))
 def(PVM_DISPATCH,                   hex(66))
 def(PVM_EMIT,                       hex(67))
 def(PVM_INT,                        hex(69))

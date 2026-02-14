@@ -35,8 +35,6 @@ parse_pvm:
 ; Returns with pvm_program_ptr pointing to the opcode after the the one that caused run_pvm to exit,
 ; and that opcode in B.
 
-run_pvm:
-
 ; Stack frame:
 ;
 ;     SP+8      PVM return address low byte (note big-endian) (only if we came from CALL)
@@ -49,15 +47,31 @@ run_pvm:
 ;     SP+1      TRY handler high byte (0 = no try handler)
 ;     SP        Current stack pointer       
 
+run_pvm:
         lda     #0                      ; Empty savepoint
         pha
         pha
         pha
         pha
 
+update_savepoint_clear_handler:
+        ldx     #0                      ; Set X=0 to clear high byte of savepoint
+
+update_savepoint:
+        stx     C                       ; Need X for stack access
+        tsx
+        sta     $102,x                  ; Handler low byte
+        lda     C                       ; Get handler high byte back from C
+        sta     $101,x
+        lda     line_pos
+        sta     $103,x
+        lda     buffer_pos
+        sta     $104,x
+
 next_pvm:
         ldy     #0
         lda     (pvm_program_ptr),y     ; Load PVM opcode
+        debug $00
         sta     B                       ; Park opcode in B
         iny
         jsr     rebase_pvm_program_ptr  ; Skip past the opcode byte
@@ -69,21 +83,13 @@ next_pvm:
         bcc     @not_accept
         jsr     calculate_address_6
         stax    pvm_program_ptr         ; We're going to jump here
-        jmp     set_handler_high_byte_zero
+        jmp     update_savepoint_clear_handler
 
 @not_accept:
         cmp     #PVM_TRY
         bcc     @not_try
         jsr     calculate_address_6
-        stx     C                       ; Need X for the stack
-        tsx
-        sta     $102,x                  ; Handler low byte
-        lda     line_pos
-        sta     $103,x
-        lda     buffer_pos
-        sta     $104,x
-        lda     C                       ; Get handler high byte back from C
-        jmp     set_handler_high_byte
+        jmp     update_savepoint
 
 @not_try:
         cmp     #PVM_JUMP
@@ -135,12 +141,7 @@ op_fail:
         sta     line_pos
         lda     $104,x
         sta     buffer_pos
-set_handler_high_byte_zero:
-        lda     #0
-set_handler_high_byte:
-        tsx                             ; In case we got here from one of the "set_handler" entry points
-        sta     $101,x                  ; Zero out handler high address so future FAIL will actually fail
-        jmp     next_pvm                ; Continue
+        jmp     update_savepoint_clear_handler
 
 ; MATCH_RANGE: Range match
 ; First byte is the length of the range. If 0, stop. Second byte is the start of the range. Attempts ranges until
@@ -181,6 +182,25 @@ op_match_any:
         jsr     write_to_line_buffer
         jmp     next_pvm
 
+; TOKENIZE: look up the name from the BEGIN point in a name table, emit the index
+
+op_tokenize:
+        lda     #EOT
+        jsr     compose_with_last_byte
+        tsx
+        lda     $103,x                  ; Get line_pos from savepoint
+        sta     decode_name_ptr         ; Start matching the name from savepoint
+        lda     #>line_buffer           ; High byte
+        sta     decode_name_ptr+1
+        jsr     read_address
+        jsr     find_name
+        bcs     op_fail                 ; Didn't find the name; treat as FAIL
+        ldx     decode_name_ptr
+        sta     line_buffer,x           ; Write the token to line_buffer
+        inx
+        stx     line_pos                ; Reset line_pos to the space after the token
+        jmp     next_pvm
+
 ; RETURN: resume at the opcode following last call
 
 op_return:
@@ -216,8 +236,6 @@ compose_with_last_byte:
         sta     line_buffer-1,x
         rts
 
-
-
 ; ; INT: parse and encode a 16-bit integer.
 
 ; op_int:
@@ -238,27 +256,12 @@ compose_with_last_byte:
 ;         bne     op_fail
 ;         rts
 
-; ; BEGIN: mark the beginning of a keyword
+; ; MARK: set the mark for a subsequent TOKENIZE or LINK
 
 ; op_begin:
 ;         mva     line_pos, decode_name_ptr           ; Set decode_name_ptr to start of name in line_buffer
 ;         mvx     #>line_buffer, decode_name_ptr+1
 ;         rts
-
-; ; TOKENIZE: look up the name from the BEGIN point in a name table, emit the index
-
-; op_tokenize:
-;         lda     #EOT
-;         jsr     compose_with_last_byte
-;         jsr     read_address
-;         jsr     find_name
-;         bcs     op_fail                 ; Didn't find the name; treat as FAIL
-;         ldx     decode_name_ptr
-;         sta     line_buffer,x           ; Write the token to line_buffer
-;         inx
-;         stx     line_pos                ; Reset line_pos to the space after the token
-;         ldy     #2
-;         jmp     rebase_pvm_program_ptr  ; Skip over the name table address
 
 ; ; DISPATCH: JUMP to the address following the end of the matched name in the name table
 
@@ -317,6 +320,7 @@ pvm_opcode_vectors:
         .word   op_match_any-1
         .word   op_compose-1
         .word   op_argsep-1
+        .word   op_tokenize-1
 
         ; .word   op_begin-1
         ; .word   op_tokenize-1
@@ -340,7 +344,6 @@ write_to_line_buffer:
 
 ; Retrieves the address from the PVM stream and returns in AX.
 ; pvm_program_ptr must point to the address.
-; Returns with Y=2.
 
 read_address:
         ldy     #0
@@ -350,8 +353,7 @@ read_address:
         lda     (pvm_program_ptr),y     ; High byte
         tax                             ; Into X
         iny
-        pla
-        rts
+        bne     rebase_pop
 
 ; Calculates the address of TRY or ACCEPT using the 6-bit offset embedded in the opcode relative to
 ; the current pvm_program_ptr value.
@@ -364,16 +366,7 @@ calculate_address_6:
         bcc     add_to_pvm_program_ptr  ; Was positive so just leave it
         ora     #$C0                    ; Sign extend to high nybble
         dex                             ; And to high byte
-add_to_pvm_program_ptr:
-        clc
-        adc     pvm_program_ptr         ; Add to pvm_program_ptr
-        pha
-        txa
-        adc     pvm_program_ptr+1
-        tax
-        jsr     rebase_pvm_program_ptr  ; Address low byte is on stack and high byte is safe in X
-        pla
-        rts
+        bne     add_to_pvm_program_ptr  ; Unconditional
 
 ; Calculates the address of JUMP or CALL using 4 bits from the opcode plus the next byte, for 12 bits total.
 ; A = the opcode
@@ -387,7 +380,17 @@ calculate_address_12:
         tax                             ; Save high byte
         lda     (pvm_program_ptr),y     ; Read the low byte
         iny
-        bne     add_to_pvm_program_ptr  ; Unconditional since INY always clears Z     
+add_to_pvm_program_ptr:
+        clc
+        adc     pvm_program_ptr         ; Add to pvm_program_ptr
+        pha
+        txa
+        adc     pvm_program_ptr+1
+        tax
+rebase_pop:
+        jsr     rebase_pvm_program_ptr  ; Address low byte is on stack and high byte is safe in X
+        pla
+        rts
 
 ; Rebases pvm_program_ptr by adding Y.
 ; Exits with Y=0.
@@ -516,16 +519,16 @@ rebase_pvm_program_ptr:
         .byte   PVM_ARGSEP
 .endmacro
 
+.macro TOKENIZE address
+        .byte   PVM_TOKENIZE, <address, >address
+.endmacro
+
 
 
 
 
 ; .macro BEGIN
 ;         .byte   PVM_BEGIN
-; .endmacro
-
-; .macro TOKENIZE address
-;         .byte   PVM_TOKENIZE, <address, >address
 ; .endmacro
 
 ; .macro DISPATCH
@@ -614,97 +617,93 @@ pvm_arg_list:
         CALL pvm_expression
         TRY @done
         ARGSEP
-        TRY @fail                       ; Parsed the argument separator so must read another argument
         JUMP pvm_arg_list
 @done:
         RETURN
-@fail:
-        FAIL
 
 ; Expressions
 
 pvm_expression:
         CALL pvm_primary_expression
+        TRY @done
+        WS
+        CALL pvm_binary_operator_name
+        TOKENIZE operator_name_table
+        COMPOSE TOKEN_OP
+        ACCEPT pvm_expression
+@done:
         RETURN
-;         TRY @done
-;         WS
-;         BEGIN
-;         TRY @not_operator_name
-;         CALL pvm_name
-;         JUMP @tokenize_operator
-; @not_operator_name:
-;         MATCH_RANGE '&', '?'
-;         TRY @tokenize_operator
-;         MATCH_RANGE '<', '>'
-; @tokenize_operator:
-;         TOKENIZE operator_name_table
-;         COMPOSE TOKEN_OP
-;         ACCEPT pvm_expression
-; @done:
-;         RETURN
-
-; pvm_primary_expression does not discard whitespace at the top level.
-; Each primary expression alternative discards whitespace.
 
 pvm_primary_expression:
-        TRY @variable
+        WS
+        TRY @string
+        MATCH '('
+        CALL pvm_expression
+        WS
+        MATCH ')'
+        RETURN
+@string:
+        TRY @number
+        CALL pvm_string
+        RETURN
+@number:
+        TRY @unary_operator
         CALL pvm_number
         RETURN
+@unary_operator:
+        TRY @function
+        CALL pvm_unary_operator
+        ACCEPT pvm_primary_expression
+@function:
+        TRY @variable
+        CALL pvm_function
+        RETURN
 @variable:
-        CALL pvm_variable
+        JUMP pvm_var
+
+pvm_unary_operator:
+        CALL pvm_unary_operator_name
+        TOKENIZE unary_operator_name_table
+        COMPOSE TOKEN_UNARY_OP
         RETURN
 
-;         TRY @string
-;         WS
-;         MATCH '('
-;         CALL pvm_expression
-;         WS
-;         MATCH ')'
-;         RETURN
-; @string:
-;         TRY @number
-;         CALL pvm_string
-;         RETURN
-; @number:
-;         TRY @unary_operator
-;         CALL pvm_number
-;         RETURN
-; @unary_operator:
-;         TRY @function
-;         WS
-;         BEGIN
-;         TRY @not_unary_operator_name
-;         CALL pvm_name
-;         JUMP @tokenize_unary_operator
-; @not_unary_operator_name:
-;         BEGIN
-;         MATCH '-'
-; @tokenize_unary_operator:
-;         TOKENIZE unary_operator_name_table
-;         COMPOSE TOKEN_UNARY_OP
-;         JUMP pvm_primary_expression
-; @function:
-;         TRY @variable
-;         WS
-;         BEGIN
-;         CALL pvm_name
-;         TRY @tokenize_function
-;         MATCH '$'
-;         ACCEPT @tokenize_function
-; @tokenize_function:
-;         TOKENIZE function_name_table
-;         COMPOSE TOKEN_FUNCTION
-;         ACCEPT @function_paren          ; Recognized the function name so arg list is now mandatory
-; @function_paren:
-;         MATCH '('
-;         ACCEPT @arg_list                ; If paren then argument list is required
-; @arg_list:
-;         CALL pvm_arg_list
-;         WS
-;         MATCH ')'
-;         RETURN
-; @variable:
-;         JUMP pvm_variable
+pvm_unary_operator_name:
+        TRY @not_name
+        CALL pvm_name
+        RETURN
+@not_name:
+        MATCH '-'
+        RETURN
+
+pvm_binary_operator_name:
+        TRY @not_name
+        CALL pvm_name
+        RETURN
+@not_name:
+        MATCH_RANGE {'&', '?'}
+        TRY @done
+        MATCH_RANGE {'<', '>'}
+@done:
+        RETURN
+
+pvm_function:
+        CALL pvm_name
+        CALL pvm_opt_type
+        TOKENIZE function_name_table
+        COMPOSE TOKEN_FUNCTION
+        WS
+        MATCH '('
+        CALL pvm_arg_list
+        WS
+        MATCH ')'
+        RETURN
+
+pvm_opt_type:
+        TRY @done
+        MATCH '$'
+@done:
+        RETURN
+
 
 ; Low-level rules
 
@@ -759,6 +758,8 @@ pvm_digits_done:
 ; @done:
 ;         RETURN
 
+; string ::= _ '"' ('""' | [^"])* '"' 
+
 pvm_string:
         WS
         MATCH '"'
@@ -774,7 +775,9 @@ pvm_string:
 @done:
         RETURN
 
-pvm_variable:
+; var ::= _ name '$'? ('(' arg_list _ ')')?
+
+pvm_var:
         WS
         CALL pvm_name
         TRY @array_paren
@@ -782,22 +785,21 @@ pvm_variable:
 @array_paren:
         COMPOSE EOT
         TRY @done
+        WS
         MATCH '('
-        ACCEPT @arg_list                ; If paren then argument list is required
-@arg_list:
         CALL pvm_arg_list
+        WS
         MATCH ')'
 @done:
         RETURN
 
+; ; pvm_var_list is list of 1-N (but not 0) variables.
 
-; ; pvm_variable_list is list of 1-N (but not 0) variables.
-
-; pvm_variable_list:
-;         CALL pvm_variable
+; pvm_var_list:
+;         CALL pvm_var
 ;         TRY @done
 ;         ARGSEP
-;         ACCEPT pvm_variable_list
+;         ACCEPT pvm_var_list
 ; @done:
 ;         RETURN
 
@@ -831,11 +833,11 @@ statement_name_table:
 ; :       name_table_entry "PRINT"
 ;             JUMP pvm_expression
 ; :       name_table_entry "LET"
-;             CALL pvm_variable
+;             CALL pvm_var
 ;             MATCH '='
 ;             JUMP pvm_expression
 ; :       name_table_entry "INPUT"
-;             JUMP pvm_variable_list
+;             JUMP pvm_var_list
 ; :       name_table_entry "LIST"
 ;             JUMP pvm_opt_arg_2
 ; :       name_table_entry "GOTO"
@@ -856,7 +858,7 @@ statement_name_table:
 ;             COMPOSE TOKEN_CLAUSE
 ;             JUMP pvm_number_list
 ; :       name_table_entry "FOR"
-;             CALL pvm_variable
+;             CALL pvm_var
 ;             WS
 ;             MATCH '='
 ;             CALL pvm_expression
@@ -878,7 +880,7 @@ statement_name_table:
 ; @for_done:
 ;             RETURN
 ; :       name_table_entry "NEXT"
-;             JUMP pvm_variable
+;             JUMP pvm_var
 ; :       name_table_entry "STOP"
 ;             RETURN
 ; :       name_table_entry "CONT"
@@ -896,13 +898,13 @@ statement_name_table:
 ; :       name_table_entry "CLR"
 ;             RETURN
 ; :       name_table_entry "DIM"
-;             JUMP pvm_variable
+;             JUMP pvm_var
 ; :       name_table_entry "REM"
 ;             JUMP pvm_text
 ; :       name_table_entry "DATA"
 ;             JUMP pvm_text
 ; :       name_table_entry "READ"
-;             JUMP pvm_variable_list
+;             JUMP pvm_var_list
 ; :       name_table_entry "RESTORE"
 ;             JUMP pvm_number
 ; :       name_table_entry "POKE"

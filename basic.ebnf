@@ -76,8 +76,7 @@ arguments_2 ::= (expression (_ ',' expression)?)?
 
 arguments_3 ::= (expression (_ ',' expression (_ ',' expression)?)?)?
 
-arguments_list ::=
-    | expression (_ ',' expression)*
+arg_list ::= expression (_ ',' expression)*
 
 expression ::= primary_expression (op expression)*
 
@@ -117,10 +116,11 @@ sign ::= [-]
 
 repeated_var ::= var (_ ',' var)*
 
-/* Note no space allowed before open paren */
-var ::= _ letter (letter | digit | '_')* '$'? ('(' expression (',' expression)* ')')?
+var ::= _ name '$'? _ ('(' arg_list _ ')')?
 
-string ::= _ '"' ([^"] | '""')* '"' 
+name ::= letter (letter | digit | '_')*
+
+string ::= _ '"' ('""' | [^"])* '"' 
 
 channel ::= _ ('#' number)?
 
