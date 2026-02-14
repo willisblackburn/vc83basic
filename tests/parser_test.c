@@ -240,7 +240,7 @@ int main(void) {
     test_pvm_string();
     test_pvm_name();
     test_pvm_expression();
-    // test_pvm_statement();
+    test_pvm_statement();
     // test_parse_line();
     return 0;
 }

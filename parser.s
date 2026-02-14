@@ -201,6 +201,12 @@ op_tokenize:
         stx     line_pos                ; Reset line_pos to the space after the token
         jmp     next_pvm
 
+; DISPATCH: JUMP to the address following the end of the matched name in the name table
+
+op_dispatch:
+        mvax    name_ptr, pvm_program_ptr   ; JUMP to name_ptr
+        jmp     next_pvm
+
 ; RETURN: resume at the opcode following last call
 
 op_return:
@@ -263,12 +269,6 @@ compose_with_last_byte:
 ;         mvx     #>line_buffer, decode_name_ptr+1
 ;         rts
 
-; ; DISPATCH: JUMP to the address following the end of the matched name in the name table
-
-; op_dispatch:
-;         mvax    name_ptr, pvm_program_ptr   ; JUMP to name_ptr
-;         rts
-
 ; ; EMIT: just output one byte
 
 ; op_emit:
@@ -321,10 +321,10 @@ pvm_opcode_vectors:
         .word   op_compose-1
         .word   op_argsep-1
         .word   op_tokenize-1
+        .word   op_dispatch-1
 
         ; .word   op_begin-1
         ; .word   op_tokenize-1
-        ; .word   op_dispatch-1
         ; .word   op_emit-1
         ; .word   op_int-1
         ; .word   op_eol-1
@@ -523,16 +523,16 @@ rebase_pvm_program_ptr:
         .byte   PVM_TOKENIZE, <address, >address
 .endmacro
 
+.macro DISPATCH
+        .byte   PVM_DISPATCH
+.endmacro
+
 
 
 
 
 ; .macro BEGIN
 ;         .byte   PVM_BEGIN
-; .endmacro
-
-; .macro DISPATCH
-;         .byte   PVM_DISPATCH
 ; .endmacro
 
 ; .macro EMIT b
@@ -588,11 +588,12 @@ pvm_line:
 ;         RETURN
 
 pvm_statement:
-;         WS
-;         BEGIN
-;         CALL pvm_name
-;         TOKENIZE statement_name_table
-;         DISPATCH
+        WS
+        ACCEPT @name                    ; Reset savepoint
+@name:
+        CALL pvm_name
+        TOKENIZE statement_name_table
+        DISPATCH                        ; Note: performs JUMP
 
 ; Argument lists
 
@@ -602,11 +603,10 @@ pvm_arg_2:
         JUMP pvm_expression
 
 pvm_opt_arg_2:
-        TRY @done
+        TRY @done                       ; First arg is optional
         CALL pvm_expression
+        TRY @done                       ; Second arg is optional
         ARGSEP
-        ACCEPT @expression2             ; Parsed the argument separator so must read another argument
-@expression2:
         CALL pvm_expression
 @done:
         RETURN
@@ -621,12 +621,22 @@ pvm_arg_list:
 @done:
         RETURN
 
+; pvm_paren_arg_list is a list of 1-N (but not 0) expressions surrounded by parentheses.
+
+pvm_paren_arg_list:
+        WS
+        MATCH '('
+        CALL pvm_arg_list
+        WS
+        MATCH ')'
+        RETURN
+
 ; Expressions
 
 pvm_expression:
         CALL pvm_primary_expression
-        TRY @done
         WS
+        TRY @done               
         CALL pvm_binary_operator_name
         TOKENIZE operator_name_table
         COMPOSE TOKEN_OP
@@ -652,19 +662,35 @@ pvm_primary_expression:
         RETURN
 @unary_operator:
         TRY @function
-        CALL pvm_unary_operator
-        ACCEPT pvm_primary_expression
-@function:
-        TRY @variable
-        CALL pvm_function
-        RETURN
-@variable:
-        JUMP pvm_var
-
-pvm_unary_operator:
         CALL pvm_unary_operator_name
         TOKENIZE unary_operator_name_table
         COMPOSE TOKEN_UNARY_OP
+        ACCEPT pvm_primary_expression
+@function:
+        TRY pvm_var
+        CALL pvm_function
+        RETURN
+
+; var ::= _ name '$'? ('(' arg_list _ ')')?
+
+pvm_var:
+        WS
+        CALL pvm_name
+        CALL pvm_opt_type
+        COMPOSE EOT
+        TRY @done
+        CALL pvm_paren_arg_list
+@done:
+        RETURN
+
+; pvm_var_list is list of 1-N (but not 0) variables.
+
+pvm_var_list:
+        CALL pvm_var
+        TRY @done
+        ARGSEP
+        ACCEPT pvm_var_list
+@done:
         RETURN
 
 pvm_unary_operator_name:
@@ -691,11 +717,7 @@ pvm_function:
         CALL pvm_opt_type
         TOKENIZE function_name_table
         COMPOSE TOKEN_FUNCTION
-        WS
-        MATCH '('
-        CALL pvm_arg_list
-        WS
-        MATCH ')'
+        CALL pvm_paren_arg_list
         RETURN
 
 pvm_opt_type:
@@ -703,7 +725,6 @@ pvm_opt_type:
         MATCH '$'
 @done:
         RETURN
-
 
 ; Low-level rules
 
@@ -748,15 +769,15 @@ pvm_digits:
 pvm_digits_done:
         RETURN
 
-; ; pvm_number_list is list of 1-N (but not 0) numbers.
+; pvm_number_list is list of 1-N (but not 0) numbers.
 
-; pvm_number_list:
-;         CALL pvm_number
-;         TRY @done
-;         ARGSEP
-;         ACCEPT pvm_number_list
-; @done:
-;         RETURN
+pvm_number_list:
+        CALL pvm_number
+        TRY @done
+        ARGSEP
+        ACCEPT pvm_number_list
+@done:
+        RETURN
 
 ; string ::= _ '"' ('""' | [^"])* '"' 
 
@@ -775,43 +796,16 @@ pvm_string:
 @done:
         RETURN
 
-; var ::= _ name '$'? ('(' arg_list _ ')')?
+; Captures all text to EOL.
 
-pvm_var:
+pvm_text:
         WS
-        CALL pvm_name
-        TRY @array_paren
-        MATCH '$'
-@array_paren:
-        COMPOSE EOT
+@next:
         TRY @done
-        WS
-        MATCH '('
-        CALL pvm_arg_list
-        WS
-        MATCH ')'
+        MATCH *
+        ACCEPT @next
 @done:
         RETURN
-
-; ; pvm_var_list is list of 1-N (but not 0) variables.
-
-; pvm_var_list:
-;         CALL pvm_var
-;         TRY @done
-;         ARGSEP
-;         ACCEPT pvm_var_list
-; @done:
-;         RETURN
-
-; ; Captures all text to EOL.
-
-; pvm_text:
-;         WS
-;         TRY @done
-;         MATCH *
-;         ACCEPT pvm_text
-; @done:
-;         RETURN
         
 ; pvm_name does not discard whitespace.
 ; Its only job is to capture an alphanumeric "name."
@@ -830,86 +824,95 @@ statement_name_table:
             RETURN
 :       name_table_entry "RUN"
             RETURN
-; :       name_table_entry "PRINT"
-;             JUMP pvm_expression
-; :       name_table_entry "LET"
-;             CALL pvm_var
-;             MATCH '='
-;             JUMP pvm_expression
-; :       name_table_entry "INPUT"
-;             JUMP pvm_var_list
-; :       name_table_entry "LIST"
-;             JUMP pvm_opt_arg_2
-; :       name_table_entry "GOTO"
-;             JUMP pvm_number
-; :       name_table_entry "GOSUB"
-;             JUMP pvm_number
-; :       name_table_entry "RETURN"
-;             RETURN
-; :       name_table_entry "POP"
-;             RETURN
-; :       name_table_entry "ON"
-;             CALL pvm_expression    
-;             WS
-;             BEGIN
-;             MATCH "GO"
-;             CALL pvm_name
-;             TOKENIZE clause_name_table
-;             COMPOSE TOKEN_CLAUSE
-;             JUMP pvm_number_list
-; :       name_table_entry "FOR"
-;             CALL pvm_var
-;             WS
-;             MATCH '='
-;             CALL pvm_expression
-;             WS
-;             BEGIN
-;             MATCH "TO"
-;             TOKENIZE clause_name_table
-;             COMPOSE TOKEN_CLAUSE
-;             CALL pvm_expression
-;             WS
-;             TRY @for_done
-;             BEGIN
-;             MATCH "STEP"
-;             ACCEPT @tokenize_step
-; @tokenize_step:
-;             TOKENIZE clause_name_table
-;             COMPOSE TOKEN_CLAUSE
-;             JUMP pvm_expression
-; @for_done:
-;             RETURN
-; :       name_table_entry "NEXT"
-;             JUMP pvm_var
-; :       name_table_entry "STOP"
-;             RETURN
-; :       name_table_entry "CONT"
-;             RETURN
-; :       name_table_entry "IF"
-;             CALL pvm_expression
-;             WS
-;             BEGIN
-;             MATCH "THEN"
-;             TOKENIZE clause_name_table
-;             COMPOSE TOKEN_CLAUSE
-;             JUMP pvm_statement
-; :       name_table_entry "NEW"
-;             RETURN
-; :       name_table_entry "CLR"
-;             RETURN
-; :       name_table_entry "DIM"
-;             JUMP pvm_var
-; :       name_table_entry "REM"
-;             JUMP pvm_text
-; :       name_table_entry "DATA"
-;             JUMP pvm_text
-; :       name_table_entry "READ"
-;             JUMP pvm_var_list
-; :       name_table_entry "RESTORE"
-;             JUMP pvm_number
-; :       name_table_entry "POKE"
-;             JUMP pvm_arg_2
-; :       name_table_end
+:       name_table_entry "PRINT"
+            JUMP pvm_expression
+:       name_table_entry "LET"
+            CALL pvm_var
+            WS
+            MATCH '='
+            JUMP pvm_expression
+:       name_table_entry "INPUT"
+            JUMP pvm_var_list
+:       name_table_entry "LIST"
+            JUMP pvm_opt_arg_2
+:       name_table_entry "GOTO"
+            JUMP pvm_number
+:       name_table_entry "GOSUB"
+            JUMP pvm_number
+:       name_table_entry "RETURN"
+            RETURN
+:       name_table_entry "POP"
+            RETURN
+:       name_table_entry "ON"
+            CALL pvm_expression    
+            WS
+            CALL pvm_goto_gosub
+            JUMP pvm_number_list
+:       name_table_entry "FOR"
+            CALL pvm_var
+            WS
+            MATCH '='
+            CALL pvm_expression
+            WS
+            CALL pvm_to
+            CALL pvm_expression
+            TRY @for_done
+            WS
+            CALL pvm_step
+            JUMP pvm_expression
+@for_done:
+            RETURN
+:       name_table_entry "NEXT"
+            JUMP pvm_var
+:       name_table_entry "STOP"
+            RETURN
+:       name_table_entry "CONT"
+            RETURN
+:       name_table_entry "IF"
+            CALL pvm_expression
+            WS
+            CALL pvm_then
+            JUMP pvm_statement
+:       name_table_entry "NEW"
+            RETURN
+:       name_table_entry "CLR"
+            RETURN
+:       name_table_entry "DIM"
+            JUMP pvm_var
+:       name_table_entry "REM"
+            JUMP pvm_text
+:       name_table_entry "DATA"
+            JUMP pvm_text
+:       name_table_entry "READ"
+            JUMP pvm_var_list
+:       name_table_entry "RESTORE"
+            JUMP pvm_number
+:       name_table_entry "POKE"
+            JUMP pvm_arg_2
+:       name_table_end
+
+pvm_then:
+        MATCH "THEN"
+        JUMP pvm_clause
+        
+pvm_goto_gosub:
+        MATCH "GO"
+        CALL pvm_name
+        JUMP pvm_clause
+        
+pvm_to:
+        MATCH "TO"
+        JUMP pvm_clause
+
+pvm_step:
+        MATCH "STEP"
+
+; Fall through
+
+pvm_clause:
+        TOKENIZE clause_name_table
+        COMPOSE TOKEN_CLAUSE
+        RETURN
 
 clause_name_table:
 :       name_table_entry "THEN"
