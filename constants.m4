@@ -135,19 +135,18 @@ comment Parse virtual machine (PVM) constants and instruction codes
 
 def(PVM_FAIL,                       hex(00))
 def(PVM_RETURN,                     hex(01))
-def(PVM_FAR_CALL,                   hex(02))
-def(PVM_FAR_JUMP,                   hex(03))
-def(PVM_WS,                         hex(04))
-def(PVM_MATCH_RANGE,                hex(05))
-def(PVM_MATCH_ANY,                  hex(06))
-def(PVM_COMPOSE,                    hex(07))
-def(PVM_ARGSEP,                     hex(08))
+def(PVM_WS,                         hex(02))
+def(PVM_MATCH_RANGE,                hex(03))
+def(PVM_MATCH_ANY,                  hex(04))
+def(PVM_COMPOSE,                    hex(05))
+def(PVM_ARGSEP,                     hex(06))
 
 
 def(PVM_MATCH,                      hex(20))
-def(PVM_TRY,                        hex(60))
-def(PVM_CALL,                       hex(80))
-def(PVM_JUMP,                       hex(C0))
+def(PVM_CALL,                       hex(60))
+def(PVM_JUMP,                       hex(70))
+def(PVM_TRY,                        hex(80))
+def(PVM_ACCEPT,                     hex(C0))
 
 
 

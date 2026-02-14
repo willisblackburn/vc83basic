@@ -19,7 +19,7 @@ parse_line:
 ; Fall through
 
 ; Invokes parsing virtual machine (PVM).
-; AX = address of first PVM instruction
+; AX = address of first PVM opcode
 ; buffer_pos = where to read from buffer
 ; line_pos = where to write to line_buffer
 
@@ -30,11 +30,10 @@ parse_pvm:
         raics   ERR_SYNTAX_ERROR        ; If returning with carry set, raise syntax error
         rts
 
-; Resume parsing instructions.
-; Invoked recursively by CALL and TRY.
+; Resume processing opcodes.
 ; Returns carry clear if the parse succeeded, or carry set if it failed.
-; Returns with pvm_program_ptr pointing to the instruction after the the one that caused run_pvm to exit,
-; and that instruction in B.
+; Returns with pvm_program_ptr pointing to the opcode after the the one that caused run_pvm to exit,
+; and that opcode in B.
 
 run_pvm:
 
@@ -47,7 +46,7 @@ run_pvm:
 ;     SP+4      Savepoint buffer_pos
 ;     SP+3      Savepoint line_pos
 ;     SP+2      TRY handler low byte (note big-endian)
-;     SP+1      TRY handler high byte
+;     SP+1      TRY handler high byte (0 = no try handler)
 ;     SP        Current stack pointer       
 
         lda     #0                      ; Empty savepoint
@@ -58,79 +57,73 @@ run_pvm:
 
 next_pvm:
         ldy     #0
-        lda     (pvm_program_ptr),y     ; Load PVM instruction
-        sta     B                       ; Park instruction in B
+        lda     (pvm_program_ptr),y     ; Load PVM opcode
+        sta     B                       ; Park opcode in B
         iny
-        jsr     rebase_pvm_program_ptr  ; Skip past the instruction byte
-        lda     B                       ; Recover instruction from B
+        jsr     rebase_pvm_program_ptr  ; Skip past the opcode byte
+        lda     B                       ; Recover opcode from B
 
-; Handle the instruction
+; Handle the opcode
 
-        cmp     #PVM_JUMP
-        bcc     @not_jump
-        jsr     calculate_address
-        jmp     jump
+        cmp     #PVM_ACCEPT
+        bcc     @not_accept
+        jsr     calculate_address_6
+        stax    pvm_program_ptr         ; We're going to jump here
+        jmp     set_handler_high_byte_zero
 
-@not_jump:
-        cmp     #PVM_CALL
-        bcc     @not_call
-        jsr     calculate_address
-        jmp     call
-
-@not_call:
+@not_accept:
         cmp     #PVM_TRY
         bcc     @not_try
-        and     #$1F                    ; Ensure bit 5 is 0 so the 5-bit offset is resolved as a forward value
-        jsr     calculate_address
+        jsr     calculate_address_6
         stx     C                       ; Need X for the stack
         tsx
         sta     $102,x                  ; Handler low byte
-        lda     C                       ; Get high byte back from C
-        sta     $101,x                  ; Handler low byte
         lda     line_pos
         sta     $103,x
         lda     buffer_pos
         sta     $104,x
-        jmp     next_pvm
+        lda     C                       ; Get handler high byte back from C
+        jmp     set_handler_high_byte
 
 @not_try:
+        cmp     #PVM_JUMP
+        bcc     @not_jump
+        jsr     calculate_address_12
+@jump:
+        stax    pvm_program_ptr
+        jmp     next_pvm
+
+@not_jump:
+        cmp     #PVM_CALL
+        bcc     @not_call
+        jsr     calculate_address_12
+        sta     C                       ; Temporarily park the call address
+        ldphaa  pvm_program_ptr         ; Save return address
+        lda     C
+        stax    pvm_program_ptr
+        jsr     run_pvm                 ; Go do it
+        plax                            ; Restore the program pointer from the stack
+        bcs     op_fail                 ; If carry set, keep failing (the CALL failed)
+        bcc     @jump
+
+@not_call:
         cmp     #PVM_MATCH
         bcc     @not_match
         ldx     buffer_pos              ; Buffer position
         cmp     buffer,x
-        bne     ins_fail                ; If no match, act like FAIL
+        bne     op_fail                 ; If no match, act like FAIL
         inc     buffer_pos
         jsr     write_to_line_buffer
         jmp     next_pvm
 
 @not_match:
-        tay                             ; Move instruction into Y: clobbers 0 that is there
-        ldax    #pvm_instruction_vectors
-        jmp     invoke_indexed_vector   ; Go do the instruction
-
-pvm_instruction_vectors:
-        .word   ins_fail-1
-        .word   ins_return-1
-        .word   ins_far_call-1
-        .word   ins_far_jump-1
-        .word   ins_ws-1
-        .word   ins_match_range-1
-        .word   ins_match_any-1
-        .word   ins_compose-1
-        .word   ins_argsep-1
-
-        ; .word   ins_begin-1
-        ; .word   ins_tokenize-1
-        ; .word   ins_dispatch-1
-        ; .word   ins_emit-1
-        ; .word   ins_int-1
-        ; .word   ins_eol-1
-        ; .word   ins_link-1
-        ; .word   ins_discard-1
+        tay                             ; Move opcode into Y: clobbers 0 that is there
+        ldax    #pvm_opcode_vectors
+        jmp     invoke_indexed_vector   ; Go do it
 
 ; FAIL: invoke the TRY handler, or fail the entire parse
 
-ins_fail:
+op_fail:
         tsx                             ; Check savepoint on stack
         sec                             ; Set carry in case there's no handler
         lda     $101,x
@@ -142,42 +135,22 @@ ins_fail:
         sta     line_pos
         lda     $104,x
         sta     buffer_pos
+set_handler_high_byte_zero:
         lda     #0
+set_handler_high_byte:
+        tsx                             ; In case we got here from one of the "set_handler" entry points
         sta     $101,x                  ; Zero out handler high address so future FAIL will actually fail
         jmp     next_pvm                ; Continue
-
-; FAR_CALL: save parser state on the stack, then perform JUMP
-
-ins_far_call:
-        jsr     read_address
-call:
-        sta     B                       ; Temporarily park the call address
-        jsr     rebase_pvm_program_ptr
-        ldphaa  pvm_program_ptr         ; Save return address
-        lda     B
-        stax    pvm_program_ptr
-        jsr     run_pvm                 ; Go do it
-        plax                            ; Restore the program pointer from the stack
-        bcs     ins_fail                ; If carry set, keep failing (the CALL failed)
-        bcc     jump
-
-; FAR_JUMP: read address, replace pvm_program_ptr
-
-ins_far_jump:
-        jsr     read_address
-jump:
-        stax    pvm_program_ptr
-        jmp     next_pvm
 
 ; MATCH_RANGE: Range match
 ; First byte is the length of the range. If 0, stop. Second byte is the start of the range. Attempts ranges until
 ; one matches or none match (producing FAIL).
 
-ins_match_range:
+op_match_range:
         ldy     #0                      ; Reload Y with 0
 @next_range:
         lda     (pvm_program_ptr),y     ; Length
-        beq     ins_fail                ; We're out of match ranges: fail
+        beq     op_fail                 ; We're out of match ranges: fail
         iny
         sta     C                       ; Store the range
         ldx     buffer_pos              ; Buffer position
@@ -200,17 +173,17 @@ ins_match_range:
 
 ; Fall through
 
-ins_match_any:
+op_match_any:
         ldx     buffer_pos
         lda     buffer,x
-        beq     ins_fail                ; The 0 at the end of the line never matches
+        beq     op_fail                 ; The 0 at the end of the line never matches
         inc     buffer_pos
         jsr     write_to_line_buffer
         jmp     next_pvm
 
-; RETURN: resume at the instruction following last call
+; RETURN: resume at the opcode following last call
 
-ins_return:
+op_return:
         clc                             ; Carry clear = success
 return_carry:
         pla                             ; Discard savepoint
@@ -221,7 +194,7 @@ return_carry:
 
 ; WS: skip over whitespace
 
-ins_ws:
+op_ws:
         ldy     buffer_pos
         jsr     skip_whitespace
         sty     buffer_pos
@@ -229,7 +202,7 @@ ins_ws:
 
 ; COMPOSE: OR the next byte value into the last byte written to the output
 
-ins_compose:
+op_compose:
         ldy     #0
         lda     (pvm_program_ptr),y     ; Get argument
         jsr     compose_with_last_byte
@@ -247,10 +220,10 @@ compose_with_last_byte:
 
 ; ; INT: parse and encode a 16-bit integer.
 
-; ins_int:
+; op_int:
 ;         ldy     buffer_pos
 ;         jsr     string_to_fp_2          ; Parse line number
-;         bcs     ins_fail                ; If no number then just fail
+;         bcs     op_fail                 ; If no number then just fail
 ;         sty     buffer_pos              ; Update buffer_pos
 ;         jsr     truncate_fp_to_int      ; Truncate number to integer
 ;         jsr     write_to_line_buffer    ; Write out the low byte
@@ -259,27 +232,27 @@ compose_with_last_byte:
 
 ; ; EOL: fail if we're not at EOL
 
-; ins_eol:
+; op_eol:
 ;         ldx     buffer_pos
 ;         lda     buffer,x
-;         bne     ins_fail
+;         bne     op_fail
 ;         rts
 
 ; ; BEGIN: mark the beginning of a keyword
 
-; ins_begin:
+; op_begin:
 ;         mva     line_pos, decode_name_ptr           ; Set decode_name_ptr to start of name in line_buffer
 ;         mvx     #>line_buffer, decode_name_ptr+1
 ;         rts
 
 ; ; TOKENIZE: look up the name from the BEGIN point in a name table, emit the index
 
-; ins_tokenize:
+; op_tokenize:
 ;         lda     #EOT
 ;         jsr     compose_with_last_byte
 ;         jsr     read_address
 ;         jsr     find_name
-;         bcs     ins_fail                ; Didn't find the name; treat as FAIL
+;         bcs     op_fail                 ; Didn't find the name; treat as FAIL
 ;         ldx     decode_name_ptr
 ;         sta     line_buffer,x           ; Write the token to line_buffer
 ;         inx
@@ -287,15 +260,15 @@ compose_with_last_byte:
 ;         ldy     #2
 ;         jmp     rebase_pvm_program_ptr  ; Skip over the name table address
 
-; ; DISPATCH: CALL the instruction following the end of the matched name in the name table
+; ; DISPATCH: JUMP to the address following the end of the matched name in the name table
 
-; ins_dispatch:
+; op_dispatch:
 ;         mvax    name_ptr, pvm_program_ptr   ; JUMP to name_ptr
 ;         rts
 
 ; ; EMIT: just output one byte
 
-; ins_emit:
+; op_emit:
 ;         ldy     #0
 ;         lda     (pvm_program_ptr),y     ; Get the value to output
 ;         jsr     write_to_line_buffer
@@ -304,7 +277,7 @@ compose_with_last_byte:
 
 ; ; LINK: save space for link byte, resume, write length on success
 
-; ins_link:
+; op_link:
 ;         ldpha   line_pos                ; Push current line_pos
 ;         inc     line_pos                ; Output from next position
 ;         jsr     run_pvm
@@ -318,23 +291,41 @@ compose_with_last_byte:
 
 ; ; DISCARD: discards the previously-emitted byte
 
-; ins_discard:
+; op_discard:
 ;         dec     line_pos
 ;         rts
 
 
 ; ARGSEP: skip over argument separator ','
 
-ins_argsep:
+op_argsep:
         ldy     buffer_pos
         jsr     read_argument_separator
         bcc     @found
-        jmp     ins_fail
+        jmp     op_fail
 @found:
         sty     buffer_pos
         lda     #','
         jsr     write_to_line_buffer
         jmp     next_pvm
+
+pvm_opcode_vectors:
+        .word   op_fail-1
+        .word   op_return-1
+        .word   op_ws-1
+        .word   op_match_range-1
+        .word   op_match_any-1
+        .word   op_compose-1
+        .word   op_argsep-1
+
+        ; .word   op_begin-1
+        ; .word   op_tokenize-1
+        ; .word   op_dispatch-1
+        ; .word   op_emit-1
+        ; .word   op_int-1
+        ; .word   op_eol-1
+        ; .word   op_link-1
+        ; .word   op_discard-1
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
@@ -347,13 +338,13 @@ write_to_line_buffer:
         inc     line_pos
         rts
 
-; Retrieves the address from the instruction stream and returns in AX.
+; Retrieves the address from the PVM stream and returns in AX.
 ; pvm_program_ptr must point to the address.
 ; Returns with Y=2.
 
 read_address:
         ldy     #0
-        lda     (pvm_program_ptr),y     ; Low byte of next instruction address
+        lda     (pvm_program_ptr),y     ; Low byte of next opcode address
         pha                             ; Don't update pvm_program_ptr yet
         iny
         lda     (pvm_program_ptr),y     ; High byte
@@ -362,25 +353,41 @@ read_address:
         pla
         rts
 
-; Calculates the address of a TRY or relative CALL or JUMP instruction.
-; A = the instruction byte
+; Calculates the address of TRY or ACCEPT using the 6-bit offset embedded in the opcode relative to
+; the current pvm_program_ptr value.
+; A = the opcode
 
-calculate_address:
+calculate_address_6:
         ldx     #0                      ; High byte of address offset
-        and     #$3F                    ; Ignore top two bits of instruction byte
+        and     #$3F                    ; Ignore top two bits of opcode
         cmp     #$20                    ; Test bit 5, which is the sign bit of the offset field
-        bcc     @positive               ; Was positive so just leave it
-        ora     #$C0                    ; Sign extend to bits 6 and 7
+        bcc     add_to_pvm_program_ptr  ; Was positive so just leave it
+        ora     #$C0                    ; Sign extend to high nybble
         dex                             ; And to high byte
-@positive:
+add_to_pvm_program_ptr:
         clc
         adc     pvm_program_ptr         ; Add to pvm_program_ptr
         pha
         txa
         adc     pvm_program_ptr+1
         tax
+        jsr     rebase_pvm_program_ptr  ; Address low byte is on stack and high byte is safe in X
         pla
         rts
+
+; Calculates the address of JUMP or CALL using 4 bits from the opcode plus the next byte, for 12 bits total.
+; A = the opcode
+
+calculate_address_12:
+        and     #$0F                    ; Ignore top four bits of opcode
+        cmp     #$08                    ; Test bit 3, which is the sign bit of the offset field
+        bcc     @positive               ; Was positive so just leave it
+        ora     #$F0                    ; Sign extend to high nybble
+@positive:
+        tax                             ; Save high byte
+        lda     (pvm_program_ptr),y     ; Read the low byte
+        iny
+        bne     add_to_pvm_program_ptr  ; Unconditional since INY always clears Z     
 
 ; Rebases pvm_program_ptr by adding Y.
 ; Exits with Y=0.
@@ -437,11 +444,11 @@ rebase_pvm_program_ptr:
     .endif
 .endmacro
 
-.macro MATCH_RANGE_write start, end
+.macro write_range start, end
         .byte (end - start) + 1, start
 .endmacro
 
-.macro MATCH_RANGE_args r1, r2, r3, r4
+.macro write_all_ranges r1, r2, r3, r4
     ; Check if the first argument is blank. If it is, we are done with the list: exit.
     .ifblank r1
         .byte 0
@@ -449,32 +456,44 @@ rebase_pvm_program_ptr:
     .endif
 
     ; Output the current pair.
-    MATCH_RANGE_write r1
+    write_range r1
 
     ; Recursively call the macro with the remaining arguments.
-    MATCH_RANGE_args {r2}, {r3}, {r4}
+    write_all_ranges {r2}, {r3}, {r4}
 .endmacro
 
 .macro MATCH_RANGE r1, r2, r3, r4
         .byte PVM_MATCH_RANGE
-        MATCH_RANGE_args {r1}, {r2}, {r3}, {r4}
+        write_all_ranges {r1}, {r2}, {r3}, {r4}
 .endmacro
 
-; Use (* + 1) because we add offset to address after skipping the instruction byte. 
+; Use (* + 1) because we add offset to address after skipping the opcode.
+; But when writing the second byte of a far opcode, use * because it's now advanced one byte. 
+
+.macro write_near_opcode opcode, address
+        .assert (address - (* + 1)) >= -32 .and (address - (* + 1)) <= 31, error, "Address offset out of range"
+        .byte   opcode + <(address - (* + 1)) & $3F
+.endmacro
+
+.macro write_far_opcode opcode, address
+        .assert (address - (* + 1)) >= -1024 .and (address - (* + 1)) <= 1023, error, "Address offset out of range"
+        .byte   opcode + >(address - (* + 1)) & $0F, <(address - *)
+.endmacro
 
 .macro TRY address
-        .assert (address - (* + 1)) >= 0 .and (address - *) <= 31, error, "Address offset out of range"
-        .byte   PVM_TRY + (<(address - (* + 1)) & $1F)
+        write_near_opcode PVM_TRY, address
+.endmacro
+
+.macro ACCEPT address
+        write_near_opcode PVM_ACCEPT, address
 .endmacro
 
 .macro JUMP address
-        .assert (address - (* + 1)) >= -32 .and (address - *) <= 31, error, "Address offset out of range"
-        .byte   PVM_JUMP + (<(address - (* + 1)) & $3F)
+        write_far_opcode PVM_JUMP, address
 .endmacro
 
 .macro CALL address
-        .assert (address - (* + 1)) >= -32 .and (address - *) <= 31, error, "Address offset out of range"
-        .byte   PVM_CALL + (<(address - (* + 1)) & $3F)
+        write_far_opcode PVM_CALL, address
 .endmacro
 
 .macro FAIL
@@ -483,14 +502,6 @@ rebase_pvm_program_ptr:
 
 .macro RETURN
         .byte   PVM_RETURN
-.endmacro
-
-.macro FAR_JUMP address
-        .byte   PVM_FAR_JUMP, <address, >address
-.endmacro
-
-.macro FAR_CALL address
-        .byte   PVM_FAR_CALL, <address, >address
 .endmacro
 
 .macro WS
@@ -591,12 +602,11 @@ pvm_opt_arg_2:
         TRY @done
         CALL pvm_expression
         ARGSEP
-        TRY @fail                       ; Parsed the argument separator so must read another argument
+        ACCEPT @expression2             ; Parsed the argument separator so must read another argument
+@expression2:
         CALL pvm_expression
 @done:
         RETURN
-@fail:
-        FAIL
 
 ; pvm_arg_list is list of 1-N (but not 0) expressions.
 
@@ -638,10 +648,10 @@ pvm_expression:
 
 pvm_primary_expression:
         TRY @variable
-        FAR_CALL pvm_number
+        CALL pvm_number
         RETURN
 @variable:
-        FAR_CALL pvm_variable
+        CALL pvm_variable
         RETURN
 
 ;         TRY @string
@@ -687,6 +697,8 @@ pvm_primary_expression:
 ;         ACCEPT @function_paren          ; Recognized the function name so arg list is now mandatory
 ; @function_paren:
 ;         MATCH '('
+;         ACCEPT @arg_list                ; If paren then argument list is required
+; @arg_list:
 ;         CALL pvm_arg_list
 ;         WS
 ;         MATCH ')'
@@ -696,49 +708,45 @@ pvm_primary_expression:
 
 ; Low-level rules
 
-; number ::= _ sign? (digit+ ('.' digit*)?) | ('.' digit*)) ('E' sign? digit+)
+; number ::= _ opt_sign ((digits decimal_digits?) | decimal_digits) ('E' opt_sign digits)
+; decimal_digits ::= ('.' opt_digits)
+; digits ::= digit+
+; opt_digits ::= digit*
+; opt_sign ::= '-'?
+
 pvm_number:
         WS
-        CALL pvm_number_opt_sign
-        CALL pvm_number_body
-        CALL pvm_number_opt_e
-        RETURN
-
-pvm_number_opt_sign:
-        TRY @done
-        MATCH '-'
-@done:
-        RETURN
-
-pvm_number_body:
-        TRY pvm_number_decimal_digits
+        CALL pvm_opt_sign
+        TRY @alt
         CALL pvm_digits
-        TRY @done
-        CALL pvm_number_decimal_digits
-@done:
-        RETURN
-
-pvm_number_decimal_digits:
-        MATCH '.'
-        JUMP pvm_opt_digits
-
-pvm_number_opt_e:
+        TRY @e
+@alt:
+        CALL pvm_decimal_digits
+@e:
         TRY @done
         MATCH 'E'
-        CALL pvm_number_opt_sign
+        CALL pvm_opt_sign
         CALL pvm_digits
+@done:
+        RETURN
+
+pvm_opt_sign:
+        TRY @done
+        MATCH '-'
 @done:
         RETURN
 
 ; pvm_digits does not remove whitespace.
 ; It is only used from pvm_number.
 
+pvm_decimal_digits:
+        MATCH '.'
+pvm_opt_digits:
+        TRY pvm_digits_done
 pvm_digits:
         MATCH_RANGE {'0', '9'}
-pvm_opt_digits:
-        TRY @done
-        JUMP pvm_digits
-@done:
+        ACCEPT pvm_opt_digits
+pvm_digits_done:
         RETURN
 
 ; ; pvm_number_list is list of 1-N (but not 0) numbers.
@@ -759,10 +767,10 @@ pvm_string:
         MATCH '"'
         TRY @done
         MATCH '"'
-        JUMP @next
+        ACCEPT @next
 @non_quote:
         MATCH *
-        JUMP @next
+        ACCEPT @next
 @done:
         RETURN
 
@@ -775,7 +783,9 @@ pvm_variable:
         COMPOSE EOT
         TRY @done
         MATCH '('
-        FAR_CALL pvm_arg_list
+        ACCEPT @arg_list                ; If paren then argument list is required
+@arg_list:
+        CALL pvm_arg_list
         MATCH ')'
 @done:
         RETURN
@@ -809,7 +819,7 @@ pvm_name:
 @next:
         TRY @done
         MATCH_RANGE {'A', 'Z'}, {'0', '9'}, {'_', '_'}
-        JUMP @next
+        ACCEPT @next
 @done:
         RETURN
 

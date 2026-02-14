@@ -107,7 +107,13 @@ unary_op ::= _ ('-' | 'NOT')
 
 repeated_number ::= number (_ ',' number)*
 
-number ::= _ sign? (digit+ ('.' digit*)) | ('.' digit*)) ('E' sign? digit+)
+number ::= _ opt_sign ((digits decimal_digits?) | decimal_digits) ('E' opt_sign digits)
+decimal_digits ::= ('.' opt_digits)
+digits ::= digit+
+opt_digits ::= digit*
+opt_sign ::= sign?
+digit ::= [0-9]
+sign ::= [-]
 
 repeated_var ::= var (_ ',' var)*
 
@@ -121,10 +127,6 @@ channel ::= _ ('#' number)?
 prompt ::= (string _ ';')?
 
 letter ::= [A-Z]
-
-digit ::= [0-9]
-
-sign ::= [-+]
 
 text ::= ' ' [#x20-#x7f]
 
