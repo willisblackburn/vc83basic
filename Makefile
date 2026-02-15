@@ -67,7 +67,7 @@ $1/%.o: $1/%.s constants.inc zeropage.inc basic.inc
 -include $$(TARGET_$1_SOURCES:.s=.d)
 
 clean::
-	rm -f basic_$1 $1/*.o $1/*.d $1/*.map
+	rm -f basic_$1 $1/*.o $1/*.d $1/*.map $1/*.dbg
 
 endef
 
@@ -141,4 +141,4 @@ $(foreach TEST,$(EXPECT_TESTS),$(eval $(call create-expect-test,$(TEST))))
 -include $$(COMMON_SOURCES:.s=.d)
 
 clean::
-	rm -f constants.inc constants.h zeropage.s zeropage.inc zeropage.h *.o *.d *.map tests/*.o tests/*.d tests/*.map
+	rm -f constants.inc constants.h zeropage.s zeropage.inc zeropage.h *.o *.d *.map tests/*.o tests/*.d tests/*.map tests/*.dbg
