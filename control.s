@@ -115,7 +115,6 @@ exec_for:
         jsr     find_or_add_variable
         jsr     assign_variable
         jsr     evaluate_expression     ; End value
-        inc     line_pos                ; Skip terminator
         jsr     pop_fp0                 ; Get the evaluated value
         lda     stack_pos               ; Stack pointer
         adc     #Control::end_value     ; Add the offset of the end value; carry is clear

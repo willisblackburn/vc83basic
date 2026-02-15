@@ -31,7 +31,7 @@ decode_expression:
         sec                             ; Set carry for subtracts to follow
         ldy     #XH_UNARY_OP            ; Unary operator
         sbc     #TOKEN_UNARY_OP
-        cmp     #8
+        cmp     #4
         bcc     @dispatch
         iny                             ; Binary operator
         sbc     #(TOKEN_OP - TOKEN_UNARY_OP)
@@ -59,6 +59,7 @@ decode_expression:
         iny                             ; Subexpression start
         cmp     #<('(' - '`')
         beq     @dispatch
+@done:
         rts                             ; None of the above; probably ')' or ',' or ';' so just return
 
 ; Decodes a number and returns it in FP0.

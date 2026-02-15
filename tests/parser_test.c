@@ -145,6 +145,7 @@ void test_pvm_statement(void) {
 
     const char simple_line_data_1[] = { ST_END };
     const char print_line_data_1[] = { ST_PRINT, '1' };
+    const char print_line_data_2[] = { ST_PRINT, '1', ',', '"', 'Y', 'E', 'S', '"', ';', '(', '0', ')' };
     const char for_line_data_1[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_CLAUSE | CLAUSE_TO, '5' };
     const char for_line_data_2[] = { ST_FOR, 'X' | EOT, '=', '1', TOKEN_CLAUSE | CLAUSE_TO, '2', '0', TOKEN_CLAUSE | CLAUSE_STEP, '2' };
     const char next_line_data_1[] = { ST_NEXT, 'X' | EOT };
@@ -169,6 +170,7 @@ void test_pvm_statement(void) {
 
     // PRINT
     call_parse_pvm("PRINT 1", pvm_statement, print_line_data_1, sizeof print_line_data_1, __LINE__);
+    call_parse_pvm("PRINT 1,\"YES\";(0)", pvm_statement, print_line_data_2, sizeof print_line_data_2, __LINE__);
 
     // FOR
     call_parse_pvm("FOR X=1 TO 5", pvm_statement, for_line_data_1, sizeof for_line_data_1, __LINE__);

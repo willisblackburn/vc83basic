@@ -22,7 +22,8 @@ PRINT X(11)
 10
 
 READY
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 # String array

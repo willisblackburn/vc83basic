@@ -288,56 +288,6 @@ compose_with_last_byte:
         sta     line_buffer-1,x
         rts
 
-; ; INT: parse and encode a 16-bit integer.
-
-; op_int:
-;         ldy     buffer_pos
-;         jsr     string_to_fp_2          ; Parse line number
-;         bcs     op_fail                 ; If no number then just fail
-;         sty     buffer_pos              ; Update buffer_pos
-;         jsr     truncate_fp_to_int      ; Truncate number to integer
-;         jsr     write_to_line_buffer    ; Write out the low byte
-;         txa                             ; and the high byte
-;         jmp     write_to_line_buffer
-
-; ; EOL: fail if we're not at EOL
-
-; op_eol:
-;         ldx     buffer_pos
-;         lda     buffer,x
-;         bne     op_fail
-;         rts
-
-; ; EMIT: just output one byte
-
-; op_emit:
-;         ldy     #0
-;         lda     (pvm_program_ptr),y     ; Get the value to output
-;         jsr     write_to_line_buffer
-;         ldy     #1
-;         jmp     rebase_pvm_program_ptr
-
-; ; LINK: save space for link byte, resume, write length on success
-
-; op_link:
-;         ldpha   line_pos                ; Push current line_pos
-;         inc     line_pos                ; Output from next position
-;         jsr     run_pvm
-;         pla                             ; Original line_pos into A
-;         tay                             ; And Y
-;         lda     line_pos                ; Current line_pos
-;         sta     line_buffer,y           ; Save into the link position
-;         pla                             ; Propagate return with carry unchanged
-;         pla
-;         rts
-
-; ; DISCARD: discards the previously-emitted byte
-
-; op_discard:
-;         dec     line_pos
-;         rts
-
-
 ; ARGSEP: skip over argument separator ','
 
 op_argsep:
@@ -361,14 +311,6 @@ pvm_opcode_vectors:
         .word   op_argsep-1
         .word   op_tokenize-1
         .word   op_dispatch-1
-
-        ; .word   op_begin-1
-        ; .word   op_tokenize-1
-        ; .word   op_emit-1
-        ; .word   op_int-1
-        ; .word   op_eol-1
-        ; .word   op_link-1
-        ; .word   op_discard-1
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
@@ -566,30 +508,6 @@ rebase_pvm_program_ptr:
         .byte   PVM_DISPATCH
 .endmacro
 
-
-
-
-
-; .macro EMIT b
-;         .byte   PVM_EMIT, b
-; .endmacro
-
-; .macro INT
-;         .byte   PVM_INT
-; .endmacro
-
-; .macro EOL
-;         .byte   PVM_EOL
-; .endmacro
-
-; .macro LINK
-;         .byte   PVM_LINK
-; .endmacro
-
-; .macro DISCARD
-;         .byte   PVM_DISCARD
-; .endmacro
-
 ; PVM program
 
 pvm_statement:
@@ -634,6 +552,23 @@ pvm_paren_arg_list:
         CALL pvm_arg_list
         WS
         MATCH ')'
+        RETURN
+
+; pvm_print_expression is the particular kind of expression in the PRINT statement.
+
+pvm_print_expression:
+        TRY @not_comma
+        MATCH ','
+        ACCEPT pvm_print_expression
+@not_comma:
+        TRY @not_semi
+        MATCH ';'
+        ACCEPT pvm_print_expression
+@not_semi:
+        TRY @done
+        CALL pvm_expression
+        ACCEPT pvm_print_expression
+@done:
         RETURN
 
 ; Expressions
@@ -830,7 +765,7 @@ statement_name_table:
 :       name_table_entry "RUN"
             RETURN
 :       name_table_entry "PRINT"
-            JUMP pvm_expression
+            JUMP pvm_print_expression
 :       name_table_entry "LET"
             CALL pvm_var
             WS
