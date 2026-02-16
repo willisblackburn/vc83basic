@@ -14,7 +14,7 @@ CONT
 } {
 1
 
-READY
+STOPPED
 2
 }
 
@@ -32,7 +32,7 @@ CONT
 } {
 1
 
-READY
+STOPPED
 
 READY
 100
@@ -53,5 +53,6 @@ CONT
 1
 
 READY
-ERROR
+
+ERROR: CONT WITHOUT STOP
 }

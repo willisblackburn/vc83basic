@@ -29,7 +29,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: LINE NOT FOUND
 }
 
 # ON...GOTO
@@ -109,7 +110,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -124,7 +126,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -139,5 +142,6 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
