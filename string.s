@@ -42,11 +42,11 @@ load_s:
 read_string:
         stax    read_ptr                ; Store read_ptr
         jsr     find_printable_character    ; Skip any whitespace        
-        sty     B                       ; Read position relative to read_ptr
+        sty     D                       ; Read position relative to read_ptr
         ldax    #(255 + STRING_EXTRA + STRING_EXTRA)    ; Allocate space for 2 strings with total length of 255
         jsr     string_alloc_memory
         bcc     out_of_memory
-        ldy     B
+        ldy     D
         lda     (read_ptr),y            ; Get first character
         iny                             ; Skip past it in case it's a double quote
         cmp     #'"'                    ; Is first character a double quote?
@@ -54,48 +54,48 @@ read_string:
         lda     #','                    ; No; terminator is a comma
         dey                             ; Move back so we read it again
 @store_terminator:
-        sta     D                       ; Store terminator in D
-        sty     B                       ; Update read offset in B
+        sta     B                       ; Store terminator in B
+        sty     D                       ; Update read offset in D
         lda     #1
-        sta     C                       ; Initialize write position relative to string_ptr
+        sta     E                       ; Initialize write position in E
 @next:
-        ldy     B                       ; Read offset
+        ldy     D                       ; Read offset
         lda     (read_ptr),y            ; Get next source character
         beq     @finish                 ; Was zero, definitely finished
-        cmp     D                       ; Was it the terminator?
+        cmp     B                       ; Was it the terminator?
         bne     @not_terminator         ; Nope
         cmp     #'"'                    ; Was the terminator also double quote?
         bne     @finish                 ; Nope; we're finished
-        inc     B                       ; Always skip over this quote
+        inc     D                       ; Always skip over this quote
         iny                             ; Increment Y in order to check the next character
         cmp     (read_ptr),y            ; Check second double quote (if present cannot have EOT set)
-        bne     @finish                 ; Nope, just finish; B points to character after double quote
+        bne     @finish                 ; Nope, just finish; D points to character after double quote
 @not_terminator:
-        ldy     C                       ; Write offset
+        ldy     E                       ; Write offset
         sta     (string_ptr),y          ; Store in output
-        inc     B                       ; Increment read and write offset
-        inc     C
+        inc     D                       ; Increment read and write offset
+        inc     E
         jmp     @next
 
-; When we get here, B always points to the next read position, and the length of the string is in C.
+; When we get here, D always points to the next read position, and the length of the string is in E.
 
 @finish:
         ldy     #0                      ; Offset 0 relative to string_ptr is the length of the string we just read
-        ldx     C                       ; Length of the string (plus one for length byte)
+        ldx     E                       ; Length of the string (plus one for length byte)
         dex                             ; Remove length byte
         txa
         sta     (string_ptr),y          ; Store length
         clc                             ; Add length to string_ptr to get address of second string less STRING_EXTRA
         adc     string_ptr
-        sta     D                       ; Store that pointer in DE
+        sta     B                       ; Store that pointer in BC
         lda     string_ptr+1
         adc     #0
-        sta     E
+        sta     C
         ldy     #STRING_EXTRA           ; Add STRING_EXTRA via Y
         txa                             ; Length
         eor     #$FF                    ; Invert bits to produce 255 - length
-        sta     (DE),y                  ; Store it
-        ldy     B                       ; Return read position in Y
+        sta     (BC),y                  ; Store it
+        ldy     D                       ; Return read position in Y
         rts                             ; Carry guaranteed to be clear by ADC
 
 out_of_memory:
@@ -223,7 +223,7 @@ compact:
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
         plax                            ; Get the size we pushed earlier
-        jmp     copy                    ; All done!
+        jmp     reverse_copy            ; All done!
 
 ; Invokes a handler each string in the string heap.
 
