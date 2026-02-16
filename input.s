@@ -19,7 +19,7 @@ exec_input:
         ldax    #buffer                 ; Point to buffer
         ldy     buffer_pos              ; Starting at buffer_pos
         jsr     string_to_fp            ; Parse the number
-        bcs     @done                   ; Failed to read a number
+        bcs     @format_error           ; Failed to read a number
         sty     buffer_pos              ; Update buffer_pos
         jsr     push_fp0                ; Push FP0 onto the value stack
 
@@ -42,9 +42,10 @@ exec_input:
         ldax    #buffer
         ldy     buffer_pos
         jsr     read_string
-        bcs     @done
+        bcs     @format_error
         sty     buffer_pos              ; Update buffer_pos to next read position
         jsr     push_string             ; Push result string onto the stack
         jmp     @assign
 
-
+@format_error:
+        raise   ERR_FORMAT_ERROR

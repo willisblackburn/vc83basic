@@ -68,6 +68,7 @@ decode_number:
         ldax    line_ptr
         ldy     line_pos
         jsr     string_to_fp            ; May fail with carry set
+        raics   ERR_FORMAT_ERROR
         sty     line_pos                ; Update line_pos
         rts
 
@@ -78,6 +79,7 @@ decode_string:
         ldax    line_ptr                ; Prepare for read_string
         ldy     line_pos
         jsr     read_string
+        raics   ERR_FORMAT_ERROR
         sty     line_pos
         rts
 

@@ -46,9 +46,7 @@ exec_read:
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     string_to_fp            ; Parse the number
-        bcs     @done                   ; Failed to read a number
-        jsr     read_argument_separator
-        bcs     @done                   ; Read non-separator after value
+        jsr     @separator
         jsr     push_fp0                ; Push FP0 onto the value stack
 
 @assign:
@@ -68,11 +66,18 @@ exec_read:
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     read_string
-        bcs     @done
-        jsr     read_argument_separator
-        bcs     @done                   ; Read non-separator after value
+        jsr     @separator
         jsr     push_string             ; Push result string onto the stack
         jmp     @assign
+
+@separator:
+        bcs     @format_error           ; If we got here with carry set then number or string read failed
+        jsr     read_argument_separator
+        bcs     @format_error           ; Read something other than separator or EOL
+        rts
+
+@format_error:
+        raise   ERR_FORMAT_ERROR
 
 ; RESTORE statement:
 
