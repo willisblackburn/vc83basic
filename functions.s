@@ -10,8 +10,7 @@ fun_adr:
         jsr     pop_string
         jsr     load_s0
         ldax    S0
-        jsr     int_to_fp
-        jmp     push_fp0
+        jmp     push_int_fp0
 
 fun_asc:
         jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
@@ -19,8 +18,7 @@ fun_asc:
         ldy     #0
         lda     (S0),y                  ; Get first character of string
         ldx     #0
-        jsr     int_to_fp               ; Make it into an FP value
-        jmp     push_fp0                ; Push it
+        jmp     push_int_fp0            ; Push it
 
 fun_chr_s:
         jsr     pop_fp0                 ; TODO: pop_fp0 + truncate_fp_to_int also common, should be one function
@@ -43,8 +41,7 @@ fun_fre:
         sbc     free_ptr+1
         tax                             ; High byte in X
         tya                             ; Low byte back into A
-        jsr     int_to_fp               ; Load into FP0
-        jmp     push_fp0
+        jmp     push_int_fp0
 
 fun_int:
         jsr     pop_fp0
@@ -152,8 +149,7 @@ fun_len:
         jsr     pop_string
         jsr     load_s0                 ; Length comes back in A, which is what we want
         ldx     #0                      ; High byte is always 0
-        jsr     int_to_fp               ; Into FP0
-        jmp     push_fp0                ; Push return value
+        jmp     push_int_fp0            ; Push return value
 
 fun_peek:
         jsr     pop_fp0                 ; Get the argument
@@ -162,8 +158,7 @@ fun_peek:
         ldy     #0                      ; Index 0
         lda     (BC),y                  ; Get the value there
         ldx     #0                      ; High byte is always 0
-        jsr     int_to_fp               ; Into FP0
-        jmp     push_fp0                ; Push return value
+        jmp     push_int_fp0            ; Push return value
 
 fun_round:
         jsr     pop_fp0
@@ -212,8 +207,7 @@ fun_usr:
         stax    BC                      ; Store it so I can use it as a pointer
         ldax    DE                      ; Recover the value
         jsr     @jump_to_user_function
-        jsr     int_to_fp               ; Convert return value in AX back to FP
-        jmp     push_fp0
+        jmp     push_int_fp0
 
 @jump_to_user_function:
         jmp     (BC)

@@ -93,7 +93,7 @@ S1 = FPX+2
 .global evaluate_variable, evaluate_decoded_variable
 .global call_binary_operator
 .global push_value_0, push_value_1
-.global push_fp0, pop_fp0
+.global push_fp0, push_int_fp0, pop_fp0
 .global push_string, pop_string
 .global stack_alloc, stack_alloc_value
 .global stack_free, stack_free_value, stack_free_value_with_type

@@ -406,6 +406,12 @@ push_value_0:
 push_value_1:
         lday    #fp_one
         jsr     load_fp0
+        jmp     push_fp0
+
+push_int_fp0:
+        jsr     int_to_fp
+
+; Fall through
 
 push_fp0:
         jsr     stack_alloc_value       ; Returns with A set to the offset
@@ -503,8 +509,7 @@ op_and:
 finish_logical_op:
         tax
         pla                             ; Recover low byte
-        jsr     int_to_fp               ; Convert back into FP value
-        jmp     push_fp0                ; Back onto stack
+        jmp     push_int_fp0            ; Back onto stack
 
 op_or:
         jsr     set_up_logical_op
