@@ -862,7 +862,6 @@ normalize:
         ldx     B                       ; Check round
         bne     @check_e_is_zero        ; Round is not zero so we can still find a 1 bit somewhere
         stx     FP0e                    ; Set exponent to 0
-        clc                             ; Signal success
         rts
 
 @check_e_is_zero:
@@ -1404,7 +1403,6 @@ fexp:
         lda     FP0e                    ; Now multiply by 2^k, which just means increasing by exponent by k
         adc     E                       ; Leaves carry clear
         sta     FP0e
-        clc
         rts
 
 fsin_x = stack + .sizeof(Float) * 2

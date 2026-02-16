@@ -202,7 +202,7 @@ process_operators:
         tay                             ; Index in jump table
         ldax    #operator_vectors
         jsr     invoke_indexed_vector   ; Invoke the vector
-        bcc     @next                   ; If operator success then continue, else fail
+        jmp     @next                   ; Continue processing operators
 @done:
         rts
 
@@ -360,8 +360,7 @@ call_binary_operator:
 
 call_binary_operator_push:
         jsr     call_binary_operator
-        bcc     push_fp0                ; If successful then push FP0 back, else fail
-        rts
+        jmp     push_fp0
 
 unary_op_minus:
         jsr     pop_fp0                 ; Get value at top of stack
