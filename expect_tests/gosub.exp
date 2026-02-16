@@ -28,7 +28,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: LINE NOT FOUND
 }
 
 # RETURN without GOSUB
@@ -42,7 +43,8 @@ RUN
 } {
 1
 1
-ERROR
+
+ERROR: RETURN WITHOUT GOSUB
 }
 
 # Infinite GOSUB (will eventually run out of stack space, may have to adjust test if changing stack size)
@@ -67,7 +69,8 @@ RUN
 2
 2
 2
-ERROR
+
+ERROR: STACK OVERFLOW
 }
 
 # ON...GOSUB
@@ -152,7 +155,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -168,7 +172,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -184,7 +189,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: OUT OF RANGE
 }
 
 # POP
@@ -198,7 +204,8 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: RETURN WITHOUT GOSUB
 }
 
 # POP without GOSUB
@@ -210,5 +217,6 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: STACK EMPTY
 }
