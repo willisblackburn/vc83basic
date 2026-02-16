@@ -200,7 +200,7 @@ exec_if:
         jsr     pop_fp0
         lda     FP0e                    ; Check if zero
         beq     @next_line              ; If zero then don't execute the THEN or any other statements on this line
-        jmp     dispatch_statement      ; Otherwise execute the THEN
+        jmp     exec_statement          ; Otherwise execute the THEN
 
 @next_line:
         jmp     advance_next_line_ptr   ; Unconditionally go to the next line
@@ -216,7 +216,7 @@ push_next_line_ptr:
         lda     next_line_pos
         sta     stack+Control::next_line_pos,x
         lda     #TYPE_CONTROL           ; Identify this as Control not Value
-        sta     stack+Control::type
+        sta     stack+Control::type,x
         txa                             ; Move stack pointer back to A
         rts
 

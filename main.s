@@ -32,6 +32,7 @@ main:
         sta     program_state           ; Whatever comes back from exception handler is new state
         tay                             ; Prepare to look up the program_state message
         bmi     @dispatch               ; Program is running; do the next thing
+        mva     good_stack_pos, stack_pos   ; After an error, restore the stack position we saved
         ldax    #error_message_table
         jsr     get_name
         bcs     @get_command            ; Shouldn't happen, but just in case
@@ -100,7 +101,8 @@ main:
         mva     next_line_pos, line_pos
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
-        jsr     dispatch_statement
+        jsr     exec_statement
+        mva     stack_pos, good_stack_pos   ; Remember the stack position after successful statement
         jmp     @dispatch               ; Keep on truckin'
 
 @error:
@@ -108,8 +110,7 @@ main:
 
 ; Decodes and executes one statement from the token stream.
 
-dispatch_statement:
-        jsr     reset_stack_pointers    ; Make sure stack pointers are reset in case there was an exception earlier
+exec_statement:
         jsr     decode_byte             ; Get statement number
         tay
         ldax    #statement_exec_vectors

@@ -142,6 +142,9 @@ byte(op_stack_pos)
 comment Primary stack position; same behavior as op_stack_pos but initialized to PRIMARY_STACK_SIZE
 byte(stack_pos)
 
+comment The position after the last statement executed w/o exception (restored after exception)
+byte(good_stack_pos)
+
 comment Minimum operator precedence used in process_operators
 byte(min_precedence)
 

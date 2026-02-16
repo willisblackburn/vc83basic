@@ -20,8 +20,8 @@ initialize_program:
 ; Fall through to clear_variables
 
 ; Clears the runtime state of the program.
-; Clears all variables and the string heap. The run state and next_line_ptr remain unchanged, so this can be called
-; while the program is running.
+; Clears all variables and the string heap. Resets the expression stack pointers. The run state and next_line_ptr
+; remain unchanged, so this can be called while the program is running.
 ; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
 
@@ -39,15 +39,9 @@ clear_variables:
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     (array_name_table_ptr),y    ; Initialize array name table to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
-
-; Fall through to reset_stack_pointers
-
-; Resets the expression stack pointers. This doesn't have to be done after clear_variables, but it's a convenient
-; place for it, as we want it done as part of initialize_program and also before handling each statement.
-
-reset_stack_pointers:
         mva     #OP_STACK_SIZE, op_stack_pos
         mva     #PRIMARY_STACK_SIZE, stack_pos
+        sta     good_stack_pos
         rts
 
 ; Resets the stack, clears the resume state, and performs RESTORE.
