@@ -63,5 +63,6 @@ NEW
 RUN
 } {
 1
-ERROR
+
+ERROR: BAD VARIABLE
 }
