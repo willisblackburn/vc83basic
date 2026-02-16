@@ -1,0 +1,26 @@
+source [file join [file dirname [info script]] common.expinc]
+spawn_basic
+
+# PEEK and POKE
+
+test {
+10 LET A$="HELLO"
+20 LET ADDR=ADR(A$)
+30 PRINT PEEK(ADDR)
+40 PRINT PEEK(ADDR+1)
+50 PRINT PEEK(ADDR+2)
+60 PRINT PEEK(ADDR+3)
+70 PRINT PEEK(ADDR+4)
+80 POKE ADDR,80
+90 PRINT A$
+RUN
+} {
+72
+69
+76
+76
+79
+PELLO
+
+READY
+}
