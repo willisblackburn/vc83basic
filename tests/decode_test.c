@@ -115,6 +115,7 @@ void xh_unary_operator(void) {
         case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
         case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
     }
+    __asm__("clc");
 }
 
 int op_count;
@@ -128,6 +129,7 @@ void xh_operator(void) {
         case 4: ASSERT_EQ(op, OP_OR); break;
         case 5: ASSERT_EQ(op, OP_SUB); break;
     }
+    __asm__("clc");
 }
 
 int num_count;
@@ -138,11 +140,13 @@ void xh_number(void) {
         case 1: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 140, 0x80800000); break;
         case 2: ASSERT_FP_FIELDS_EQ(FP0, POSITIVE, 129, 0xC0000000); break;
     }
+    __asm__("clc");
 }
 
 void xh_string(void) {
     decode_string();
     // Don't do anything with strings
+    __asm__("clc");
 }
 
 int var_count;
@@ -150,7 +154,8 @@ int var_count;
 void xh_variable(void) {
     decode_name();
     ++var_count;
-    ASSERT_EQ(*decode_name_ptr, 'X' | EOT);
+    ASSERT_EQ((unsigned char)*decode_name_ptr, 'X' | EOT);
+    __asm__("clc");
 }
 
 int function_count;
@@ -159,6 +164,7 @@ void xh_function(void) {
     char function = decode_byte()  & (char)~TOKEN_FUNCTION;
     ++function_count;
     ASSERT_EQ(function, 0);
+    __asm__("clc");
 }
 
 int paren_count;
@@ -169,7 +175,9 @@ void xh_paren(void) {
     decode_expression(decode_xh_vectors);
     // Consume ')'
     decode_byte();
+    __asm__("clc");
 }
+
 
 void* decode_xh_vectors[] = {
     (char*)xh_unary_operator - 1,
