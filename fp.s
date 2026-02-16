@@ -245,8 +245,7 @@ mul10_significand:
         jsr     shift_left              ; *2
         jsr     rotate_left             ; *4
         jsr     add_significands        ; *5
-        jsr     rotate_left             ; *10
-        rts
+        jmp     rotate_left             ; *10
 
 ; Divides the FP0 significand by 10.
 ; Returns the remainder in FPX.
