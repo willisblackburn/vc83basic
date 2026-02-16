@@ -159,13 +159,11 @@ op_concat:
 
 op_eq:
         jsr     compare_values
-        bcc     push_value_0            ; A < B
         bne     push_value_0            ; A <> B
         beq     push_value_1            ; A = B
 
 op_ne:
         jsr     compare_values
-        bcc     push_value_1            ; A < B
         bne     push_value_1            ; A <> B
         beq     push_value_0            ; A = B
 
