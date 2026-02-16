@@ -207,7 +207,7 @@ exec_if:
         bcs     @error
         lda     FP0e                    ; Check if zero
         beq     @next_line              ; If zero then don't execute the THEN or any other statements on this line
-        jsr     dispatch_statement      ; Otherwise execute the THEN
+        jsr     exec_statement          ; Otherwise execute the THEN
         clc
 @error:
         rts
@@ -229,7 +229,7 @@ push_next_line_ptr:
         lda     next_line_pos
         sta     stack+Control::next_line_pos,x
         lda     #TYPE_CONTROL           ; Identify this as Control not Value
-        sta     stack+Control::type
+        sta     stack+Control::type,x
         txa                             ; Move stack pointer back to A
 @done:
         rts

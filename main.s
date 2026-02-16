@@ -43,7 +43,7 @@ main:
         mva     next_line_pos, line_pos
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
-        jsr     dispatch_statement
+        jsr     exec_statement
         bcc     @loop
 @error:
         jsr     print_error
@@ -78,7 +78,7 @@ main:
 
 ; Decodes and executes one statement from the token stream.
 
-dispatch_statement:
+exec_statement:
         jsr     decode_byte             ; Get statement number
         tay
         ldax    #statement_exec_vectors

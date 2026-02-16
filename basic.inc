@@ -172,7 +172,7 @@ S1 = FPX+2
 
 ; main.s
 .global main
-.global dispatch_statement
+.global exec_statement
 
 ; name.s
 .global find_name, find_name_2
