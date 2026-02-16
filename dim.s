@@ -9,6 +9,7 @@ exec_dim:
         lda     decode_name_arity       ; See if it's an array name
         bpl     @invalid_variable       ; Nope
         jsr     evaluate_argument_list  ; Evaluate the dimensions values (A = decdee_name_arity = $FF)
+        inc     line_pos                ; Skip ')'
         eor     #$FF                    ; Invert to get number of arguments
         sta     decode_name_arity
         ldax    array_name_table_ptr    ; Look for the name in the name table

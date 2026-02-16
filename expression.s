@@ -38,7 +38,9 @@ evaluate_function:
         pha                             ; Remember what function it was, while we go decode the arguments
         tax
         lda     function_arity_table,x  ; How many arguments?
+        inc     line_pos                ; Skip '('
         jsr     evaluate_argument_list
+        inc     line_pos                ; Skip ')'
         pla                             ; Recover the function number
         tay
         ldax    #function_vectors
@@ -159,25 +161,20 @@ evaluate_unary_operator:
 ; Returns the number of arguments that were expected but not found; will be negative if too many argument found.
 
 evaluate_argument_list:
-        pha                             ; Save the number of arguments expected on the stack
-@next:
-        ldy     line_pos                ; Peek at next byte in token stream
+        pha                             ; Save expected count
+@loop:
+        jsr     evaluate_expression
+        tsx
+        dec     $101,x                  ; Decrement remaining
+        beq     @done                   ; If reached 0 exactly, stop
+        ldy     line_pos
         lda     (line_ptr),y
-        beq     @done                   ; Was 0
-        cmp     #')'
-        beq     @done                   ; Was ')'
-        cmp     #','                    ; If it's a comma then just skip it
-        bne     @no_comma
-        inc     line_pos                ; Skip the comma
-@no_comma:
-        jsr     evaluate_expression     ; Read the next expression
-        tsx                             ; Get ready to access stack
-        dec     $101,x                  ; Decrement the number of arguments
-        jmp     @next                   ; Continue on
-
+        cmp     #','
+        bne     @done                   ; No comma, stop
+        inc     line_pos                ; Skip comma
+        jmp     @loop                   ; And continue
 @done:
-        inc     line_pos                ; Skip over the terminating byte
-        pla                             ; Return number of arguments read
+        pla                             ; Return remaining count
         rts
 
 push_operator:

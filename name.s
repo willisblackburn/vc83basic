@@ -164,6 +164,7 @@ find_or_add_variable:
 
 @array:
         jsr     evaluate_argument_list  ; Evaluate the array arguments: arity $FF is still in A
+        inc     line_pos                ; Skip ')'
         eor     #$FF                    ; A is now arity of array reference
         sta     decode_name_arity
         ldax    array_name_table_ptr

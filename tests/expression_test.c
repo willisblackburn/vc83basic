@@ -237,7 +237,7 @@ void test_string_comparison(void) {
 }
 
 void test_evaluate_argument_list(void) {
-    const char line_data[] = { '1', '2', '8', ',', '1', TOKEN_OP | OP_ADD, '2', 0 };
+    const char line_data[] = { '(', '1', '2', '8', ',', '1', TOKEN_OP | OP_ADD, '2', ')', 0 };
     const Float value_128 = { 0x00000000, 135 };
     const Float value_3 = { 0x40000000, 129 };
 
@@ -250,10 +250,12 @@ void test_evaluate_argument_list(void) {
     ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE);
 
     set_line(0, line_data, sizeof line_data);
-    skipped_arguments = evaluate_argument_list(5);
-    ASSERT_EQ(skipped_arguments, 3);
+    line_pos++; // Skip '('
+    skipped_arguments = evaluate_argument_list(2);
+    line_pos++; // Skip ')'
+    ASSERT_EQ(skipped_arguments, 0);
 
-    ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 12 /* 5 bytes plus 1 byte for type for each value */);
+    ASSERT_EQ(stack_pos, PRIMARY_STACK_SIZE - 12 /* 2*6 bytes */);
 
     pop_fp0();
     store_fp0(&value);
