@@ -41,11 +41,11 @@ exec_on:
         jsr     evaluate_expression     ; Evaluate the "ON" expression
         inc     line_pos                ; Skip past the terminator
         jsr     pop_value
-        sta     on_value
+        sta     B
         txa                             ; Check the high byte
         bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
-        dec     on_value                ; Decrease value sought by 1
+        dec     B                       ; Decrease value sought by 1
         bmi     @zero                   ; If it went negative then it was originally 0
         beq     @found                  ; It was found
         ldy     line_pos                ; Otherwise advance to the next ','
