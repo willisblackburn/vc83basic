@@ -101,6 +101,7 @@ void xh_unary_operator(void) {
         case 1: ASSERT_EQ(op, UNARY_OP_MINUS); break;
         case 2: ASSERT_EQ(op, UNARY_OP_NOT); break;
     }
+    __asm__("clc");
 }
 
 int op_count;
@@ -113,6 +114,7 @@ void xh_operator(void) {
         case 3: ASSERT_EQ(op, OP_MUL); break;
         case 4: ASSERT_EQ(op, OP_OR); break;
     }
+    __asm__("clc");
 }
 
 int num_count;
@@ -126,11 +128,13 @@ void xh_number(void) {
         case 1: store_fp0(&result); ASSERT_FLOAT_EQ(result, result_1); break;
         case 2: store_fp0(&result); ASSERT_FLOAT_EQ(result, result_2); break;
     }
+    __asm__("clc");
 }
 
 void xh_string(void) {
     decode_string();
     // Don't do anything with strings
+    __asm__("clc");
 }
 
 int var_count;
@@ -138,7 +142,8 @@ int var_count;
 void xh_variable(void) {
     decode_name();
     ++var_count;
-    ASSERT_EQ(*decode_name_ptr, 'X' | EOT);
+    ASSERT_EQ((unsigned char)*decode_name_ptr, 'X' | EOT);
+    __asm__("clc");
 }
 
 int paren_count;
@@ -149,7 +154,9 @@ void xh_paren(void) {
     decode_expression(decode_xh_vectors);
     // Consume ')'
     decode_byte();
+    __asm__("clc");
 }
+
 
 void* decode_xh_vectors[] = {
     (char*)xh_unary_operator - 1,
