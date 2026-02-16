@@ -46,12 +46,12 @@ exec_on:
         jsr     pop_fp0
         bcs     @error
         jsr     truncate_fp_to_int      ; FP0 -> integer in AX
-        sta     on_value
+        sta     B
         sec                             ; Set carry in case this next check fails
         txa                             ; Check the high byte
         bne     @error                  ; If high byte is set then value is out of range (either <0 or >255)
 @loop:
-        dec     on_value                ; Decrease value sought by 1
+        dec     B                       ; Decrease value sought by 1
         bmi     @zero                   ; If it went negative then it was originally 0
         beq     @found                  ; It was found
         ldy     line_pos                ; Otherwise advance to the next ','
