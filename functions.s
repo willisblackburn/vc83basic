@@ -248,8 +248,8 @@ fun_usr:
 
 fun_val:
         jsr     pop_string              ; Get the argument string
+        jsr     load_s0                 ; Into S0, returns length in A
         sta     D                       ; Store the length into D
-        jsr     load_s0                 ; Into S0
         mvax    #buffer, dst_ptr        ; Copy
         ldax    S0
         ldy     D
