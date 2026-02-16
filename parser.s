@@ -557,6 +557,7 @@ pvm_paren_arg_list:
 ; pvm_print_expression is the particular kind of expression in the PRINT statement.
 
 pvm_print_expression:
+        WS
         TRY @not_comma
         MATCH ','
         ACCEPT pvm_print_expression
