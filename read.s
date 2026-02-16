@@ -40,13 +40,12 @@ exec_read:
 
         jsr     decode_name             ; Read the variable name
         jsr     find_or_add_variable
-        bcs     @done
         lda     decode_name_type        ; Is it a number or a string?
         bne     @string                 ; It's a string
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     string_to_fp            ; Parse the number
-        jsr     @separator
+        jsr     @post_read
         jsr     push_fp0                ; Push FP0 onto the value stack
 
 @assign:
@@ -66,11 +65,11 @@ exec_read:
         ldax    data_line_ptr           ; Point to data line
         ldy     data_line_pos
         jsr     read_string
-        jsr     @separator
+        jsr     @post_read
         jsr     push_string             ; Push result string onto the stack
         jmp     @assign
 
-@separator:
+@post_read:
         bcs     @format_error           ; If we got here with carry set then number or string read failed
         jsr     read_argument_separator
         bcs     @format_error           ; Read something other than separator or EOL
