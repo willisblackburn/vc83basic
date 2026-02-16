@@ -202,7 +202,6 @@ fun_str_s:
         ldax    #buffer                 ; Source
         jsr     copy_y_from
         jmp     push_string
-        rts
 
 fun_usr:
         jsr     pop_fp0                 ; Pop the value
