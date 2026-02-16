@@ -4,9 +4,7 @@
 ; POKE
 
 exec_poke:
-        jsr     evaluate_expression     ; Evaluate address and value
-        inc     line_pos                ; Skip argument separator
-        jsr     evaluate_expression
+        jsr     evaluate_argument_list
         jsr     pop_fp0                 ; Pop the value
         jsr     truncate_fp_to_int      ; Convert into an integer
         pha                             ; Push the low byte; high byte doesn't matter
