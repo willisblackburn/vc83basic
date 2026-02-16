@@ -224,8 +224,7 @@ compact:
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
         plax                            ; Get the size we pushed earlier
-        jsr     copy
-        rts                             ; All done!
+        jmp     copy                    ; All done!
 
 ; Invokes a handler each string in the string heap.
 
