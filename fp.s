@@ -1416,6 +1416,7 @@ fexp:
         lda     FP0e                    ; Now multiply by 2^k, which just means increasing by exponent by k
         adc     E                       ; Leaves carry clear
         sta     FP0e
+        clc
         rts
 
 fsin_x = stack + .sizeof(Float) * 2
