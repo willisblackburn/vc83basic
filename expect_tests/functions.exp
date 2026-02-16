@@ -40,7 +40,7 @@ PRINT LEFT$("HELLO",0)
 test {
 PRINT LEFT$("HELLO",-1)
 } {
-ERROR
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -64,7 +64,7 @@ PRINT RIGHT$("HELLO",0)
 test {
 PRINT RIGHT$("HELLO",-1)
 } {
-ERROR
+ERROR: OUT OF RANGE
 }
 
 test {
@@ -88,19 +88,19 @@ PRINT MID$("HELLO",1,0)
 test {
 PRINT MID$("HELLO",1,-1)
 } {
-ERROR
+ERROR: OUT OF RANGE
 }
 
 test {
 PRINT MID$("HELLO",0,1)
 } {
-ERROR
+ERROR: OUT OF RANGE
 }
 
 test {
 PRINT MID$("HELLO",-1,1)
 } {
-ERROR
+ERROR: OUT OF RANGE
 }
 
 test {
