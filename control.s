@@ -43,8 +43,7 @@ exec_on:
         stax    on_handler              ; Store the handler address
         jsr     evaluate_expression     ; Evaluate the "ON" expression
         inc     line_pos                ; Skip past the terminator
-        jsr     pop_fp0
-        jsr     truncate_fp_to_int      ; FP0 -> integer in AX
+        jsr     pop_int_fp0             ; FP0 -> integer in AX
         sta     on_value
         sec                             ; Set carry in case this next check fails
         txa                             ; Check the high byte

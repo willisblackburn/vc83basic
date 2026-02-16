@@ -199,8 +199,7 @@ find_array_element:
         lda     type_size_table,x       ; Initialize array_element_size to the size of one value of the array's type
         sta     array_element_size
 @next:
-        jsr     pop_fp0                 ; Get the next value off the stack
-        jsr     truncate_fp_to_int      ; Make it an integer; the value is in AX (preserves BC)
+        jsr     pop_int_fp0             ; Get the next value off the stack
         jsr     imul_16                 ; Multiply it by the value in array_element_size
         sta     E                       ; Park low byte in E
         ldy     #0                      ; Read next dimension value starting at name_ptr
@@ -281,8 +280,7 @@ dimension_array:
         stax    array_element_size
 @next:
         sty     E                       ; Preserve current write position relative to name_ptr in E
-        jsr     pop_fp0                 ; Get the next value off the stack (preserves DE)
-        jsr     truncate_fp_to_int      ; Make it an integer; the value is in AX (preserves DE)
+        jsr     pop_int_fp0             ; Get the next value off the stack (preserves DE)
         clc
         adc     #1                      ; Add one because DIM(n) creates n+1 elements from 0 to n
         bcc     @skip_inx

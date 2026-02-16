@@ -7,22 +7,19 @@ fun_abs:
         jmp     push_fp0
 
 fun_adr:
-        jsr     pop_string
-        jsr     load_s0
+        jsr     pop_string_s0
         ldax    S0
         jmp     push_int_fp0
 
 fun_asc:
-        jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
-        jsr     load_s0
+        jsr     pop_string_s0
         ldy     #0
         lda     (S0),y                  ; Get first character of string
         ldx     #0
         jmp     push_int_fp0            ; Push it
 
 fun_chr_s:
-        jsr     pop_fp0                 ; TODO: pop_fp0 + truncate_fp_to_int also common, should be one function
-        jsr     truncate_fp_to_int
+        jsr     pop_int_fp0
         pha                             ; Park the character
         lda     #1                      ; Allocate space for a 1-byte string
         jsr     string_alloc
@@ -63,8 +60,7 @@ fun_right_s:
 
 fun_mid_s:
         jsr     fun_mid_s_setup         ; Requested length in D
-        jsr     pop_fp0                 ; Pop the starting position
-        jsr     truncate_fp_to_int
+        jsr     pop_int_fp0             ; Pop the starting position
         bmi     fun_mid_out_of_range    ; Don't allow negative starting position
         sec
         sbc     #1                      ; Subtract 1 to make it 0-based; carry is already set
@@ -126,8 +122,7 @@ fun_mid_s_setup:
         lda     #255
         jsr     string_alloc            ; Allocate a 255-byte string; if success then we know we can alloc later
         plstaa  string_ptr              ; Restore string_ptr
-        jsr     pop_fp0                 ; Requested length
-        jsr     truncate_fp_to_int      ; Length of string returned in A
+        jsr     pop_int_fp0             ; Length of string returned in A
         bmi     fun_mid_out_of_range    ; Don't allow negative length
         sta     D                       ; Save in D
         rts
@@ -136,8 +131,7 @@ fun_mid_s_setup:
 ; D contains the requested length; limit it to the string length.
 
 fun_mid_s_pop_string:
-        jsr     pop_string
-        jsr     load_s0
+        jsr     pop_string_s0
         sta     E
         cmp     D                       ; Compare string length to requested length
         bcs     @ok                     ; String length >= requested length; okay
@@ -146,14 +140,12 @@ fun_mid_s_pop_string:
         rts
 
 fun_len:
-        jsr     pop_string
-        jsr     load_s0                 ; Length comes back in A, which is what we want
+        jsr     pop_string_s0           ; Length comes back in A, which is what we want
         ldx     #0                      ; High byte is always 0
         jmp     push_int_fp0            ; Push return value
 
 fun_peek:
-        jsr     pop_fp0                 ; Get the argument
-        jsr     truncate_fp_to_int      ; Convert it to an address
+        jsr     pop_int_fp0             ; Get the argument
         stax    BC                      ; Need it to be a pointer
         ldy     #0                      ; Index 0
         lda     (BC),y                  ; Get the value there
@@ -199,11 +191,9 @@ fun_str_s:
         jmp     push_string
 
 fun_usr:
-        jsr     pop_fp0                 ; Pop the value
-        jsr     truncate_fp_to_int      ; Convert it to an integer
+        jsr     pop_int_fp0             ; Pop the value
         stax    DE                      ; Store in DE because pop_fp0 preserves it
-        jsr     pop_fp0                 ; Pop the address
-        jsr     truncate_fp_to_int      ; Convert it to an address
+        jsr     pop_int_fp0             ; Pop the address
         stax    BC                      ; Store it so I can use it as a pointer
         ldax    DE                      ; Recover the value
         jsr     @jump_to_user_function
@@ -213,8 +203,7 @@ fun_usr:
         jmp     (BC)
 
 fun_val:
-        jsr     pop_string              ; Get the argument string
-        jsr     load_s0                 ; Into S0, returns length in A
+        jsr     pop_string_s0           ; Get the argument string into S0, returns length in A
         sta     D                       ; Store the length into D
         mvax    #buffer, dst_ptr        ; Copy
         ldax    S0

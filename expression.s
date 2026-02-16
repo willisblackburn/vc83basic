@@ -256,8 +256,7 @@ op_concat:
         jsr     pop_string              ; Get the second string
         jsr     load_s1                 ; Load into S1
         sta     E                       ; Length of second string in E
-        jsr     pop_string              ; Get first string
-        jsr     load_s0                 ; First string into S0
+        jsr     pop_string_s0           ; Get first string
         sta     D                       ; Length of first string in D
         clc
         adc     E                       ; Get total length of string
@@ -289,8 +288,7 @@ compare_string_values:
         jsr     pop_string              ; Get second string
         jsr     load_s1                 ; Second string into S1
         sta     E                       ; Length of second string in E
-        jsr     pop_string              ; Get first string
-        jsr     load_s0                 ; First string into S0
+        jsr     pop_string_s0           ; Get first string
         sta     D                       ; Length of first string in D
         cmp     E                       ; Compare first string length to second
         bcc     @use_first_string_length
@@ -422,6 +420,10 @@ push_fp0:
         ldy     #>stack                 ; Stack page
         jmp     store_fp0               ; Store FP0 in the AY address
 
+pop_int_fp0:
+        jsr     pop_fp0
+        jmp     truncate_fp_to_int
+
 ; Pops a value from the stack into an FP register.
 ; DE SAFE
 
@@ -448,6 +450,10 @@ push_string:
         lda     string_ptr+1            ; High byte
         sta     stack+Value::string_value_ptr+1,y   ; Carry still clear for return
         rts
+
+pop_string_s0:
+        jsr     pop_string
+        jmp     load_s0
 
 ; Pops the string value from the stack and returns the address in AY.
 ; BC SAFE, DE SAFE
@@ -520,8 +526,6 @@ op_or:
         jmp     finish_logical_op
 
 set_up_logical_op:
-        jsr     pop_fp0
-        jsr     truncate_fp_to_int
+        jsr     pop_int_fp0
         stax    DE                      ; Store returned value in DE
-        jsr     pop_fp0
-        jmp     truncate_fp_to_int
+        jmp     pop_int_fp0
