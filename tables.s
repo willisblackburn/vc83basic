@@ -116,8 +116,7 @@ type_size_table:
         .byte 2                         ; TYPE_STRING
 
 error_message_table:
-        .byte :+ - *, "READY"
-:       .byte :+ - *, "STOPPED"
+        .byte :+ - *, "STOPPED"
 :       .byte :+ - *, "INTERNAL ERROR"
 :       .byte :+ - *, "OUT OF MEMORY"
 :       .byte :+ - *, "TYPE MISMATCH"
@@ -129,13 +128,13 @@ error_message_table:
 :       .byte :+ - *, "NEXT WITHOUT FOR"
 :       .byte :+ - *, "LINE NOT FOUND"
 :       .byte :+ - *, "OUT OF RANGE"
-:       .byte :+ - *, "BAD VARIABLE"
+:       .byte :+ - *, "INVALID VARIABLE"
 :       .byte :+ - *, "ALREADY DIMENSIONED"
 :       .byte :+ - *, "LINE TOO LONG"
 :       .byte :+ - *, "EXPRESSION TOO COMPLEX"
 :       .byte :+ - *, "FORMAT ERROR"
-:       .byte :+ - *, "DIVIDE BY ZERO"
 :       .byte :+ - *, "ARITY MISMATCH"
 :       .byte :+ - *, "SYNTAX ERROR"
 :       .byte :+ - *, "IMMEDIATE MODE STOP"
+:       .byte :+ - *, "DIVIDE BY ZERO"
 :       .byte 0

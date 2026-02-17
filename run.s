@@ -24,11 +24,9 @@ exec_clr:
 ; END statement:
 ; Terminates the program.
 
-.assert PS_READY = 0, error
-
 exec_end:
         mva     #0, resume_line_ptr+1   ; Disable CONT
-        raise   A
+        raise   PS_READY
 
 ; STOP statement:
 ; Stops the program (can be resumed with CONT).
@@ -40,7 +38,7 @@ exec_stop:
         sta     resume_line_ptr+1
         mva     next_line_ptr, resume_line_ptr  ; Note mva not mvaa
         mva     next_line_pos, resume_line_pos
-        raise   PS_STOPPED
+        raise   ERR_STOPPED
 
 ; CONT statement:
 ; Continues the program after STOP.

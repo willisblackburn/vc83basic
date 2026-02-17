@@ -14,7 +14,7 @@ CONT
 } {
 1
 
-STOPPED
+STOPPED AT 20
 2
 }
 
@@ -32,7 +32,7 @@ CONT
 } {
 1
 
-STOPPED
+STOPPED AT 20
 
 READY
 100

@@ -7,16 +7,20 @@ start_length = * - start_message
 free_message: .byte " BYTES FREE"
 free_length = * - free_message
 
+ready_message: .byte "READY"
+ready_message_length = * - ready_message
+
 error_message: .byte "ERROR: "
 error_message_length = * - error_message
 
-error_message_2: .byte " AT LINE "
+error_message_2: .byte " AT "
 error_message_2_length = * - error_message_2
 
 ; Verify that the program states are the affected values so we can use flags.
 
-.assert PS_READY = 0, error
-.assert PS_RUNNING = $80, error
+.assert PS_RUNNING = 0, error
+.assert PS_READY = 1, error
+.assert ERR_STOPPED = $80, error
 
 main:
         jsr     initialize_target
@@ -30,38 +34,14 @@ main:
 ; Exception handler: control reaches here following "raise" or JMP to on_raise.
 
         sta     program_state           ; Whatever comes back from exception handler is new state
-        tay                             ; Prepare to look up the program_state message
-        bmi     @dispatch               ; Program is running; do the next thing
-        mva     good_stack_pos, stack_pos   ; After an error, restore the stack position we saved
-        ldax    #error_message_table
-        jsr     get_name
-        bcs     @get_command            ; Shouldn't happen, but just in case
+        beq     @dispatch               ; Program is running; do the next thing
+        pha                             ; Save the error value and output a newline, which we will need no matter what
         jsr     newline
-        lda     program_state
-        cmp     #ERR_INTERNAL_ERROR
-        bcc     @not_error
-        ldax    #error_message
-        ldy     #error_message_length
+        pla
+        bmi     @error
+        ldax    #ready_message
+        ldy     #ready_message_length
         jsr     write
-@not_error:
-        sec
-        lda     next_name_ptr           ; Length of message is next_name_ptr - name_ptr
-        sbc     name_ptr
-        tay
-        ldax    name_ptr
-        jsr     write
-        ; ldy     #Line::number+1         ; Print line number if >= 0, else we're in immediate mode
-        ; lda     (line_ptr),y
-        ; bmi     @no_line_number
-        ; ldax    #error_message_2
-        ; ldy     #error_message_2_length
-        ; jsr     write
-        ; mva     #0, buffer_pos
-        ; jsr     line_number_to_string
-        ; ldy     buffer_pos
-        ; ldax    #buffer
-        ; jsr     write
-@no_line_number:
         jsr     newline
 
 @get_command:
@@ -106,7 +86,38 @@ main:
         jmp     @dispatch               ; Keep on truckin'
 
 @error:
-        raise   ERR_INTERNAL_ERROR
+        mvx     good_stack_pos, stack_pos   ; After an error, restore the stack position we saved
+        and     #$7F                    ; Clear the high bit
+        beq     @not_error              ; For STOPPED we don't print "ERROR"
+        pha                             ; Save the error value again
+        ldax    #error_message
+        ldy     #error_message_length
+        jsr     write
+        pla     
+@not_error:
+        tay                             ; Prepare to look up the program_state message
+        ldax    #error_message_table
+        jsr     get_name
+        sec
+        lda     next_name_ptr           ; Length of message is next_name_ptr - name_ptr
+        sbc     name_ptr
+        tay
+        ldax    name_ptr
+        jsr     write
+        ldy     #Line::number+1         ; Print line number if >= 0, else we're in immediate mode
+        lda     (line_ptr),y
+        bmi     @no_line_number
+        ldax    #error_message_2
+        ldy     #error_message_2_length
+        jsr     write
+        mva     #0, buffer_pos
+        jsr     line_number_to_string
+        ldy     buffer_pos
+        ldax    #buffer
+        jsr     write
+@no_line_number:
+        jsr     newline
+        jmp     @get_command
 
 ; Decodes and executes one statement from the token stream.
 
