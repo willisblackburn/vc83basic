@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "test.h"
 
 void add_string_variable_with_name(const char* name, const String* value) {
