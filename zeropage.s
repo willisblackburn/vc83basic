@@ -1,5 +1,3 @@
-.include "basic.inc"
-
 ; Zero page data
 
 .zeropage
@@ -38,3 +36,5 @@ buffer_pos: .res 1
 
 ; The line number sought by find_line
 line_number: .res 2
+
+.code
