@@ -3,7 +3,7 @@
 ; SPDX-License-Identifier: MIT
 
 ; cc65 runtime
-.importzp sp
+.importzp c_sp
 
 ; sim65 vectors
 .import exit
@@ -14,6 +14,9 @@
 
 .import buffer, buffer_length
 .import readline, write, newline, putch
+
+; Must export startup so the linker can find it.
+.export startup
 
 .segment "STARTUP"
 
@@ -29,8 +32,8 @@ startup:
         txs                             ; Initialize the stack to $FF
         lda     #<(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
         ldx     #>(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__)
-        sta     sp
-        stx     sp+1                    ; Set up C stack
+        sta     c_sp
+        stx     c_sp+1                  ; Set up C stack
         lda     #<message               ; Print message
         ldx     #>message       
         ldy     #message_length
