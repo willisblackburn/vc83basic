@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source

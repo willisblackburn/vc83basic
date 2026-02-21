@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 start_message: .byte "VC83 BASIC <> "
 start_length = * - start_message
@@ -17,7 +15,9 @@ error_message_length = * - error_message
 .assert PS_STOPPED = 0, error
 .assert PS_RUNNING = 1, error
 
-main:
+.export _main
+_main:
+main := _main
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
@@ -43,7 +43,7 @@ main:
         mva     next_line_pos, line_pos
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
-        jsr     dispatch_statement
+        jsr     exec_statement
         bcc     @loop
 @error:
         jsr     print_error
@@ -75,35 +75,6 @@ main:
         ldax    #line_buffer            ; Reset next_line_ptr to line_buffer
         jsr     reset_next_line_ptr_2
         bne     @dispatch               ; Unconditional
-
-; Decodes and executes one statement from the token stream.
-
-dispatch_statement:
-        jsr     decode_byte             ; Get statement number
-        tay
-        ldax    #statement_exec_vectors
-        jmp     invoke_indexed_vector
-
-statement_exec_vectors:
-        .word   exec_end-1
-        .word   exec_run-1
-        .word   exec_print-1
-        .word   exec_let-1
-        .word   exec_input-1
-        .word   exec_list-1
-        .word   exec_goto-1
-        .word   exec_gosub-1
-        .word   exec_return-1
-        .word   exec_pop-1
-        .word   exec_on_goto-1
-        .word   exec_on_gosub-1
-        .word   exec_for-1
-        .word   exec_next-1
-        .word   exec_stop-1
-        .word   exec_cont-1
-        .word   exec_if-1
-        .word   exec_new-1
-        .word   exec_clr-1
 
 print_start:
         ldax    #start_message
