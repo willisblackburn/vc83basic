@@ -7,12 +7,10 @@ ready_message_length = * - ready_message
 error_message: .byte "ERROR"
 error_message_length = * - error_message
 
-keyword_run: .byte 'R', 'U', 'N'+$80
-keyword_print: .byte 'P', 'R', 'I', 'N', 'T'+$80
+keyword_run: .byte 'R', 'U', 'N' | $80
+keyword_print: .byte 'P', 'R', 'I', 'N', 'T' | $80
 
-.export _main
-_main:
-main := _main
+main:
         jsr     initialize_target
         jsr     initialize_program
 @ready:
