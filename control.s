@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; stack must be page-aligned
 .assert <stack = 0, error
