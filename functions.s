@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 fun_adr:
         jsr     pop_string
