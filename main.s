@@ -18,9 +18,7 @@ error_message_length = * - error_message
 .assert PS_STOPPED = 0, error
 .assert PS_RUNNING = 1, error
 
-.export _main
-_main:
-main := _main
+main:
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
