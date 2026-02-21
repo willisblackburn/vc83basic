@@ -1266,7 +1266,8 @@ fneg:
 ; AY = pointer to the value
 
 fcmp:
-        jsr     load_fp1        
+        jsr     load_fp1  
+fcmp_2:      
         lda     FP1s                    ; Sign of FP1 (note registers 0 and 1 are reversed here)
         cmp     FP0s                    ; Subtract sign of FP0
         beq     @same_sign              ; If same sign then continue
@@ -1454,29 +1455,20 @@ fsin:
         lday    #fsin_x                 ; Go get the original argument
         jsr     load_fp0                ; Load it into FP0
         jsr     fsub_2                  ; Subtract giving the remainder of x/2pi
-
         lda     FP0s                    ; Save sign of remainder
         pha
         mva     #0, FP0s                ; Take absolute value
-        
         lday    #fp_pi                  ; Load pi/2 into FP1
         jsr     load_fp1
         dec     FP1e
-        lday    #fpoly_x                ; Temporarily store pi/2 in fpoly_x (safe here, it gets clobbered later anyway)
-        jsr     store_fp1
-        
-        lday    #fpoly_x                ; Point ay to pi/2
-        jsr     fcmp                    ; Compare |remainder| with pi/2
+        jsr     fcmp_2                  ; Compare |remainder| with pi/2
         bcc     @no_fold                ; If |remainder| < pi/2, don't fold
-
 @fold:
         pla
         sta     FP0s                    ; Restore original sign
-
         inc     FP1e                    ; FP1 is now pi
         lda     FP0s
         sta     FP1s                    ; FP1 is now sign(x') * pi
-
         jsr     fneg                    ; FP0 = -remainder
         jsr     fadd_2                  ; FP0 = sign(x') * pi - remainder
         jmp     @apply_poly
