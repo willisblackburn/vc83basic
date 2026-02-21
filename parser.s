@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.

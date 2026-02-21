@@ -1,39 +1,44 @@
-SOURCES = init.s io.s main.s parser.s program.s startup.s util.s zeropage.s
-OBJECTS = $(SOURCES:.s=.o)
+TARGETS = sim6502
+TEST_TARGET = sim6502
 
-TEST_COMMON_SOURCES = c_wrappers.s
-TEST_COMMON_OBJECTS = $(TEST_COMMON_SOURCES:.s=.o)
-TEST_SOURCES = parser_test.c program_test.c util_test.c
-TEST_OBJECTS = $(TEST_SOURCES:.c=.o)
-TESTS = $(TEST_SOURCES:.c=)
-RUN_TESTS = $(addsuffix .run, $(TESTS))
+TESTS = parser_test program_test util_test
 
-TARGET = -t sim6502
+ASMFLAGS = --create-dep $(@:.o=.d)
+CFLAGS = --create-dep $(@:.o=.d)
+LDFLAGS = -m $@.map
 
-all: basic $(TESTS)
+all: $(addprefix basic_,$(TARGETS))
 
-basic: $(OBJECTS)
-	cl65 $(TARGET) -m $@.map -o $@ $^
+# Goal: basic_sim6502
+basic_sim6502: basic_sim6502.s basic.inc
+	cl65 -t sim6502 $(LDFLAGS) -o $@ $<
 
-test: $(RUN_TESTS)
+# Tests
+test: $(addprefix run_,$(TESTS))
 
-$(TESTS): %: %.o $(TEST_COMMON_OBJECTS) $(filter-out startup.o, $(OBJECTS))
-	cl65 $(TARGET) -m $@.map -o $@ $^
+define create-test
+run_$1: $1
+	sim65 $1
 
-$(RUN_TESTS): %.run: %
-	sim65 $^
+$1: $1.o basic_tests.o
+	cl65 -t $(TEST_TARGET) $(LDFLAGS) -o $$@ $$^
 
-%.o: %.s
-	cl65 -c $(TARGET) --create-dep $(<:.s=.d) -o $@ $<
+clean::
+	rm -f $1
+endef
+
+$(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
+
+# Object files for tests
+basic_tests.o: basic_tests.s basic.inc
+	cl65 -t $(TEST_TARGET) -c $(ASMFLAGS) -o $@ $<
 
 %.o: %.c
-	cl65 -c $(TARGET) --create-dep $(<:.c=.d) -o $@ $<
+	cl65 -t $(TEST_TARGET) -c $(CFLAGS) -o $@ $<
 
-ifneq ($(MAKECMDGOALS), clean)
--include $(SOURCES:.s=.d)
--include $(TEST_COMMON_SOURCES:.s=.d)
--include $(TEST_SOURCES:.c=.d)
-endif
+.PHONY: all test clean
 
-clean:
-	rm -f basic $(TESTS) *.o *.d *.map
+clean::
+	rm -f $(addprefix basic_,$(TARGETS)) basic_tests.o *.o *.d *.map
+
+-include *.d

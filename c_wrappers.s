@@ -7,9 +7,6 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
-.include "macros.inc"
-.include "basic.inc"
-
 ; Aliases for globals
 
 .export _buffer_pos = buffer_pos
@@ -133,3 +130,5 @@ _div10:
         jsr     div10
         sty     _reg_y                  ; Save remainder
         rts
+
+.code

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stddef.h>
 
 // Types
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in

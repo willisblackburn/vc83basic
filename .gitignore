@@ -4,5 +4,6 @@
 *.o
 *.d
 *.map
-basic
+basic_apple2
+basic_sim6502
 *_test
