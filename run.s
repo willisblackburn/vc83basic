@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; RUN statement:
 ; Executes the program.
