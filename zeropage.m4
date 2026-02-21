@@ -1,3 +1,7 @@
+dnl SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+dnl
+dnl SPDX-License-Identifier: MIT
+
 ifelse(
     OUTPUT, `s', `
 .zeropage

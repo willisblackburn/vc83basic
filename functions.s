@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 fun_asc:
         jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
