@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 evaluate_vectors:
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP
