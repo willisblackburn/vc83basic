@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; Initializes a new program.
 ; Inserts an empty zero-length line -1 into the program space.

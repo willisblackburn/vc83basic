@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+#
+# SPDX-License-Identifier: MIT
+
 TARGETS = sim6502 apple2
 TEST_TARGET = sim6502
 
