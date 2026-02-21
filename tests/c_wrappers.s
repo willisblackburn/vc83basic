@@ -1,3 +1,7 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
+
 ; Wrappers around assembly language functions to make them callable from C.
 ; The assembly language functions don't use the C stack, so the wrapper functions
 ; pop arguments from the C stack and put them in the right places before calling
