@@ -7,9 +7,7 @@ ready_message_length = * - ready_message
 error_message: .byte "ERROR"
 error_message_length = * - error_message
 
-.export _main
-_main:
-main := _main
+main:
         jsr     initialize_target
         jsr     initialize_program
 @ready:
