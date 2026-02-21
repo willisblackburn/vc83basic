@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; Functions that decode the tokenized program for display on the console.
 ; Most functions decode from the line pointed to by line_ptr, using line_pos as the read position,
