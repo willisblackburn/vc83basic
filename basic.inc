@@ -55,7 +55,7 @@
 
 ; Zero Page
 
-.include "zeropage.inc"
+.include "zeropage.s"
 
 BC = B
 DE = D
@@ -86,8 +86,6 @@ S1 = FPX+2
 .include "input.s"
 .include "let.s"
 .include "list.s"
+.include "main.s"
 .include "print.s"
 .include "run.s"
-
-; Zero Page definitions
-.include "zeropage.s"
