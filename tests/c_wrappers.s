@@ -7,8 +7,6 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
-.include "../macros.inc"
-.include "../basic.inc"
 
 .bss
 
@@ -531,3 +529,5 @@ _invoke_indexed_vector:
         jsr     popax                   ; Address of vector array
         ldy     B      
         jmp     invoke_indexed_vector
+
+.code

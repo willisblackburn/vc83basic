@@ -5,7 +5,8 @@
 *.d
 *.dbg
 *.map
-basic_*
+basic_apple2
+basic_sim6502
 *_test
 constants.inc
 constants.h

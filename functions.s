@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 fun_abs:
         jsr     pop_fp0

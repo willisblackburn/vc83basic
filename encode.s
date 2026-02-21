@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Functions in this module are only used when parsing program lines and are optimzed for space over speed.
 ; All functions write to the output buffer at index line_pos and update line_pos.

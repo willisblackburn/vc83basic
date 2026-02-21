@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Matches the input against names from a table.
 ; Each name table entry consists of a length (one byte if in the range 0-127, otherwise two bytes, high byte first),
@@ -213,10 +211,10 @@ find_array_element:
         txa                             ; Compare the multiplication result (currently in EX) with the limit
         cmp     array_element_size+1    ; Result high byte < limit high byte?
         bcc     @ok                     ; <
-        bne     out_of_range            ; >, otherwise =
+        bne     name_out_of_range            ; >, otherwise =
         lda     E                       ; Same with low byte
         cmp     array_element_size
-        bcs     out_of_range            ; >=
+        bcs     name_out_of_range            ; >=
 @ok:
         lda     E                       ; Result still in EX; make sure we have low byte of result in A
         adc     array_element_offset    ; Add result to array_element_offset; carry will always be clear
@@ -235,7 +233,7 @@ find_array_element:
         sta     name_ptr+1
         rts
 
-out_of_range:
+name_out_of_range:
         raise   ERR_OUT_OF_RANGE
 
 ARRAY_TRIAL_GROW_SIZE = $80
@@ -288,8 +286,8 @@ dimension_array:
         inx
 @skip_inx:
         jsr     imul_16                 ; Multiply the current element size by the new value
-        bcs     out_of_range            ; Size >= 64K
-        bmi     out_of_range            ; Size >= 32K
+        bcs     name_out_of_range            ; Size >= 64K
+        bmi     name_out_of_range            ; Size >= 32K
         stax    array_element_size
         ldy     E                       ; Write position
         sta     (name_ptr),y            ; The value we're writing is the size of the array so far
@@ -322,7 +320,7 @@ dimension_array:
         tay                             ; Will need 0 in Y too
         adc     array_element_size+1
         sta     size+1
-        bmi     out_of_range            ; It can't be >= 64K but might be >= 32K
+        bmi     name_out_of_range            ; It can't be >= 64K but might be >= 32K
         ora     #$80                    ; High bit was clear before; now it's set
         sta     (dst_ptr),y             ; Store high byte of length with high bit set
         iny

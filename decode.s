@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Functions to decode values from the token stream.
 ; For all functions, line_pos is the read position in line_ptr.
