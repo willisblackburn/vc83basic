@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 fun_asc:
         jsr     pop_string              ; TODO: pop_string + load_s0 is common and should be one function
