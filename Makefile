@@ -16,11 +16,11 @@ all: $(addprefix basic_,$(TARGETS))
 
 # Goal: basic_sim6502
 basic_sim6502: basic_sim6502.s basic.inc constants.inc zeropage.inc zeropage.s
-	cl65 -C sim6502/sim6502.cfg $(LDFLAGS) -o $@ $< sim6502.lib
+	cl65 -t sim6502 -C sim6502/sim6502.cfg $(LDFLAGS) -o $@ $<
 
 # Goal: basic_apple2
 basic_apple2: basic_apple2.s basic.inc constants.inc zeropage.inc zeropage.s
-	cl65 -C apple2/apple2.cfg $(LDFLAGS) -o $@ $< apple2.lib
+	cl65 -t apple2 -C apple2/apple2.cfg $(LDFLAGS) -o $@ $<
 
 # Rules for building the constants files:
 constants.inc: constants.m4
