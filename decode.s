@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; Functions to decode values from the token stream.
 ; For all functions, line_pos is the read position in line_ptr.
