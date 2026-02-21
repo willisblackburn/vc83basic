@@ -23,9 +23,7 @@ error_message_2_length = * - error_message_2
 .assert PS_READY = 1, error
 .assert ERR_STOPPED = $80, error
 
-.export _main
-_main:
-main := _main
+main:
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
