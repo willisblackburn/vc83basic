@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 start_message: .byte "VC83 BASIC <> "
 start_length = * - start_message
@@ -17,7 +15,9 @@ error_message_length = * - error_message
 .assert PS_STOPPED = 0, error
 .assert PS_RUNNING = 1, error
 
-main:
+.export _main
+_main:
+main := _main
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
@@ -73,25 +73,7 @@ main:
         jsr     advance_next_line_ptr   ; Tee up next line
 
         mva     #PS_RUNNING, program_state  ; Set the program state to RUNNING
-        bne     @dispatch
-
-statement_exec_vectors:
-        .word   exec_end-1
-        .word   exec_run-1
-        .word   exec_print-1
-        .word   exec_let-1
-        .word   exec_input-1
-        .word   exec_list-1
-        .word   exec_goto-1
-        .word   exec_gosub-1
-        .word   exec_return-1
-        .word   exec_pop-1
-        .word   exec_on_goto-1
-        .word   exec_on_gosub-1
-        .word   exec_for-1
-        .word   exec_next-1
-        .word   exec_stop-1
-        .word   exec_cont-1
+        bne     @dispatch               ; Unconditional
 
 print_start:
         ldax    #start_message
