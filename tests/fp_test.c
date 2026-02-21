@@ -793,22 +793,22 @@ const FunctionTestCase fsin_test_cases[] = {
     // sin(0) = 0
     { { 0x00000000,   0 }, { 0x00000000,   0 } },
     // sin(pi/2) = 1
-    { { 0x490FDA9E, 128 }, { 0x00001053, 128 } }, // Should be 1, is almost exactly 1
+    { { 0x490FDA9E, 128 }, { 0x00000002, 128 } }, // Should be 1, is almost exactly 1
     // sin(pi) = 0
     { { 0x490FDA9E, 129 }, { 0xB1D00000, 109 } }, // Should be 0, is extremely close to 0
     // sin(3pi/2) = -1
-    { { 0x16CBE3F7, 130 }, { 0x80001054, 128 } }, // Should be -1, is almost exactly -1
+    { { 0x16CBE3F7, 130 }, { 0x80000002, 128 } }, // Should be -1, is almost exactly -1
 };
 
 TEST_FUNCTION(fsin);
 
 const FunctionTestCase fcos_test_cases[] = {
     // cos(0) = 1
-    { { 0x00000000,   0 }, { 0x00001053, 128 } }, // Should be 1, is almost exactly 1
+    { { 0x00000000,   0 }, { 0x00000001, 128 } }, // Should be 1, is almost exactly 1
     // cos(pi/2) = 0
     { { 0x490FDA9E, 128 }, { 0xB1E00000, 108 } }, // Should be 0, is extremely close to 0
     // cos(pi) = -1
-    { { 0x490FDA9E, 129 }, { 0x80001055, 128 } }, // Should be -1, is almost exactly -1
+    { { 0x490FDA9E, 129 }, { 0xFFFFFFFE, 127 } }, // Should be -1, is almost exactly -1
     // cos(3pi/2) = 0
     { { 0x16CBE3F7, 130 }, { 0x05600000, 110 } }, // Should be 0, is 0.0000003974884749
 };
@@ -818,7 +818,7 @@ TEST_FUNCTION(fcos);
 const FunctionTestCase ftan_test_cases[] = {
     { { 0x00000000, 0 }, { 0x00000000, 0 } }, // tan(0) = 0.0
     { { 0x490FDAA2, 127 }, { 0x00000B20, 128 } }, // tan(pi/4) = 1.0 (approx)
-    { { 0x00000000, 128 }, { 0x47594065, 128 } }, // tan(1.0) = 1.5574077246549022
+    { { 0x00000000, 128 }, { 0x47593DE5, 128 } }, // tan(1.0) = 1.5574077246549022
 };
 
 TEST_FUNCTION(ftan);

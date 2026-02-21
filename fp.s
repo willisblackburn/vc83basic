@@ -1418,13 +1418,14 @@ ftan_cos_x = stack + .sizeof(Float) * 4
 
 ; These coefficients are the Minimax (Chebyshev) polynomial fit for sine evaluated over [-pi/2, pi/2].
 ; They replace the traditional Taylor series coefficients (1/3!, 1/5!, etc.) to minimize the maximum error 
-; across the entire quarter-circle range. For example, C3 is -0.166666566 instead of -0.166666666 (-1/6).
+; across the entire quarter-circle range.
 fp_sin_coefficients:
-        .byte $00, $8F, $D1, $2E, 109   ; C9:  0.000002605
-        .byte $00, $16, $B2, $CF, 115   ; C7: -0.000198074
-        .byte $00, $02, $88, $08, 121   ; C5:  0.008333208
-        .byte $00, $A4, $AA, $AA, 125   ; C3: -0.166666566
-        .byte $00, $00, $00, $00, 128   ; C1:  1.000000000
+        .byte $12, $E6, $D8, $CE, 102   ; C11: -0.000000024080
+        .byte $BF, $48, $CB, $38, 109   ; C9: 0.000002753646
+        .byte $DD, $82, $0C, $D0, 115   ; C7: -0.000198410866
+        .byte $ED, $87, $88, $08, 121   ; C5: 0.008333332769
+        .byte $AA, $AA, $AA, $AA, 125   ; C3: -0.166666666639
+        .byte $00, $00, $00, $00, 128   ; C1: 1.000000000000
 
 ; Calcuates the cosine of the value in FP0.
 ; This is just the sine of FP0 value plus pi/2.
@@ -1479,7 +1480,7 @@ fsin:
 
 @apply_poly:
         ldax    #fp_sin_coefficients    ; Apply Chebyshev series
-        ldy     #5                      ; Loop count for 5 Chebyshev coefficients
+        ldy     #6                      ; Loop count for 6 Chebyshev coefficients
         jmp     fpoly_odd
 
 ; Calculates the tangent of the value in FP0 as sin/cos.
