@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; We treat this as zero.
 .assert PS_STOPPED = 0, error
