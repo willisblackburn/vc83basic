@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "test.h"
 
 void call_parse_name(const char* s, char set_buffer_pos, const char* expect_line_data, size_t expect_line_data_size,

@@ -1,3 +1,7 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
+
 ; cc65 runtime
 .import push0, push1, pushax, pusha0
 
