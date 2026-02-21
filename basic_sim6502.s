@@ -6,4 +6,3 @@
 .include "startup.s"
 .include "init.s"
 .include "io.s"
-.include "main.s"
