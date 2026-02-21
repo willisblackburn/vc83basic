@@ -1,0 +1,6 @@
+.include "basic.inc"
+.include "apple2/apple2.inc"
+.include "apple2/apple2_startup.s"
+.include "apple2/apple2_init.s"
+.include "apple2/apple2_io.s"
+.include "main.s"

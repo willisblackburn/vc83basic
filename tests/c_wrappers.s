@@ -7,8 +7,6 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
-.include "../macros.inc"
-.include "../basic.inc"
 
 .bss
 
@@ -399,3 +397,5 @@ _read_number:
 _format_number:
 .export _format_number
         jmp     format_number
+
+.code
