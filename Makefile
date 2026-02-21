@@ -15,11 +15,11 @@ LDFLAGS = -m $@.map
 all: $(addprefix basic_,$(TARGETS))
 
 # Goal: basic_sim6502
-basic_sim6502: basic_sim6502.s basic.inc constants.inc zeropage.inc zeropage.s
+basic_sim6502: basic_sim6502.s basic.inc constants.inc zeropage.s
 	cl65 -t sim6502 -C sim6502/sim6502.cfg $(LDFLAGS) -o $@ $<
 
 # Goal: basic_apple2
-basic_apple2: basic_apple2.s basic.inc constants.inc zeropage.inc zeropage.s
+basic_apple2: basic_apple2.s basic.inc constants.inc zeropage.s
 	cl65 -t apple2 -C apple2/apple2.cfg $(LDFLAGS) -o $@ $<
 
 # Rules for building the constants files:
@@ -32,9 +32,6 @@ constants.h: constants.m4
 # Rules for building the zero page files:
 zeropage.s: zeropage.m4
 	m4 -DOUTPUT=s $< >$@
-
-zeropage.inc: zeropage.m4
-	m4 -DOUTPUT=inc $< >$@
 
 zeropage.h: zeropage.m4
 	m4 -DOUTPUT=h $< >$@
@@ -66,7 +63,7 @@ endef
 $(foreach TEST,$(EXPECT_TESTS),$(eval $(call create-expect-test,$(TEST))))
 
 # Object files for tests
-basic_tests.o: basic_tests.s basic.inc constants.inc zeropage.inc zeropage.s
+basic_tests.o: basic_tests.s basic.inc constants.inc zeropage.s
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(ASMFLAGS) -o $@ $<
 
 tests/%.o: tests/%.c constants.h zeropage.h tests/test.h
@@ -75,6 +72,6 @@ tests/%.o: tests/%.c constants.h zeropage.h tests/test.h
 .PHONY: all test expect_test clean
 
 clean::
-	rm -f $(addprefix basic_,$(TARGETS)) basic_tests.o constants.inc constants.h zeropage.s zeropage.inc zeropage.h *.o *.d *.map tests/*.o tests/*.d tests/*.map tests/*.dbg
+	rm -f $(addprefix basic_,$(TARGETS)) basic_tests.o constants.inc constants.h zeropage.s zeropage.h *.o *.d *.map tests/*.o tests/*.d tests/*.map tests/*.dbg
 
 -include *.d tests/*.d
