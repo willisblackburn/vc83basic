@@ -1,3 +1,6 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
 
 ; Reads a number from the buffer.
 ; If the first character is not a number, then return an error. Otherwise, read up to the first non-digit.
