@@ -23,6 +23,8 @@ BUFFER_SIZE = 256
 
 ; Zero Page
 
+.include "zeropage.s"
+
 .globalzp B
 .globalzp BC
 .globalzp C
@@ -41,9 +43,7 @@ BUFFER_SIZE = 256
 .globalzp src_ptr
 
 ; Core files
+.include "main.s"
 .include "util.s"
 .include "parser.s"
 .include "program.s"
-
-; Zero Page definitions
-.include "zeropage.s"
