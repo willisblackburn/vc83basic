@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; GOTO statement:
 
@@ -186,7 +184,7 @@ exec_if:
         txa                             ; Transfer high byte into X
         ora     B                       ; Or the high and low bytes together
         beq     @done                   ; If zero then don't execute the THEN
-        jsr     dispatch_statement      ; Otherwise execute the THEN
+        jsr     exec_statement          ; Otherwise execute the THEN
 @done:
         clc
         rts
