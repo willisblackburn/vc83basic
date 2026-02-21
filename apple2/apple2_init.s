@@ -1,5 +1,3 @@
-.include "../macros.inc"
-.include "../basic.inc"
 
 initialize_target:
         rts
@@ -8,3 +6,5 @@ initialize_target:
 
 buffer := $200
 line_buffer := $300
+
+.code

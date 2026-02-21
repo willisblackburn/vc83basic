@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Gets the value for an expression and returns it in AX.
 
