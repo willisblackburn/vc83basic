@@ -16,6 +16,9 @@ exec_list:
         ldphaa  next_line_ptr
         ldpha   next_line_pos
         jsr     reset_next_line_ptr
+        lda     #$FF
+        sta     line_number             ; Set line number to max in case user did not provide arguments
+        sta     line_number+1
         ldy     line_pos                ; Look to see if there are arguments
         lda     (line_ptr),y
         beq     @next_line              ; Nothing after LIST, just go
