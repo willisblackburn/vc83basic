@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 evaluate_vectors:
         .word   evaluate_unary_operator-1   ; XH_UNARY_OP

@@ -1,4 +1,3 @@
-.include "basic.inc"
 
 statement_name_table:
         .byte   :+ - *, 'R', 'U', 'N' | EOT
