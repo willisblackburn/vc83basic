@@ -1,3 +1,12 @@
+.include "macros.inc"
+
+; Linker-defined symbols
+.import __MAIN_START__, __MAIN_SIZE__
+.import __BSS_RUN__, __BSS_SIZE__
+.import __STACKSIZE__
+
+.segment "CODE"
+
 .include "constants.inc"
 
 ; Data structures
@@ -15,88 +24,20 @@
 BC = B
 DE = D
 
-; Data
+; Core files
+.include "util.s"
+.include "tables.s"
+.include "name.s"
+.include "parser.s"
+.include "decode.s"
+.include "encode.s"
+.include "expression.s"
+.include "program.s"
+.include "input.s"
+.include "let.s"
+.include "list.s"
+.include "print.s"
+.include "run.s"
 
-.global buffer
-.global line_buffer
-
-; Functions
-
-; decode.s
-.global decode_number
-.global decode_name
-.global decode_byte
-
-; encode.s
-.global encode_zero
-.global encode_byte
-
-; expression.s
-.global evaluate_expression
-
-; input.s
-.global exec_input
-
-; let.s
-.global exec_let
-.global assign_variable
-
-; list.s
-.global exec_list
-.global list_line
-.global list_statement
-.global list_directive
-
-; main.s
-.global main
-
-; name.s
-.global find_name
-.global match_name
-.global advance_name_ptr
-.global rebase_name_ptr
-.global find_or_add_variable
-.global add_variable
-
-; parser.s
-.global parse_line
-.global parse_statement
-.global parse_directive
-.global parse_expression
-.global parse_name
-.global parse_number
-.global parse_argument_separator
-
-; print.s
-.global exec_print
-
-; program.s
-.global initialize_program
-.global reset_program_state
-.global reset_line_ptr
-.global append_null_line
-.global find_line
-.global advance_line_ptr
-.global insert_or_update_line
-.global grow, grow_a, shrink, shrink_a
-
-; run.s
-.global exec_run
-.global run_line
-.global invoke_statement_handler
-
-; tables.s
-.global statement_name_table
-
-; util.s
-.global copy, copy_a, copy_y_from
-.global reverse_copy
-.global clear_memory
-.global mul2a, mul2, mul10, div10
-.global invoke_indexed_vector
-.global read_number, char_to_digit
-.global format_number
-.global find_printable_character
-
-; target/*
-.global startup, initialize_target, readline, write, putch, newline
+; Zero Page definitions
+.include "zeropage.s"
