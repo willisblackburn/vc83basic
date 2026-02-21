@@ -12,13 +12,13 @@ test "PRINT SIN(1)\n" "0.841470985\n"
 
 # COS
 
-test "PRINT COS(0)\n" "0.999999945\n"
-test "PRINT COS(1)\n" "0.540270075\n"
+test "PRINT COS(0)\n" "1\n"
+test "PRINT COS(1)\n" "0.540301189\n"
 
 # TAN
 
 test "PRINT TAN(0)\n" "0\n"
-test "PRINT TAN(1)\n" "1.557500635\n"
+test "PRINT TAN(1)\n" "1.557410943\n"
 
 # ATN
 
