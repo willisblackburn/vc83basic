@@ -1,0 +1,26 @@
+version = 1
+
+[[annotations]]
+path = ".gitignore"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
+path = "PREVIOUS_BRANCH"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
+path = "backport.py"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
+path = "basic.ebnf"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
+path = "checksemis.py"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
