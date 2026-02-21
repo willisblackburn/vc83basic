@@ -7,8 +7,6 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
-.include "../macros.inc"
-.include "../basic.inc"
 
 .bss
 
@@ -502,3 +500,5 @@ _skip_whitespace:
         jsr     skip_whitespace
         sty     _Y
         jmp     set_err
+
+.code

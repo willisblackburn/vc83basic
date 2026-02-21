@@ -1,6 +1,4 @@
-.include "apple2.inc"
-.include "../macros.inc"
-.include "../basic.inc"
+
 
 .segment "STARTUP"
 
@@ -10,7 +8,7 @@ startup:
         txs                             ; Initialize the stack to $FF
         jsr     initialize_once     
         jsr     HOME                    ; Clear screen
-        jsr     main        
+        jsr     _main        
         jmp     DOSWARM                 ; Exit to resident program
         
 .segment "ONCE"     

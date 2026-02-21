@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Loads a string into one of the two S registers.
 ; Returns length in A and a pointer to the string data in the selected S register: either S0 for load_s0, or S1

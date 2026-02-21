@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 start_message: .byte "VC83 BASIC <> "
 start_length = * - start_message
@@ -22,7 +20,9 @@ error_message_2_length = * - error_message_2
 .assert PS_READY = 1, error
 .assert ERR_STOPPED = $80, error
 
-main:
+.export _main
+_main:
+main := _main
         jsr     initialize_target
         jsr     initialize_program
         jsr     print_start
@@ -117,40 +117,6 @@ main:
 @no_line_number:
         jsr     newline
         jmp     @get_command
-
-; Decodes and executes one statement from the token stream.
-
-exec_statement:
-        jsr     decode_byte             ; Get statement number
-        tay
-        ldax    #statement_exec_vectors
-        jmp     invoke_indexed_vector
-
-statement_exec_vectors:
-        .word   exec_end-1
-        .word   exec_run-1
-        .word   exec_print-1
-        .word   exec_let-1
-        .word   exec_input-1
-        .word   exec_list-1
-        .word   exec_goto-1
-        .word   exec_gosub-1
-        .word   exec_return-1
-        .word   exec_pop-1
-        .word   exec_on_goto_gosub-1
-        .word   exec_for-1
-        .word   exec_next-1
-        .word   exec_stop-1
-        .word   exec_cont-1
-        .word   exec_if-1
-        .word   exec_new-1
-        .word   exec_clr-1
-        .word   exec_dim-1
-        .word   exec_rem-1
-        .word   exec_data-1
-        .word   exec_read-1
-        .word   exec_restore-1
-        .word   exec_poke-1
 
 print_start:
         ldax    #start_message

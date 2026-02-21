@@ -1,4 +1,3 @@
-.include "basic.inc"
 
 function_arity_table:
         .byte   1   ; LEN
