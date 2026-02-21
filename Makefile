@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+#
+# SPDX-License-Identifier: MIT
+
 SOURCES = io.s startup.s
 OBJECTS = $(SOURCES:.s=.o)
 
