@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; stack must be page-aligned
 .assert <stack = 0, error

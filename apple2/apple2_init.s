@@ -1,5 +1,3 @@
-.include "../macros.inc"
-.include "../basic.inc"
 
 initialize_target:
         rts
@@ -18,3 +16,5 @@ line_buffer: .res BUFFER_SIZE
 stack := $300
 ; Operator stack
 op_stack := $300 + PRIMARY_STACK_SIZE
+
+.code

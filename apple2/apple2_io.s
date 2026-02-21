@@ -1,6 +1,4 @@
-.include "apple2.inc"
-.include "../macros.inc"
-.include "../basic.inc"
+
 
 newline = CROUT
 
@@ -38,4 +36,6 @@ write:
 putch:
         ora     #$80
         jmp     COUT
+
+.code
         
