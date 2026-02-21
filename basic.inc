@@ -23,7 +23,7 @@
 
 ; Zero Page
 
-.include "zeropage.inc"
+.include "zeropage.s"
 
 BC = B
 DE = D
@@ -38,8 +38,6 @@ DE = D
 .include "expression.s"
 .include "program.s"
 .include "let.s"
+.include "main.s"
 .include "print.s"
 .include "run.s"
-
-; Zero Page definitions
-.include "zeropage.s"
