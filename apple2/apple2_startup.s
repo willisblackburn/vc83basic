@@ -2,6 +2,8 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+; Must export startup so the linker can find it.
+.export startup
 
 .segment "STARTUP"
 
@@ -11,7 +13,7 @@ startup:
         txs                             ; Initialize the stack to $FF
         jsr     initialize_once     
         jsr     HOME                    ; Clear screen
-        jsr     _main        
+        jsr     main        
         jmp     DOSWARM                 ; Exit to resident program
         
 .segment "ONCE"     
