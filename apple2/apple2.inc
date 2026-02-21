@@ -1,3 +1,7 @@
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+;
+; SPDX-License-Identifier: MIT
+
 PROMPT      := $33      ; GETLN prompt character
 COUTMASK    := $50
 HIMEM       := $73      ; Highest available memory address+1
