@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Matches the input against names from a table.
 ; Each name table entry consists of a length (one byte if in the range 0-127, otherwise two bytes, high byte first),

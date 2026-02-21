@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; Functions that decode the tokenized program for display on the console.
 ; Most functions decode from the line pointed to by line_ptr, using line_pos as the read position,

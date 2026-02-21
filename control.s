@@ -1,5 +1,3 @@
-.include "macros.inc"
-.include "basic.inc"
 
 ; stack must be page-aligned
 .assert <stack = 0, error
@@ -191,7 +189,7 @@ exec_if:
         jsr     pop_fp0
         lda     FP0e                    ; Check if zero
         beq     @done                   ; If zero then don't execute the THEN
-        jsr     dispatch_statement      ; Otherwise execute the THEN
+        jsr     exec_statement          ; Otherwise execute the THEN
 @done:
         clc
         rts
