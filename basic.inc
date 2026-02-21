@@ -41,7 +41,7 @@
 
 ; Zero Page
 
-.include "zeropage.inc"
+.include "zeropage.s"
 
 BC = B
 DE = D
@@ -67,8 +67,6 @@ FP1s = FP1+UnpackedFloat::s
 .include "input.s"
 .include "let.s"
 .include "list.s"
+.include "main.s"
 .include "print.s"
 .include "run.s"
-
-; Zero Page definitions
-.include "zeropage.s"
