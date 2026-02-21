@@ -1,6 +1,5 @@
 ifelse(
     OUTPUT, `s', `
-.include "basic.inc"
 .zeropage
 define(`var', ``$1: .res $2
 .export _$1 = $1'')
@@ -8,6 +7,7 @@ define(`comment', `;')
 define(`block', ``$1 = *
 .assert $1_END - $1 = $2, error'')
 define(`endblock', ``$1_END = *'')
+define(`finalize', `.code')
     ',
     OUTPUT, `inc', `
 define(`var', ``.globalzp $1'')
@@ -15,6 +15,7 @@ define(`comment', `;')
 define(`block', ``.globalzp $1
 $1_SIZE = $2'')
 define(`endblock', `')
+define(`finalize', `')
     ',
     OUTPUT, `h', `
 define(`var', ``extern $3 $1;
@@ -22,6 +23,7 @@ define(`var', ``extern $3 $1;
 define(`comment', `//')
 define(`block', `')
 define(`endblock', `')
+define(`finalize', `')
     ')
 
 define(`byte', `var($1, 1, ifelse($2, `', `char', $2))')
@@ -169,3 +171,5 @@ word(array_element_size)
 
 comment The offset of an element in the array
 word(array_element_offset)
+
+finalize()

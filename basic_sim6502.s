@@ -1,0 +1,5 @@
+.include "basic.inc"
+.include "sim6502/sim6502_startup.s"
+.include "sim6502/sim6502_init.s"
+.include "sim6502/sim6502_io.s"
+.include "main.s"
