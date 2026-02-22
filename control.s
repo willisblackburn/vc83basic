@@ -124,8 +124,7 @@ exec_for:
         clc
         adc     #Control::step_value    ; Add the offset of the step value
         ldy     #>stack
-        jsr     store_fp0               ; Store the step value
-        rts
+        jmp     store_fp0               ; Store the step value
 
 @invalid_variable:
         raise   ERR_INVALID_VARIABLE

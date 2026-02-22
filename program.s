@@ -206,8 +206,7 @@ grow:
         bne     @out_of_memory
 @continue:
         jsr     grow_shrink_common
-        jsr     reverse_copy            ; Copy data up to the higher address
-        rts
+        jmp     reverse_copy            ; Copy data up to the higher address
 
 @out_of_memory:
         raise   ERR_OUT_OF_MEMORY
@@ -234,8 +233,7 @@ shrink:
         inc     E
 @skip_increment:
         jsr     grow_shrink_common
-        jsr     copy
-        rts
+        jmp     copy
 
 ; Adds the value in DE to the pointer identified by Y, and all subsequent pointers up to (but not including)
 ; string_ptr, by some amount. Also sets up src_ptr, dst_ptr, and size for copy.

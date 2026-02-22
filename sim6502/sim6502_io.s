@@ -56,5 +56,4 @@ putch:
         jsr     pusha0                  ; Push onto C stack
         lda     #1                      ; Length
         ldx     #0
-        jsr     _write
-        rts
+        jmp     _write

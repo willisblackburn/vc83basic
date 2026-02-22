@@ -21,7 +21,6 @@ startup:
 initialize_once:        
         lda     #$FF                    ; Print in normal mode
         sta     COUTMASK        
-        jsr     CROUT                   ; Apple doesn't automatically start new line after BRUN
-        rts
+        jmp     CROUT                   ; Apple doesn't automatically start new line after BRUN
 
 .code

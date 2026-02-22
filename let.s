@@ -25,5 +25,4 @@ assign_variable:
         jsr     stack_free_value_with_type
         txa                             ; Becomes low byte of source address
         ldx     #>stack                 ; Stack page
-        jsr     copy_y_from             ; Copy from stack into variable data
-        rts
+        jmp     copy_y_from             ; Copy from stack into variable data
