@@ -273,13 +273,22 @@ op_ws:
         sty     buffer_pos
         jmp     next_pvm
 
+; EMIT: output a byte
+
+op_emit:
+        ldy     #0
+        lda     (pvm_program_ptr),y     ; Get argument
+        jsr     write_to_line_buffer
+        jmp     rebase_next_pvm
+
 ; COMPOSE: OR the next byte value into the last byte written to the output
 
 op_compose:
         ldy     #0
         lda     (pvm_program_ptr),y     ; Get argument
         jsr     compose_with_last_byte
-        iny
+rebase_next_pvm:
+        ldy     #1
         jsr     rebase_pvm_program_ptr  ; Advance past byte
         jmp     next_pvm
         
@@ -312,6 +321,7 @@ pvm_opcode_vectors:
         .word   op_argsep-1
         .word   op_tokenize-1
         .word   op_dispatch-1
+        .word   op_emit-1
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
@@ -407,6 +417,9 @@ rebase_pvm_program_ptr:
         
         ; Output the last character, bitwise OR'd with EOT
         .byte   .strat(s, @length - 1) | EOT
+    .else
+        ; If string is empty then just output a single EOT byte.
+        .byte   EOT
     .endif
 .endmacro
 
@@ -509,60 +522,26 @@ rebase_pvm_program_ptr:
         .byte   PVM_DISPATCH
 .endmacro
 
+.macro EMIT b
+        .byte   PVM_EMIT, b
+.endmacro
+
 ; PVM program
 
 pvm_statement:
         WS
-        ACCEPT @name                    ; Reset savepoint
-@name:
+        TRY @impl_let                   ; Sets savepoint and start of keyword
         CALL pvm_name
         TOKENIZE statement_name_table
         DISPATCH                        ; Note: performs JUMP
 
-; Argument lists
+@impl_let:
+        EMIT ST_IMPL_LET
 
-pvm_arg_2:
-        CALL pvm_expression
-        ARGSEP
-        JUMP pvm_expression
-
-; pvm_arg_list is list of 1-N (but not 0) expressions.
-
-pvm_arg_list:
-        CALL pvm_expression
-        TRY @done
-        ARGSEP
-        JUMP pvm_arg_list
-@done:
-        RETURN
-
-; pvm_paren_arg_list is a list of 1-N (but not 0) expressions surrounded by parentheses.
-
-pvm_paren_arg_list:
+pvm_let:
+        CALL pvm_var
         WS
-        MATCH '('
-        CALL pvm_arg_list
-        WS
-        MATCH ')'
-        RETURN
-
-; pvm_print_expression is the particular kind of expression in the PRINT statement.
-
-pvm_print_expression:
-        WS
-        TRY @not_comma
-        MATCH ','
-        ACCEPT pvm_print_expression
-@not_comma:
-        TRY @not_semi
-        MATCH ';'
-        ACCEPT pvm_print_expression
-@not_semi:
-        TRY @done
-        CALL pvm_expression
-        ACCEPT pvm_print_expression
-@done:
-        RETURN
+        MATCH '='
 
 ; Expressions
 
@@ -623,6 +602,51 @@ pvm_var:
         COMPOSE EOT
         TRY @done
         CALL pvm_paren_arg_list
+@done:
+        RETURN
+
+; Argument lists
+
+pvm_arg_2:
+        CALL pvm_expression
+        ARGSEP
+        JUMP pvm_expression
+
+; pvm_arg_list is list of 1-N (but not 0) expressions.
+
+pvm_arg_list:
+        CALL pvm_expression
+        TRY @done
+        ARGSEP
+        JUMP pvm_arg_list
+@done:
+        RETURN
+
+; pvm_paren_arg_list is a list of 1-N (but not 0) expressions surrounded by parentheses.
+
+pvm_paren_arg_list:
+        WS
+        MATCH '('
+        CALL pvm_arg_list
+        WS
+        MATCH ')'
+        RETURN
+
+; pvm_print_expression is the particular kind of expression in the PRINT statement.
+
+pvm_print_expression:
+        WS
+        TRY @not_comma
+        MATCH ','
+        ACCEPT pvm_print_expression
+@not_comma:
+        TRY @not_semi
+        MATCH ';'
+        ACCEPT pvm_print_expression
+@not_semi:
+        TRY @done
+        CALL pvm_expression
+        ACCEPT pvm_print_expression
 @done:
         RETURN
 
@@ -767,17 +791,13 @@ pvm_name:
         RETURN
 
 statement_name_table:
-        name_table_entry "END"
-            RETURN
+        name_table_entry ""             ; Implied LET: won't ever match
+:       name_table_entry "LET"
+            JUMP pvm_let
 :       name_table_entry "RUN"
             RETURN
 :       name_table_entry "PRINT"
             JUMP pvm_print_expression
-:       name_table_entry "LET"
-            CALL pvm_var
-            WS
-            MATCH '='
-            JUMP pvm_expression
 :       name_table_entry "INPUT"
             JUMP pvm_var_list
 :       name_table_entry "LIST"
@@ -836,6 +856,8 @@ statement_name_table:
             JUMP pvm_opt_number
 :       name_table_entry "POKE"
             JUMP pvm_arg_2
+:       name_table_entry "END"
+            RETURN
 :       name_table_end
 
 pvm_then:

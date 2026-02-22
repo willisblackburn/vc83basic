@@ -17,10 +17,10 @@ def(TOKEN_FUNCTION,     hex(60)) comment OR with index of function
 
 comment Statement tokens
 
-def(ST_END,             0)
-def(ST_RUN,             1)
-def(ST_PRINT,           2)
-def(ST_LET,             3)
+def(ST_IMPL_LET,        0)
+def(ST_LET,             1)
+def(ST_RUN,             2)
+def(ST_PRINT,           3)
 def(ST_INPUT,           4)
 def(ST_LIST,            5)
 def(ST_GOTO,            6)
@@ -41,6 +41,7 @@ def(ST_DATA,           20)
 def(ST_READ,           21)
 def(ST_RESTORE,        22)
 def(ST_POKE,           23)
+def(ST_END,            24)
 
 comment Binary operator tokens: combine with TOKEN_OP
 
@@ -127,6 +128,7 @@ def(PVM_COMPOSE,                    hex(05))
 def(PVM_ARGSEP,                     hex(06))
 def(PVM_TOKENIZE,                   hex(07))
 def(PVM_DISPATCH,                   hex(08))
+def(PVM_EMIT,                       hex(09))
 def(PVM_MATCH,                      hex(20))
 def(PVM_CALL,                       hex(60))
 def(PVM_JUMP,                       hex(70))

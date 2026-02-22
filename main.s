@@ -128,10 +128,10 @@ exec_statement:
         jmp     invoke_indexed_vector
 
 statement_exec_vectors:
-        .word   exec_end-1
+        .word   exec_let-1
+        .word   exec_let-1
         .word   exec_run-1
         .word   exec_print-1
-        .word   exec_let-1
         .word   exec_input-1
         .word   exec_list-1
         .word   exec_goto-1
@@ -152,6 +152,7 @@ statement_exec_vectors:
         .word   exec_read-1
         .word   exec_restore-1
         .word   exec_poke-1
+        .word   exec_end-1
 
 print_start:
         ldax    #start_message
