@@ -2,12 +2,6 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-start_message: .byte "VC83 BASIC <> "
-start_length = * - start_message
-
-free_message: .byte " BYTES FREE"
-free_length = * - free_message
-
 ready_message: .byte "READY"
 ready_message_length = * - ready_message
 
@@ -24,9 +18,9 @@ error_message_2_length = * - error_message_2
 .assert ERR_STOPPED = $80, error
 
 main:
+        jsr     print_start             ; initialize_program will clobber print_start
         jsr     initialize_target
         jsr     initialize_program
-        jsr     print_start
         tsx                             ; Remember the stack pointer so we can return to main later
         stx     exception_handler_sp
         lda     #PS_READY               ; Will be passed through install_exception_handler
@@ -154,21 +148,28 @@ statement_exec_vectors:
         .word   exec_poke-1
         .word   exec_end-1
 
+.segment "ONCE"
+
+; We only need the start message at startup, so we put it in the ONCE segment so it can later be overwritten by
+; program data. Free memory is a constant; subtract 5 in order to account for null line (3 bytes) and end byte
+; for variable and array name tables.
+
+start_message: .byte "VC83 BASIC <> "
+start_length = * - start_message
+
+free_message: .byte " BYTES FREE"
+free_length = * - free_message
+
 print_start:
         ldax    #start_message
         ldy     #start_length
         jsr     write
-        sec                             ; Calculate free memory; TODO: move to FRE function
-        lda     himem_ptr
-        sbc     free_ptr
-        tay                             ; Park low byte
-        lda     himem_ptr+1
-        sbc     free_ptr+1
-        tax                             ; High byte in X
-        tya                             ; Low byte back into A
+        ldax    #((__MAIN_START__ + __MAIN_SIZE__) - (__BSS_RUN__ + __BSS_SIZE__) - 5)
         jsr     int_to_fp               ; Load into FP0
         jsr     print_number
         ldax    #free_message
         ldy     #free_length
         jsr     write
         jmp     newline
+
+.code

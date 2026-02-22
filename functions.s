@@ -31,7 +31,7 @@ fun_chr_s:
 
 fun_fre:
         jsr     compact                 ; GC strings
-        sec                             ; Calculate free memory
+        sec                             ; Calculate free memory as himem_ptr - free_ptr
         lda     himem_ptr
         sbc     free_ptr
         tay                             ; Park low byte

@@ -8,19 +8,18 @@
 .segment "STARTUP"
 
 startup:
-        cld                             ; Clear decimal flag
         ldx     #$FF        
         txs                             ; Initialize the stack to $FF
         jsr     initialize_once     
-        jsr     HOME                    ; Clear screen
         jsr     main        
         jmp     DOSWARM                 ; Exit to resident program
         
 .segment "ONCE"     
         
 initialize_once:        
+        cld                             ; Clear decimal flag
         lda     #$FF                    ; Print in normal mode
         sta     COUTMASK        
-        jmp     CROUT                   ; Apple doesn't automatically start new line after BRUN
+        jmp     HOME                    ; Clear screen
 
 .code

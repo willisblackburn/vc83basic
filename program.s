@@ -11,8 +11,8 @@ initialize_program:
         mvax    #(__MAIN_START__ + __MAIN_SIZE__), himem_ptr
         mvax    #(__BSS_RUN__ + __BSS_SIZE__), program_ptr  ; Set program_ptr to start of program space
         jsr     append_null_line                            ; Build a null line at program_ptr
-        mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
         jsr     reset_program
+        mvax    #(__BSS_RUN__ + __BSS_SIZE__ + .sizeof(Line)), variable_name_table_ptr
 
 ; Fall through to clear_variables
 
