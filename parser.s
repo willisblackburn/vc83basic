@@ -663,7 +663,7 @@ pvm_binary_operator_name:
         CALL pvm_name
         RETURN
 @not_name:
-        MATCH_RANGE {'&', '?'}
+        MATCH_RANGE {'&', '?'}, {'^', '^'}
         TRY @done
         MATCH_RANGE {'<', '>'}
 @done:

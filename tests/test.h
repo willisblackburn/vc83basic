@@ -122,6 +122,7 @@ void fadd(/* AY */ const Float* value);
 void fsub(/* AY */ const Float* value);
 void fmul(/* AY */ const Float* value);
 void fdiv(/* AY */ const Float* value);
+void fpow(/* AY */ const Float* value);
 void fneg(void);
 int fcmp(/* AY */ const Float* value);
 void fpoly(const Float* coefficients, char n);

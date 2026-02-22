@@ -463,6 +463,17 @@ const OperationTestCase fdiv_test_cases[] = {
 
 TEST_OPERATION(fdiv);
 
+const OperationTestCase fpow_test_cases[] = {
+    // 1 ^ 1
+    { { 0x00000000, 128 }, { 0x00000000, 128 }, { 0x00000001, 128 } },
+    // 2 ^ 1
+    { { 0x00000000, 129 }, { 0x00000000, 128 }, { 0x00000002, 129 } },
+    // 2 ^ 2
+    { { 0x00000000, 129 }, { 0x00000000, 129 }, { 0x00000004, 130 } },
+};
+
+TEST_OPERATION(fpow);
+
 typedef struct ComparisonTestCase {
     Float arg0;
     Float arg1;
@@ -861,6 +872,7 @@ int main(void) {
     test_fsub();
     test_fmul();
     test_fdiv();
+    test_fpow();
     test_fcmp();
     test_char_to_digit();
     test_fp_to_string();

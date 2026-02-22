@@ -252,7 +252,9 @@ op_div:
         jmp     call_binary_operator_push
 
 op_pow:
-        jmp     op_add
+        lda     #>(fpow-1)
+        ldx     #<(fpow-1)
+        jmp     call_binary_operator_push
 
 op_concat:
         jsr     pop_string              ; Get the second string

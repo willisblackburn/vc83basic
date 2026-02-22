@@ -1252,6 +1252,15 @@ fdiv_fp1:
         bcc     @divide                 ; Continue if 1 bit has not emerged from B
         rts
 
+; Raise the value in FP0 to the power of the argument.
+
+fpow:
+        phay                            ; Save argument
+        jsr     flog                    ; Logarithm of FP0
+        play                            ; Recover argument
+        jsr     fmul                    ; Multiply log by argument
+        jmp     fexp                    ; Raise
+
 ; Negates the sign of FP0.
 
 fneg:

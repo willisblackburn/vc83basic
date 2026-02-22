@@ -250,6 +250,13 @@ _fdiv:
         ldy     B
         jmp     fdiv
 
+_fpow:
+.export _fpow
+        startwrap
+        stx     B                       ; Move argument in AX to AY
+        ldy     B
+        jmp     fpow
+
 _fneg:
 .export _fneg
         startwrap
