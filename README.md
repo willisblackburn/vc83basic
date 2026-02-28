@@ -116,15 +116,6 @@ To add support for a new hardware platform:
 3.  **Master Assembly File**: Create a `basic_{target}.s` file that `.include`s `basic.inc` and all your platform-specific assembly files.
 4.  **Makefile**: Add the new target to the `TARGETS` list in the `Makefile` and define the build rules.
 
-## Contributing
-
-Contributions are welcome! Please keep the following in mind:
-
-*   **Licensing**: By contributing code to this project, you agree to license your contribution under the [MIT License](licenses/MIT.txt).
-*   **Pull Requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
-*   **Discussion**: To improve the chance of your contribution being accepted, please reach out or open an issue to discuss your proposed changes before starting work.
-*   **Forking**: You're welcome to fork the project and use it with or without changes in your own projects, subject to the terms of the [MIT License](licenses/MIT.txt).
-
 ## VC83 BASIC vs. Microsoft BASIC
 
 VC83 BASIC has a few improvements over Microsoft BASIC:
@@ -142,3 +133,19 @@ from the core, such as I/O functions and graphics and sound statements. So the B
 run on real hardware will probably be 10K, 12K, or even 16K.
 
 VC83 BASIC does not include DEF FN or ON ERROR statements. Let me know if these are important.
+
+## License
+
+VC83 BASIC is available to you under the terms of the [MIT License](LICENSES/MIT.txt). This generally means you can
+use it for whatever, provided that the copyright notice and license terms are "included in all copies or substantial
+portions of the Software."
+
+## Contributing
+
+Contributions are welcome! Please keep the following in mind:
+
+*   **Licensing**: By contributing code to this project, you agree to license your contribution under the [MIT License](LICENSES/MIT.txt).
+*   **Pull Requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
+*   **Discussion**: To improve the chance of your contribution being accepted, please reach out or open an issue to discuss your proposed changes before starting work.
+*   **Forking**: You're welcome to fork the project and use it with or without changes in your own projects, subject to the terms of the [MIT License](LICENSES/MIT.txt).
+
