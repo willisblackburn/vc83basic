@@ -64,6 +64,6 @@ error_message_table:
 :       .byte :+ - *, "FORMAT"
 :       .byte :+ - *, "ARITY?"
 :       .byte :+ - *, "SYN ERR"
-:       .byte :+ - *, "NO RUN"
+:       .byte :+ - *, "NOT RUN"
 :       .byte :+ - *, "DIV/0"
 :       .byte 0
