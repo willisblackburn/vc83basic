@@ -1,0 +1,15 @@
+SPDX-License-Identifier: LicenseRef-Proprietary
+SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+
+TRADEMARK & BRANDING LICENSE
+
+1. OWNERSHIP: The project name, logos, and visual assets are proprietary 
+   trademarks of the owners.
+2. RESTRICTIONS: You may not redistribute, sell, or mirror this software 
+   using the original branding, name, or logos. 
+3. FORKS: If you fork or redistribute the source code (as permitted by the 
+   MIT license), you MUST remove all original branding and logos and 
+   rename the project to avoid consumer confusion.
+
+All other rights to these visual assets are reserved.
+
