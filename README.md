@@ -115,3 +115,12 @@ To add support for a new hardware platform:
 2.  **Initialization**: Implement platform-specific startup and I/O (`readline`, `write`, `putch`) in its own directory.
 3.  **Master Assembly File**: Create a `basic_{target}.s` file that `.include`s `basic.inc` and all your platform-specific assembly files.
 4.  **Makefile**: Add the new target to the `TARGETS` list in the `Makefile` and define the build rules.
+
+## Contributing
+
+Contributions are welcome! Please keep the following in mind:
+
+*   **Licensing**: By contributing code to this project, you agree to license your contribution under the [MIT License](licenses/MIT.txt).
+*   **Pull Requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
+*   **Discussion**: To improve the chance of your contribution being accepted, please reach out or open an issue to discuss your proposed changes before starting work.
+*   **Forking**: You're welcome to fork the project and use it with or without changes in your own projects, subject to the terms of the [MIT License](licenses/MIT.txt).
