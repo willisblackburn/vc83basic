@@ -2,6 +2,58 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+function_vectors:
+        .word   fun_len-1
+        .word   fun_str_s-1
+        .word   fun_chr_s-1 
+        .word   fun_asc-1
+        .word   fun_left_s-1
+        .word   fun_right_s-1
+        .word   fun_mid_s-1
+        .word   fun_val-1
+        .word   fun_fre-1
+        .word   fun_peek-1
+        .word   fun_adr-1
+        .word   fun_usr-1
+        .word   fun_int-1
+        .word   fun_round-1
+        .word   fun_log-1
+        .word   fun_exp-1
+        .word   fun_sin-1
+        .word   fun_cos-1
+        .word   fun_tan-1
+        .word   fun_atn-1
+        .word   fun_abs-1
+        .word   fun_sgn-1
+        .word   fun_sqr-1
+        .word   fun_rnd-1
+
+function_arity_table:
+        .byte   1   ; LEN
+        .byte   1   ; STR$
+        .byte   1   ; CHR$
+        .byte   1   ; ASC
+        .byte   2   ; LEFT$
+        .byte   2   ; RIGHT$
+        .byte   3   ; MID$
+        .byte   1   ; VAL
+        .byte   0   ; FRE
+        .byte   1   ; PEEK
+        .byte   1   ; ADR
+        .byte   2   ; USR
+        .byte   1   ; INT
+        .byte   1   ; ROUND
+        .byte   1   ; LOG
+        .byte   1   ; EXP
+        .byte   1   ; SIN
+        .byte   1   ; COS
+        .byte   1   ; TAN
+        .byte   1   ; ATN
+        .byte   1   ; ABS
+        .byte   1   ; SGN
+        .byte   1   ; SQR
+        .byte   1   ; RND
+
 fun_abs:
         jsr     pop_fp0
         mva     #0, FP0s                ; Set sign to positive unconditionally

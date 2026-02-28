@@ -9,32 +9,6 @@
 .assert Value::number_value = 0, error
 .assert Value::string_value_ptr = 0, error
 
-function_vectors:
-        .word   fun_len-1
-        .word   fun_str_s-1
-        .word   fun_chr_s-1 
-        .word   fun_asc-1
-        .word   fun_left_s-1
-        .word   fun_right_s-1
-        .word   fun_mid_s-1
-        .word   fun_val-1
-        .word   fun_fre-1
-        .word   fun_peek-1
-        .word   fun_adr-1
-        .word   fun_usr-1
-        .word   fun_int-1
-        .word   fun_round-1
-        .word   fun_log-1
-        .word   fun_exp-1
-        .word   fun_sin-1
-        .word   fun_cos-1
-        .word   fun_tan-1
-        .word   fun_atn-1
-        .word   fun_abs-1
-        .word   fun_sgn-1
-        .word   fun_sqr-1
-        .word   fun_rnd-1
-
 evaluate_function:
         jsr     decode_byte             ; Return the operator in A
         and     #<~TOKEN_FUNCTION
@@ -135,6 +109,18 @@ evaluate_decoded_variable:
         stax    dst_ptr                 ; Copy to stack
         ldax    name_ptr                ; Copy from variable data
         jmp     copy_y_from
+
+; Operator precedence table
+; We index this by the operator index divided by 2.
+
+operator_precedence_table:
+        .byte   PR_ADD                  ; +, -
+        .byte   PR_MUL                  ; *, /
+        .byte   PR_POW                  ; ^, &
+        .byte   PR_RELATIONAL           ; =, <>
+        .byte   PR_RELATIONAL           ; <=, <
+        .byte   PR_RELATIONAL           ; >=, >
+        .byte   PR_LOGICAL              ; AND, OR
 
 evaluate_operator:
         jsr     decode_byte             ; Return the operator in A
