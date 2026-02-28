@@ -27,3 +27,18 @@ test "PRINT ATN(1)\n" "0.78539636\n"
 test "PRINT ATN(0.5)\n" "0.463647589\n"
 test "PRINT ATN(2)\n" "1.10714741\n"
 test "PRINT ATN(-1)\n" "-0.78539636\n"
+
+# LOG
+
+test "PRINT LOG(1)\n" "0\n"
+test "PRINT LOG(2.71828183)\n" "1\n"
+
+# EXP
+
+test "PRINT EXP(0)\n" "1\n"
+test "PRINT EXP(1)\n" "2.71828183\n"
+
+# SQR
+
+test "PRINT SQR(4)\n" "2\n"
+test "PRINT SQR(2)\n" "1.41421356\n"

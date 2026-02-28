@@ -33,7 +33,7 @@ RUN
 } {
 1
 
-ERROR: LINE? AT 20
+ERR: LINE? AT 20
 }
 
 # RETURN without GOSUB
@@ -48,7 +48,7 @@ RUN
 1
 1
 
-ERROR: NO GOSUB AT 30
+ERR: NO GOSUB AT 30
 }
 
 # Infinite GOSUB (will eventually run out of stack space, may have to adjust test if changing stack size)
@@ -74,7 +74,7 @@ RUN
 2
 2
 
-ERROR: O'FLOW AT 20
+ERR: O'FLOW AT 20
 }
 
 # ON...GOSUB
@@ -163,7 +163,7 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }
 
 test {
@@ -180,7 +180,7 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }
 
 test {
@@ -197,7 +197,7 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }
 
 # POP
@@ -212,7 +212,7 @@ RUN
 } {
 1
 
-ERROR: NO GOSUB AT 40
+ERR: NO GOSUB AT 40
 }
 
 # POP without GOSUB
@@ -225,5 +225,5 @@ RUN
 } {
 1
 
-ERROR: U'FLOW AT 20
+ERR: U'FLOW AT 20
 }

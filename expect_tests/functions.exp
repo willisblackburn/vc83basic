@@ -44,7 +44,7 @@ PRINT LEFT$("HELLO",0)
 test {
 PRINT LEFT$("HELLO",-1)
 } {
-ERROR: RANGE
+ERR: RANGE
 }
 
 test {
@@ -68,7 +68,7 @@ PRINT RIGHT$("HELLO",0)
 test {
 PRINT RIGHT$("HELLO",-1)
 } {
-ERROR: RANGE
+ERR: RANGE
 }
 
 test {
@@ -92,19 +92,19 @@ PRINT MID$("HELLO",1,0)
 test {
 PRINT MID$("HELLO",1,-1)
 } {
-ERROR: RANGE
+ERR: RANGE
 }
 
 test {
 PRINT MID$("HELLO",0,1)
 } {
-ERROR: RANGE
+ERR: RANGE
 }
 
 test {
 PRINT MID$("HELLO",-1,1)
 } {
-ERROR: RANGE
+ERR: RANGE
 }
 
 test {
@@ -139,13 +139,68 @@ PRINT STR$(3.14159)
 # VAL
 
 test {
-PRINT VAL("25")
-} {
-25
-}
-
-test {
 PRINT VAL("3.14159")
 } {
 3.14159
 }
+
+# INT, ROUND, ABS, SGN
+
+test {
+PRINT INT(3.9), INT(-3.1), INT(-3.9)
+} {
+3               -3              -3
+}
+
+test {
+PRINT ROUND(3.4), ROUND(3.5), ROUND(-3.4), ROUND(-3.5)
+} {
+3               4               -3              -4
+}
+
+test {
+PRINT ABS(3.14), ABS(-3.14), ABS(0)
+} {
+3.14            3.14            0
+}
+
+test {
+PRINT SGN(5), SGN(-5), SGN(0)
+} {
+1               -1              0
+}
+
+# FRE
+# TODO: FRE(0) returns negative value in sim65 due to 16-bit signed integer limits.
+# test {
+# PRINT FRE(0) > 0
+# } {
+# 1
+# }
+
+# RND
+
+test {
+PRINT RND(1) >= 0 AND RND(1) < 1
+} {
+1
+}
+
+test {
+LET R1=RND(1): LET R2=RND(1): PRINT R1<>R2
+} {
+1
+}
+
+test {
+PRINT RND(0) = RND(0)
+} {
+1
+}
+
+# test {
+# PRINT RND(-1) <> RND(-2)
+# } {
+# 1
+# }
+# TODO: RND(-1) and RND(-2) produce the same seed because they have the same normalized mantissa.

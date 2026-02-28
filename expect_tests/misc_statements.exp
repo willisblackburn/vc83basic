@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+#
+# SPDX-License-Identifier: MIT
+
+source [file join [file dirname [info script]] common.expinc]
+spawn_basic
+
+# REM
+
+test {
+10 REM THIS IS A COMMENT
+20 PRINT 1
+RUN
+} {
+1
+}
+
+# NEW
+
+test {
+10 PRINT 1
+NEW
+LIST
+} {
+READY
+}
+
+# END and STOP
+
+test {
+10 PRINT 1
+20 END
+30 PRINT 2
+RUN
+} {
+1
+}
+
+test {
+10 PRINT 1
+20 STOP
+30 PRINT 2
+RUN
+} {
+1
+
+STOPPED AT 20
+}
+
+# RESTORE with line number (not currently supported by interpreter)
+# test {
+# 10 DATA 1,2,3,4
+# 20 DATA 5,6,7,8
+# 30 READ A,B
+# 40 RESTORE 20
+# 50 READ C,D
+# 60 PRINT A,B,C,D
+# RUN
+# } {
+# 1               2               5               6
+# }
+# TODO: RESTORE line_number is accepted by parser but ignored by exec_restore.
+
+# Exceptional conditions
+
+test {
+10 PRINT 1/0
+RUN
+} {
+ERR: DIV/0 AT 10
+}
+
+# test {
+# 10 PRINT LOG(-1)
+# RUN
+# } {
+# ERR: RANGE AT 10
+# }
+# TODO: LOG with negative or zero argument does not currently raise an error in the interpreter.
+
+# test {
+# 10 PRINT SQR(-1)
+# RUN
+# } {
+# ERR: RANGE AT 10
+# }
+# TODO: SQR with negative argument does not currently raise an error in the interpreter.

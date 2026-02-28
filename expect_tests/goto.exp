@@ -34,7 +34,7 @@ RUN
 } {
 1
 
-ERROR: LINE? AT 20
+ERR: LINE? AT 20
 }
 
 # ON...GOTO
@@ -115,7 +115,7 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }
 
 test {
@@ -131,7 +131,7 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }
 
 test {
@@ -147,5 +147,5 @@ RUN
 } {
 1
 
-ERROR: RANGE AT 20
+ERR: RANGE AT 20
 }

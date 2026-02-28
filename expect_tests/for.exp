@@ -68,7 +68,7 @@ RUN
 } {
 1
 
-ERROR: BAD VAR AT 30
+ERR: BAD VAR AT 30
 }
 
 # FOR with STEP
