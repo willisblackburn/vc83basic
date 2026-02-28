@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
 
 A floating-point BASIC interpreter for the 6502 microprocessor, targeting the Apple II and the `sim65` simulator.
 
-## 1. Necessary Tools
+## Necessary Tools
 
 To build and test the project, you need the following tools in your `PATH`:
 
@@ -17,7 +17,7 @@ To build and test the project, you need the following tools in your `PATH`:
 *   **m4**: A macro processor used to generate constants and zero-page definitions.
 *   **expect**: Used for running automated integration tests.
 
-## 2. How to Build and Test
+## How to Build and Test
 
 The project uses a `Makefile` to manage the build process.
 
@@ -30,7 +30,7 @@ The project uses `.m4` files to ensure consistency across Assembly, C, and inclu
 *   `constants.m4` contains constant values. It is processed by `m4` to generate `constants.inc` (Assembly) and `constants.h` (C).
 *   `zeropage.m4` contains variables stored in zero page. It is processed to generate `zeropage.s` (the actual ZP definitions), `zeropage.inc` (global declarations for Assembly), and `zeropage.h` (C headers).
 
-## 3. How to Run
+## How to Run
 
 ### sim65 (Simulator)
 The simulation version can be run directly from the command line:
@@ -50,7 +50,7 @@ The file `basic_apple2` is an Apple II executable. To run it:
     ```
 3.  Boot the disk in an emulator or on real hardware and run it using `BRUN BASIC`.
 
-## 4. Memory Map
+## Memory Map
 
 The interpreter manages memory using several zero-page pointers:
 
@@ -64,7 +64,7 @@ The interpreter manages memory using several zero-page pointers:
 *   `string_ptr`: Points to the bottom of the string space. This space grows downwards from `himem_ptr` and is compacted upwards during garbage collection.
 *   `himem_ptr`: The highest address used by the interpreter and the ceiling for the string space.
 
-## 5. General Structure of the Interpreter
+## General Structure of the Interpreter
 
 ### Parser and Virtual Machine
 The parser converts user input into a tokenized program. It is controlled by a **Parser Virtual Machine (PVM)** that uses a domain-specific language (DSL) defined in `parser.s`.
@@ -78,7 +78,7 @@ The interpreter uses two stacks for expression evaluation:
 2.  **Operator Stack**: Holds pending operators to respect precedence.
 Most statements and functions are implemented by pushing values onto the stack and popping them to perform operations.
 
-## 6. Floating Point System
+## Floating Point System
 
 VC83 BASIC uses a custom 5-byte floating-point format documented in `fp.s`:
 *   **Format**: `sttttttt tttttttt tttttttt tttttttt eeeeeeee`
@@ -90,7 +90,7 @@ VC83 BASIC uses a custom 5-byte floating-point format documented in `fp.s`:
     *   **Unary functions** (e.g., `SIN`, `LOG`, `NEG`) always operate on `FP0`.
     *   **Binary functions** (e.g., `FADD`, `FMUL`) operate on `FP0` and an "argument" value. The address of the argument is passed in `AX` and loaded into `FP1` before the operation.
 
-## 7. Strings
+## Strings
 
 Strings in VC83 BASIC are stored with the following structure:
 *   **Layout**: `[Length Byte] [String Data...] [Extra Byte 1] [Extra Byte 2]`
@@ -100,7 +100,7 @@ Strings in VC83 BASIC are stored with the following structure:
     *   The collector moves all still-referenced strings to the top of the string space (towards `himem_ptr`).
     *   During collection, the two extra bytes following each string are used to store a forwarding address to facilitate the move.
 
-## 8. Testing
+## Testing
 
 ### C Unit Tests
 Located in the `tests/` directory (e.g., `fp_test.c`). These tests are written in C but interface with the 6502 assembly code through `c_wrappers.s`, which provides a C-callable interface to assembly functions. They are run using `sim65`.
@@ -108,7 +108,7 @@ Located in the `tests/` directory (e.g., `fp_test.c`). These tests are written i
 ### Expect Tests
 Located in `expect_tests/`. These are integration tests that use the `expect` tool to feed BASIC commands into `sim65 basic_sim6502` and verify the output. This ensures the interpreter behaves correctly from a user's perspective.
 
-## 9. Extending BASIC to a New Platform
+## Extending BASIC to a New Platform
 
 To add support for a new hardware platform:
 1.  **Linker Config**: Create an `ld65` configuration file (e.g., `myplatform/myplatform.cfg`).
@@ -124,3 +124,21 @@ Contributions are welcome! Please keep the following in mind:
 *   **Pull Requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
 *   **Discussion**: To improve the chance of your contribution being accepted, please reach out or open an issue to discuss your proposed changes before starting work.
 *   **Forking**: You're welcome to fork the project and use it with or without changes in your own projects, subject to the terms of the [MIT License](licenses/MIT.txt).
+
+## VC83 BASIC vs. Microsoft BASIC
+
+VC83 BASIC has a few improvements over Microsoft BASIC:
+
+*   **Variable names**: Variable names can be any length.
+*   **String GC**: The string garbage collector is much more efficient.
+
+However, VC83 BASIC is also quite a bit slower than Microsoft BASIC. This is an area for development; it doesn't seem
+like it should be an unfixable problem.
+
+## What's missing?
+
+My goal was to fit the BASIC core into 8K. But in order to get there, I had to remove all platform-specific features
+from the core, such as I/O functions and graphics and sound statements. So the BASIC interpreter that will be actually
+run on real hardware will probably be 10K, 12K, or even 16K.
+
+VC83 BASIC does not include DEF FN or ON ERROR statements. Let me know if these are important.
