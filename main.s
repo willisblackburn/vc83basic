@@ -18,8 +18,7 @@ error_message_2_length = * - error_message_2
 .assert ERR_STOPPED = $80, error
 
 main:
-        jsr     print_start             ; initialize_program will clobber print_start
-        jsr     initialize_target
+        jsr     initialize              ; initialize is in ONCE segment and will be clobbered after it returns
         jsr     initialize_program
         tsx                             ; Remember the stack pointer so we can return to main later
         stx     exception_handler_sp
@@ -160,7 +159,8 @@ start_length = * - start_message
 free_message: .byte " BYTES FREE"
 free_length = * - free_message
 
-print_start:
+initialize:
+        jsr     initialize_target
         ldax    #start_message
         ldy     #start_length
         jsr     write

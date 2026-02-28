@@ -2,7 +2,12 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+.segment "ONCE"
+
 initialize_target:
+        ldax    #fp_pi                  ; Initialize the random number generator with pi
+        jsr     load_fp0
+        jsr     initialize_rnd_value
         rts
 
 ; Buffers

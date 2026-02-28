@@ -937,4 +937,5 @@ function_name_table:
 :       name_table_entry "ABS"
 :       name_table_entry "SGN"
 :       name_table_entry "SQR"
+:       name_table_entry "RND"
 :       name_table_end

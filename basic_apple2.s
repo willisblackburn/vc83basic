@@ -3,6 +3,7 @@
 ; SPDX-License-Identifier: MIT
 
 .include "basic.inc"
+.include "random.s"
 .include "apple2/apple2.inc"
 .include "apple2/apple2_startup.s"
 .include "apple2/apple2_init.s"

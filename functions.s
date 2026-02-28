@@ -158,6 +158,43 @@ fun_round:
         jsr     round
         jmp     push_fp0        
 
+.bss
+
+rnd_value:      .res .sizeof(Float::t)
+
+.code
+
+fun_rnd:
+        jsr     pop_fp0                 ; 0 -> return previous number, >0 -> return next number, <0 -> reseed
+        lda     FP0e
+        beq     @output
+        lda     FP0s
+        bpl     @generate
+        jsr     initialize_rnd_value
+@generate:
+        jsr     rnd_generate
+@output:
+        ldx     #4                      ; Make random number from rnd_value
+@next_copy_to_fp0:
+        lda     rnd_value-1,x
+        sta     FP0t-1,x
+        dex
+        bne     @next_copy_to_fp0
+        lda     #BIAS-1                 ; This effectively puts the binary point to the left of the mantissa
+        sta     FP0e
+        stx     FP0s                    ; The purpose of all the -1s was to make X 0 here
+        jsr     normalize 
+        jmp     push_fp0
+
+initialize_rnd_value:
+        ldx     #4                      ; Copy given number into rnd_value
+@next_copy_to_value:
+        lda     FP0t-1,x
+        sta     rnd_value-1,x
+        dex
+        bne     @next_copy_to_value
+        rts        
+
 fun_sgn:
         jsr     pop_fp0
         lda     FP0e                    ; If exponent is 0 then value is 0; return 0

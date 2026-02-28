@@ -26,6 +26,7 @@ function_arity_table:
         .byte   1   ; ABS
         .byte   1   ; SGN
         .byte   1   ; SQR
+        .byte   1   ; RND
 
 ; Operator precedence table
 ; We index this by the operator index divided by 2.

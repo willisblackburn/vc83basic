@@ -8,6 +8,7 @@
 ; C standard library functions
 .import _fprintf, _stderr
 
+.segment "ONCE"
 
 ; Architecture-specific initializations that will be invoked from main (even for unit tests).
 ; We point the BRK handler to the debug_handler function here.
@@ -17,6 +18,9 @@ initialize_target:
         sta     $FFFE                   ; BRK vector low byte
         lda     #>debug_handler
         sta     $FFFF                   ; BRK vector high byte
+        ldax    #fp_pi                  ; Initialize the random number generator with pi
+        jsr     load_fp0
+        jsr     initialize_rnd_value
         rts
 
 ; Buffers
