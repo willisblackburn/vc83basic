@@ -8,7 +8,7 @@ type_size_table:
 
 error_message_table:
         .byte :+ - *, "STOPPED"
-:       .byte :+ - *, "SYS ERR"
+:       .byte :+ - *, "?!"
 :       .byte :+ - *, "OUT MEM"
 :       .byte :+ - *, "TYPE?"
 :       .byte :+ - *, "NO STOP"
@@ -25,7 +25,7 @@ error_message_table:
 :       .byte :+ - *, "COMPLEX"
 :       .byte :+ - *, "FORMAT"
 :       .byte :+ - *, "ARITY?"
-:       .byte :+ - *, "SYN ERR"
+:       .byte :+ - *, "SYNTAX"
 :       .byte :+ - *, "NOT RUN"
 :       .byte :+ - *, "DIV/0"
 :       .byte 0
