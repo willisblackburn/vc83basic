@@ -57,11 +57,11 @@ The file `basic_apple2` is an Apple II executable. To run it:
 The interpreter manages memory using several zero-page pointers:
 
 *   `program_ptr`: Points to the start of the BASIC program.
-    *   **Program Structure**: Lines are stored sequentially. Each line record starts with a 1-byte size, followed by a 2-byte line number. Statements within the line begin with an offset to the next statement and end with `0`. The program ends with a "null line" (size 0).
+    *   **Program structure**: Lines are stored sequentially. Each line record starts with a 1-byte size, followed by a 2-byte line number. Statements within the line begin with an offset to the next statement and end with `0`. The program ends with a "null line" (size 0).
 *   `variable_name_table_ptr`: Points to the start of the Variable Name Table (VNT), which immediately follows the program.
-    *   **VNT Structure**: Each record starts with a size byte (MSB set if 2 bytes). The variable name follows, with the MSB set on the last character. String variables end with `$`. The variable value is stored after the name. A zero-size record terminates the table.
+    *   **VNT structure**: Each record starts with a size byte (MSB set if 2 bytes). The variable name follows, with the MSB set on the last character. String variables end with `$`. The variable value is stored after the name. A zero-size record terminates the table.
 *   `array_name_table_ptr`: Points to the Array Name Table (ANT) following the VNT.
-    *   **ANT Structure**: Similar to VNT, but after the name, it contains a 1-byte arity (dimensions) followed by words defining the element size at each level for offset calculation.
+    *   **ANT structure**: Similar to VNT, but after the name, it contains a 1-byte arity (dimensions) followed by words defining the element size at each level for offset calculation.
 *   `free_ptr`: Points to the first byte of free memory after the ANT.
 *   `string_ptr`: Points to the bottom of the string space. This space grows downwards from `himem_ptr` and is compacted upwards during garbage collection.
 *   `himem_ptr`: The highest address used by the interpreter and the ceiling for the string space.
@@ -71,13 +71,13 @@ The interpreter manages memory using several zero-page pointers:
 ### Parser and Virtual Machine
 The parser converts user input into a tokenized program. It is controlled by a **Parser Virtual Machine (PVM)** that uses a domain-specific language (DSL) defined in `parser.s`.
 *   **Objective**: Detect syntax errors up-front and replace keywords with 1-byte tokens for efficient execution.
-*   **Type Checking**: Notably, the parser does *not* perform type checking; this is handled at runtime.
-*   **LIST Command**: Handles the reverse process, expanding tokens back into human-readable code.
+*   **Type checking**: Notably, the parser does *not* perform type checking; this is handled at runtime.
+*   **LIST command**: Handles the reverse process, expanding tokens back into human-readable code.
 
 ### Execution
 The interpreter uses two stacks for expression evaluation:
-1.  **Value Stack**: Holds intermediate numerical and string values.
-2.  **Operator Stack**: Holds pending operators to respect precedence.
+1.  **Value stack**: Holds intermediate numerical and string values.
+2.  **Operator stack**: Holds pending operators to respect precedence.
 Most statements and functions are implemented by pushing values onto the stack and popping them to perform operations.
 
 ## Floating Point System
@@ -98,7 +98,7 @@ Strings in VC83 BASIC are stored with the following structure:
 *   **Layout**: `[Length Byte] [String Data...] [Extra Byte 1] [Extra Byte 2]`
 *   **Size**: The `Length Byte` and the two extra bytes are *not* included in the reported length of the string.
 *   **Allocation**: The interpreter creates new strings by moving `string_ptr` down and writing the new string at the new `string_ptr` location. Thus, `string_ptr` always points to the most recently created string.
-*   **Garbage Collection**: When `string_ptr` reaches `free_ptr`, the interpreter triggers a garbage collector.
+*   **Garbage collection**: When `string_ptr` reaches `free_ptr`, the interpreter triggers a garbage collector.
     *   The collector moves all still-referenced strings to the top of the string space (towards `himem_ptr`).
     *   During collection, the two extra bytes following each string are used to store a forwarding address to facilitate the move.
 
@@ -129,9 +129,9 @@ run on real hardware will probably be 10K, 12K, or even 16K.
 ## Extending BASIC to a New Platform
 
 To add support for a new hardware platform:
-1.  **Linker Config**: Create an `ld65` configuration file (e.g., `{platform}/{platform}.cfg`).
+1.  **Linker config**: Create an `ld65` configuration file (e.g., `{platform}/{platform}.cfg`).
 2.  **Initialization**: Implement platform-specific startup and mandatory I/O (`readline`, `write`, `putch`) in its own directory.
-3.  **Master Assembly File**: Create a `basic_{platform}.s` file that `.include`s `basic.inc` and all your platform-specific assembly files.
+3.  **Master assembly file**: Create a `basic_{platform}.s` file that `.include`s `basic.inc` and all your platform-specific assembly files.
 4.  **Makefile**: Add the new target to the `TARGETS` list in the `Makefile` and define the build rules.
 5.  **Extensions (optional)**: You can implement platform-specific extensions. See `apple2_extension.s` for an example.
 
@@ -148,6 +148,6 @@ portions of the Software."
 Contributions are welcome! Please keep the following in mind:
 
 *   **Licensing**: By contributing code to this project, you agree to license your contribution under the [MIT License](LICENSES/MIT.txt).
-*   **Pull Requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
+*   **Pull requests**: Pull requests are welcome, but we can't guarantee that we'll merge them.
 *   **Discussion**: To improve the chance of your contribution being accepted, please reach out or open an issue to discuss your proposed changes before starting work.
 *   **Forking**: You're welcome to fork the project and use it with or without changes in your own projects, subject to the terms of the [MIT License](LICENSES/MIT.txt).
