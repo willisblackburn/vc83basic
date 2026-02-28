@@ -6,6 +6,11 @@ SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
 SPDX-License-Identifier = "MIT-0"
 
 [[annotations]]
+path = ".github/**"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
 path = "PREVIOUS_BRANCH"
 SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
 SPDX-License-Identifier = "MIT-0"
