@@ -651,6 +651,18 @@ void test_string_to_fp(void) {
     // sqrt(2)                                         
     call_string_to_fp("1.414213562", 0x3504F333, 128, __LINE__);
 
+    // Scientific notation tests
+    call_string_to_fp("1E5", 0x43500000, 144, __LINE__);
+    call_string_to_fp("10E4", 0x43500000, 144, __LINE__);
+    call_string_to_fp("-1E5", 0xC3500000, 144, __LINE__);
+    call_string_to_fp("31415.9E-4", 0x490FCF81, 129, __LINE__);
+    call_string_to_fp(".0314159E2", 0x490FCF81, 129, __LINE__);
+    call_string_to_fp("1E0", 0x00000000, 128, __LINE__);
+    call_string_to_fp("-1E0", 0x80000000, 128, __LINE__);
+    call_string_to_fp("0E5", 0x00000000, 0, __LINE__);
+    call_string_to_fp("100E-2", 0x00000000, 128, __LINE__);
+    call_string_to_fp("1E", 0x00000000, 128, __LINE__);
+
     // Verify that string_to_fp stops on non-digit.
     call_string_to_fp("10X", 0x20000000, 131, __LINE__);
     call_string_to_fp("-100-", 0xC8000000, 134, __LINE__);

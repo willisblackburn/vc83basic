@@ -712,10 +712,8 @@ string_to_fp_2:
 
 @not_decimal_point:
         cmp     #'E'                    ; Is it 'E'?
-        bne     @not_e                  ; No
-        clc                             ; Signal success
-        rts
-
+        bne     @not_e
+        jmp     @parse_e
 @not_e:
         jsr     char_to_digit           ; Try to make it into a digit
         bcs     @not_digit              ; Character was not a digit, '.', or 'E'
@@ -762,21 +760,25 @@ string_to_fp_2:
 ; the end of the number. The number is now a 32-bit integer in FP0, so convert it into FP.
 
         sty     E                       ; Y points to the first non-digit; save in E
+        lda     D                       ; Load D to test its sign
+        bpl     @calc_fp
+        mva     #0, D                   ; Clear D if negative so we don't do unwanted scaling
+@calc_fp:
         jsr     int32_to_fp
         lda     D                       ; Test number of digits
-        bmi     @whole                  ; If negative or zero then no decimal point or no digits after it
-        beq     @whole
+        beq     @whole                  ; If zero then no scaling
+        bmi     @multiply
+        
         phzp    FP0, .sizeof(UnpackedFloat)     ; Hold FP0 result on stack
         lday    #fp_ten
         jsr     load_fp0                ; Set FP0 to 10
 @scale_divisor:
         dec     D                       ; Decrement number of digits after decimal
-        beq     @scale
+        beq     @scale_div
         lday    #fp_ten
         jsr     fmul                    ; Multiply FP0 by 10
         jmp     @scale_divisor          ; Do it again until E is 0
-
-@scale:
+@scale_div:
         jsr     copy_fp0_fp1            ; Move divisor into FP1
         plzp    FP0, .sizeof(UnpackedFloat)     ; Reload result saved earlier
         jsr     fdiv_fp1                ; Divide
@@ -785,6 +787,75 @@ string_to_fp_2:
         ldy     E                       ; Return buffer read position in Y
         clc                             ; Signal success
         rts
+
+@multiply:
+        phzp    FP0, .sizeof(UnpackedFloat)     ; Hold FP0 result on stack
+        lday    #fp_ten
+        jsr     load_fp0                ; Set FP0 to 10
+@scale_multiplier:
+        inc     D                       ; Increment number of digits after decimal
+        beq     @scale_mul
+        lday    #fp_ten
+        jsr     fmul                    ; Multiply FP0 by 10
+        jmp     @scale_multiplier       ; Do it again until E is 0
+@scale_mul:
+        jsr     copy_fp0_fp1            ; Move multiplier into FP1
+        plzp    FP0, .sizeof(UnpackedFloat)     ; Reload result saved earlier
+        jsr     fmul_2                  ; Multiply by FP1
+        jmp     @whole
+
+@parse_e:
+        lda     D                       ; Check if we had any digits
+        cmp     #$80
+        bne     @e_start
+        jmp     @err_not_digit
+@e_start:
+        mva     #0, C                   ; C = exponent accumulator
+        iny                             ; Skip 'E'
+        lda     (read_ptr),y
+        cmp     #'-'
+        php                             ; Save Z flag (if '-', Z is set)
+        beq     @e_sign
+        cmp     #'+'
+        bne     @e_digit
+@e_sign:
+        iny                             ; Skip sign
+@e_digit:
+        lda     (read_ptr),y
+        jsr     char_to_digit
+        bcs     @e_done
+        pha
+        lda     C
+        asl     A
+        sta     C
+        asl     A
+        asl     A
+        adc     C       
+        sta     C
+        pla
+        clc
+        adc     C
+        sta     C
+        iny
+        bne     @e_digit                ; Loop
+@e_done:
+        plp                             ; Restore sign flag
+        bne     @apply_e                ; If not '-', Z=0, branch taken
+        lda     C
+        eor     #$FF
+        clc
+        adc     #1
+        sta     C
+@apply_e:
+        sty     E                       ; Save Y in E
+        lda     D
+        bpl     @e_d_pos
+        lda     #0
+@e_d_pos:
+        sec
+        sbc     C
+        sta     D
+        jmp     @calc_fp
 
 ; Converts the character in A into a digit.
 ; Returns the digit in A, carry clear if ok, carry set if error.
