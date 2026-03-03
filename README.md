@@ -8,14 +8,14 @@ SPDX-License-Identifier: MIT
 
 ![VC83 BASIC running on an Apple II](VC83_on_Apple_II_small.jpg)
 
-A floating-point BASIC interpreter for the 6502 microprocessor, targeting the Apple II and the `sim65` simulator,
+A floating-point BASIC interpreter for the 6502 microprocessor, targeting the Apple II and the sim6502 simulator,
 with the capability of being extended to other platforms.
 
 ## Tools
 
 To build and test the project, you need the following tools in your `PATH`:
 
-*   **cc65 compiler package**: Specifically `cl65` (the compiler/linker) and `sim65` (the 6502 simulator).
+*   **cc65 compiler package**: Specifically `cl65` (the compiler/linker) and `sim65` (the sim6502 simulator).
 *   **make**: For automating the build process.
 *   **m4**: A macro processor used to generate constants and zero-page definitions.
 *   **expect**: Used for running automated integration tests.
@@ -29,9 +29,9 @@ The project uses a `Makefile` to manage the build process.
 *   **Run integration tests**: `make expect_test`
 
 ### Constant and Zero-Page Generation
-The project uses `.m4` files to ensure consistency across Assembly, C, and include files.
-*   `constants.m4` contains constant values. It is processed by `m4` to generate `constants.inc` (Assembly) and `constants.h` (C).
-*   `zeropage.m4` contains variables stored in zero page. It is processed to generate `zeropage.s` (the actual ZP definitions), `zeropage.inc` (global declarations for Assembly), and `zeropage.h` (C headers).
+The project uses `.m4` files to ensure consistency across assembly, C, and include files.
+*   `constants.m4` contains constant values. It is processed by `m4` to generate `constants.inc` (assembly) and `constants.h` (C).
+*   `zeropage.m4` contains variables stored in zero page. It is processed to generate `zeropage.s` (the actual ZP definitions), `zeropage.inc` (global declarations for assembly), and `zeropage.h` (C headers).
 
 ## How to Run
 
