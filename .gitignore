@@ -6,6 +6,7 @@
 *.dbg
 *.map
 basic_apple2
+basic_atari
 basic_sim6502
 *_test
 *_test.s

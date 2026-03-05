@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-TARGETS = sim6502 apple2
+TARGETS = sim6502 apple2 atari
 TEST_TARGET = sim6502
 
 TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
@@ -27,6 +27,13 @@ basic_apple2.o: basic_apple2.s basic.inc constants.inc zeropage.s
 
 basic_apple2: basic_apple2.o
 	cl65 -t apple2 -C apple2/apple2.cfg $(LDFLAGS) -o $@ $<
+
+# Goal: basic_atari
+basic_atari.o: basic_atari.s basic.inc constants.inc zeropage.s
+	cl65 -t atari -c $(ASMFLAGS) -o $@ $<
+
+basic_atari: basic_atari.o
+	cl65 -t atari -C atari/atari-asm-xex.cfg $(LDFLAGS) -o $@ $<
 
 # Rules for building the constants files:
 constants.inc: constants.m4
