@@ -57,8 +57,9 @@ emulator, try the one at [apple2ts.com](https://apple2ts.com).
 Instead of creating a new disk image, you can duplicate an existing DOS 3.3 disk image (search around for "blank DOS 3.3 boot disk" or something like that), then
 you can boot and run BASIC from the same disk.
 
-To run on actual hardware, you need to put `basic.dsk` onto an actual physical disk, or on a disk emulator like
-a [Floppy Emu](https://www.bigmessowires.com/floppy-emu/).
+To run on real hardware, you obviously need to put `basic.dsk` on a physical disk, or on a disk emulator like
+a [Floppy Emu](https://www.bigmessowires.com/floppy-emu/). If you have an actual Apple II then you presumably understand
+how to do this. I've only tested on my Apple II+, so if it doesn't work on your e/c/gs, let me know.
 
 ## Memory Map
 
@@ -94,18 +95,19 @@ Most statements and functions are implemented by pushing values onto the primary
 
 VC83 BASIC uses a custom 5-byte floating-point format documented in `fp.s`:
 *   **Format**: `sttttttt tttttttt tttttttt tttttttt eeeeeeee`
-    *   `s`: Sign bit.
-    *   `t`: 31-bit fractional significand (implied `1.` before `t`).
-    *   `e`: 8-bit exponent, excess-128 (128 = $10^0$).
-*   **Registers**: The system uses two main floating-point registers stored in zero page, `FP0` and `FP1`.
+    *   `s`: Sign bit
+    *   `t`: 32-bit fractional significand encoded as 31 bits with implied `1.`
+    *   `e`: 8-bit exponent, excess-128 (128 = $2^0$)
+*   **Registers**: The system uses two main floating-point registers stored in zero page, `FP0` and `FP1`. `FPX` extends the `FP0` significand to 64 bits.
 *   **Operations**:
     *   **Unary functions** (e.g., `SIN`, `LOG`, `NEG`) always operate on `FP0`.
-    *   **Binary functions** (e.g., `FADD`, `FMUL`) operate on `FP0` and an "argument" value. The address of the argument is passed in `AX` and loaded into `FP1` before the operation.
+    *   **Binary functions** (e.g., `FADD`, `FMUL`) operate on `FP0` and an "argument" value. The address of the argument is passed in `AY` and loaded into `FP1` before the operation.
 
 While VC83 BASIC uses the same number of bits to represent a floating point value as Microsoft BASIC, note that
-the implied digit is 1, vs. 0 in Microsoft BASIC.
+the implied 1 digit is to the left of the binary point (like IEEE-754), vs. Microsoft which places it to the right
+of the binary point.
 
-The floating point system does not support subnormal values (it underflows instead), NaN, or infinity.
+The floating point system does not support subnormal values, NaN, or infinity.
 
 ## Strings
 
