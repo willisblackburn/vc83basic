@@ -23,10 +23,10 @@ test "PRINT TAN(1)\n" "1.55741094\n"
 # ATN
 
 test "PRINT ATN(0)\n" "0\n"
-test "PRINT ATN(1)\n" "0.78539636\n"
+test "PRINT ATN(1)\n" "0.78539864\n"
 test "PRINT ATN(0.5)\n" "0.463647589\n"
 test "PRINT ATN(2)\n" "1.10714741\n"
-test "PRINT ATN(-1)\n" "-0.78539636\n"
+test "PRINT ATN(-1)\n" "-0.78539864\n"
 
 # LOG
 

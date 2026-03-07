@@ -21,6 +21,14 @@
 BIAS = 128
 MAXDIGITS = 10
 
+.bss
+
+; Allocate some scratch space needed for the higher-level functions.
+
+fp_scratch: .res .sizeof(Float) * 5
+
+.code
+
 ; We make a lot of assumptions about the size of Float in this module.
 .assert .sizeof(Float) = 5, error
 .assert .sizeof(Float::t) = 4, error
@@ -169,10 +177,11 @@ set_significand_fp:
 ; Checks if the FP0 significand is zero.
 
 fp0_significand_is_zero:
-        lda     FP0t                    ; OR all the significand bytes together
-        ora     FP0t+1
+        lda     FP0t+3
+fp0_low_bits_are_zero:
         ora     FP0t+2
-        ora     FP0t+3
+        ora     FP0t+1
+        ora     FP0t                    ; OR all the significand bytes together
         rts
 
 ; Generates the two's complement of the FP0 extended significand by subtracting it from 0.
@@ -1002,15 +1011,10 @@ fsub_2:
         sta     FP1s
         jmp     fadd_2
 
-; Polynomial functions use space on the stack.
-; We just put them at the very top of the stack (the lowest address since it grows down) rather than try to use the
-; stack pointer.
+fpoly_x = fp_scratch
+fpoly_odd_x = fp_scratch + .sizeof(Float)
 
-fpoly_x = stack
-fpoly_odd_x = stack + .sizeof(Float)
-
-; Applies a polynomial to the value in FP0 using Horner's method. Stores temporary variables in stack space, so
-; the stack must not be using that space.
+; Applies a polynomial to the value in FP0 using Horner's method.
 ; The function accepts an argument in FP0 and a list of floating point polynomial coefficients, with the largest power
 ; first. If there are N coefficients, then the first is for the N-1 term, the next for the N-2 term, etc. The last
 ; coefficient is a constant (the N-N or zero-power term).
@@ -1301,9 +1305,11 @@ fcmp_2:
 @done:
         rts                             ; Flags will be set correctly here
 
-flog_x = stack + .sizeof(Float) * 2
-flog_x_plus_1 = stack + .sizeof(Float) * 3
-flog_k = stack + .sizeof(Float) * 4
+; flog calls fpoly, so use the next three slots.
+
+flog_x = fp_scratch + .sizeof(Float) * 2
+flog_x_plus_1 = fp_scratch + .sizeof(Float) * 3
+flog_k = fp_scratch + .sizeof(Float) * 4
 
 fp_log_coefficients:
         .byte $E3, $38, $8E, $63, 124   ; 1/9     x^9 / 9
@@ -1369,8 +1375,8 @@ flog:
         dec     FP1e                    ; Synthesize log(sqrt(2)) as log(2)/2
         jmp     fadd_2
 
-fexp_x = stack + .sizeof(Float) * 2
-fexp_k = stack + .sizeof(Float) * 3
+fexp_x = fp_scratch + .sizeof(Float) * 2
+fexp_k = fp_scratch + .sizeof(Float) * 3
 
 fp_exp_coefficients:
         .byte $D0, $00, $0D, $50, 115   ; 1/7!     x^7 / 7!
@@ -1419,9 +1425,9 @@ fexp:
         sta     FP0e
         rts
 
-fsin_x = stack + .sizeof(Float) * 2
-ftan_x = stack + .sizeof(Float) * 3
-ftan_cos_x = stack + .sizeof(Float) * 4
+fsin_x = fp_scratch + .sizeof(Float) * 2
+ftan_x = fp_scratch + .sizeof(Float) * 3
+ftan_cos_x = fp_scratch + .sizeof(Float) * 4
 
 ; These coefficients are the Minimax (Chebyshev) polynomial fit for sine evaluated over [-pi/2, pi/2].
 ; They replace the traditional Taylor series coefficients (1/3!, 1/5!, etc.) to minimize the maximum error 
@@ -1520,34 +1526,36 @@ fp_atn_coefficients:
 ;     atan(x) = pi/2 - atan(1/x) for x > 1
 ;     Polynomial approximation for 0 <= x <= 1
 
-fatn_sign = stack + 10
-fatn_swap = stack + 11
+.assert BIAS = $80, error
 
 fatn:
         lda     FP0e
         beq     @done                   ; If 0, return 0
-        mva     FP0s, fatn_sign         ; Save original sign
-        mva     #0, FP0s                ; x = |x|
-        lday    #fp_one
+        lda     FP0s
+        bpl     @positive
+        mva     #0, FP0s                ; It's negative; make it positive
+        jsr     @positive               ; Calculate as if it was positive all along
+        mva     #$80, FP0s              ; Make the result negative
+@done:
+        rts
+
+@positive:
+        lday    #fp_one                 ; Are we > 1?
         jsr     fcmp
-        mva     #0, fatn_swap           ; Default no swap
-        bcc     @no_swap
-        inc     fatn_swap               ; Mark swap
+        bcc     @approximate            ; Less than 1, so approximate
+        beq     @approximate            ; Exactly 1
         jsr     copy_fp0_fp1            ; FP1 = x
         lday    #fp_one
         jsr     load_fp0                ; FP0 = 1
         jsr     fdiv_fp1                ; FP0 = 1 / x
-@no_swap:
+        jsr     @approximate            ; Get ATN of this new value
+        jsr     copy_fp0_fp1            ; Move ATN value to right side
+        lday    #fp_pi
+        jsr     load_fp0                ; FP0 = pi
+        dec     FP0e                    ; FP0 = pi/2
+        jmp     fsub_2                  ; Subtract
+
+@approximate:
         ldax    #fp_atn_coefficients
         ldy     #8
-        jsr     fpoly_odd
-        lda     fatn_swap
-        beq     @no_unswap
-        lday    #fp_pi
-        jsr     load_fp1                ; FP1 = pi
-        dec     FP1e                    ; FP1 = pi/2
-        jsr     fsub_2                  ; result = FP1 - FP0 = pi/2 - atan(1/x)
-@no_unswap:
-        mva     fatn_sign, FP0s         ; Restore original sign
-@done:
-        rts
+        jmp     fpoly_odd
