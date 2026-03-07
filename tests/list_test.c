@@ -31,6 +31,7 @@ void test_list_statement(void) {
     const char string_line_data_1[] = { 0, ST_PRINT, '"', 'H', 'E', 'L', 'L', 'O', '"', 0 };
     const char string_line_data_2[] = { 0, ST_PRINT, '"', 'B', 'U', 'G', ' ', 'O', 'R', ' ', '"', '"', 
         'F', 'E', 'A', 'T', 'U', 'R', 'E', '?', '"', '"', '"', 0 };
+    const char string_line_data_3[] = { 0, ST_PRINT, '"', 'l', 'o', 'w', 'e', 'r', 'c', 'a', 's', 'e', '"', 0 };
     const char variable_line_data_1[] = { 0, ST_PRINT, 'I', 'D', 'X', '_', '2' | EOT, 0 };
     const char variable_line_data_2[] = { 0, ST_PRINT, 'A', '$' | EOT, 0 };
     const char variable_line_data_3[] = { 0, ST_PRINT, 'X' | EOT, '(', '5', ')', 0 };
@@ -70,6 +71,7 @@ void test_list_statement(void) {
     call_list_statement(number_line_data_5, sizeof number_line_data_5, "PRINT .125", __LINE__);
     call_list_statement(string_line_data_1, sizeof string_line_data_1, "PRINT \"HELLO\"", __LINE__);
     call_list_statement(string_line_data_2, sizeof string_line_data_2, "PRINT \"BUG OR \"\"FEATURE?\"\"\"", __LINE__);
+    call_list_statement(string_line_data_3, sizeof string_line_data_3, "PRINT \"lowercase\"", __LINE__);
     call_list_statement(variable_line_data_1, sizeof variable_line_data_1, "PRINT IDX_2", __LINE__);
     call_list_statement(variable_line_data_2, sizeof variable_line_data_2, "PRINT A$", __LINE__);
     call_list_statement(variable_line_data_3, sizeof variable_line_data_3, "PRINT X(5)", __LINE__);

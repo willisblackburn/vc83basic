@@ -65,6 +65,7 @@ void test_pvm_string(void) {
     const char line_data_1[] = { '"', 'H', 'E', 'L', 'L', 'O', '"' };
     const char line_data_2[] = { '"', '"' };
     const char line_data_3[] = { '"', 'I', 'N', 'T', 'E', 'R', 'N', 'A', 'L', ' ', '"', '"', 'Q', 'U', 'O', 'T', 'E', 'S', '"', '"', '"' };
+    const char line_data_4[] = { '"', 'l', 'o', 'w', 'e', 'r', 'c', 'a', 's', 'e', '"' };
 
     PRINT_TEST_NAME();
 
@@ -72,6 +73,7 @@ void test_pvm_string(void) {
     call_parse_pvm("\"\"", pvm_string, line_data_2, sizeof line_data_2, __LINE__);
     call_parse_pvm("  \"\"", pvm_string, line_data_2, sizeof line_data_2, __LINE__);
     call_parse_pvm("\"INTERNAL \"\"QUOTES\"\"\"", pvm_string, line_data_3, sizeof line_data_3, __LINE__);
+    call_parse_pvm("\"lowercase\"", pvm_string, line_data_4, sizeof line_data_4, __LINE__);
 }
 
 void test_pvm_name(void) {
