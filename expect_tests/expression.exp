@@ -17,6 +17,10 @@ test "PRINT 3.14159\n" "3.14159\n"
 test "PRINT -1\n" "-1\n"
 test "PRINT -1.0\n" "-1\n"
 test "PRINT -3.14159\n" "-3.14159\n"
+test "PRINT 1E5\n" "100000\n"
+test "PRINT 1E-5\n" "0.00001\n"
+test "PRINT 31415.9E-4\n" "3.14159\n"
+test "PRINT 2.25E20\n" "2.25E20\n"
 
 # Strings
 
