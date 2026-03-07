@@ -230,7 +230,7 @@ compact:
 ; Invokes a handler each string in the string heap.
 
 for_all_strings:
-        stax    vector_table_ptr        ; Use vector_table_ptr to store the handler vector
+        stax    vector_ptr              ; Use vector_ptr to store the handler vector
         mvax    string_ptr, src_ptr
         bne     @next                   ; Unconditional since high byte of string_ptr can't be zero
 
@@ -246,7 +246,7 @@ for_all_strings:
 ; Invokes a handler vector for each string value in the variable name table.
 
 for_all_referenced_strings:
-        stax    vector_table_ptr        ; Use vector_table_ptr to store the handler vector
+        stax    vector_ptr              ; Use vector_ptr to store the handler vector
         ldax    variable_name_table_ptr ; Prepare to scan variables
         jsr     initialize_name_ptr
         bne     @next                   ; Unconditional since initialize_name_ptr exits with Z clear
@@ -337,7 +337,7 @@ handle_string:
         lda     (src_ptr),y             ; Load length first
         tax                             ; Move into X in case someone wants it later
         jsr     add_src_ptr_plus_one
-        jmp     (vector_table_ptr)      ; Jump to handler; RTS from handler will return to point after JSR @invoke
+        jmp     (vector_ptr)            ; Jump to handler; RTS from handler will return to point after JSR @invoke
 
 @done:
         rts

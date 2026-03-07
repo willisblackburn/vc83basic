@@ -47,8 +47,8 @@ word(dst_ptr, void*)
 comment Size for memory operations
 word(size, size_t)
 
-comment Pointer to the table of vectors used by invoke_indexed_vector
-word(vector_table_ptr, void**)
+comment Scratch pointer often used for jumping to handlers
+word(vector_ptr, void**)
 
 comment A pointer to the start of the program
 word(program_ptr, Line*)

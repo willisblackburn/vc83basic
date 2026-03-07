@@ -121,22 +121,20 @@ set_memory:
 ; Callers can use BC and DE to pass parameters to the target function.
 ; Since Y, the vector index, can never exceed 127, the ASL will clear the carry flag, and it will still be clear
 ; when control reaches the target routine.
-; The invoke_indexed_vector_2 entry point requires the caller to set up vector_table_ptr but preserves X.
 ; AX = address of the vector table
 ; Y = the index of the vector
 ; BC SAFE, DE SAFE
 
 invoke_indexed_vector:
-        stax    vector_table_ptr
-invoke_indexed_vector_2:
+        stax    vector_ptr
         tya
         asl     A                       ; Multiply by 2 since each vector is 2 bytes
         tay
         iny                             ; Increment by 1 to get the high byte first
-        lda     (vector_table_ptr),y
+        lda     (vector_ptr),y
         pha
         dey                             ; Move to low byte
-        lda     (vector_table_ptr),y    
+        lda     (vector_ptr),y    
         pha
         rts                             ; RTS jumps to vector pushed on the stack
 
