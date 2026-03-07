@@ -9,7 +9,9 @@
 void call_list_statement(const char* line_data, size_t line_data_length, const char* expect_buffer, int line) {
     fprintf(stderr, "  %s:%d: list_statement(): expecting \"%s\"\n", __FILE__, line, expect_buffer);
     set_line(0, line_data, line_data_length);
+    // These values are initialized in list_line, which we're not calling here.
     buffer_pos = 0;
+    string_flag = 0;
     list_statement();
     ASSERT_MEMORY_EQ(buffer, expect_buffer, strlen(expect_buffer));
     ASSERT_EQ(buffer_pos, strlen(expect_buffer));

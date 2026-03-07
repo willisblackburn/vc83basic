@@ -165,4 +165,7 @@ word(exception_handler, void*)
 comment PVM instruction pointer
 word(pvm_program_ptr, const char*)
 
+comment True if we're parsing or LISTing a string
+byte(string_flag)
+
 finalize()

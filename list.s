@@ -58,6 +58,7 @@ exec_list:
 
 list_line:
         mvy     #0, buffer_pos          ; Initialize write position in buffer (also set Y to next_line_offset)
+        sty     string_flag             ; Make sure we're not in string mode
         lda     (line_ptr),y            ; Next line offset into A
         beq     @done                   ; If it's the null statement then we're at the end of the program
         jsr     line_number_to_string
@@ -104,6 +105,15 @@ list_statement:
         jsr     decode_byte             ; Get the next byte; Y is line_pos
         beq     @done
         and     #$7F                    ; Clear EOT
+        cmp     #'"'                    ; If it's double quote then just output
+        bne     @check_string_flag
+        lda     string_flag
+        eor     #$80                    ; Toggle bit 7
+        sta     string_flag
+        lda     #'"'                    ; Reload the quote
+@check_string_flag:
+        ldx     string_flag
+        bmi     @output
         sec                             ; Prepare to look for tokens
         sbc     #$04                    ; Unary operator
         cmp     #4
@@ -140,6 +150,7 @@ list_statement:
         jmp     @next
 @default:
         sbc     #$A0                    ; Subtract to cycle the value A back around to its original value
+@output:
         jsr     append_buffer
         bne     @next                   ; Unconditional because append_buffer does INC
 
