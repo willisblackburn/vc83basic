@@ -114,8 +114,8 @@ void test_pvm_expression(void) {
     const char parens_line_data_1[] = { '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')' };
     const char parens_line_data_2[] = { 'X' | EOT, TOKEN_OP | OP_AND, '(', 'Y' | EOT, TOKEN_OP | OP_OR, TOKEN_UNARY_OP | UNARY_OP_NOT, 'Z' | EOT, ')' };
 
-    const char function_line_data_1[] = { TOKEN_FUNCTION | 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')' };
-    const char function_line_data_2[] = { TOKEN_FUNCTION | 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')' };
+    const char function_line_data_1[] = { TOKEN_FUNCTION, 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')' };
+    const char function_line_data_2[] = { TOKEN_FUNCTION, 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')' };
 
     PRINT_TEST_NAME();
 
@@ -175,7 +175,7 @@ void test_pvm_statement(void) {
     const char data_line_data_1[] = { ST_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5' };
     const char poke_line_data_1[] = { ST_POKE, '7', '1', '0', ',', '0' };
     const char dim_line_data_1[] = { ST_DIM, 'A' | EOT, '(', '5', ')'  };
-    const char extension_line_data_1[] = { TOKEN_EX_STATEMENT | 0 };
+    const char extension_line_data_1[] = { TOKEN_EXTENSION | 0 };
 
     PRINT_TEST_NAME();
 

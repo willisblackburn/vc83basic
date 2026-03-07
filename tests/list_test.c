@@ -36,8 +36,8 @@ void test_list_statement(void) {
     const char variable_line_data_2[] = { 0, ST_PRINT, 'A', '$' | EOT, 0 };
     const char variable_line_data_3[] = { 0, ST_PRINT, 'X' | EOT, '(', '5', ')', 0 };
     const char variable_line_data_4[] = { 0, ST_PRINT, 'X', 'Y', 'Z', 'Z', 'Y', '$' | EOT, '(', '1', ',', '1', '0', ')', 0 };
-    const char function_line_data_1[] = { 0, ST_PRINT, TOKEN_FUNCTION | 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')', 0 };
-    const char function_line_data_2[] = { 0, ST_PRINT, TOKEN_FUNCTION | 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')', 0 };
+    const char function_line_data_1[] = { 0, ST_PRINT, TOKEN_FUNCTION, 0, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ')', 0 };
+    const char function_line_data_2[] = { 0, ST_PRINT, TOKEN_FUNCTION, 6, '(', '"', 'H', 'E', 'L', 'L', 'O', '"', ',', '2', ',', '3', ')', 0 };
     const char expression_line_data_1[] = { 0, ST_PRINT, '1', TOKEN_OP | OP_ADD, '1', TOKEN_OP | OP_ADD, '1', 0 };
     const char expression_line_data_2[] = { 0, ST_PRINT, '1', TOKEN_OP | OP_ADD, '(', '1', TOKEN_OP | OP_ADD, '1', ')', 0 };
     const char expression_line_data_3[] = { 0, ST_PRINT, '3', '1', '4', '.', '1', '5', TOKEN_OP | OP_DIV, '1', '0', TOKEN_OP | OP_POW, '2', TOKEN_OP | OP_MUL, 'X', 0 };
@@ -62,7 +62,7 @@ void test_list_statement(void) {
     const char list_line_data_2[] = { 0, ST_LIST, '1', '0', '0', 0 };
     const char list_line_data_3[] = { 0, ST_LIST, '1', '0', '0', ',', '5', '0', '0', 0 };
     const char data_line_data_1[] = { 0, ST_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5', 0 };
-    const char extension_line_data_1[] = { 0, TOKEN_EX_STATEMENT | 0, 0 };
+    const char extension_line_data_1[] = { 0, TOKEN_EXTENSION | 0, 0 };
 
     PRINT_TEST_NAME();
 

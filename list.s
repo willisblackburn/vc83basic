@@ -78,7 +78,7 @@ list_line:
 ; Outputs a statement.
 
 .assert CLAUSE_THEN = 0, error
-.assert TOKEN_EX_STATEMENT = $80, error
+.assert TOKEN_EXTENSION = $80, error
 
 list_statement:
         inc     line_pos                ; Skip past the next statement offset; we don't use it
@@ -89,7 +89,7 @@ list_statement:
         ldax    #statement_name_table
         bne     @token                  ; Unconditional
 @extension:
-        and     #<~TOKEN_EX_STATEMENT
+        and     #<~TOKEN_EXTENSION
         tay
         ldax    #ex_statement_name_table
 @token:
@@ -97,14 +97,23 @@ list_statement:
         ldy     line_pos                ; Exit w/o adding whitespace if there's no more data on the line
         lda     (line_ptr),y
         bne     @not_empty
-        inc     line_pos
+        inc     line_pos                ; Skip 0 at end of statement
         rts
 @not_empty:
         jsr     add_whitespace
 @next:
         jsr     decode_byte             ; Get the next byte; Y is line_pos
         beq     @done
-        sec                             ; Prepare to look for tokens
+        and     #<~EOT                  ; Clear EOT if it's set
+        cmp     #TOKEN_FUNCTION         ; Is it the function token?
+        bne     @try_unary_operator
+        jsr     decode_byte             ; Get the function number
+        tay
+        ldax    #function_name_table
+        jsr     expand_tokenized_name   ; Call directly becuase we don't want to add whitespace after
+        jmp     @next
+@try_unary_operator:
+        sec                             ; Look for other tokens
         sbc     #TOKEN_UNARY_OP         ; Unary operator
         cmp     #4
         bcs     @try_clause
@@ -126,20 +135,12 @@ list_statement:
 @try_operator:
         sbc     #TOKEN_OP - TOKEN_CLAUSE        ; Binary operator
         cmp     #16
-        bcs     @try_function
+        bcs     @default
         tay
         ldax    #operator_name_table
         bcc     @token                  ; Unconditional
-@try_function:
-        sbc     #TOKEN_FUNCTION - TOKEN_OP      ; Function
-        cmp     #32
-        bcs     @default
-        tay
-        ldax    #function_name_table
-        jsr     expand_tokenized_name   ; Call directly becuase we don't want to add whitespace after
-        jmp     @next
 @default:
-        sbc     #TOKEN_FUNCTION         ; Subtract to cycle the value A back around to its original value
+        sbc     #<(0 - TOKEN_OP)        ; Subtract to cycle the value A back around to its original value
         and     #<~EOT                  ; Clear EOT if it's set
         jsr     append_buffer
         bne     @next                   ; Unconditional because append_buffer does INC

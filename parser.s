@@ -539,7 +539,7 @@ pvm_statement:
         TRY @impl_let                   ; Look for an extension statement
         CALL pvm_name
         TOKENIZE ex_statement_name_table
-        COMPOSE TOKEN_EX_STATEMENT
+        COMPOSE TOKEN_EXTENSION
         DISPATCH
 
 @impl_let:
@@ -679,10 +679,14 @@ pvm_binary_operator_name:
         RETURN
 
 pvm_function:
+        EMIT TOKEN_FUNCTION
+        CALL pvm_function_call
+        RETURN
+
+pvm_function_call:
         CALL pvm_name
         CALL pvm_opt_type
         TOKENIZE function_name_table
-        COMPOSE TOKEN_FUNCTION
         CALL pvm_paren_arg_list
         RETURN
 
@@ -789,7 +793,7 @@ pvm_text:
         
 pvm_statement_name:
         TRY pvm_name
-        MATCH '?'                       ; A statement name can be '?', normal names aren't
+        MATCH '?'                       ; A statement name can be '?', other names can't
         RETURN
 
 ; pvm_name does not discard whitespace.

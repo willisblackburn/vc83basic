@@ -113,7 +113,7 @@ main:
 
 ; Decodes and executes one statement from the token stream.
 
-.assert TOKEN_EX_STATEMENT = $80, error
+.assert TOKEN_EXTENSION = $80, error
 
 exec_statement:
         jsr     decode_byte             ; Get statement number

@@ -10,8 +10,8 @@
 .assert Value::string_value_ptr = 0, error
 
 evaluate_function:
-        jsr     decode_byte             ; Return the operator in A
-        and     #<~TOKEN_FUNCTION
+        inc     line_pos                ; Skip over the function token
+        jsr     decode_byte             ; Return the function number in A
         pha                             ; Remember what function it was, while we go decode the arguments
         tax
         lda     function_arity_table,x  ; How many arguments?
@@ -45,8 +45,7 @@ evaluate_string:
 ; values. Sometimes the caller is using them (for example, they might identify the variable that LET is setting), so
 ; we save them on the stack and restore them before returning.
 
-.assert TOKEN_FUNCTION >= $80, error
-.assert TOKEN_EX_FUNCTION >= $80, error
+.assert TOKEN_EXTENSION = $80, error
 
 evaluate_expression:
         phzp    DECODE_NAME_STATE, DECODE_NAME_STATE_SIZE   ; Remember the decoded name
@@ -60,12 +59,11 @@ evaluate_expression:
 @dispatch:
         ldy     line_pos                ; Peek at next byte in token stream
         lda     (line_ptr),y
-        sec                             ; Prepare for subtract-o-rama
-        bpl     @high_bit_clear         ; The high bit is clear so don't check for anything that requires it
-        and     #$7F                    ; We know the high bit is set, so we can clear it now
-        cmp     #32                     ; Check for function
-        bcc     evaluate_function
-@high_bit_clear:
+        beq     @done                   ; Short circuit to end if we're at the end of the line
+        and     #<~EOT                  ; Clear EOT if it's set
+        cmp     #TOKEN_FUNCTION         ; First check for a function
+        beq     evaluate_function
+        sec                             ; Otherwise, prepare for subtract-o-rama
         sbc     #'A'
         cmp     #<('(' - 'A')           ; Start of subexpression
         beq     evaluate_paren
@@ -90,6 +88,7 @@ evaluate_expression:
 ; None of the above; probably end of line or ')' or ',' or ';' so just return.
 ; Pop the @dispatch address off the stack so we return from evaluate_expression not @dispatch.
 
+@done:
         pla
         pla
         lda     #PR_CLOSE_PAREN         ; Process any operators not yet processed (except open paren)
