@@ -39,14 +39,7 @@ version_length = * - version
 fun_ver:
         jsr     pop_fp0                 ; Ignore argument
         lda     #version_length
-        jsr     string_alloc
-        sta     dst_ptr                 ; New string is destination for the copy
-        inc     dst_ptr                 ; Move past length byte
-        bne     @skip_iny
-        iny
-@skip_iny:
-        sty     dst_ptr+1
+        jsr     string_alloc_for_copy
         ldax    #version
-        ldy     #version_length
         jsr     copy_y_from
         jmp     push_string

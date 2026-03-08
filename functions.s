@@ -143,13 +143,7 @@ fun_mid_s:
 fun_mid_s_finish:
         sta     E                       ; Starting position in E
         lda     D
-        jsr     string_alloc            ; Guaranteed to succeed
-        sta     dst_ptr                 ; New space is destination for the copy
-        inc     dst_ptr                 ; Move past length byte
-        bne     @skip_iny
-        iny
-@skip_iny:
-        sty     dst_ptr+1
+        jsr     string_alloc_for_copy
         ldax    S0                      ; Copy source is S0 + E
         clc
         adc     E
@@ -273,14 +267,7 @@ fun_str_s:
         mva     #0, buffer_pos          ; Write at buffer position 0
         jsr     fp_to_string
         lda     buffer_pos              ; The string length
-        jsr     string_alloc            ; Guaranteed to succeed
-        sta     dst_ptr                 ; New space is destination for the copy
-        inc     dst_ptr                 ; Move past length byte
-        bne     @skip_iny
-        iny
-@skip_iny:
-        sty     dst_ptr+1
-        ldy     buffer_pos              ; Length
+        jsr     string_alloc_for_copy
         ldax    #buffer                 ; Source
         jsr     copy_y_from
         jmp     push_string

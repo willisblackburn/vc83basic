@@ -103,6 +103,18 @@ read_string_2:
 out_of_memory:
         raise   ERR_OUT_OF_MEMORY
 
+; Allocates a new string and sets dst_ptr to point to its data space.
+; A = the length of the new string (not including length byte)
+; Returns the length in both A and Y (to set up call to copy_y_from).
+; DE SAFE
+
+string_alloc_for_copy:
+        jsr     string_alloc            ; Returns string address in AY
+        ldx     #dst_ptr
+        jsr     load_s                  ; load_s can load any ZP pointer, not just S0 and S1
+        tay
+        rts
+
 ; Allocates a new string on the string heap.
 ; A = the length of the new string (not including length byte)
 ; Returns the address of the new string in string_ptr and in AY (to make it easy to pass to load_s0/s1).

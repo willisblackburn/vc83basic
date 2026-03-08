@@ -263,13 +263,7 @@ op_concat:
         clc
         adc     E                       ; Get total length of string
         bcs     @out_of_range           ; Combined string is too long
-        jsr     string_alloc            ; Otherwise A is length of new string; allocate it
-        sta     dst_ptr                 ; New space is destination for the copy
-        inc     dst_ptr                 ; Move past length byte
-        bne     @skip_iny
-        iny
-@skip_iny:
-        sty     dst_ptr+1
+        jsr     string_alloc_for_copy
         ldax    S0                      ; Copy S0 to dst_ptr
         ldy     D
         jsr     copy_y_from
