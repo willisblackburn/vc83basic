@@ -2,6 +2,8 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+.segment "PARSER"
+
 ; All "parse" functions use:
 ; buffer = the buffer containing the user-entered program source
 ; buffer_pos = the read position in buffer (modified on success)
@@ -170,6 +172,26 @@ next_pvm:
         jmp     next_pvm
 
 @not_match:
+        cmp     #PVM_TOKENIZE
+        bcc     @not_tokenize
+        jsr     calculate_address_12
+        jsr     initialize_name_ptr
+        lda     #EOT
+        jsr     compose_with_last_byte
+        tsx
+        lda     $103,x                  ; Get line_pos from savepoint
+        sta     decode_name_ptr         ; Start matching the name from savepoint
+        lda     #>line_buffer           ; High byte
+        sta     decode_name_ptr+1
+        jsr     find_name_2
+        bcs     op_fail                 ; Didn't find the name; treat as FAIL
+        ldx     decode_name_ptr
+        sta     line_buffer,x           ; Write the token to line_buffer
+        inx
+        stx     line_pos                ; Reset line_pos to the space after the token
+        jmp     next_pvm
+
+@not_tokenize:
         tay                             ; Move opcode into Y: clobbers 0 that is there
         ldax    #pvm_opcode_vectors
         jmp     invoke_indexed_vector   ; Go do it
@@ -227,25 +249,6 @@ op_match_any:
         beq     op_fail                 ; The 0 at the end of the line never matches
         inc     buffer_pos
         jsr     write_to_line_buffer
-        jmp     next_pvm
-
-; TOKENIZE: look up the name from the BEGIN point in a name table, emit the index
-
-op_tokenize:
-        lda     #EOT
-        jsr     compose_with_last_byte
-        tsx
-        lda     $103,x                  ; Get line_pos from savepoint
-        sta     decode_name_ptr         ; Start matching the name from savepoint
-        lda     #>line_buffer           ; High byte
-        sta     decode_name_ptr+1
-        jsr     read_address
-        jsr     find_name
-        bcs     op_fail                 ; Didn't find the name; treat as FAIL
-        ldx     decode_name_ptr
-        sta     line_buffer,x           ; Write the token to line_buffer
-        inx
-        stx     line_pos                ; Reset line_pos to the space after the token
         jmp     next_pvm
 
 ; DISPATCH: JUMP to the address following the end of the matched name in the name table
@@ -319,7 +322,6 @@ pvm_opcode_vectors:
         .word   op_match_any-1
         .word   op_compose-1
         .word   op_argsep-1
-        .word   op_tokenize-1
         .word   op_dispatch-1
         .word   op_emit-1
 
@@ -333,19 +335,6 @@ write_to_line_buffer:
         sta     line_buffer,y
         inc     line_pos
         rts
-
-; Retrieves the address from the PVM stream and returns in AX.
-; pvm_program_ptr must point to the address.
-
-read_address:
-        ldy     #0
-        lda     (pvm_program_ptr),y     ; Low byte of next opcode address
-        pha                             ; Don't update pvm_program_ptr yet
-        iny
-        lda     (pvm_program_ptr),y     ; High byte
-        tax                             ; Into X
-        iny
-        bne     rebase_pop
 
 ; Calculates the address of TRY or ACCEPT using the 6-bit offset embedded in the opcode relative to
 ; the current pvm_program_ptr value.
@@ -515,7 +504,7 @@ rebase_pvm_program_ptr:
 .endmacro
 
 .macro TOKENIZE address
-        .byte   PVM_TOKENIZE, <address, >address
+        write_far_opcode PVM_TOKENIZE, address
 .endmacro
 
 .macro DISPATCH
@@ -979,3 +968,5 @@ function_name_table:
 :       name_table_entry "SQR"
 :       name_table_entry "RND"
 :       name_table_end
+
+.code

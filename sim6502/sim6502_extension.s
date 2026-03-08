@@ -5,10 +5,18 @@
 ; exit function provided by sim6502
 .import exit
 
+.segment "PARSER"
+
 ex_statement_name_table:
         name_table_entry "BYE"
             RETURN
 :       name_table_end
+
+ex_function_name_table:
+        name_table_entry "VER$"
+:       name_table_end
+
+.code
 
 ex_statement_vectors:
         .word   exec_bye-1
@@ -17,10 +25,6 @@ ex_statement_vectors:
 
 exec_bye:
         jmp     exit
-
-ex_function_name_table:
-        name_table_entry "VER$"
-:       name_table_end
 
 ex_function_arity_table:
         .byte   1                       ; VER

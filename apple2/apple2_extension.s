@@ -2,12 +2,20 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+.segment "PARSER"
+
 ex_statement_name_table:
         name_table_entry "GR"
             RETURN
 :       name_table_entry "TEXT"
             RETURN
 :       name_table_end
+
+ex_function_name_table:
+        name_table_entry "PDL"
+:       name_table_end
+
+.code
 
 ex_statement_vectors:
         .word   exec_gr-1
@@ -20,10 +28,6 @@ exec_gr:
 exec_text:
         jsr     SETTXT
         rts
-
-ex_function_name_table:
-        name_table_entry "PDL"
-:       name_table_end
 
 ex_function_arity_table:
         .byte   1                       ; PDL
