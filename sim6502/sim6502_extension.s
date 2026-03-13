@@ -16,10 +16,12 @@ ex_function_name_table:
         name_table_entry "VER$"
 :       name_table_end
 
-.code
+.segment "VECTORS"
 
 ex_statement_vectors:
         .word   exec_bye-1
+
+.code
 
 ; BYE: exits the interpeter
 
@@ -29,8 +31,12 @@ exec_bye:
 ex_function_arity_table:
         .byte   1                       ; VER
 
+.segment "VECTORS"
+
 ex_function_vectors:
         .word   fun_ver-1
+
+.code
 
 version:
 .include "version.inc"

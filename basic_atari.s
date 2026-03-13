@@ -2,7 +2,7 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-.include "basic.inc"
+.include "basic.s"
 .include "random.s"
 .include "atari/atari.inc"
 .include "atari/atari_startup.s"

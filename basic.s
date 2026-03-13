@@ -55,6 +55,9 @@
 
 ; Zero Page
 
+; We have to declare zero-page variables and aliases up-front because the assembler has to know to use the
+; zero-page addressing mode.
+
 .include "zeropage.s"
 
 BC = B
@@ -71,23 +74,23 @@ S0 = FPX
 S1 = FPX+2
 
 ; Core files
-.include "util.s"
-.include "tables.s"
-.include "fp.s"
-.include "string.s"
-.include "name.s"
-.include "parser.s"
-.include "decode.s"
-.include "expression.s"
-.include "program.s"
 .include "control.s"
+.include "decode.s"
 .include "dim.s"
+.include "expression.s"
+.include "fp.s"
 .include "functions.s"
 .include "input.s"
 .include "let.s"
 .include "list.s"
 .include "main.s"
+.include "name.s"
+.include "parser.s"
 .include "poke.s"
 .include "print.s"
+.include "program.s"
 .include "read.s"
 .include "run.s"
+.include "string.s"
+.include "tables.s"
+.include "util.s"

@@ -128,6 +128,8 @@ exec_statement:
         ldax    #ex_statement_vectors
         jmp     invoke_indexed_vector
 
+.segment "VECTORS"
+
 statement_vectors:
         .word   exec_let-1
         .word   exec_let-1

@@ -2,7 +2,7 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-.include "basic.inc"
+.include "basic.s"
 .include "random.s"
 .include "sim6502/sim6502_init.s"
 .include "sim6502/sim6502_io.s"

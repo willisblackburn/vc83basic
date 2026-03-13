@@ -12,14 +12,20 @@ ex_statement_name_table:
 ex_function_name_table:
         name_table_end
 
-.code
+.segment "VECTORS"
 
 ex_statement_vectors:
         .word   exec_dos-1
+
+.code
 
 exec_dos:
         jmp     (DOSVEC)
 
 ex_function_arity_table:
 
+.segment "VECTORS"
+
 ex_function_vectors:
+
+.code

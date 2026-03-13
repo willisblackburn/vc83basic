@@ -28,6 +28,8 @@ function_arity_table:
         .byte   1                       ; SQR
         .byte   1                       ; RND
 
+.segment "VECTORS"
+
 function_vectors:
         .word   fun_len-1
         .word   fun_str_s-1
@@ -53,6 +55,8 @@ function_vectors:
         .word   fun_sgn-1
         .word   fun_sqr-1
         .word   fun_rnd-1
+
+.code
 
 fun_abs:
         jsr     pop_fp0

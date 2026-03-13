@@ -15,21 +15,21 @@ LDFLAGS = -m $@.map
 all: $(addprefix basic_,$(TARGETS))
 
 # Goal: basic_sim6502
-basic_sim6502.o: basic_sim6502.s basic.inc constants.inc zeropage.s version.inc
+basic_sim6502.o: basic_sim6502.s basic.s constants.inc zeropage.s version.inc
 	cl65 -t sim6502 -c $(ASMFLAGS) -o $@ $<
 
 basic_sim6502: basic_sim6502.o
 	cl65 -t sim6502 -C sim6502/sim6502.cfg $(LDFLAGS) -o $@ $<
 
 # Goal: basic_apple2
-basic_apple2.o: basic_apple2.s basic.inc constants.inc zeropage.s version.inc
+basic_apple2.o: basic_apple2.s basic.s constants.inc zeropage.s version.inc
 	cl65 -t apple2 -c $(ASMFLAGS) -o $@ $<
 
 basic_apple2: basic_apple2.o
 	cl65 -t apple2 -C apple2/apple2.cfg $(LDFLAGS) -o $@ $<
 
 # Goal: basic_atari
-basic_atari.o: basic_atari.s basic.inc constants.inc zeropage.s version.inc
+basic_atari.o: basic_atari.s basic.s constants.inc zeropage.s version.inc
 	cl65 -t atari -c $(ASMFLAGS) -o $@ $<
 
 basic_atari: basic_atari.o
@@ -69,7 +69,7 @@ endef
 
 $(foreach TEST,$(TESTS),$(eval $(call create-test,$(TEST))))
 
-basic_tests.o: basic_tests.s basic.inc constants.inc zeropage.s version.inc
+basic_tests.o: basic_tests.s basic.s constants.inc zeropage.s version.inc
 	cl65 -t $(TEST_TARGET) -C $(TEST_TARGET)/$(TEST_TARGET).cfg -c $(ASMFLAGS) -o $@ $<
 
 tests/%.o: tests/%.c constants.h zeropage.h tests/test.h

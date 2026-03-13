@@ -15,11 +15,13 @@ ex_function_name_table:
         name_table_entry "PDL"
 :       name_table_end
 
-.code
+.segment "VECTORS"
 
 ex_statement_vectors:
         .word   exec_gr-1
         .word   exec_text-1
+
+.code
 
 exec_gr:
         jsr     SETGR
@@ -32,8 +34,12 @@ exec_text:
 ex_function_arity_table:
         .byte   1                       ; PDL
 
+.segment "VECTORS"
+
 ex_function_vectors:
         .word   fun_pdl-1
+
+.code
 
 fun_pdl:
         jsr     pop_int_fp0

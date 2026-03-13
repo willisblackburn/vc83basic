@@ -314,17 +314,6 @@ op_argsep:
         jsr     write_to_line_buffer
         jmp     next_pvm
 
-pvm_opcode_vectors:
-        .word   op_fail-1
-        .word   op_return-1
-        .word   op_ws-1
-        .word   op_match_range-1
-        .word   op_match_any-1
-        .word   op_compose-1
-        .word   op_argsep-1
-        .word   op_dispatch-1
-        .word   op_emit-1
-
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
 
@@ -968,5 +957,18 @@ function_name_table:
 :       name_table_entry "SQR"
 :       name_table_entry "RND"
 :       name_table_end
+
+.segment "VECTORS"
+
+pvm_opcode_vectors:
+        .word   op_fail-1
+        .word   op_return-1
+        .word   op_ws-1
+        .word   op_match_range-1
+        .word   op_match_any-1
+        .word   op_compose-1
+        .word   op_argsep-1
+        .word   op_dispatch-1
+        .word   op_emit-1
 
 .code
