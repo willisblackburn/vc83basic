@@ -117,15 +117,14 @@ main:
 
 exec_statement:
         jsr     decode_byte             ; Get statement number
+        clc
         bmi     @extension              ; It's an extension
-        tay
-        ldax    #statement_vectors
+        adc     #statement_vectors_offset
         jmp     invoke_indexed_vector
 
 @extension:
         and     #<~TOKEN_EXTENSION
-        tay
-        ldax    #ex_statement_vectors
+        adc     #ex_statement_vectors_offset
         jmp     invoke_indexed_vector
 
 .segment "VECTORS"

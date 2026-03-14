@@ -192,8 +192,8 @@ next_pvm:
         jmp     next_pvm
 
 @not_tokenize:
-        tay                             ; Move opcode into Y: clobbers 0 that is there
-        ldax    #pvm_opcode_vectors
+        clc
+        adc     #pvm_opcode_vectors_offset
         jmp     invoke_indexed_vector   ; Go do it
 
 ; FAIL: invoke the TRY handler, or fail the entire parse

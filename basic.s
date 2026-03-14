@@ -6,12 +6,22 @@
 
 ; Linker-defined symbols
 .import __MAIN_START__, __MAIN_SIZE__
+.import __VECTORS_LOAD__, __VECTORS_SIZE__
 .import __BSS_RUN__, __BSS_SIZE__
 .import __STACKSIZE__
 
-.segment "CODE"
-
 .include "constants.inc"
+
+; We're going to index the vector table with X, so make sure that's possible.
+.assert __VECTORS_SIZE__ < 256, error
+
+; Generate the offset of each vector table in terms of the number of vectors.
+pvm_opcode_vectors_offset = <(pvm_opcode_vectors - __VECTORS_LOAD__) / 2
+statement_vectors_offset = <(statement_vectors - __VECTORS_LOAD__) / 2
+ex_statement_vectors_offset = <(ex_statement_vectors - __VECTORS_LOAD__) / 2
+function_vectors_offset = <(function_vectors - __VECTORS_LOAD__) / 2
+ex_function_vectors_offset = <(ex_function_vectors - __VECTORS_LOAD__) / 2
+operator_vectors_offset = <(operator_vectors - __VECTORS_LOAD__) / 2
 
 ; Data structures
 

@@ -21,14 +21,14 @@ evaluate_function:
         jsr     evaluate_argument_list
         inc     line_pos                ; Skip ')'
         pla                             ; Recover the function number
+        clc
         bmi     @extension
-        tay
-        ldax    #function_vectors
+        adc     #function_vectors_offset
         jmp     invoke_indexed_vector
+
 @extension:
         and     #<~TOKEN_EXTENSION
-        tay
-        ldax    #ex_function_vectors
+        adc     #ex_function_vectors_offset
         jmp     invoke_indexed_vector
 
 evaluate_paren:
@@ -185,26 +185,6 @@ push_operator:
         stx     op_stack_pos            ; Update stack pointer
         rts
 
-operator_vectors:
-        .word   op_add-1
-        .word   op_sub-1
-        .word   op_mul-1
-        .word   op_div-1
-        .word   op_pow-1
-        .word   op_concat-1
-        .word   op_eq-1
-        .word   op_lt-1
-        .word   op_gt-1
-        .word   op_ne-1
-        .word   op_le-1
-        .word   op_ge-1
-        .word   op_and-1
-        .word   op_or-1
-        .word   0
-        .word   0
-        .word   unary_op_minus-1
-        .word   unary_op_not-1
-
 ; Process operators with a precedence >= the precedence passed in A.
 ; The open and close parens will never be handled through the jump table: close paren is never actually put on the
 ; operator stack, and open parens have such a low precedence that they will never be evaluated.
@@ -222,8 +202,8 @@ process_operators:
         bcc     @done                   ; If carry clear (we had to borrow) then op prec < min prec; stop
         inc     op_stack_pos            ; Move stack position to next operator
         and     #$1F                    ; Keep lower 5 bits
-        tay                             ; Index in jump table
-        ldax    #operator_vectors
+        clc
+        adc     #operator_vectors_offset
         jsr     invoke_indexed_vector   ; Invoke the vector
         jmp     @next                   ; Continue processing operators
 @done:
@@ -525,3 +505,27 @@ set_up_logical_op:
         jsr     pop_int_fp0
         stax    DE                      ; Store returned value in DE
         jmp     pop_int_fp0
+
+.segment "VECTORS"
+
+operator_vectors:
+        .word   op_add-1
+        .word   op_sub-1
+        .word   op_mul-1
+        .word   op_div-1
+        .word   op_pow-1
+        .word   op_concat-1
+        .word   op_eq-1
+        .word   op_lt-1
+        .word   op_gt-1
+        .word   op_ne-1
+        .word   op_le-1
+        .word   op_ge-1
+        .word   op_and-1
+        .word   op_or-1
+        .word   0
+        .word   0
+        .word   unary_op_minus-1
+        .word   unary_op_not-1
+
+.code

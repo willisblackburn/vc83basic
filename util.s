@@ -126,18 +126,14 @@ set_memory:
 ; BC SAFE, DE SAFE
 
 invoke_indexed_vector:
-        stax    vector_ptr
-        tya
-        asl     A                       ; Multiply by 2 since each vector is 2 bytes
-        tay
-        iny                             ; Increment by 1 to get the high byte first
-        lda     (vector_ptr),y
+        asl     A                       ; Multiply vector number by 2; clears carry
+        tax                             ; Set up as index
+        lda     __VECTORS_LOAD__+1,x    ; High byte
         pha
-        dey                             ; Move to low byte
-        lda     (vector_ptr),y    
+        lda     __VECTORS_LOAD__,x      ; Low byte
         pha
         rts                             ; RTS jumps to vector pushed on the stack
-
+        
 ; Reads a comma beween arguments. Also recognizes 0 as end of input.
 ; read_ptr = the read address
 ; Y = the starting position

@@ -11,7 +11,6 @@
 ; cc65 runtime
 .import popa, popax, return0, return1
 
-
 .bss
 
 ; Wrappers use these fields to save register values prior to calling the delegate function and also to return values
@@ -25,6 +24,8 @@ _Y: .res 1
 
 _err: .res 1
 .export _err
+
+.code
 
 ; C exports for non-zero-page data.
 ; These must have corresponding extern declarations in test.h
@@ -42,7 +43,6 @@ _err: .res 1
 .export _pvm_number = pvm_number
 .export _pvm_string = pvm_string
 .export _pvm_name = pvm_name
-.code
 
 ; Sets the err variable to 1 if carry is set, 0 otherwise.
 set_err:
@@ -498,9 +498,6 @@ _clear_memory:
 
 _invoke_indexed_vector:
 .export _invoke_indexed_vector
-        sta     B                       ; Index arrives in A; we need it in Y
-        jsr     popax                   ; Address of vector array
-        ldy     B      
         jmp     invoke_indexed_vector
 
 _read_argument_separator:
@@ -517,4 +514,23 @@ _skip_whitespace:
         sty     _Y
         jmp     set_err
 
+.segment "VECTORS"
+
+; Used by test_invoke_indexed_vector
+
+.export _test_vectors
+_test_vectors:
+        .word   return_31415-1
+        .word   return_7771-1
+        .word   return_7771-1
+        .word   return_31415-1
+
 .code
+
+return_31415:
+        ldax    #31415
+        rts
+
+return_7771:
+        ldax    #7771
+        rts
