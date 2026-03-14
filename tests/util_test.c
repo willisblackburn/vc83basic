@@ -121,10 +121,6 @@ void test_invoke_indexed_vector(void) {
 
     PRINT_TEST_NAME();
 
-    DEBUG_PTR(_VECTORS_LOAD__);
-    DEBUG_PTR(test_vectors);
-    DEBUG(test_vectors_offset);
-
     result = invoke_indexed_vector(test_vectors_offset);
     ASSERT_EQ(result, 31415);
     result = invoke_indexed_vector(test_vectors_offset+1);
