@@ -78,6 +78,7 @@ run_expect_test_%:
 	expect expect_tests/$*.exp
 
 .PHONY: all test expect_test clean
+.SECONDARY:
 
 clean::
 	rm -f $(addprefix basic_,$(TARGETS)) basic_tests.o constants.inc constants.h zeropage.s zeropage.h version.inc *.o *.d *.map tests/*.o tests/*.d tests/*.map tests/*.dbg
