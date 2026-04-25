@@ -1,4 +1,4 @@
-; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn / 2026 A.C. Wright
 ;
 ; SPDX-License-Identifier: MIT
 ;

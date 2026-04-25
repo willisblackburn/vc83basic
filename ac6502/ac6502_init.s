@@ -1,12 +1,11 @@
-; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+; SPDX-FileCopyrightText: 2022-2026 Willis Blackburn / 2026 A.C. Wright
 ;
 ; SPDX-License-Identifier: MIT
 ;
-; ac6502 BASIC workspace (buffers and interpreter stacks) and the
-; target-specific one-time initialization hook.  All mutable storage is
-; placed in the BSS segment so __BSS_SIZE__ correctly reflects how much
-; RAM is consumed before the user program area.  BASIC's program_ptr is
-; computed from __BSS_RUN__ + __BSS_SIZE__ (see program.s).
+; ac6502 BASIC workspace (buffers and interpreter stacks).  All mutable
+; storage is placed in the BSS segment so __BSS_SIZE__ correctly reflects
+; how much RAM is consumed before the user program area.  BASIC's
+; program_ptr is computed from __BSS_RUN__ + __BSS_SIZE__ (see program.s).
 ; 
 ; See https://github.com/acwright/6502 for more info
 
@@ -25,15 +24,5 @@ line_buffer:    .res BUFFER_SIZE
 
 stack:          .res PRIMARY_STACK_SIZE
 op_stack:       .res OP_STACK_SIZE
-
-.segment "ONCE"
-
-; initialize_target is invoked from the cartridge startup after BIOS
-; hardware has been initialized and interrupts have been enabled.  All
-; we need to do here is display the BASIC banner; I/O goes through the
-; BIOS via Chrout / Chrin.
-
-initialize_target:
-        jmp     display_startup_banner
 
 .code
