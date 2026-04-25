@@ -175,9 +175,6 @@ void test_truncate_fp_to_int(void) {
     const IntConversionTestCase* test_case;
     int i;
     int result;
-    Float less_than_one = { 0x00000000, 127 };
-    Float too_large = { 0x00000000, 144 };
-    Float much_too_large = { 0x00000000, 197 };
 
     PRINT_TEST_NAME();
 
@@ -194,18 +191,53 @@ void test_truncate_fp_to_int(void) {
     // Some unusual cases.
 
     // If floating point value is less than 1, then output is zero.
-    load_fp0(&less_than_one);
-    result = truncate_fp_to_int();
-    ASSERT_EQ(err, 0);
-    ASSERT_EQ(result, 0);
+    {
+        Float less_than_one = { 0x00000000, 127 };
+        load_fp0(&less_than_one);
+        result = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(result, 0);
+    }
 
-    // If floating point value is >=2^16, the function should return error.
-    load_fp0(&too_large);
-    result = truncate_fp_to_int();
-    ASSERT_NE(err, 0);
-    load_fp0(&much_too_large);
-    result = truncate_fp_to_int();
-    ASSERT_NE(err, 0);
+    // 32768 (positive) should succeed. On cc65 the 16-bit int wraps to -32768.
+    {
+        Float fp_32768 = { 0x00000000, 143 };  // +32768
+        load_fp0(&fp_32768);
+        result = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(result, (int)-32768L);
+    }
+
+    // 65535 should succeed. On cc65 the 16-bit int wraps to -1.
+    {
+        Float fp_65535 = { 0x7FFF0000, 143 };  // 65535
+        load_fp0(&fp_65535);
+        result = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(result, -1);
+    }
+
+    // If floating point value is >=2^16 (65536), the function should return error.
+    {
+        Float too_large = { 0x00000000, 144 };       // 65536
+        Float much_too_large = { 0x00000000, 197 };
+        load_fp0(&too_large);
+        result = truncate_fp_to_int();
+        ASSERT_NE(err, 0);
+        load_fp0(&much_too_large);
+        result = truncate_fp_to_int();
+        ASSERT_NE(err, 0);
+    }
+
+    // -32769 should succeed (magnitude 32769 fits in 16 bits).
+    // 16-bit negation of 0x8001 = 0x7FFF = 32767.
+    {
+        Float fp_neg_32769 = { 0x80010000, 143 };  // -32769
+        load_fp0(&fp_neg_32769);
+        result = truncate_fp_to_int();
+        ASSERT_EQ(err, 0);
+        ASSERT_EQ(result, 32767);
+    }
 }
 
 typedef struct Int32ConversionTestCase {

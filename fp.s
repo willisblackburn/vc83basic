@@ -376,19 +376,14 @@ truncate_fp_to_int:
         cmp     #32                     ; Exponent >= 32 means out of range!
         bcs     raise_out_of_range
 @in_range:
+        lda     FP0t+2                  ; Upper two bytes of magnitude must be zero
+        ora     FP0t+3
+        bne     raise_out_of_range
         lda     FP0s                    ; Was float value negative?
-        bpl     @positive
-        jsr     negate_significand
-@positive:
-        lda     FP0t+1                  ; Load the high byte of the return value
-        tax                             ; Move into X for return
-        rol     A                       ; Rotate high bit into carry: this is the sign of the return value
-        lda     #0
-        adc     FP0t+2                  ; If I add the sign to the top 2 bytes, it must be zero
-        bne     raise_out_of_range
-        adc     FP0t+3
-        bne     raise_out_of_range
-        lda     FP0t+0                  ; Load low byte of return value into A
+        bpl     @load
+        jsr     negate_significand      ; Negate the significand; upper bytes don't matter anymore
+@load:  
+        ldax    FP0t                    ; Load result into AX
         rts
 
 raise_out_of_range:
