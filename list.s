@@ -103,14 +103,13 @@ list_statement:
         bne     @try_unary_operator
         jsr     decode_byte             ; Get the function number
         tay
-        bmi     @ex_function            ; It's an extension function
-        ldax    #function_name_table
-        bne     @got_func_table
-@ex_function:
-        tya
+        bpl     @not_ex_function        ; Standard function
         and     #$7F
         tay
         ldax    #ex_function_name_table
+        bne     @got_func_table         ; Unconditional
+@not_ex_function:
+        ldax    #function_name_table
 @got_func_table:
         jsr     expand_tokenized_name   ; Call directly becuase we don't want to add whitespace after
         jmp     @next

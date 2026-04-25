@@ -60,6 +60,23 @@ reset_data_2:
         mva     #.sizeof(Line) + 2, data_line_pos   ; Skip 1 for DATA, 1 for next statement offset
         rts
 
+; Advances next_line_ptr to the next line.
+; next_line_ptr = current next line (updated)
+; X SAFE, BC SAFE, DE SAFE
+
+advance_next_line_ptr:
+        ldy     #Line::next_line_offset
+        lda     (next_line_ptr),y       ; Get next line offset into A
+        clc
+        adc     next_line_ptr           ; Add line length to low byte of next_line_ptr
+        sta     next_line_ptr           ; Save back
+        bcc     set_next_line_pos       ; Don't need to change the high byte
+        inc     next_line_ptr+1         ; Increment the high byte
+
+set_next_line_pos:
+        mvy     #.sizeof(Line), next_line_pos
+        rts
+
 ; Sets next_line_ptr to program_ptr. Does not change the run state.
 ; Returns next_line_ptr in AX.
 ; BC SAFE, DE SAFE
@@ -68,8 +85,7 @@ reset_next_line_ptr:
         ldax    program_ptr
 reset_next_line_ptr_2:
         stax    next_line_ptr
-        mvy     #.sizeof(Line), next_line_pos
-        rts
+        bne     set_next_line_pos       ; Unconditional: stax doesn't affect flags, ldax sets Z from high byte
 
 ; Builds a null line at the location passed in AX. The null line has line number -1 and a length of zero.
 ; The zero length prevents advance_next_line_ptr from advancing past the line.
@@ -130,22 +146,6 @@ compare_next_line_to_target:
         txa                             ; High byte diff is 0; load low difference to set Z flag
 @done:
         rts     
-
-; Advances next_line_ptr to the next line.
-; next_line_ptr = current next line (updated)
-; X SAFE, BC SAFE, DE SAFE
-
-advance_next_line_ptr:
-        ldy     #Line::next_line_offset
-        lda     (next_line_ptr),y       ; Get next line offset into A
-        clc
-        adc     next_line_ptr           ; Add line length to low byte of next_line_ptr
-        sta     next_line_ptr           ; Save back
-        bcc     @skip                   ; Don't need to change the high byte
-        inc     next_line_ptr+1         ; Increment the high byte
-@skip:
-        mvy     #.sizeof(Line), next_line_pos
-        rts        
 
 ; Updates the program based on the information in line_buffer.
 ; If the line number in line_buffer is in the program, remove it.

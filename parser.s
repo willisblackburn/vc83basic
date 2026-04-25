@@ -270,6 +270,17 @@ return_carry:
         pla
         rts
 
+; ARGSEP: skip over argument separator ','
+
+op_argsep:
+        ldy     buffer_pos
+        jsr     read_argument_separator
+        bcs     op_fail
+        sty     buffer_pos
+        lda     #','
+        jsr     write_to_line_buffer
+        jmp     next_pvm
+
 ; WS: skip over whitespace
 
 op_ws:
@@ -305,19 +316,6 @@ compose_with_last_byte:
         ora     line_buffer-1,x         ; Subtract one since we want last character
         sta     line_buffer-1,x
         rts
-
-; ARGSEP: skip over argument separator ','
-
-op_argsep:
-        ldy     buffer_pos
-        jsr     read_argument_separator
-        bcc     @found
-        jmp     op_fail
-@found:
-        sty     buffer_pos
-        lda     #','
-        jsr     write_to_line_buffer
-        jmp     next_pvm
 
 ; Write a single byte to line_buffer, checking for the maximum line length.
 ; X SAFE, BC SAFE, DE SAFE
