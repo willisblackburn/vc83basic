@@ -15,7 +15,15 @@ exec_dim:
         ldax    array_name_table_ptr    ; Look for the name in the name table
         jsr     find_name
         bcc     @already_dimensioned
-        jmp     dimension_array         ; Go do it
+        jsr     dimension_array         ; Go do it
+        jsr     peek_byte               ; Check for comma (more arrays)
+        cmp     #','
+        bne     @done                   ; No more arrays
+        inc     line_pos                ; Skip ','
+        bne     exec_dim                ; Unconditional: loop for next array
+
+@done:
+        rts
 
 @invalid_variable:
         jmp     raise_invalid_variable

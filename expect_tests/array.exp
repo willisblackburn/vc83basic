@@ -49,3 +49,14 @@ PRINT M(1,1),M(2,2),M(4,3),M(5,5)
 } {
 1               4               12              25
 }
+
+# Multiple arrays in one DIM
+
+test {
+DIM P(10),Q(20)
+LET P(5)=50
+LET Q(15)=150
+PRINT P(5),Q(15)
+} {
+50              150
+}

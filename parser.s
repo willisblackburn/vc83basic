@@ -847,7 +847,7 @@ statement_name_table:
 :       name_table_entry "NEW"
 :       name_table_entry "CLR"
 :       name_table_entry "DIM"
-            JUMP pvm_var
+            JUMP pvm_var_list
 :       name_table_entry "REM"
             JUMP pvm_text
 :       name_table_entry "DATA"
