@@ -598,6 +598,12 @@ pvm_var:
 
 ; Argument lists
 
+pvm_arg_4:
+        CALL pvm_expression
+        ARGSEP
+pvm_arg_3:
+        CALL pvm_expression
+        ARGSEP
 pvm_arg_2:
         CALL pvm_expression
         ARGSEP

@@ -24,7 +24,7 @@ ex_statement_name_table:
 :       name_table_entry "COLOR"
             JUMP pvm_arg_2
 :       name_table_entry "SOUND"
-            JUMP ex_pvm_arg_3
+            JUMP pvm_arg_3
 :       name_table_entry "VOL"
             JUMP pvm_expression
 :       name_table_entry "PAUSE"
@@ -34,9 +34,9 @@ ex_statement_name_table:
 :       name_table_entry "TIME"
 :       name_table_entry "DATE"
 :       name_table_entry "SETTIME"
-            JUMP ex_pvm_arg_3
+            JUMP pvm_arg_3
 :       name_table_entry "SETDATE"
-            JUMP ex_pvm_arg_4
+            JUMP pvm_arg_4
 :       name_table_entry "NVRAM"
             JUMP pvm_arg_2
 :       name_table_entry "BANK"
@@ -45,18 +45,6 @@ ex_statement_name_table:
 :       name_table_entry "SYS"
             JUMP pvm_expression
 :       name_table_end
-
-; Helper PVM fragments for 3- and 4-argument statements.
-
-ex_pvm_arg_4:
-        CALL pvm_expression
-        ARGSEP
-ex_pvm_arg_3:
-        CALL pvm_expression
-        ARGSEP
-        CALL pvm_expression
-        ARGSEP
-        JUMP pvm_expression
 
 ex_function_name_table:
         name_table_entry "JOY"
