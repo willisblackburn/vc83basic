@@ -102,6 +102,7 @@ S1 = FPX+2
 .include "poke.s"
 .include "print.s"
 .include "program.s"
+.include "random.s"
 .include "read.s"
 .include "run.s"
 .include "statements.s"

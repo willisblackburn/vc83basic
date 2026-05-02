@@ -228,9 +228,9 @@ PRINT RND(0)=RND(0)
 1
 }
 
-# test {
-# PRINT RND(-1)<>RND(-2)
-# } {
-# 1
-# }
-# TODO: RND(-1) and RND(-2) produce the same seed because they have the same normalized mantissa.
+# RND(-1) and RND(-2) produce the same seed because they have the same normalized mantissa.
+test {
+PRINT RND(-1)=RND(-2)
+} {
+1
+}
