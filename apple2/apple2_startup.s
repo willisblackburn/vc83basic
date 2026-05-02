@@ -15,7 +15,5 @@ startup:
         jsr     main        
         jmp     DOSWARM                 ; Exit to resident program
 
-reset_handler:
-        raise   PS_READY
 
 .code
