@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-TARGETS = sim6502 apple2 apple2_lc atari ac6502
+TARGETS = sim6502 apple2 apple2_lc atari ac6502 vc83_serial
 TEST_TARGET = sim6502
 
 TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
@@ -68,6 +68,17 @@ basic_ac6502.o: basic_ac6502.s basic.s constants.inc zeropage.s version.inc
 basic_ac6502: basic_ac6502.o
 	cl65 -t none -C ac6502/ac6502.cfg $(LDFLAGS) -o $@ $<
 	$(PRINT_SIZE)
+
+# Goal: basic_vc83_serial
+basic_vc83_serial.o: basic_vc83_serial.s basic.s constants.inc zeropage.s version.inc
+	cl65 -t none -c $(ASMFLAGS) -o $@ $<
+
+basic_vc83_serial: basic_vc83_serial.o
+	cl65 -t none -C vc83_serial/vc83_serial.cfg $(LDFLAGS) -o $@ $<
+	$(PRINT_SIZE)
+
+basic_vc83_serial.mem: basic_vc83_serial
+	srec_cat $< -Binary -offset 0x0400 -Output $@ -VMem 8
 
 # Rule for version.inc
 version.inc: FORCE

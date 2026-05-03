@@ -10,6 +10,8 @@ basic_apple2
 basic_apple2_lc
 basic_atari
 basic_sim6502
+basic_vc83_serial
+basic_vc83_serial.mem
 *_test
 *_test.s
 constants.inc
