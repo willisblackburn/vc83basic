@@ -2,6 +2,8 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+H2          := $2C
+V2          := $2D
 PROMPT      := $33      ; GETLN prompt character
 COUTMASK    := $50
 HIMEM       := $73      ; Highest available memory address+1
@@ -16,6 +18,13 @@ LCROM       := $C081    ; Select ROM
 LCROMWP     := $C082    ; Select ROM + write protect RAM
 LCRAM       := $C083    ; Select RAM (read twice to write-enable RAM)
 
+PLOT        := $F800
+HLINE       := $F819
+VLINE       := $F828
+CLRSCR      := $F832
+CLRTOP      := $F836
+SETCOL      := $F864
+SCRN        := $F871
 SETTXT      := $FB39
 PREAD       := $FB1E
 SETGR       := $FB40
