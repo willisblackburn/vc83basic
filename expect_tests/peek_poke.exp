@@ -40,3 +40,51 @@ PRINT PEEK(ADDR, 1)
 } {
 ERR: ARITY?
 }
+
+# DPEEK and DPOKE
+
+test {
+NEW
+} {
+READY
+}
+
+test {
+10 LET A$="HELLO"
+20 LET ADDR=ADR(A$)
+30 PRINT DPEEK(ADDR)
+40 DPOKE ADDR,18761
+50 PRINT A$
+RUN
+} {
+17736
+IILLO
+
+READY
+}
+
+test {
+PRINT DPEEK()
+} {
+ERR: SYNTAX
+}
+
+test {
+PRINT DPEEK(ADDR, 1)
+} {
+ERR: ARITY?
+}
+
+test {
+DPOKE ADDR
+} {
+ERR: SYNTAX
+}
+
+test {
+DPOKE ADDR, 1, 2
+} {
+ERR: SYNTAX
+}
+
+

@@ -10,7 +10,6 @@ spawn_basic
 # Formatting of expressions in LIST
 
 test {
-NEW
 100 PRINT 1
 101 PRINT X
 102 PRINT X+1
@@ -53,10 +52,17 @@ LIST
 118 PRINT "HELLO" AND "WORLD"
 }
 
+test {
+NEW
+} {
+READY
+}
+
 # DATA and REM retain all characters
 
 test {
 10 DATA 1,2,3
+
 20 DATA TEXT WITHOUT QUOTES, "TEXT WITH QUOTES", 3.14159, !@#
 LIST
 } {

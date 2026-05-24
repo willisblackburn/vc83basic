@@ -864,6 +864,8 @@ statement_name_table:
             JUMP pvm_opt_number
 :       name_table_entry "POKE"
             JUMP pvm_arg_2
+:       name_table_entry "DPOKE"
+            JUMP pvm_arg_2
 :       name_table_entry "END"
 :       name_table_entry "INPUT"
             TRY @vars
@@ -949,6 +951,7 @@ function_name_table:
 :       name_table_entry "VAL"
 :       name_table_entry "FRE"
 :       name_table_entry "PEEK"
+:       name_table_entry "DPEEK"
 :       name_table_entry "ADR"
 :       name_table_entry "USR"
 :       name_table_entry "INT"

@@ -42,9 +42,11 @@ def(ST_DATA,           20)
 def(ST_READ,           21)
 def(ST_RESTORE,        22)
 def(ST_POKE,           23)
-def(ST_END,            24)
-def(ST_INPUT,          25)
-def(ST_IF_THEN,        26)
+def(ST_DPOKE,          24)
+def(ST_END,            25)
+def(ST_INPUT,          26)
+def(ST_IF_THEN,        27)
+
 
 comment Binary operator tokens: combine with TOKEN_OP
 

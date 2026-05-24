@@ -25,6 +25,8 @@ function_table:
     .byte   1 | PROLOG_POP_FP | EPILOG_PUSH_INT
     .word   fun_peek-1
     .byte   1 | PROLOG_POP_INT | EPILOG_PUSH_INT
+    .word   fun_dpeek-1
+    .byte   1 | PROLOG_POP_INT | EPILOG_PUSH_INT
     .word   fun_adr-1
     .byte   1 | PROLOG_POP_STRING | EPILOG_PUSH_INT
     .word   fun_usr-1
@@ -170,6 +172,15 @@ fun_peek:
         lda     (BC),y                  ; Get the value there
 fun_len:
         ldx     #0                      ; Zero-extend to 16 bits; for len we receive the string length in A
+        rts
+
+fun_dpeek:
+        jsr     fun_peek                ; Leaves pointer in BC and Y=0
+        pha
+        iny
+        lda     (BC),y                  ; Get high byte
+        tax
+        pla
         rts
 
 .bss

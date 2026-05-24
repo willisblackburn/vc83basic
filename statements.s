@@ -44,6 +44,7 @@ statement_vectors:
         .word   exec_read-1
         .word   exec_restore-1
         .word   exec_poke-1
+        .word   exec_dpoke-1
         .word   exec_end-1
         .word   exec_input-1
         .word   exec_if-1
