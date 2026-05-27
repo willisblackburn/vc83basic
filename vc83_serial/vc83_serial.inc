@@ -2,7 +2,7 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-UART_BASE       := $C100
+UART_BASE       := $D100
 UART_TX_LEVEL   := UART_BASE + 0
 UART_RX_LEVEL   := UART_BASE + 1
 UART_TX_DATA    := UART_BASE + 2
