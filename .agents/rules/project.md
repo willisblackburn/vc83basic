@@ -12,7 +12,7 @@ keep in mind the very limited space available: the core interpreter needs to fit
 platform-specific extensions the total size can go up to 10K, 12K, or 16K, depending on the platform.
 The specific version that must fit into 8K is the apple2 (not apple2_lc) binary. The code size limitation
 means that we may sometimes have to select algorithms that are most space-efficient, even if they are
-slower.
+slower. The `make` process will report the code size of each binary.
 
 ## Testing
 
