@@ -39,7 +39,6 @@ clear_variables:
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos
         mva     #PRIMARY_STACK_SIZE, stack_pos
-        sta     good_stack_pos
         rts
 
 ; Resets the stack, clears the resume state, and performs RESTORE.

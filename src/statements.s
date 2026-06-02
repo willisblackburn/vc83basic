@@ -9,6 +9,8 @@
 .assert ex_statement_vectors_offset >= statement_vectors_offset, error
 
 exec_statement:
+        mva     stack_pos, reset_stack_pos      ; Save stack pos in case we have to roll it back
+        mva     #OP_STACK_SIZE, op_stack_pos    ; Clear op stack
         jsr     decode_byte             ; Get statement number
         clc
         adc     #statement_vectors_offset

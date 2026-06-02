@@ -80,11 +80,10 @@ run:
         jsr     decode_byte             ; The next byte is the next statement offset
         sta     next_line_pos           ; By default the "next line" is the next statement on this line
         jsr     exec_statement
-        mva     stack_pos, good_stack_pos   ; Remember the stack position after successful statement
         jmp     run                     ; Keep on truckin'
 
 handle_error:
-        mvx     good_stack_pos, stack_pos   ; After an error, restore the stack position we saved
+        mvx     reset_stack_pos, stack_pos   ; After an error, restore the stack position we saved
         and     #$7F                    ; Clear the high bit
         beq     @not_error              ; For STOPPED we don't print "ERROR"
         pha                             ; Save the error value again
