@@ -7,7 +7,7 @@
 
 proc spawn_basic {} {
     global spawn_id
-    spawn sim65 basic_sim6502
+    spawn sim65 build/basic_sim6502
     fconfigure $spawn_id -translation { crlf lf }
     expect "VC83 BASIC*BYTES FREE\n"
     expect_before {

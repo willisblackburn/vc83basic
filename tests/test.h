@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "../constants.h"
+#include "../src/constants.h"
 
 // Types
 // These are not the actual types used by the interpeter! They are C structs that mirror the structures used in
@@ -43,7 +43,7 @@ typedef struct String {
 
 // Zero Page
 
-#include "../zeropage.h"
+#include "../src/zeropage.h"
 
 // References to exports defined in c_wrappers.s
 
