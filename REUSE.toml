@@ -1,6 +1,11 @@
 version = 1
 
 [[annotations]]
+path = ".agents/**"
+SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
 path = ".gitignore"
 SPDX-FileCopyrightText = "2022-2026 Willis Blackburn"
 SPDX-License-Identifier = "MIT-0"
