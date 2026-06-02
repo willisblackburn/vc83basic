@@ -183,32 +183,6 @@ fun_dpeek:
         pla
         rts
 
-.bss
-
-rnd_value:      .res .sizeof(Float::t)
-
-.code
-
-fun_rnd:
-        lda     FP0e                    ; 0 -> return previous number, >0 -> return next number, <0 -> reseed
-        beq     @output
-        lda     FP0s
-        bpl     @generate
-        jsr     rnd_reseed
-@generate:
-        jsr     rnd_generate
-@output:
-        ldx     #4                      ; Make random number from rnd_value
-@next_copy_to_fp0:
-        lda     rnd_value-1,x
-        sta     FP0t-1,x
-        dex
-        bne     @next_copy_to_fp0
-        lda     #BIAS-1                 ; This effectively puts the binary point to the left of the mantissa
-        sta     FP0e
-        stx     FP0s                    ; The purpose of all the -1s was to make X 0 here
-        jmp     normalize 
-
 fun_sgn:
         lda     FP0e                    ; If exponent is 0 then value is 0; return 0
         beq     @done

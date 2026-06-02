@@ -249,7 +249,10 @@ for_all_strings:
         lda     #STRING_EXTRA - 2       ; Move to next string; minus 2 because two calls to "plus_one" function
         jsr     add_src_ptr_plus_one
 @next:
-        jsr     check_src_ptr
+        lda     src_ptr                 ; Compare src_ptr with himem_ptr using 16-bit subtraction
+        cmp     himem_ptr               ; Check low byte
+        lda     src_ptr+1               ; Subtract high byte
+        sbc     himem_ptr+1             ; Carry clear if src_ptr < himem_ptr, else carry set
         bcc     @continue
         rts
 
@@ -463,16 +466,6 @@ set_name_ptr_data:
         txa                             ; Return type in A (setting flags)
         rts
 
-; Checks if src_ptr is < himem_ptr.
-; Returns carry clear if it is, otherwise carry set.
-
-check_src_ptr:
-        lda     src_ptr                 ; Compare src_ptr with himem_ptr using 16-bit subtraction
-        cmp     himem_ptr               ; Check low byte
-        lda     src_ptr+1               ; Subtract high byte
-        sbc     himem_ptr+1             ; Returns with carry clear if src_ptr < himem_ptr, else carry set
-@done:
-        rts
 
 ; Adds the value in A plus one to src_ptr. Always adds one more than A to make make skipping over the length byte
 ; and string data easier.
