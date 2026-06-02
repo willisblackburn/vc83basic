@@ -12,8 +12,7 @@ startup:
         ldx     #$FF        
         txs                             ; Initialize the stack to $FF
         jsr     initialize_target
-        jsr     main        
-        jmp     DOSWARM                 ; Exit to resident program
+        jmp     main
 
 
 .code

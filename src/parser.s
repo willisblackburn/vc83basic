@@ -609,22 +609,18 @@ pvm_arg_2:
         ARGSEP
         JUMP pvm_expression
 
-; pvm_arg_list is list of 1-N (but not 0) expressions.
-
-pvm_arg_list:
-        CALL pvm_expression
-        TRY @done
-        ARGSEP
-        JUMP pvm_arg_list
-@done:
-        RETURN
-
-; pvm_paren_arg_list is a list of 1-N (but not 0) expressions surrounded by parentheses.
+; pvm_paren_arg_list is a list of expressions surrounded by parentheses.
 
 pvm_paren_arg_list:
         WS
         MATCH '('
-        CALL pvm_arg_list
+@loop:
+        TRY @done
+        CALL pvm_expression
+        TRY @done
+        ARGSEP
+        JUMP @loop
+@done:
         WS
         MATCH ')'
         RETURN

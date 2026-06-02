@@ -222,6 +222,9 @@ evaluate_unary_operator:
 
 evaluate_argument_list:
         pha                             ; Save expected count
+        jsr     peek_byte
+        cmp     #')'
+        beq     @done
 @loop:
         jsr     evaluate_expression
         tsx

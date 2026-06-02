@@ -10,7 +10,7 @@ spawn_basic
 test "PRINT SIN(0)\n" "0\n"
 test "PRINT SIN(1)\n" "0.841470985\n"
 
-test "PRINT SIN()\n" "ERR: SYNTAX\n"
+test "PRINT SIN()\n" "ERR: ARITY?\n"
 test "PRINT SIN(1, 2)\n" "ERR: ARITY?\n"
 
 # COS
@@ -18,7 +18,7 @@ test "PRINT SIN(1, 2)\n" "ERR: ARITY?\n"
 test "PRINT COS(0)\n" "1\n"
 test "PRINT COS(1)\n" "0.540301189\n"
 
-test "PRINT COS()\n" "ERR: SYNTAX\n"
+test "PRINT COS()\n" "ERR: ARITY?\n"
 test "PRINT COS(1, 2)\n" "ERR: ARITY?\n"
 
 # TAN
@@ -26,7 +26,7 @@ test "PRINT COS(1, 2)\n" "ERR: ARITY?\n"
 test "PRINT TAN(0)\n" "0\n"
 test "PRINT TAN(1)\n" "1.55741094\n"
 
-test "PRINT TAN()\n" "ERR: SYNTAX\n"
+test "PRINT TAN()\n" "ERR: ARITY?\n"
 test "PRINT TAN(1, 2)\n" "ERR: ARITY?\n"
 
 # ATN
@@ -37,7 +37,7 @@ test "PRINT ATN(0.5)\n" "0.463647609\n"
 test "PRINT ATN(2)\n" "1.10714739\n"
 test "PRINT ATN(-1)\n" "-0.785398163\n"
 
-test "PRINT ATN()\n" "ERR: SYNTAX\n"
+test "PRINT ATN()\n" "ERR: ARITY?\n"
 test "PRINT ATN(1, 2)\n" "ERR: ARITY?\n"
 
 # LOG
@@ -51,7 +51,7 @@ PRINT LOG(-1)
 ERR: RANGE
 }
 
-test "PRINT LOG()\n" "ERR: SYNTAX\n"
+test "PRINT LOG()\n" "ERR: ARITY?\n"
 test "PRINT LOG(1, 2)\n" "ERR: ARITY?\n"
 
 # EXP
@@ -59,7 +59,7 @@ test "PRINT LOG(1, 2)\n" "ERR: ARITY?\n"
 test "PRINT EXP(0)\n" "1\n"
 test "PRINT EXP(1)\n" "2.71828182\n"
 
-test "PRINT EXP()\n" "ERR: SYNTAX\n"
+test "PRINT EXP()\n" "ERR: ARITY?\n"
 test "PRINT EXP(1, 2)\n" "ERR: ARITY?\n"
 
 # SQR
@@ -73,5 +73,5 @@ PRINT SQR(-1)
 ERR: RANGE
 }
 
-test "PRINT SQR()\n" "ERR: SYNTAX\n"
+test "PRINT SQR()\n" "ERR: ARITY?\n"
 test "PRINT SQR(1, 2)\n" "ERR: ARITY?\n"

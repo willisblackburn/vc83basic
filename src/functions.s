@@ -22,7 +22,7 @@ function_table:
     .word   fun_val-1
     .byte   1 | PROLOG_POP_STRING | EPILOG_PUSH_FP
     .word   fun_fre-1
-    .byte   1 | PROLOG_POP_FP | EPILOG_PUSH_INT
+    .byte   0 | EPILOG_PUSH_INT
     .word   fun_peek-1
     .byte   1 | PROLOG_POP_INT | EPILOG_PUSH_INT
     .word   fun_dpeek-1

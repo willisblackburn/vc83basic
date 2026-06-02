@@ -19,7 +19,6 @@ startup:
         txs                             ; Initialize the stack to $FF
         mvax    #(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__), c_sp
         jsr     initialize_target
-        jsr     main        
-        jmp     exit                    ; Return 0 from sim65
+        jmp     main
 
 .code

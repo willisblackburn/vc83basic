@@ -36,7 +36,7 @@ statement_vectors:
         .word   exec_next-1
         .word   exec_stop-1
         .word   exec_cont-1
-        .word   exec_new-1
+        .word   initialize_program-1
         .word   clear_variables-1
         .word   exec_dim-1
         .word   exec_rem-1

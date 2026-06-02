@@ -155,7 +155,7 @@ PRINT INT(3.9),INT(-3.1),INT(-3.9)
 test {
 PRINT INT()
 } {
-ERR: SYNTAX
+ERR: ARITY?
 }
 
 test {
@@ -173,7 +173,7 @@ PRINT ABS(3.14), ABS(-3.14), ABS(0)
 test {
 PRINT ABS()
 } {
-ERR: SYNTAX
+ERR: ARITY?
 }
 
 test {
@@ -191,7 +191,7 @@ PRINT SGN(5),SGN(-5),SGN(0)
 test {
 PRINT SGN()
 } {
-ERR: SYNTAX
+ERR: ARITY?
 }
 
 test {
@@ -201,12 +201,11 @@ ERR: ARITY?
 }
 
 # FRE
-# TODO: FRE(0) returns negative value in sim65 due to 16-bit signed integer limits.
-# test {
-# PRINT FRE(0) > 0
-# } {
-# 1
-# }
+test {
+PRINT FRE()<0 OR FRE()>0
+} {
+1
+}
 
 # RND
 

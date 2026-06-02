@@ -42,11 +42,3 @@ exec_cont:
         raieq   ERR_CONT_WITHOUT_STOP
         mva     resume_line_pos, next_line_pos
         jmp     raise_ps_running
-
-; NEW statment:
-; Clears the program from memory, which also has the effect of stopping the program as if END.
-
-exec_new:
-        jsr     initialize_program
-        clc
-        rts
