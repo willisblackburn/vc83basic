@@ -9,9 +9,11 @@
 ;
 ; Missing hardware is handled gracefully: statements print "NO DEVICE"
 ; (or silently skip for video/sound commands, matching the BIOS); the
-; hardware-reading functions return 0.
-
-.setcpu "65C02"
+; hardware-reading functions return whatever the BIOS's own BASIC returns
+; for an absent card -- 0 for NVRAM, $FF for JOY (the ports are active low,
+; so 0 would mean every direction and button held at once).
+;
+; The 65C02 instruction set is enabled in ac6502.inc.
 
 ; --- Parser name tables and argument parsers --------------------------------
 
@@ -166,20 +168,6 @@ ex_print_ax:
         jsr     int_to_fp
         jmp     print_number
 
-; Check for Ctrl-C / ESC in the keyboard buffer.  Raise ERR_STOPPED if found.
-ex_break_check:
-        jsr     Chrin                   ; Non-blocking (C=1 if a char is waiting)
-        bcc     @done
-        cmp     #CH_ESC
-        beq     @brk
-        cmp     #CH_CTRLC
-        bne     @done
-@brk:
-        lda     #ERR_STOPPED
-        jmp     on_raise
-@done:
-        rts
-
 ; ---------------------------------------------------------------------------
 ; Video statements: CLS, LOCATE, COLOR
 ; ---------------------------------------------------------------------------
@@ -191,11 +179,23 @@ exec_cls:
 @skip:
         rts
 
+; LOCATE row, col -- 0-23 and 0-39, range-checked as the BIOS's own BASIC does.
+; VideoSetCursor computes row * 40 + col with no limit of its own, so a row
+; past 51 would leave the cursor beyond the 960-byte name table and let the
+; next PRINT scribble over the character set in the pattern table at VRAM $0800.
 exec_locate:
         jsr     evaluate_argument_list
         jsr     pop_int_fp0             ; col
+        cpx     #0
+        bne     @range
+        cmp     #40
+        bcs     @range
         sta     D                       ; D = col
         jsr     pop_int_fp0             ; row
+        cpx     #0
+        bne     @range
+        cmp     #24
+        bcs     @range
         tay                             ; Y = row
         ldx     D                       ; X = col
         bit     HW_PRESENT
@@ -203,6 +203,8 @@ exec_locate:
         jmp     VideoSetCursor
 @skip:
         rts
+@range:
+        raise   ERR_OUT_OF_RANGE
 
 exec_color:
         jsr     evaluate_argument_list
@@ -323,7 +325,7 @@ exec_wait:
         jsr     pop_int_fp0             ; address
         stax    BC                      ; BC = pointer
 @loop:
-        jsr     ex_break_check
+        jsr     check_break             ; WAIT can spin forever -- stay breakable
         ldy     #0
         lda     (BC),y
         and     D
@@ -376,40 +378,51 @@ exec_date:
         jsr     ex_print_2d
         jmp     newline
 
+; Only D and E survive a pop_int_fp0 (pop_fp0 is documented DE SAFE, not BC
+; SAFE), and SETTIME has three values to hold, so the surplus goes on the CPU
+; stack -- the same trick exec_sound uses.
 exec_settime:
         jsr     evaluate_argument_list
         jsr     pop_int_fp0             ; ss
-        sta     C                       ; C = seconds
+        pha
         jsr     pop_int_fp0             ; mm
-        sta     D                       ; D = minutes
+        pha
         jsr     pop_int_fp0             ; hh
         sta     E                       ; E = hours
         lda     HW_PRESENT
         and     #HW_RTC
         bne     :+
+        pla                             ; Unwind mm and ss before bailing out
+        pla
         jmp     ex_no_device
-:       lda     E                       ; A = hours
-        ldx     D                       ; X = minutes
-        ldy     C                       ; Y = seconds
+:       pla
+        tax                             ; X = minutes
+        pla
+        tay                             ; Y = seconds
+        lda     E                       ; A = hours
         jmp     RtcWriteTime
 
+; Four values, and only D and E survive a pop -- see exec_settime above.
 exec_setdate:
         jsr     evaluate_argument_list
         jsr     pop_int_fp0             ; dd
-        sta     B                       ; B = day
+        pha
         jsr     pop_int_fp0             ; mm
-        sta     C                       ; C = month
+        pha
         jsr     pop_int_fp0             ; yy
-        sta     D                       ; D = year
+        sta     E                       ; E = year
         jsr     pop_int_fp0             ; cc
         sta     RTC_BUF_CENT
         lda     HW_PRESENT
         and     #HW_RTC
         bne     :+
+        pla                             ; Unwind mm and dd before bailing out
+        pla
         jmp     ex_no_device
-:       lda     B                       ; A = day
-        ldx     C                       ; X = month
-        ldy     D                       ; Y = year
+:       pla
+        tax                             ; X = month
+        pla                             ; A = day
+        ldy     E                       ; Y = year
         jmp     RtcWriteDate
 
 ; ---------------------------------------------------------------------------
@@ -487,15 +500,27 @@ ex_sys_call:
 ; Functions
 ; ---------------------------------------------------------------------------
 
-; JOY(n) -- return joystick bitmask for port n (1 or 2); 0 if GPIO absent.
+; JOY(n) -- return the joystick bitmask for port n (1 or 2).
+; Both ports are active low -- pulled high through 1K, grounded by the stick's
+; switches -- so a held button reads 0 and an untouched stick reads $FF.  That
+; makes $FF, not 0, the honest answer for a port that is not fitted at all;
+; 0 would claim every direction and button is held.  Matches FnJoy in the
+; BIOS's own BASIC, down to raising an error for a port that does not exist.
 fun_joy:
-        sta     D                       ; save port number
+        cpx     #0                      ; High byte must be zero...
+        bne     @range
+        cmp     #1                      ; ...and the port must be 1 or 2
+        beq     @port
+        cmp     #2
+        bne     @range
+@port:
+        sta     D                       ; Save the port number
         lda     HW_PRESENT
         and     #HW_GPIO
-        beq     @none
+        beq     @absent
         lda     D
         cmp     #2
-        bcs     @p2                     ; n >= 2 -> port 2
+        beq     @p2
         jsr     ReadJoystick1
         ldx     #0
         rts
@@ -503,15 +528,19 @@ fun_joy:
         jsr     ReadJoystick2
         ldx     #0
         rts
-@none:
-        lda     #0
-        tax
+@absent:
+        lda     #$FF                    ; What an untouched stick reads
+        ldx     #0
         rts
+@range:
+        raise   ERR_OUT_OF_RANGE
 
 ; INKEY(x) -- return ASCII code of a pending key, or 0 if none.
 ; The argument is ignored (vc83 functions require at least one arg).
+; get_key rather than the Kernal's Chrin, which would echo the key to the
+; screen on its way back.
 fun_inkey:
-        jsr     Chrin                   ; C=1 if char available
+        jsr     get_key                 ; C=1 if a key was waiting
         bcs     @got
         lda     #0
 @got:
