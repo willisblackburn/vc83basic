@@ -61,6 +61,33 @@ To run on real hardware, you obviously need to put `basic.dsk` on a physical dis
 a [Floppy Emu](https://www.bigmessowires.com/floppy-emu/). If you have an actual Apple II then you presumably understand
 how to do this. I've only tested on my Apple II+, so if it doesn't work on your e/c/gs, let me know.
 
+### Apple 1
+
+The `basic_apple1` binary targets the original Apple 1 and compatible hardware including the
+[Replica-1](https://www.corshamtech.com/product/replica-1-plus/), [APL1](https://github.com/acwright/APL1),
+and most Apple 1 emulators. All of these use the original Apple 1 PIA I/O at `$D010–$D013`. The binary
+loads at `$4000`.
+
+1.  Build the binary:
+    ```bash
+    make build/basic_apple1
+    ```
+
+2.  Convert the raw binary to WozMon-formatted text using [bin2woz](https://github.com/acwright/bin2woz):
+    ```bash
+    bin2woz -a 0x4000 build/basic_apple1 > build/basic_apple1.woz
+    ```
+    Each line of the output contains a 4-digit hex address followed by up to 16 bytes, ready
+    to be pasted into WozMon or sent via the APL1 Terminal's Send Program panel.
+
+3.  Load the program into your Apple 1 (or emulator) using WozMon by pasting or typing the
+    contents of `basic_apple1.woz`.
+
+4.  Run it:
+    ```
+    4000R
+    ```
+
 ## Memory Map
 
 The interpreter manages memory using several zero-page pointers:

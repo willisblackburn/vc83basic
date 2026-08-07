@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-TARGETS = sim6502 apple2 apple2_lc atari ac6502 vc83_serial
+TARGETS = sim6502 apple1 apple2 apple2_lc atari ac6502 vc83_serial
 TEST_TARGET = sim6502
 
 TESTS = $(notdir $(basename $(wildcard tests/*_test.c)))
@@ -42,6 +42,16 @@ build/basic_sim6502.o: targets/sim6502/basic_sim6502.s src/basic.s $(GENERATED_A
 build/basic_sim6502: build/basic_sim6502.o
 	@mkdir -p $(@D)
 	cl65 -t sim6502 -C targets/sim6502/sim6502.cfg $(LDFLAGS) -o $@ $<
+	$(PRINT_SIZE)
+
+# Goal: basic_apple1
+build/basic_apple1.o: targets/apple1/basic_apple1.s src/basic.s $(GENERATED_ASM_SOURCES)
+	@mkdir -p $(@D)
+	cl65 -t none -c $(ASMFLAGS) --asm-include-dir targets/apple1 -o $@ $<
+
+build/basic_apple1: build/basic_apple1.o
+	@mkdir -p $(@D)
+	cl65 -t none -C targets/apple1/apple1.cfg $(LDFLAGS) -o $@ $<
 	$(PRINT_SIZE)
 
 # Goal: basic_apple2
