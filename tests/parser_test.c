@@ -6,22 +6,40 @@
 
 #include "test.h"
 
-void call_parse_pvm_expect_buffer_pos(const char* s, const char* start, const char* expect_line_data,
+void call_parse_expression_expect_buffer_pos(const char* s, const char* expect_line_data,
     size_t expect_line_data_length, size_t expect_buffer_pos, int line) {
-    fprintf(stderr, "  %s:%d: parse_pvm(\"%s\")\n", __FILE__, line, s);
+    fprintf(stderr, "  %s:%d: parse_expression(\"%s\")\n", __FILE__, line, s);
     strcpy(buffer, s);
     buffer_pos = 0;
     line_pos = offsetof(Line, data);
-    parse_pvm(start);
+    parse_expression_wrapper();
     ASSERT_EQ(err, 0);
     ASSERT_EQ(buffer_pos, expect_buffer_pos);
     ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
     ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
 }
 
-void call_parse_pvm(const char* s, const char* start, const char* expect_line_data,
+void call_parse_expression(const char* s, const char* expect_line_data,
     size_t expect_line_data_length, int line) {
-    call_parse_pvm_expect_buffer_pos(s, start, expect_line_data, expect_line_data_length, strlen(s), line);
+    call_parse_expression_expect_buffer_pos(s, expect_line_data, expect_line_data_length, strlen(s), line);
+}
+
+void call_parse_statement_expect_buffer_pos(const char* s, const char* expect_line_data,
+    size_t expect_line_data_length, size_t expect_buffer_pos, int line) {
+    fprintf(stderr, "  %s:%d: parse_statement(\"%s\")\n", __FILE__, line, s);
+    strcpy(buffer, s);
+    buffer_pos = 0;
+    line_pos = offsetof(Line, data);
+    parse_statement_wrapper();
+    ASSERT_EQ(err, 0);
+    ASSERT_EQ(buffer_pos, expect_buffer_pos);
+    ASSERT_MEMORY_EQ(line_buffer.data, expect_line_data, expect_line_data_length);
+    ASSERT_EQ(line_pos, offsetof(Line, data) + expect_line_data_length);
+}
+
+void call_parse_statement(const char* s, const char* expect_line_data,
+    size_t expect_line_data_length, int line) {
+    call_parse_statement_expect_buffer_pos(s, expect_line_data, expect_line_data_length, strlen(s), line);
 }
 
 void test_pvm_expression(void) {
@@ -46,34 +64,34 @@ void test_pvm_expression(void) {
     PRINT_TEST_NAME();
 
     // Constants
-    call_parse_pvm("1", pvm_expression, constant_line_data_1, sizeof constant_line_data_1, __LINE__);
+    call_parse_expression("1", constant_line_data_1, sizeof constant_line_data_1, __LINE__);
 
     // Variables
-    call_parse_pvm("X", pvm_expression, variable_line_data_1, sizeof variable_line_data_1, __LINE__);
-    call_parse_pvm("S$", pvm_expression, variable_line_data_2, sizeof variable_line_data_2, __LINE__);
-    call_parse_pvm("X(5)", pvm_expression, variable_line_data_3, sizeof variable_line_data_3, __LINE__);
-    call_parse_pvm("S$(1,25)", pvm_expression, variable_line_data_4, sizeof variable_line_data_4, __LINE__);
+    call_parse_expression("X", variable_line_data_1, sizeof variable_line_data_1, __LINE__);
+    call_parse_expression("S$", variable_line_data_2, sizeof variable_line_data_2, __LINE__);
+    call_parse_expression("X(5)", variable_line_data_3, sizeof variable_line_data_3, __LINE__);
+    call_parse_expression("S$(1,25)", variable_line_data_4, sizeof variable_line_data_4, __LINE__);
 
     // Operators
-    call_parse_pvm("1+1", pvm_expression, operator_line_data_1, sizeof operator_line_data_1, __LINE__);
-    call_parse_pvm("  1+1", pvm_expression, operator_line_data_1, sizeof operator_line_data_1, __LINE__);
-    call_parse_pvm("  1  +  1", pvm_expression, operator_line_data_1, sizeof operator_line_data_1, __LINE__);
-    call_parse_pvm("1+1/2", pvm_expression, operator_line_data_2, sizeof operator_line_data_2, __LINE__);
-    call_parse_pvm("\"A\" & \"B\"", pvm_expression, operator_line_data_3, sizeof operator_line_data_3, __LINE__);
-    call_parse_pvm("X AND Y", pvm_expression, operator_line_data_4, sizeof operator_line_data_4, __LINE__);
+    call_parse_expression("1+1", operator_line_data_1, sizeof operator_line_data_1, __LINE__);
+    call_parse_expression("  1+1", operator_line_data_1, sizeof operator_line_data_1, __LINE__);
+    call_parse_expression("  1  +  1", operator_line_data_1, sizeof operator_line_data_1, __LINE__);
+    call_parse_expression("1+1/2", operator_line_data_2, sizeof operator_line_data_2, __LINE__);
+    call_parse_expression("\"A\" & \"B\"", operator_line_data_3, sizeof operator_line_data_3, __LINE__);
+    call_parse_expression("X AND Y", operator_line_data_4, sizeof operator_line_data_4, __LINE__);
 
     // Unary operators
-    call_parse_pvm("1+-A", pvm_expression, unary_operator_line_data_1, sizeof unary_operator_line_data_1, __LINE__);
-    call_parse_pvm("NOT 1", pvm_expression, unary_operator_line_data_2, sizeof unary_operator_line_data_2, __LINE__);
+    call_parse_expression("1+-A", unary_operator_line_data_1, sizeof unary_operator_line_data_1, __LINE__);
+    call_parse_expression("NOT 1", unary_operator_line_data_2, sizeof unary_operator_line_data_2, __LINE__);
 
     // Parentheses
-    call_parse_pvm("1+(1+1)", pvm_expression, parens_line_data_1, sizeof parens_line_data_1, __LINE__);
-    call_parse_pvm("X AND (Y OR NOT Z)", pvm_expression, parens_line_data_2, sizeof parens_line_data_2, __LINE__);
+    call_parse_expression("1+(1+1)", parens_line_data_1, sizeof parens_line_data_1, __LINE__);
+    call_parse_expression("X AND (Y OR NOT Z)", parens_line_data_2, sizeof parens_line_data_2, __LINE__);
 
     // Function
-    call_parse_pvm("LEN(\"HELLO\")", pvm_expression, function_line_data_1, sizeof function_line_data_1, __LINE__);
-    call_parse_pvm("MID$(\"HELLO\",2,3)", pvm_expression, function_line_data_2, sizeof function_line_data_2, __LINE__);
-    call_parse_pvm("VER$(0)", pvm_expression, function_line_data_3, sizeof function_line_data_3, __LINE__);
+    call_parse_expression("LEN(\"HELLO\")", function_line_data_1, sizeof function_line_data_1, __LINE__);
+    call_parse_expression("MID$(\"HELLO\",2,3)", function_line_data_2, sizeof function_line_data_2, __LINE__);
+    call_parse_expression("VER$(0)", function_line_data_3, sizeof function_line_data_3, __LINE__);
 }
 
 void test_pvm_statement(void) {
@@ -99,7 +117,7 @@ void test_pvm_statement(void) {
     const char list_line_data_1[] = { TOK_LIST };
     const char list_line_data_2[] = { TOK_LIST, TOK_NUM, '1', '0', '0' | EOT };
     const char list_line_data_3[] = { TOK_LIST, TOK_NUM, '1', '0', '0' | EOT, TOK_COMMA, TOK_NUM, '5', '0', '0' | EOT };
-    const char data_line_data_1[] = { TOK_DATA, 'H', 'E', 'L', 'L', 'O', ',', '\"', 'X', ',', 'Y', '\"', ',', '5' };
+    const char data_line_data_1[] = { TOK_DATA, 'H', 'E', 'L', 'L', 'O', ',', '"', 'X', ',', 'Y', '"', ',', '5' };
     const char rem_line_data_1[] = { TOK_REM, 'T', 'H', 'I', 'S', ' ', 'I', 'S', ' ', 'A', ' ', 'R', 'E', 'M' };
     const char poke_line_data_1[] = { TOK_POKE, TOK_NUM, '7', '1', '0' | EOT, TOK_COMMA, TOK_NUM, '0' | EOT };
     const char dim_line_data_1[] = { TOK_DIM, TOK_NAME, 'A' | EOT, TOK_LPAREN, TOK_NUM, '5' | EOT, TOK_RPAREN };
@@ -108,57 +126,57 @@ void test_pvm_statement(void) {
     PRINT_TEST_NAME();
 
     // Simple statement
-    call_parse_pvm("END", pvm_statement, simple_line_data_1, sizeof simple_line_data_1, __LINE__);
+    call_parse_statement("END", simple_line_data_1, sizeof simple_line_data_1, __LINE__);
 
     // PRINT
-    call_parse_pvm("PRINT 1", pvm_statement, print_line_data_1, sizeof print_line_data_1, __LINE__);
-    call_parse_pvm("PRINT 1,\"YES\";(0)", pvm_statement, print_line_data_2, sizeof print_line_data_2, __LINE__);
-    call_parse_pvm("?X", pvm_statement, print_line_data_3, sizeof print_line_data_3, __LINE__);
-    call_parse_pvm("? X", pvm_statement, print_line_data_3, sizeof print_line_data_3, __LINE__);
+    call_parse_statement("PRINT 1", print_line_data_1, sizeof print_line_data_1, __LINE__);
+    call_parse_statement("PRINT 1,\"YES\";(0)", print_line_data_2, sizeof print_line_data_2, __LINE__);
+    call_parse_statement("?X", print_line_data_3, sizeof print_line_data_3, __LINE__);
+    call_parse_statement("? X", print_line_data_3, sizeof print_line_data_3, __LINE__);
 
     // FOR
-    call_parse_pvm("FOR X=1 TO 5", pvm_statement, for_line_data_1, sizeof for_line_data_1, __LINE__);
-    call_parse_pvm("FOR X=1 TO 20 STEP 2", pvm_statement, for_line_data_2, sizeof for_line_data_2, __LINE__);
+    call_parse_statement("FOR X=1 TO 5", for_line_data_1, sizeof for_line_data_1, __LINE__);
+    call_parse_statement("FOR X=1 TO 20 STEP 2", for_line_data_2, sizeof for_line_data_2, __LINE__);
 
     // NEXT
-    call_parse_pvm("NEXT X", pvm_statement, next_line_data_1, sizeof next_line_data_1, __LINE__);
+    call_parse_statement("NEXT X", next_line_data_1, sizeof next_line_data_1, __LINE__);
 
     // LET
-    call_parse_pvm("LET X=100", pvm_statement, let_line_data_1, sizeof let_line_data_1, __LINE__);
-    call_parse_pvm("X=100", pvm_statement, let_line_data_2, sizeof let_line_data_2, __LINE__);
+    call_parse_statement("LET X=100", let_line_data_1, sizeof let_line_data_1, __LINE__);
+    call_parse_statement("X=100", let_line_data_2, sizeof let_line_data_2, __LINE__);
 
     // IF
-    call_parse_pvm("IF X=1 THEN GOTO 10", pvm_statement, if_line_data_1, sizeof if_line_data_1, __LINE__);
-    call_parse_pvm("IF X=1 THEN 10", pvm_statement, if_line_data_2, sizeof if_line_data_2, __LINE__);
-    call_parse_pvm("IF X=1 THEN LET X=X+1", pvm_statement, if_line_data_3, sizeof if_line_data_3, __LINE__);
-    call_parse_pvm("IF X=1 THEN X=X+1", pvm_statement, if_line_data_4, sizeof if_line_data_4, __LINE__);
+    call_parse_statement("IF X=1 THEN GOTO 10", if_line_data_1, sizeof if_line_data_1, __LINE__);
+    call_parse_statement("IF X=1 THEN 10", if_line_data_2, sizeof if_line_data_2, __LINE__);
+    call_parse_statement("IF X=1 THEN LET X=X+1", if_line_data_3, sizeof if_line_data_3, __LINE__);
+    call_parse_statement("IF X=1 THEN X=X+1", if_line_data_4, sizeof if_line_data_4, __LINE__);
 
     // INPUT (covers READ)
-    call_parse_pvm("INPUT A", pvm_statement, input_line_data_1, sizeof input_line_data_1, __LINE__);
-    call_parse_pvm("INPUT A,B,C", pvm_statement, input_line_data_2, sizeof input_line_data_2, __LINE__);
+    call_parse_statement("INPUT A", input_line_data_1, sizeof input_line_data_1, __LINE__);
+    call_parse_statement("INPUT A,B,C", input_line_data_2, sizeof input_line_data_2, __LINE__);
 
     // ON
-    call_parse_pvm("ON 1 GOTO 10", pvm_statement, on_line_data_1, sizeof on_line_data_1, __LINE__);
-    call_parse_pvm("ON 1 GOSUB 10", pvm_statement, on_line_data_2, sizeof on_line_data_2, __LINE__);
-    call_parse_pvm("ON X GOSUB 10,20,30", pvm_statement, on_line_data_3, sizeof on_line_data_3, __LINE__);
+    call_parse_statement("ON 1 GOTO 10", on_line_data_1, sizeof on_line_data_1, __LINE__);
+    call_parse_statement("ON 1 GOSUB 10", on_line_data_2, sizeof on_line_data_2, __LINE__);
+    call_parse_statement("ON X GOSUB 10,20,30", on_line_data_3, sizeof on_line_data_3, __LINE__);
 
     // LIST
-    call_parse_pvm("LIST", pvm_statement, list_line_data_1, sizeof list_line_data_1, __LINE__);
-    call_parse_pvm("LIST 100", pvm_statement, list_line_data_2, sizeof list_line_data_2, __LINE__);
-    call_parse_pvm("LIST 100,500", pvm_statement, list_line_data_3, sizeof list_line_data_3, __LINE__);
+    call_parse_statement("LIST", list_line_data_1, sizeof list_line_data_1, __LINE__);
+    call_parse_statement("LIST 100", list_line_data_2, sizeof list_line_data_2, __LINE__);
+    call_parse_statement("LIST 100,500", list_line_data_3, sizeof list_line_data_3, __LINE__);
 
     // DATA & REM
-    call_parse_pvm("DATA HELLO,\"X,Y\",5", pvm_statement, data_line_data_1, sizeof data_line_data_1, __LINE__);
-    call_parse_pvm("REM THIS IS A REM", pvm_statement, rem_line_data_1, sizeof rem_line_data_1, __LINE__);
+    call_parse_statement("DATA HELLO,\"X,Y\",5", data_line_data_1, sizeof data_line_data_1, __LINE__);
+    call_parse_statement("REM THIS IS A REM", rem_line_data_1, sizeof rem_line_data_1, __LINE__);
 
     // POKE
-    call_parse_pvm("POKE 710, 0", pvm_statement, poke_line_data_1, sizeof poke_line_data_1, __LINE__);
+    call_parse_statement("POKE 710, 0", poke_line_data_1, sizeof poke_line_data_1, __LINE__);
 
     // DIM
-    call_parse_pvm("DIM A(5)", pvm_statement, dim_line_data_1, sizeof dim_line_data_1, __LINE__);
+    call_parse_statement("DIM A(5)", dim_line_data_1, sizeof dim_line_data_1, __LINE__);
 
     // // BYE (extension statement)
-    call_parse_pvm("BYE", pvm_statement, extension_line_data_1, sizeof extension_line_data_1, __LINE__);
+    call_parse_statement("BYE", extension_line_data_1, sizeof extension_line_data_1, __LINE__);
 }
 
 void call_parse_line(const char* s, const Line* expect_line, int line) {

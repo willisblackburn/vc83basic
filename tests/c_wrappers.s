@@ -41,8 +41,8 @@ exception_handler: .res 2
 .export _buffer = buffer
 .export _line_buffer = line_buffer
 
-.export _pvm_statement = pvm_statement;
-.export _pvm_expression = pvm_expression;
+.export _parse_statement = parse_statement
+.export _parse_expression = parse_expression
 
 ; Sets the err variable to 1 if carry is set, 0 otherwise.
 set_err:
@@ -435,10 +435,15 @@ _parse_line:
         startwrap
         jmp     parse_line
 
-_parse_pvm:
-.export _parse_pvm
+_parse_statement_wrapper:
+.export _parse_statement_wrapper
         startwrap
-        jmp     parse_pvm
+        jmp     parse_statement
+
+_parse_expression_wrapper:
+.export _parse_expression_wrapper
+        startwrap
+        jmp     parse_expression
 
 ; program.s
 

@@ -80,12 +80,9 @@ extern int S1;
 extern char buffer[];
 extern Line line_buffer;
 
-extern const char pvm_line[];
-extern const char pvm_statement[];
-extern const char pvm_expression[];
-extern const char pvm_number[];
-extern const char pvm_string[];
-extern const char pvm_name[];
+// Prototypes for parse functions (no longer PVM-based)
+void parse_statement_wrapper(void);
+void parse_expression_wrapper(void);
 
 // Prototypes for C wrapper functions
 
@@ -155,7 +152,6 @@ int imul_16(/* AX */ int value);
 
 // parser.s
 void parse_line(void);
-void parse_pvm(const char *start);
 
 // program.s
 void initialize_target(void);

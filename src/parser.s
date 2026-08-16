@@ -16,9 +16,6 @@
 
 .assert TOK_EOL = 0, error
 
-; We assume that RETURN is the first of a list of unparameterized opcodes in the range $F0-$FF.
-.assert PVM_RETURN = $F0, error
-
 parse_line:
         mva     #0, buffer_pos                  ; Initialize the read pointer
         mva     #.sizeof(Line) + 1, line_pos    ; Initialize write pointer (leave room for statement length byte)
@@ -43,12 +40,11 @@ parse_line:
 
 @next_statement:
         ldpha   line_pos                ; Save start of statement position
-        ldax    #pvm_statement
-        jsr     parse_pvm
+        jsr     parse_statement
         lda     #TOK_EOL                ; Store TOK_EOL at end of statement
         jsr     append_line_buffer
         pla                             ; Get back the start of statement
-        tax                             
+        tax
         tya                             ; Current write position is next statement offset
         sta     line_buffer-1,x         ; Write it to the byte before the start of this statement
         jsr     next_token              ; Read the next token
@@ -68,407 +64,377 @@ parse_line:
 syntax_error:
         raise   ERR_SYNTAX_ERROR
 
-; Invokes parsing virtual machine (PVM).
-; AX = address of first PVM opcode
-; buffer_pos = where to read from buffer
-; line_pos = where to write to line_buffer
+; --- Helpers ---
 
-parse_pvm:
-        stax    pvm_program_ptr
-        mvax    #buffer, read_ptr       ; Set up read_ptr so parsing primitives in util module work
-        jsr     run_pvm_next_token
-        bcs     syntax_error
-        mva     D, buffer_pos           ; Put back the last token that was read but not matched
-        mva     E, line_pos
+; Reads next token and verifies it matches expected token.
+; A = expected token on entry.
+; On mismatch, raises syntax error.
+
+require_token:
+        sta     D                       ; Save expected token
+        jsr     next_token              ; Read next token
+        cmp     D                       ; Compare with expected
+        bne     syntax_error            ; Mismatch -> error
         rts
 
-; Resume processing opcodes.
-; Returns carry clear if the parse succeeded, or carry set if it failed.
-; Returns with pvm_program_ptr pointing to the opcode after the the one that caused run_pvm to exit,
-; and the last opcode in B.
+; Reads next token speculatively, saving buffer_pos and line_pos in D/E.
+; Returns token in A.
 
-run_pvm_next_token:
-        mva     buffer_pos, D           ; Save state so we can put back the last token
-        mva     line_pos, E
-        jsr     next_token              ; Clobbers BC, but we can use after
-        sta     C                       ; Hold the token we just read in C
-run_pvm:
-        jsr     get_next_pvm_byte       ; Load PVM opcode
+read_ahead:
+        mva     buffer_pos, D           ; Save read position
+        mva     line_pos, E             ; Save write position
+        jmp     next_token              ; Read and return token in A
 
-; Handle the opcode
+; Restores buffer_pos and line_pos from D/E, undoing a speculative read.
 
-        cmp     #PVM_CALL
-        bcc     @match
-        cmp     #PVM_JUMP
-        bcc     @call
-        cmp     #PVM_BRANCH_IF
-        bcc     @jump
-        cmp     #PVM_RETURN
-        bcc     @branch_if
-        clc                             ; If it was RETURN, make sure the carry is clear
-        beq     @return
-        cmp     #PVM_GUARD
+reject_token:
+        mva     D, buffer_pos           ; Restore read position
+        mva     E, line_pos             ; Restore write position
+        rts
+
+; --- Statement dispatch ---
+
+; Tokens $40-$51 are dispatched via parse_stmt_table.
+; Tokens $52-$7F are no-arg statements (just return).
+; TOK_NAME ($13) triggers implicit LET.
+
+parse_statement:
+        jsr     next_token              ; Read statement keyword
+        cmp     #TOK_NAME               ; Implicit LET?
+        beq     parse_impl_let
+        sec
+        sbc     #TOK_PRINT              ; A = token - $40
+        cmp     #TOK_RESTORE - TOK_PRINT + 1 ; In table range? ($40-$51)
+        bcc     @dispatch
+        cmp     #TOK_RUN - TOK_PRINT    ; No-arg range starts at $52
+        bcc     @syntax_err
+        cmp     #$80 - TOK_PRINT        ; No-arg range ends at $7F
+        bcc     @done
+@syntax_err:
+        jmp     syntax_error
+
+@dispatch:
+        asl     A                       ; Multiply by 2 for table offset
+        tax
+        lda     parse_stmt_table+1,x    ; High byte of handler
+        pha
+        lda     parse_stmt_table,x      ; Low byte of handler
+        pha
+@done:
+        rts                             ; Jump to handler (or return for no-arg)
+
+parse_stmt_table:
+        .word   parse_print-1           ; $40 PRINT
+        .word   parse_print-1           ; $41 ALT_PRINT
+        .word   parse_let-1             ; $42 LET
+        .word   parse_for-1             ; $43 FOR
+        .word   parse_next_stmt-1       ; $44 NEXT
+        .word   parse_if-1              ; $45 IF
+        .word   parse_input-1           ; $46 INPUT
+        .word   parse_read-1            ; $47 READ
+        .word   parse_on-1              ; $48 ON
+        .word   parse_goto_gosub-1      ; $49 GOTO
+        .word   parse_goto_gosub-1      ; $4A GOSUB
+        .word   parse_list-1            ; $4B LIST
+        .word   parse_arg_2-1           ; $4C POKE
+        .word   parse_arg_2-1           ; $4D DPOKE
+        .word   parse_dim-1             ; $4E DIM
+        .word   parse_data_rem-1        ; $4F DATA
+        .word   parse_data_rem-1        ; $50 REM
+        .word   parse_restore-1         ; $51 RESTORE
+
+; --- Simple statement entry points ---
+
+parse_let:
+        lda     #TOK_NAME               ; LET requires variable name
+        jsr     require_token
+
+parse_impl_let:
+        jsr     parse_optional_array    ; Optional array subscript
+        lda     #TOK_EQ
+        jsr     require_token           ; Require '='
+        jmp     parse_expression        ; Parse the value
+
+parse_next_stmt:
+        lda     #TOK_NAME               ; NEXT requires variable name
+        jmp     require_token
+
+parse_goto_gosub:
+        lda     #TOK_NUM                ; GOTO/GOSUB require line number
+        jmp     require_token
+
+; --- Statement parsers ---
+
+; PRINT [sep|expr] [sep [expr]] ...
+; sep = SEMI | COMMA
+; Terminates on COLON, EOL
+
+parse_print:
+@check:
+        jsr     read_ahead              ; Speculatively read next token
+        cmp     #TOK_SEMI               ; Leading/trailing separator?
+        beq     @check
+        cmp     #TOK_COMMA
+        beq     @check
+        cmp     #TOK_COLON              ; End of statement?
         beq     @guard
-        cmp     #PVM_SLURP
-        beq     @slurp
-        sec                             ; Treat anything else as FAIL
-@return:
-        rts
+        tax                             ; Check for EOL (= 0)
+        beq     @guard
+        jsr     reject_token            ; Not separator/end: must be expression
+        jsr     parse_expression
 
-@match:
-        jsr     match_token
-        beq     run_pvm_next_token      ; It matched; continue
-@fail:
-        sec                             ; Set carry to indicate failure and return
-        rts
+; After expression, must see separator or end
 
-@call:
-        jsr     calculate_address_10    ; Get the address: pvm_program_ptr is return address, call address in AX
-        tay
-        ldphaa  pvm_program_ptr         ; Save the return address
-        sty     pvm_program_ptr
-        stx     pvm_program_ptr+1       ; Save new address
-        jsr     run_pvm                 ; Call it
-        plstaa  pvm_program_ptr         ; Recover return address
-        bcs     @fail                   ; If the called function failed then just keep failing
-        jmp     run_pvm
-
-@jump:
-        jsr     calculate_address_10    ; Get the address: call address in AX
-        stax    pvm_program_ptr
-        jmp     run_pvm
-
-@branch_if:
-        jsr     calculate_address_10    ; Get the address: call address in AX
-        stax    vector_ptr
-        jsr     get_next_pvm_byte       ; A is the byte we have to match
-        jsr     match_token             ; Try to match it
-        bne     run_pvm                 ; If it didn't match then just carry on
-        mvax    vector_ptr, pvm_program_ptr     ; Continue at the branch address
-        bne     run_pvm_next_token      ; Unconditional
+        jsr     read_ahead
+        cmp     #TOK_SEMI
+        beq     @check
+        cmp     #TOK_COMMA
+        beq     @check
+        cmp     #TOK_COLON
+        beq     @guard
+        tax
+        beq     @guard                  ; EOL
+        jmp     syntax_error            ; Unexpected token after expression
 
 @guard:
-        jsr     get_next_pvm_byte       ; Read the token we want to match
-        jsr     match_token
-        bne     run_pvm                 ; If it didn't match then just carry on with the next instruction
-        clc                             ; Else the guard stops this function and causes it to return success
+        jmp     reject_token            ; Un-read terminator and return
+
+; FOR variable = start TO end [STEP step]
+
+parse_for:
+        lda     #TOK_NAME               ; Variable name
+        jsr     require_token
+        lda     #TOK_EQ                 ; '='
+        jsr     require_token
+        jsr     parse_expression        ; Start value
+        lda     #TOK_TO                 ; 'TO'
+        jsr     require_token
+        jsr     parse_expression        ; End value
+        jsr     read_ahead              ; Check for optional STEP
+        cmp     #TOK_STEP
+        beq     @step
+        jmp     reject_token            ; No STEP; un-read token and return
+
+@step:
+        jmp     parse_expression        ; Parse step value (tail call)
+
+; IF expression THEN line_number | statement
+
+parse_if:
+        jsr     parse_expression        ; Condition
+        lda     #TOK_THEN               ; 'THEN'
+        jsr     require_token
+        jsr     read_ahead              ; Check if followed by line number
+        cmp     #TOK_NUM
+        beq     @line_number            ; Line number: already consumed, done
+        jsr     reject_token            ; Otherwise parse a statement
+        jmp     parse_statement
+
+@line_number:
         rts
 
-@slurp:
-        ldx     D                       ; Read from D (buffer_pos before speculative next_token)
-        ldy     E                       ; Write to line_pos before speculative next_token
-        sty     line_pos
-@slurp_whitespace:
-        lda     buffer,x
-        beq     @done
-        cmp     #' '
-        bne     @slurp_next
-        inx
-        bne     @slurp_whitespace
-@slurp_next:             
-        lda     buffer,x
-        beq     @done
-        jsr     append_line_buffer
-        inx
-        bne     @slurp_next
-@done:
-        stx     D
-        sty     E
-        clc                             ; There can't be anything more to parse so return success
-        rts
+; INPUT [string ;] var [, var] ...
 
-; Matches the token in C with the opcode.
-; A = the opcode
-; Z flag will indicate whether it was matched or not
-; X SAFE, Y SAFE, BC SAFE, DE SAFE
+parse_input:
+        jsr     read_ahead              ; Check for optional prompt string
+        cmp     #TOK_STRING
+        beq     @prompt
+        jsr     reject_token            ; No prompt; parse variable list
+        jmp     parse_read
 
-match_token:
-        cmp     #PVM_MATCH_CLASS        ; Opcodes below this are exact token matches
-        bcc     @exact_match
-        asl     A                       ; The lower four bits are the mask
-        asl     A
-        asl     A
-        asl     A
-        eor     C
-        and     #$F0                    ; If top 4 bits match then they will be 0 and Z will be set
-        rts
-
-@exact_match:
-        cmp     C                       ; Compare opcode, now the token we need to match, to the next token
-        rts
-
-; Gets the next byte from the PVM program and returns it in A.
-; Increments pvm_program_ptr.
-; X SAFE, BC SAFE, DE SAFE
-
-get_next_pvm_byte:
-        ldy     #0
-        lda     (pvm_program_ptr),y     ; Load PVM opcode
-        inc     pvm_program_ptr
-        bne     @skip_inc
-        inc     pvm_program_ptr+1
-@skip_inc:
-        rts
-
-; Calculates the address of JUMP or CALL using 2 bits from the opcode plus the next byte, for 10 bits total.
-; A = the opcode
-; Return the new pvm_program_ptr value in AX
-
-calculate_address_10:
-        and     #$03                    ; Ignore top four bits of opcode
-        cmp     #$02                    ; Test bit 1, which is the sign bit of the offset field
-        bcc     @positive               ; Was positive so just leave it
-        ora     #$FC                    ; Sign extend to high nybble
-@positive:
-        tax                             ; Save high byte
-        jsr     get_next_pvm_byte  
-        clc
-        adc     pvm_program_ptr         ; Add to pvm_program_ptr
-        pha
-        txa
-        adc     pvm_program_ptr+1
-        tax
-        pla
-        rts
-
-; PVM macros
-
-.macro MATCH t
-        .assert t < $C0, error, "Can only match tokens not opcodes"
-        .byte t    
-.endmacro
-
-.macro MATCH_CLASS c
-        .assert (c & $0F) = 0, error, "Class must be $0-$F"
-        .byte PVM_MATCH_CLASS | (c >> 4)    
-.endmacro
-
-.macro write_opcode_address opcode, address
-        .assert (address - (* + 2)) >= -512 .and (address - (* + 2)) <= 511, error, "Address offset out of range"
-        .byte   opcode | >(address - (* + 2)) & $03, <(address - (* + 1))
-.endmacro
-
-.macro CALL address
-        write_opcode_address PVM_CALL, address
-.endmacro
-
-.macro JUMP address
-        write_opcode_address PVM_JUMP, address
-.endmacro
-
-.macro BRANCH_IF t, address
-        write_opcode_address PVM_BRANCH_IF, address
-        MATCH t
-.endmacro
-
-.macro BRANCH_IF_CLASS c, address
-        write_opcode_address PVM_BRANCH_IF, address
-        MATCH_CLASS c
-.endmacro
-
-.macro RETURN
-        .byte PVM_RETURN
-.endmacro
-
-.macro FAIL
-        .byte PVM_FAIL
-.endmacro
-
-.macro GUARD t
-        .byte PVM_GUARD
-        MATCH t
-.endmacro
-
-.macro GUARD_CLASS c
-        .byte PVM_GUARD
-        MATCH_CLASS c
-.endmacro
-
-.macro SLURP
-        .byte PVM_SLURP
-.endmacro
-
-; PVM program
-
-pvm_statement:
-        BRANCH_IF TOK_PRINT, pvm_print
-        BRANCH_IF TOK_ALT_PRINT, pvm_print
-        BRANCH_IF TOK_LET, pvm_let
-        BRANCH_IF TOK_NAME, pvm_impl_let
-        BRANCH_IF TOK_FOR, pvm_for
-        BRANCH_IF TOK_NEXT, pvm_next
-        BRANCH_IF TOK_IF, pvm_if
-        BRANCH_IF TOK_INPUT, pvm_input
-        BRANCH_IF TOK_READ, pvm_read
-        BRANCH_IF TOK_ON, pvm_on
-        BRANCH_IF TOK_GOTO, pvm_goto
-        BRANCH_IF TOK_GOSUB, pvm_gosub
-        BRANCH_IF TOK_LIST, pvm_list
-        BRANCH_IF TOK_POKE, pvm_arg_2
-        BRANCH_IF TOK_DPOKE, pvm_arg_2
-        BRANCH_IF TOK_DIM, pvm_dim
-        BRANCH_IF TOK_DATA, pvm_data
-        BRANCH_IF TOK_REM, pvm_rem
-        BRANCH_IF TOK_RESTORE, pvm_restore
-        BRANCH_IF_CLASS TOK_CLASS_ST_5X, @done  ; Any other no-arg statement
-        BRANCH_IF_CLASS TOK_CLASS_ST_6X, @done
-        BRANCH_IF_CLASS TOK_CLASS_ST_7X, @done
-        FAIL
-@done:
-        RETURN
-
-; Statements
-
-pvm_print:
-        BRANCH_IF TOK_SEMI, pvm_print
-        BRANCH_IF TOK_COMMA, pvm_print
-        GUARD TOK_COLON                 ; Abandon the PRINT statement if we see COLON or EOL
-        GUARD TOK_EOL
-        CALL pvm_expression             ; Otherwise it has to be an expression
-        BRANCH_IF TOK_SEMI, pvm_print
-        BRANCH_IF TOK_COMMA, pvm_print
-        GUARD TOK_COLON
-        GUARD TOK_EOL
-        FAIL
-
-pvm_let:
-        MATCH TOK_NAME
-pvm_impl_let:
-        CALL pvm_optional_array
-        MATCH TOK_EQ
-        JUMP pvm_expression
-
-pvm_for:
-        MATCH TOK_NAME
-        MATCH TOK_EQ
-        CALL pvm_expression
-        MATCH TOK_TO
-        CALL pvm_expression
-        BRANCH_IF TOK_STEP, pvm_expression
-        RETURN
-
-pvm_next:
-        MATCH TOK_NAME
-        RETURN
-
-pvm_if:
-        CALL pvm_expression
-        MATCH TOK_THEN
-        BRANCH_IF TOK_NUM, @done
-        JUMP pvm_statement
-@done:
-        RETURN
-
-pvm_input:
-        BRANCH_IF TOK_STRING, @prompt
-        JUMP pvm_read
 @prompt:
-        MATCH TOK_SEMI
+        lda     #TOK_SEMI               ; Prompt followed by ';'
+        jsr     require_token
 
-pvm_read:
-        MATCH TOK_NAME
-        CALL pvm_optional_array
-        BRANCH_IF TOK_COMMA, pvm_read
-        RETURN
+; READ var [, var] ... (also used by INPUT after prompt)
 
-pvm_on:
-        CALL pvm_expression
-        BRANCH_IF TOK_GOTO, @line_number_list
-        BRANCH_IF TOK_GOSUB, @line_number_list
-        FAIL
+parse_read:
+        lda     #TOK_NAME               ; Variable name
+        jsr     require_token
+        jsr     parse_optional_array    ; Optional subscript
+        jsr     read_ahead              ; Check for more variables
+        cmp     #TOK_COMMA
+        beq     parse_read              ; Comma: loop for next variable
+        jmp     reject_token            ; Done; un-read token
 
-@line_number_list:
-        MATCH TOK_NUM
-        BRANCH_IF TOK_COMMA, @line_number_list
-        RETURN
+; ON expression GOTO|GOSUB num [, num] ...
 
-pvm_goto:
-pvm_gosub:
-        MATCH TOK_NUM
-        RETURN
+parse_on:
+        jsr     parse_expression        ; The selector expression
+        jsr     next_token              ; Must be GOTO or GOSUB
+        cmp     #TOK_GOTO
+        beq     @line_list
+        cmp     #TOK_GOSUB
+        beq     @line_list
+        jmp     syntax_error
 
-pvm_list:
-        GUARD TOK_COLON
-        GUARD TOK_EOL
-        CALL pvm_expression
-        BRANCH_IF TOK_COMMA, pvm_expression
+@line_list:
+        lda     #TOK_NUM                ; Require line number
+        jsr     require_token
+        jsr     read_ahead              ; Check for more numbers
+        cmp     #TOK_COMMA
+        beq     @line_list              ; Comma: loop for next number
+        jmp     reject_token            ; Done
+
+; LIST [expr [, expr]]
+
+parse_list:
+        jsr     read_ahead              ; Check for empty LIST
+        cmp     #TOK_COLON              ; End of statement?
+        beq     @guard
+        tax
+        beq     @guard                  ; EOL?
+        jsr     reject_token            ; Has arguments
+        jsr     parse_expression        ; First argument
+        jsr     read_ahead              ; Check for second argument
+        cmp     #TOK_COMMA
+        bne     @guard                  ; No comma: un-read and return
+        jmp     parse_expression        ; Second argument (tail call)
+
+@guard:
+        jmp     reject_token
+
+; RESTORE [line_number]
+
+parse_restore:
+        jsr     read_ahead              ; Check for optional line number
+        cmp     #TOK_NUM
+        beq     @done                   ; Number consumed; return
+        jmp     reject_token            ; No number; un-read and return
+
 @done:
-        RETURN
+        rts
 
-pvm_restore:
-        BRANCH_IF TOK_NUM, @done
+; DIM name[(subscripts)] [, ...]
+
+parse_dim:
+        lda     #TOK_NAME               ; Variable name
+        jsr     require_token
+        jsr     parse_optional_array    ; Optional subscript
+        jsr     read_ahead              ; Check for more dimensions
+        cmp     #TOK_COMMA
+        beq     parse_dim               ; Comma: loop
+        jmp     reject_token            ; Done
+
+; DATA text / REM text
+; Copies remaining raw characters into line_buffer, skipping leading whitespace.
+
+parse_data_rem:
+        ldx     buffer_pos
+@skip_ws:
+        lda     buffer,x                ; Read character
+        beq     @slurp_done             ; End of line
+        cmp     #' '                    ; Skip spaces
+        bne     @copy
+        inx
+        bne     @skip_ws
+
+@copy:
+        lda     buffer,x                ; Read character
+        beq     @slurp_done             ; End of line
+        jsr     append_line_buffer      ; Append to output
+        inx
+        bne     @copy
+
+@slurp_done:
+        stx     buffer_pos              ; Update read position
+        rts
+
+; --- Expression parser ---
+
+; expression = primary_expression [operator expression]
+
+parse_expression:
+        jsr     parse_primary_expression
+        jsr     read_ahead              ; Check for operator
+        and     #$F0                    ; Isolate token class
+        cmp     #TOK_CLASS_OP_2X        ; Operator class?
+        beq     parse_expression        ; Yes: consume operator and recurse
+        jmp     reject_token            ; No: un-read and return
+
+; primary_expression = num | string | name[()] | function() | (expr) | unary primary
+
+parse_primary_expression:
+        jsr     next_token              ; Read primary token
+        cmp     #TOK_LPAREN             ; Subexpression?
+        beq     @subexpr
+        cmp     #TOK_ADD                ; Unary +?
+        beq     parse_primary_expression
+        cmp     #TOK_SUB                ; Unary -?
+        beq     parse_primary_expression
+        cmp     #TOK_NOT                ; Unary NOT?
+        beq     parse_primary_expression
+        cmp     #TOK_NUM                ; Number literal?
+        beq     @done
+        cmp     #TOK_STRING             ; String literal?
+        beq     @done
+        cmp     #TOK_NAME               ; Variable name?
+        beq     @name
+        cmp     #$80                    ; Function tokens are $80-$BF
+        bcc     @fail
+        cmp     #$C0
+        bcc     @function
+@fail:
+        jmp     syntax_error
+
 @done:
-        RETURN
+        rts
 
-pvm_dim:
-        MATCH TOK_NAME
-        CALL pvm_optional_array
-        BRANCH_IF TOK_COMMA, pvm_dim
-        RETURN
+@subexpr:
+        jsr     parse_expression        ; Parse inner expression
+        lda     #TOK_RPAREN             ; Require ')'
+        jmp     require_token
 
-pvm_data:
-pvm_rem:
-        SLURP
+@name:
+        jmp     parse_optional_array    ; Check for subscript
 
-; Expressions
+@function:
+        jmp     parse_function
 
-pvm_expression:
-        CALL pvm_primary_expression
-        BRANCH_IF_CLASS TOK_CLASS_OP_2X, pvm_expression
-        RETURN
+; name [(arg_list)]
 
-pvm_primary_expression:
-        BRANCH_IF TOK_LPAREN, pvm_subexpression
-        BRANCH_IF TOK_ADD, pvm_primary_expression   ; Unary +
-        BRANCH_IF TOK_SUB, pvm_primary_expression   ; Unary -
-        BRANCH_IF TOK_NOT, pvm_primary_expression   ; Unary NOT
-        BRANCH_IF TOK_NUM, @done
-        BRANCH_IF TOK_STRING, @done
-        BRANCH_IF TOK_NAME, pvm_optional_array
-        BRANCH_IF_CLASS TOK_CLASS_FN_8X, pvm_function
-        BRANCH_IF_CLASS TOK_CLASS_FN_9X, pvm_function
-        BRANCH_IF_CLASS TOK_CLASS_FN_AX, pvm_function
-        BRANCH_IF_CLASS TOK_CLASS_FN_BX, pvm_function
-        FAIL
-@done:
-        RETURN
-
-pvm_subexpression:
-        CALL pvm_expression
-        MATCH TOK_RPAREN
-        RETURN
-
-pvm_optional_array:
-        BRANCH_IF TOK_LPAREN, @array
-        RETURN
+parse_optional_array:
+        jsr     read_ahead              ; Check for '('
+        cmp     #TOK_LPAREN
+        beq     @array
+        jmp     reject_token            ; No '('; un-read and return
 
 @array:
-        CALL pvm_arg_list
-        MATCH TOK_RPAREN
-        RETURN
+        jsr     parse_arg_list          ; Parse subscripts
+        lda     #TOK_RPAREN             ; Require ')'
+        jmp     require_token
 
-pvm_function:
-        MATCH TOK_LPAREN
-        BRANCH_IF TOK_RPAREN, @done
-        CALL pvm_arg_list
-        MATCH TOK_RPAREN
-@done:
-        RETURN
+; function (arg_list) | function ()
 
-; Argument lists
+parse_function:
+        lda     #TOK_LPAREN             ; Require '('
+        jsr     require_token
+        jsr     read_ahead              ; Check for empty args
+        cmp     #TOK_RPAREN
+        beq     @empty                  ; Already consumed ')'; done
+        jsr     reject_token            ; Has arguments
+        jsr     parse_arg_list
+        lda     #TOK_RPAREN             ; Require ')'
+        jmp     require_token
 
-pvm_arg_4:
-        CALL pvm_expression
-        MATCH TOK_COMMA
-pvm_arg_3:
-        CALL pvm_expression
-        MATCH TOK_COMMA
-pvm_arg_2:
-        CALL pvm_expression
-        MATCH TOK_COMMA
-        JUMP pvm_expression
+@empty:
+        rts
 
-pvm_arg_list:
-        CALL pvm_expression
-        BRANCH_IF TOK_COMMA, pvm_arg_list
-        RETURN
+; --- Argument lists ---
+
+; Two arguments separated by comma (used by POKE, DPOKE)
+
+parse_arg_2:
+        jsr     parse_expression        ; First argument
+        lda     #TOK_COMMA              ; Require ','
+        jsr     require_token
+        jmp     parse_expression        ; Second argument (tail call)
+
+; Variable-length argument list: expr [, expr] ...
+
+parse_arg_list:
+        jsr     parse_expression        ; First argument
+        jsr     read_ahead              ; Check for more
+        cmp     #TOK_COMMA
+        beq     parse_arg_list          ; Comma: loop for next
+        jmp     reject_token            ; Done; un-read token

@@ -4,7 +4,7 @@
 
 .include "lexer_data.inc"
 
-.segment "PARSER"
+.segment "LEXER"
 
 ; Encodes string using .byte and sets bit 7 (EOT) on the last character.
 
