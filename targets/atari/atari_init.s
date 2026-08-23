@@ -16,6 +16,9 @@ op_stack: .res OP_STACK_SIZE
 
 .bss
 
+; Align vectors to an even boundary because we JMP through them, avoiding
+; the 6502 indirect JMP page-crossing defect ($xxFF).
+.align  2
 old_dosini:     .res 2
 old_dosvec:     .res 2
 
