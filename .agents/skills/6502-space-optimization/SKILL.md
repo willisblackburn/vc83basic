@@ -440,14 +440,11 @@ merged into one `JMP invoke_indexed_vector`.
 
 ## 12. Exploit Known Function Side Effects
 
-### Use non-obvious register values
+### Use non-obvious register and flag return values
 
-Track what registers and flags contain after every instruction and function call. Often a register
-will hold a useful value as a side effect.
-
-**Project example** (`3ec95e94`): Created `iny_rebase_pvm_program_ptr` which increments Y before
-calling `rebase_pvm_program_ptr`. Multiple callers that previously did `INY` /
-`JSR rebase_pvm_program_ptr` (4 bytes) now do `JSR iny_rebase_pvm_program_ptr` (3 bytes).
+Track what registers and flags contain after every instruction and function call. Often a function
+leaves a register or flag in a useful state on return (such as leaving an index in X, a counter at zero,
+or carry clear on success) that callers can use directly instead of reloading or retesting.
 
 ### Use loop counters that end at useful values
 
@@ -622,6 +619,42 @@ When the 16-bit value is held in the `AX` register pair (low byte in A, high byt
 
 ---
 
+## 18. Absorb Call-Site Instructions into Functions
+
+Examine call sites of frequently-called subroutines to see if surrounding setup or cleanup code can
+be merged into the callee.
+
+### Move universal setup or cleanup into the function
+
+If all callers of a subroutine perform the same instruction immediately before calling (such as
+loading a fixed parameter or clearing a flag) or immediately after returning, move that instruction
+into the function body to save bytes across all call sites.
+
+### Create secondary entry points for common pre-call instructions
+
+If only a subset of callers perform a setup instruction before calling the function, add a secondary
+entry point that executes that instruction and then falls through into the main routine.
+
+**Project example** (`3ec95e94`): Created `iny_rebase_pvm_program_ptr` which increments Y before
+falling through into `rebase_pvm_program_ptr`. Multiple callers that previously did `INY` /
+`JSR rebase_pvm_program_ptr` (4 bytes) now do `JSR iny_rebase_pvm_program_ptr` (3 bytes), saving 1
+byte at each call site.
+
+```assembly
+; BEFORE (Call sites: 4 bytes each)
+        iny
+        jsr     rebase_pvm_program_ptr
+
+; AFTER (Call sites: 3 bytes each; saves 1 byte per site)
+iny_rebase_pvm_program_ptr:
+        iny
+rebase_pvm_program_ptr:
+        inc     pvm_program_ptr
+        ...
+```
+
+---
+
 ## Summary Checklist
 
 When reviewing code for space savings, check each of these in order:
@@ -643,3 +676,4 @@ When reviewing code for space savings, check each of these in order:
 15. **BIT trick:** Can $2C skip over a 2-byte instruction?
 16. **Stack scratch:** Can PHA/PLA replace STA/LDA for temporaries?
 17. **16-bit adjustments:** Can BCC/INC or BCS/DEC replace ADC #0 / SBC #0 for high bytes?
+18. **Call-site absorption:** Can surrounding setup/cleanup code at call sites be moved into the subroutine or into a secondary entry point?
