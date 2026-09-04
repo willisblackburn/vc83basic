@@ -8,8 +8,8 @@ SPDX-License-Identifier: MIT
 
 ![VC83 BASIC running on an Apple II](VC83_on_Apple_II_small.jpg)
 
-A floating point BASIC interpreter for the 6502 microprocessor, targeting the Apple II and the sim6502 simulator,
-with the capability of being extended to other platforms.
+A floating point BASIC interpreter for the 6502 microprocessor, targeting retrocomputers, homebrew systems,
+and simulators including the Apple II, Apple 1, Atari 8-bit, ac6502, and sim6502.
 
 ## Tools
 
@@ -36,30 +36,36 @@ The project uses a `Makefile` to manage the build process.
 *   **Run integration tests**: `make expect_test`
 
 ### Constant and Zero-Page Generation
-The project uses `.m4` files to ensure consistency across assembly, C, and include files.
-*   `constants.m4` contains constant values. It is processed by `m4` to generate `constants.inc` (assembly) and `constants.h` (C).
-*   `zeropage.m4` contains variables stored in zero page. It is processed to generate `zeropage.s` (the actual ZP definitions), `zeropage.inc` (global declarations for assembly), and `zeropage.h` (C headers).
+The project uses `.m4` files in `src/` to ensure consistency across assembly, C, and include files.
+*   `src/constants.m4` contains constant values. It is processed by `m4` to generate `src/constants.inc` (assembly) and `src/constants.h` (C).
+*   `src/zeropage.m4` contains variables stored in zero page. It is processed to generate `src/zeropage.s` (zero-page definitions and exports) and `src/zeropage.h` (C headers).
 
 ## How to Run
 
 ### sim6502 (Simulator)
 The simulation version can be run directly from the command line:
 ```bash
-sim65 basic_sim6502
+sim65 build/basic_sim6502
+```
+Or simply:
+```bash
+make run
 ```
 
 ### Apple II
-The file `basic_apple2` is an [AppleSingle](https://nulib.com/library/AppleSingle_AppleDouble.pdf)-format executable. To run it:
+The file `build/basic_apple2` is an [AppleSingle](https://nulib.com/library/AppleSingle_AppleDouble.pdf)-format executable targeting standard 48K RAM. To run it:
 1.  Create an Apple II disk image (DOS 3.3). You can use a tool like [AppleCommander](https://applecommander.github.io/):
     ```bash
     java -jar ac.jar -dos140 basic.dsk
     ```
-2.  Add the `basic_apple2` file to the disk image. Use `-as` because this is an AppleSingle file.
+2.  Add the `build/basic_apple2` file to the disk image. Use `-as` because this is an AppleSingle file.
     ```bash
-    java -jar ac.jar -as basic.dsk basic < basic_apple2
+    java -jar ac.jar -as basic.dsk basic < build/basic_apple2
     ```
 3.  Boot a DOS 3.3 disk in an emulator, insert the BASIC disk, and run it using `BRUN BASIC` (or `BRUN BASIC,D2` if you put `basic.dsk` in the second drive.) If you don't have an
 emulator, try the one at [apple2ts.com](https://apple2ts.com).
+
+Alternatively, the `build/basic_apple2_lc` target loads the interpreter into the Apple II Language Card RAM ($D000–$FFFF), freeing almost the entire 48K main memory for user programs and variables.
 
 Instead of creating a new disk image, you can duplicate an existing DOS 3.3 disk image (search around for "blank DOS 3.3 boot disk" or something like that), then
 you can boot and run BASIC from the same disk.
@@ -95,6 +101,12 @@ loads at `$4000`.
     ```
     4000R
     ```
+
+### Atari 8-bit
+
+The `build/basic_atari` binary targets the Atari 8-bit family (400, 800, XL, XE) and interfaces with the Atari OS via the Central Input/Output (CIO) subsystem, featuring full channel-based I/O (`enable_io_channels`) and trigonometric functions.
+
+The build produces an Atari DOS executable format file. In an emulator such as [Altirra](https://www.virtualdub.org/altirra.html) or [Atari800](https://atari800.github.io/), you can load and run `build/basic_atari` directly (or rename it with a `.xex` extension), or copy it to an Atari DOS disk image.
 
 ### ac6502
 
@@ -139,40 +151,44 @@ The parser converts user input into a tokenized program in two stages:
 *   **LIST command**: Handles the reverse process, expanding tokens back into human-readable code.
 
 ### Execution and Flow Control
-The interpreter uses two stacks for expression evaluation and flow control:
-1.  **Primary stack**: Holds intermediate numerical and string values, as well as the
-control structure used for `GOSUB` AND `FOR`. The `POP` command removes one control structure from this stack.
-2.  **Operator stack**: Holds pending operators to respect precedence.
+The interpreter uses two stacks for expression evaluation and flow control, paired with a lazy evaluation strategy:
+1.  **Value stack (`stack`)**: A page-aligned memory buffer managed by `stack_pos` (growing downward) that stores 6-byte `Value` structures (a 1-byte type tag `TYPE_NUMBER` or `TYPE_STRING`, and a 5-byte data payload). It also stores control frames for `GOSUB` and `FOR` loops (`POP` removes one control frame).
+2.  **Operator stack (`op_stack`)**: A byte array managed by `op_stack_pos` (growing downward). Each 1-byte entry packs both operator precedence (high nibble) and dispatch vector ID (low nibble), allowing single-instruction precedence comparisons and direct table dispatch.
 
-Most statements and functions are implemented by pushing values onto the primary stack and popping them to perform operations.
+**Lazy Evaluation**: Primary expressions leave results directly in zero-page working registers (`FP0` for numbers, `S0` for string pointers, tracked by `expr_type`) without pushing to the value stack. Intermediate results are only pushed to the stack when necessary—such as preserving a left operand across binary operators, passing arguments in parameter lists, or before allocating new strings on the heap. Simple assignments and single-term expressions execute entirely in registers without touching the stack.
 
 ## Floating Point Support
 
-VC83 BASIC uses a custom 5-byte floating point format documented in `fp.s`:
+VC83 BASIC uses a custom 5-byte (40-bit) floating point format documented in `src/fp.s`:
 *   **Format**: `sttttttt tttttttt tttttttt tttttttt eeeeeeee`
-    *   `s`: Sign bit
-    *   `t`: 32-bit fractional significand encoded as 31 bits with implied `1.`
-    *   `e`: 8-bit exponent, excess-127 (127 = $2^0$)
-*   **Registers**: The system uses two main floating point registers stored in zero page, `FP0` and `FP1`. `FPX` extends the `FP0` significand to 64 bits.
+    *   `s`: Sign bit (bit 31, 0 for positive, 1 for negative)
+    *   `t`: 31-bit fractional significand with implied `1.` (stored little-endian across bytes 0–3)
+    *   `e`: 8-bit biased exponent, excess-128 (`BIAS = 128`, stored in byte 4). An exponent of 0 represents zero (`0.0`). For any non-zero exponent $e \ge 1$, the actual exponent is $e - 128$ ($128 = 2^0$).
+*   **Precision**: The implied 1 bit to the left of the binary point (`1.[fraction]`, conceptually similar to IEEE-754) provides 32 bits of precision (9 decimal digits).
+*   **Registers**: Stored in zero page:
+    *   `FP0`: Accumulator register.
+    *   `FP1`: Operand register.
+    *   `FPX`: 32-bit extension register extending `FP0` to 64 bits during multiplication and addition to prevent precision loss before normalization. Zero-page string pointers `S0` and `S1` overlay the same address space as `FPX`.
 *   **Operations**:
-    *   **Unary functions** (e.g., `SIN`, `LOG`, `NEG`) always operate on `FP0`.
-    *   **Binary functions** (e.g., `FADD`, `FMUL`) operate on `FP0` and an "argument" value. The address of the argument is passed in `AY` and loaded into `FP1` before the operation.
-
-While VC83 BASIC uses the same number of bits to represent a floating point value as Microsoft BASIC, note that
-the implied 1 digit is to the left of the binary point (like IEEE-754), vs. Microsoft which places it to the right
-of the binary point.
+    *   **Unary functions** (e.g., `SQR`, `LOG`, `fneg`, `floor`, `round`) operate directly on `FP0`.
+    *   **Binary functions** (e.g., `fadd`, `fsub`, `fmul`, `fdiv`, `fcmp`) operate on `FP0` and `FP1`. Wrapper routines also accept the address of a memory operand in `AY` and load it into `FP1`.
+    *   **Transcendental functions**: Trigonometric (`SIN`, `COS`, `TAN`, `ATN`), logarithmic (`LOG`), exponential (`EXP`), and power (`^`) functions are computed using Chebyshev polynomials and Taylor series via Horner's method (`fpoly` and `fpoly_odd`). Note: Trigonometric functions are omitted from the standalone 8K `apple2` target to fit in 8K, but are included in extended targets (`apple2_lc`, `atari`, `ac6502`).
 
 The floating point system does not support subnormal values, NaN, or infinity.
 
 ## Strings
 
-Strings in VC83 BASIC are stored with the following structure:
-*   **Layout**: `[Length Byte] [String Data...] [Extra Byte 1] [Extra Byte 2]`
-*   **Size**: The `Length Byte` and the two extra bytes are *not* included in the reported length of the string.
-*   **Allocation**: The interpreter creates new strings by moving `string_ptr` down and writing the new string at the new `string_ptr` location. Thus, `string_ptr` always points to the most recently created string.
-*   **Garbage collection**: When `string_ptr` reaches `free_ptr`, the interpreter triggers a garbage collector.
-    *   The collector moves all still-referenced strings to the top of the string space (towards `himem_ptr`).
-    *   During collection, the two extra bytes following each string are used to store a forwarding address.
+Strings in VC83 BASIC are stored in dynamic string space at the top of RAM:
+*   **Layout**: `[Length Byte] [String Data...] [Relocation Offset Low] [Relocation Offset High]`
+*   **Overhead**: Each string carries 3 bytes of overhead (`STRING_EXTRA = 3`): one length byte and two relocation bytes.
+*   **Allocation**: Strings grow downward from `himem_ptr` toward `free_ptr`. `string_ptr` always points to the start of the most recently allocated string.
+*   **Garbage collection**: When `string_ptr` reaches `free_ptr`, the interpreter triggers a linear-time ($O(n)$) **Mark-Sweep-Compact** garbage collector that runs in six phases:
+    1.  Clear marks on all strings in the heap by setting the relocation high byte to `$FF` (unmarked).
+    2.  Scan variables, arrays, and the value stack to mark referenced strings (setting relocation high byte to `$00`).
+    3.  Calculate relocation offsets for each marked string.
+    4.  Update all string pointers in variables, arrays, and the stack.
+    5.  Compact marked string data down to the bottom of free space.
+    6.  Shift the compacted block of live strings back up to the top of memory (`himem_ptr`).
 
 ## Testing
 
@@ -180,34 +196,38 @@ Strings in VC83 BASIC are stored with the following structure:
 Located in the `tests/` directory (e.g., `fp_test.c`). These tests are written in C but interface with the 6502 assembly code through `c_wrappers.s`, which provides a C-callable interface to assembly functions. They are run using `sim65`.
 
 ### Expect Tests
-Located in `expect_tests/`. These are integration tests that use the `expect` tool to feed BASIC commands into `sim65 basic_sim6502` and verify the output. This ensures the interpreter behaves correctly from a user's perspective.
+Located in `expect_tests/`. These are integration tests that use the `expect` tool to feed BASIC commands into `sim65 build/basic_sim6502` and verify the output. This ensures the interpreter behaves correctly from a user's perspective.
 
 ## VC83 BASIC vs. Microsoft BASIC
 
-VC83 BASIC has a few improvements over Microsoft BASIC:
+VC83 BASIC differs from Microsoft 6502 BASIC in several key areas:
 
-*   **Variable names**: Variable names can be any length.
-*   **String GC**: The string garbage collector is much more efficient.
+*   **Parser & Syntax Validation**: Microsoft BASIC performs simple keyword token replacement on entry without syntax checking, deferring errors until runtime. VC83 BASIC uses a dedicated DFA lexer and LL(1) Parser Virtual Machine (PVM) to perform full syntax validation on entry, catching syntax errors immediately.
+*   **Variable names**: Microsoft BASIC only considers the first two characters of a variable name significant (causing collisions between names like `VAR1` and `VAR2`). VC83 BASIC allows variable names of any length.
+*   **String GC**: Microsoft BASIC famously pauses due to an $O(n^2)$ string collection algorithm that repeatedly scans the variable table. VC83 BASIC uses a linear $O(n)$ mark-sweep-compact collector.
 
-However, VC83 BASIC is also quite a bit slower than Microsoft BASIC. This is an area for development; it doesn't seem
-like it should be an unfixable problem.
+However, VC83 BASIC is currently slower than Microsoft BASIC. This is an active area for development.
 
 ## What's missing?
 
-My goal was to fit the BASIC core into 8K. But in order to get there, I had to remove platform-specific features
-such as I/O and graphics and sound statements from the core. So the BASIC interpreter that will actually
-run on real hardware will probably be 10K, 12K, or even 16K.
+The core interpreter is designed to fit into an 8K footprint (under 8,192 bytes, as demonstrated by the proof-of-concept `apple2` target, which omits trigonometric functions to fit). Keeping the core down to 8K leaves ample headroom for platforms to extend the language—adding full trig, channel-based I/O, graphics, and sound—within 10K, 12K, or 16K ROM or Language Card configurations (as seen in `apple2_lc`, `atari`, and `ac6502`).
 
-VC83 BASIC does not support for DEF FN or ON ERROR. Let me know if these are important.
+VC83 BASIC does not support `DEF FN` or `ON ERROR`. Let me know if these are important.
 
 ## Extending BASIC to a New Platform
 
 To add support for a new hardware platform:
-1.  **Linker config**: Create an `ld65` configuration file (e.g., `{platform}/{platform}.cfg`).
-2.  **Initialization**: Implement platform-specific startup and mandatory I/O (`getch`, `putch`, `inkey`, `readline`, `newline`, `tab`, `save`, `load`) in its own directory. On failure, I/O routines should invoke `raise ERR_IO_ERROR`.
-3.  **Master assembly file**: Create a `basic_{platform}.s` file that `.include`s `basic.inc` and all your platform-specific assembly files.
-4.  **Makefile**: Add the new target to the `TARGETS` list in the `Makefile` and define the build rules.
-5.  **Extensions (optional)**: Implement platform-specific extension macros in `{platform}.inc` (`extension_statement_keywords`, `extension_pvm_statements`, `extension_pvm_code`, split vectors `extension_statement_vectors_l/h`, and `extension_statement_flags`) and handler code in `{platform}_extension.s`. See `ac6502.inc` / `ac6502_extension.s` or `apple2_lc.inc` / `apple2_extension_lc.s` for examples.
+1.  **Linker config**: Create an `ld65` configuration file in `targets/{platform}/{platform}.cfg`.
+2.  **Initialization**: Implement platform-specific startup and mandatory I/O routines (`getch`, `putch`, `inkey`, `readline`, `newline`, `tab`, `save`, `load`) in `targets/{platform}/`. On failure, I/O routines should invoke `raise ERR_IO_ERROR` (non-blocking `inkey` returns carry set `C=1` when no key is waiting).
+3.  **Master assembly file**: Create a `targets/{platform}/basic_{platform}.s` file that `.include`s `basic.s` (from `src/`), `main.s`, `random.s`, and your platform-specific assembly files.
+4.  **Makefile**: Add the new target to the `TARGETS` list in the `Makefile` and define the build and linking rules.
+5.  **Extensions (optional)**: Implement platform-specific statements and functions in `targets/{platform}/{platform}.inc` and `{platform}_extension.s`:
+    *   **Keywords**: `extension_statement_keywords`, `extension_function_keywords`, `extension_custom_keywords`
+    *   **PVM grammar rules**: `extension_pvm_statements`, `extension_pvm_functions`, `extension_pvm_code`
+    *   **Dispatch vectors**: `extension_statement_vectors_l/h`, `extension_function_vectors_l/h`
+    *   **Dispatch flags**: `extension_statement_flags`, `extension_function_flags` using `PROLOG_*` (`PROLOG_NONE`, `PROLOG_POP_FP`, `PROLOG_POP_INT`, `PROLOG_POP_STRING`) and `EPILOG_*` (`EPILOG_NONE`, `EPILOG_PUSH_FP`, `EPILOG_PUSH_INT`, `EPILOG_PUSH_STRING`) to automate stack argument evaluation and return values without boilerplate.
+    *   **Channel-based I/O (`enable_io_channels`)**: For platforms supporting numbered I/O channels (Atari-style `#0`–`#7`), define `enable_io_channels` and implement driver routines `open`, `close`, `close_all`, and `xio`.
+    *   See `targets/ac6502/ac6502.inc` / `ac6502_extension.s` or `targets/apple2/apple2_lc.inc` / `apple2_extension_lc.s` for examples.
 
 
 ## License
