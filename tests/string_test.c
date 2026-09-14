@@ -384,13 +384,13 @@ void test_string_255(void) {
 
     initialize_program();
 
-    // 1. Allocate 255-byte string
+    // Allocate 255-byte string
     s = string_alloc(255);
     ASSERT_EQ(err, 0);
     ASSERT_EQ(s->length, 255);
     ASSERT_PTR_EQ(s, string_ptr);
 
-    // 2. Load 255-byte string into S0 and S1
+    // Load 255-byte string into S0 and S1
     len = load_s0(s);
     ASSERT_EQ(len, 255);
     ASSERT_PTR_EQ(S0, s->data);
@@ -399,7 +399,7 @@ void test_string_255(void) {
     ASSERT_EQ(len, 255);
     ASSERT_PTR_EQ(S1, s->data);
 
-    // 3. Read unquoted 255-byte string
+    // Read unquoted 255-byte string
     for (i = 0; i < 255; ++i) {
         buffer[i] = 'A' + (i % 26);
     }
@@ -410,7 +410,7 @@ void test_string_255(void) {
     ASSERT_EQ(memcmp(string_ptr->data, buffer, 255), 0);
     ASSERT_EQ(Y, 255);
 
-    // 4. Compact preserving 255-byte string
+    // Compact preserving 255-byte string
     add_string_variable_with_name("LONG$", s);
     compact();
     parse_and_get_name("LONG$");

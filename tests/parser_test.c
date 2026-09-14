@@ -213,7 +213,7 @@ void test_max_line_length(void) {
 
     PRINT_TEST_NAME();
 
-    // 1. Long valid line (REM statement fitting in line_buffer)
+    // Long valid line (REM statement fitting in line_buffer)
     memset(buf, 'X', 230);
     buf[230] = '\0';
     sprintf(buffer, "10 REM %s", buf);
@@ -221,7 +221,7 @@ void test_max_line_length(void) {
     ASSERT_EQ(err, 0);
     ASSERT_EQ(line_buffer.number, 10);
 
-    // 2. Long expression that exceeds MAX_LINE_LENGTH
+    // Long expression that exceeds MAX_LINE_LENGTH
     memset(buf, 0, sizeof buf);
     strcpy(buf, "10 PRINT ");
     pos = strlen(buf);
@@ -236,15 +236,17 @@ void test_max_line_length(void) {
     parse_line();
     ASSERT_EQ(err, ERR_LINE_TOO_LONG);
 
-    // 3. Many chained statements that exceed MAX_LINE_LENGTH
+    // Many chained statements that exceed MAX_LINE_LENGTH
     pos = 0;
     strcpy(buf, "10 ");
     pos = 3;
-    for (i = 0; i < 40; ++i) {
-        strcpy(buf + pos, "LET X=1:");
-        pos += 8;
+    for (i = 0; i < 35; ++i) {
+        strcpy(buf + pos, "X=1:");
+        pos += 4;
     }
     buf[pos] = '\0';
+    // Make sure we didn't clobber stack...
+    ASSERT(pos < 256);
     strcpy(buffer, buf);
     parse_line();
     ASSERT_EQ(err, ERR_LINE_TOO_LONG);
