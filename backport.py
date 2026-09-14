@@ -1,4 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+#
+# SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+#
+# SPDX-License-Identifier: MIT
 
 import subprocess
 

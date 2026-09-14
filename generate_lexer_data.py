@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# SPDX-FileCopyrightText: 2022-2026 Willis Blackburn
+#
+# SPDX-License-Identifier: MIT
+
 """
 generate_lexer_data.py
 
