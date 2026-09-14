@@ -32,6 +32,10 @@ CFLAGS += -g
 LDFLAGS += -Wl --dbgfile,$@.dbg
 endif
 
+.PHONY: all test expect_test clean FORCE
+.SECONDARY:
+.DELETE_ON_ERROR:
+
 all: $(addprefix build/basic_,$(TARGETS))
 
 run: build/basic_sim6502
@@ -166,9 +170,6 @@ expect_test: build/basic_sim6502 $(addprefix run_expect_test_,$(EXPECT_TESTS))
 
 run_expect_test_%:
 	expect expect_tests/$*.exp
-
-.PHONY: all test expect_test clean FORCE
-.SECONDARY:
 
 clean::
 	rm -rf build/
