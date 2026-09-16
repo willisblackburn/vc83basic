@@ -451,10 +451,8 @@ pop_fp0:
 ; Pushes the pending value (FP0 or S0 based on expr_type) onto the value stack.
 push_pending:
         lda     expr_type
-        bne     @string
-        jmp     push_fp0
-@string:
-        jmp     push_string_s0
+        beq     push_fp0
+        bne     push_string_s0
 
 ; Pushes the string referenced by string_ptr onto the stack. This works because this function is only called after
 ; we have generated a new string.
@@ -463,7 +461,9 @@ push_pending:
 
 push_string:
         mvax    string_ptr, S0
+
 ; Fall through
+
 push_string_s0:
         jsr     stack_alloc_value
         tay
