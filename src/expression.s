@@ -288,12 +288,6 @@ op_ne_tail:
         bne     set_value_1             ; A <> B
         beq     set_value_0             ; A = B
 
-op_le:
-        jsr     compare_values
-        bcc     set_value_1             ; A < B
-        beq     set_value_1             ; A = B
-        bne     set_value_0             ; A > B
-
 op_lt:
         jsr     compare_values
         bcc     set_value_1             ; A < B
@@ -306,11 +300,14 @@ op_ge:
 
 op_gt:
         jsr     compare_values
-        bcc     set_value_0             ; A < B
         bcs     op_ne_tail              ; A >= B
 
 set_value_0:
         jmp     clear_fp0
+
+op_le:
+        jsr     compare_values
+        bcs     op_eq_tail
 
 set_value_1:
         jmp     load_one_fp0
