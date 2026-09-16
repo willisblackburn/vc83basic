@@ -244,38 +244,6 @@ op_concat:
 @out_of_range:
         jmp     raise_out_of_range
 
-; Compares two strings: right operand in S0, left on stack.
-; Returns flags based on comparison.
-; CMP s1 len, s2 len
-; C=0 (borrow) if s1 len < s2 len
-; C=1 (not borrow) if s1 len >= s2 len
-
-compare_string_values:
-        lday    S0                      ; Right string header pointer
-        jsr     load_s1                 ; Convert to data pointer in S1, A = right string length
-        sta     E                       ; Length of second string in E
-        jsr     pop_string_s0           ; Get first string from stack into S0
-        sta     D                       ; Length of first string in D
-        cmp     E                       ; Compare first string length to second
-        bcc     @use_first_string_length
-        lda     E                       ; Replace length in A with the shorter second string length 
-@use_first_string_length:
-        sta     B                       ; Store shortest string length in B
-        ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
-@next_character:
-        iny
-        cpy     B                       ; Out of characters?
-        beq     @compare_lengths        ; Yes
-        lda     (S0),y                  ; Compare the next character
-        cmp     (S1),y
-        beq     @next_character
-        rts                             ; Return with the flags from the comparison
-
-@compare_lengths:
-        lda     D                       ; Characters are the same, so shorter string is lesser or equal
-        cmp     E
-        rts
-
 op_eq:
         jsr     compare_values
 op_eq_tail:
@@ -316,6 +284,38 @@ compare_num_values:
         jsr     load_fp1
         jsr     swap_fp0_fp1
         jmp     fcmp_2
+
+; Compares two strings: right operand in S0, left on stack.
+; Returns flags based on comparison.
+; CMP s1 len, s2 len
+; C=0 (borrow) if s1 len < s2 len
+; C=1 (not borrow) if s1 len >= s2 len
+
+compare_string_values:
+        lday    S0                      ; Right string header pointer
+        jsr     load_s1                 ; Convert to data pointer in S1, A = right string length
+        sta     E                       ; Length of second string in E
+        jsr     pop_string_s0           ; Get first string from stack into S0
+        sta     D                       ; Length of first string in D
+        cmp     E                       ; Compare first string length to second
+        bcc     @use_first_string_length
+        lda     E                       ; Replace length in A with the shorter second string length 
+@use_first_string_length:
+        sta     B                       ; Store shortest string length in B
+        ldy     #$FF                    ; Start at first character ($FF because we pre-increment Y)
+@next_character:
+        iny
+        cpy     B                       ; Out of characters?
+        beq     @compare_lengths        ; Yes
+        lda     (S0),y                  ; Compare the next character
+        cmp     (S1),y
+        beq     @next_character
+        rts                             ; Return with the flags from the comparison
+
+@compare_lengths:
+        lda     D                       ; Characters are the same, so shorter string is lesser or equal
+        cmp     E
+        rts
 
 compare_values:
         lda     expr_type               ; Right operand type
