@@ -537,6 +537,14 @@ op_and:
         pha
         txa                             ; High byte into A
         and     E                       ; AND high bytes
+        jmp     finish_logical_op
+
+op_or:
+        jsr     set_up_logical_op
+        ora     D                       ; OR low bytes
+        pha
+        txa                             ; High byte into A
+        ora     E                       ; OR low bytes
 
 ; Fall through
 
@@ -545,14 +553,6 @@ finish_logical_op:
         mva     #TYPE_NUMBER, expr_type ; Result is TYPE_NUMBER
         pla                             ; Recover low byte
         jmp     int_to_fp
-
-op_or:
-        jsr     set_up_logical_op
-        ora     D                       ; OR low bytes
-        pha
-        txa                             ; High byte into A
-        ora     E                       ; OR low bytes
-        jmp     finish_logical_op
 
 set_up_logical_op:
         lda     expr_type
