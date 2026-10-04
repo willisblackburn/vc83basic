@@ -115,7 +115,7 @@ exec_locate:
 
 exec_color:
         and     #$0F
-        sta     D                       ; D = bg nibble (last arg popped by prolog)
+        sta     D                       ; D = bg nybble (last arg popped by prolog)
         jsr     pop_int_fp0             ; fg -> AX
         asl     A
         asl     A

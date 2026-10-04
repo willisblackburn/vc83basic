@@ -153,7 +153,7 @@ The parser converts user input into a tokenized program in two stages:
 ### Execution and Flow Control
 The interpreter uses two stacks for expression evaluation and flow control, paired with a lazy evaluation strategy:
 1.  **Value stack (`stack`)**: A page-aligned memory buffer managed by `stack_pos` (growing downward) that stores 6-byte `Value` structures (a 1-byte type tag `TYPE_NUMBER` or `TYPE_STRING`, and a 5-byte data payload). It also stores control frames for `GOSUB` and `FOR` loops (`POP` removes one control frame).
-2.  **Operator stack (`op_stack`)**: A byte array managed by `op_stack_pos` (growing downward). Each 1-byte entry packs both operator precedence (high nibble) and dispatch vector ID (low nibble), allowing single-instruction precedence comparisons and direct table dispatch.
+2.  **Operator stack (`op_stack`)**: A byte array managed by `op_stack_pos` (growing downward). Each 1-byte entry packs both operator precedence (high nybble) and dispatch vector ID (low nybble), allowing single-instruction precedence comparisons and direct table dispatch.
 
 **Lazy Evaluation**: Primary expressions leave results directly in zero-page working registers (`FP0` for numbers, `S0` for string pointers, tracked by `expr_type`) without pushing to the value stack. Intermediate results are only pushed to the stack when necessary—such as preserving a left operand across binary operators, passing arguments in parameter lists, or before allocating new strings on the heap. Simple assignments and single-term expressions execute entirely in registers without touching the stack.
 

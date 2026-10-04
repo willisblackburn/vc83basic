@@ -393,7 +393,7 @@ switching to 12-bit relative offsets and putting the parser data in a segment gu
 nearby, the unique address-reading code was eliminated. Saved 14 bytes.
 
 **Project example** (`b764c358`, `861c536e`): Function dispatch metadata (arity, prolog/epilog
-actions) was packed into 4-bit nibbles, two per byte, in a `dispatch_flags` table. This halved the
+actions) was packed into 4-bit nybbles, two per byte, in a `dispatch_flags` table. This halved the
 table size and allowed a single `dispatch_entry` routine to handle both statements and functions.
 
 ### Use Structure of Arrays (SoA) for pointer tables

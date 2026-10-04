@@ -73,9 +73,9 @@ dispatch:
         lsr     A                               ; Byte offset in flags table = X / 2
         tay
         lda     dispatch_flags-8,y
-        bcc     @even                           ; Even index -> low nibble
+        bcc     @even                           ; Even index -> low nybble
 @shift:
-        lsr     A                               ; Odd index -> high nibble
+        lsr     A                               ; Odd index -> high nybble
         lsr     A
         lsr     A
         lsr     A
