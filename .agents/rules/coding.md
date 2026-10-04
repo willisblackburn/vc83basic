@@ -46,6 +46,8 @@ Add blank lines after JMP and unconditional branches, if followed by a cheap lab
 
 Spaces around operators in expressions follow a semantic convention. Simple address and offset adjustments have **no spaces**: `var_ptr+1`, `Line::num+1`, `stack+Control::next_line_ptr,x`, `.word exec_print-1`, `#'A'-1`. Value computations have **spaces**: `#.sizeof(Line) + 2`, `1 | PROLOG_POP_FP`, `* - ready_message`, `fp_scratch + .sizeof(Float) * 2`, `.if fp_format = 5`. The distinction is whether the expression represents a location in memory (tight) or computes a value (spaced).
 
+Prefer to use full words in variable names and not abbreviate. Use `count` not `cnt`. Use `size` not `sz`. However, *do* use `dst` and `src` for destination and source pointers, and use `ptr` instead of `pointer`.
+
 ## Minimizing Permission Checks and Command Overhead
 
 Repeated command permission checks slow down work significantly. Minimize interactive command prompts by adopting these strategies:
