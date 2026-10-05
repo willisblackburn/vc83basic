@@ -117,7 +117,7 @@ build/basic_vc83_serial: build/basic_vc83_serial.o
 
 build/basic_vc83_serial.mem: build/basic_vc83_serial
 	@mkdir -p $(@D)
-	if command -v srec_cat >/dev/null; then srec_cat $< -Binary -offset 0x0400 -Output $@ -VMem 8; else echo "srec_cat not installed"; touch $@; fi 
+	if command -v srec_cat >/dev/null; then srec_cat $< -Binary -offset 0x0800 -Output $@ -VMem 8; else echo "srec_cat not installed"; touch $@; fi 
 
 # Rule for version.inc
 src/version.inc: FORCE
