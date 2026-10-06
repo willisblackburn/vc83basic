@@ -50,6 +50,7 @@ clear_variables:
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos
         mva     #PRIMARY_STACK_SIZE, stack_pos
+        sta     reset_stack_pos
 .ifdef enable_io_channels
         jsr     close_all
 .endif
