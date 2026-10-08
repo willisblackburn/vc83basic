@@ -3,6 +3,7 @@
 ; SPDX-License-Identifier: MIT
 
 enable_trig_functions = 1
+enable_io_channels    = 1
 
 .include "vc83_serial.inc"
 .include "basic.s"
@@ -10,3 +11,4 @@ enable_trig_functions = 1
 .include "vc83_serial_startup.s"
 .include "vc83_serial_init.s"
 .include "vc83_serial_io.s"
+.include "vc83_serial_extension.s"
