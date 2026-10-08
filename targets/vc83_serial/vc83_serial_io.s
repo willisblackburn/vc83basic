@@ -65,7 +65,7 @@ xio:
 
 getch:
         lda     channel
-        bmi     @serial_getch
+        bpl     @serial_getch           ; Bit 7 clear: not set by command -> default serial UART
         and     #$07
         jsr     API_GET
         rts
@@ -94,7 +94,7 @@ inkey:
 putch:
         pha
         lda     channel
-        bmi     @serial_putch
+        bpl     @serial_putch           ; Bit 7 clear: not set by command -> default serial UART
         and     #$07
         tax                             ; Channel in X
         pla
@@ -138,7 +138,7 @@ tab:
 
 readline:
         bit     channel
-        bpl     @channel_readline
+        bmi     @channel_readline       ; Bit 7 set: channel was set by command -> OS channel
 
         ldx     #0
 @loop:

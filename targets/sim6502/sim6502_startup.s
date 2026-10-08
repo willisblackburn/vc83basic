@@ -18,7 +18,7 @@ startup:
         ldx     #$FF
         txs                             ; Initialize the stack to $FF
         mvax    #(__MAIN_START__ + __MAIN_SIZE__ + __STACKSIZE__), c_sp
-        mva     #$80, channel
+        mva     #0, channel
         jsr     initialize_target
         jmp     main
 

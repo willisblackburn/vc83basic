@@ -8,8 +8,8 @@
 
 exec_input:
 .ifdef enable_io_channels
-        bit     channel                 ; Bit 7 is clear if explicit channel was given
-        bpl     @get_input              ; Skip prompt if explicit channel
+        bit     channel                 ; Bit 7 is set if explicit channel was given
+        bmi     @get_input              ; Skip prompt if explicit channel
 .endif
         jsr     peek_byte
         cmp     #TOK_STRING
@@ -59,7 +59,7 @@ exec_input:
 @more_input:
 .ifdef enable_io_channels
         bit     channel
-        bpl     @get_input              ; Explicit channel: skip prompt
+        bmi     @get_input              ; Explicit channel: skip prompt
 .endif
         jmp     @default_prompt
 
