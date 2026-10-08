@@ -6,6 +6,7 @@
 dir_record:     .res 15
 dir_name        = dir_record
 dir_size        = dir_record + 11
+grmode_val:     .res 1
 
 .segment "CODE"
 
@@ -146,3 +147,67 @@ exec_status:
 
 @status_type_mismatch:
         jmp     raise_type_mismatch
+
+; GRMODE mode
+; Configures VCGA graphics layers.
+; Mode argument:
+;   Bits 4:0: format argument for VCGALAYER on Layer 3
+;   Bit 7: if set, configure 4-line text window on Layer 2; if clear, disable Layer 2
+;   Bits 6:5: must be 0 (frame is fixed to 640x400)
+;   Layers 0 and 1 are disabled.
+exec_grmode:
+        cpx     #0
+        bne     @err
+        tax
+        and     #$60
+        bne     @err
+        stx     grmode_val
+
+        ; Disable layers 0 and 1
+        lda     #0
+        sta     arg1
+        jsr     API_VCGALAYER
+        lda     #1
+        jsr     API_VCGALAYER
+
+        ; Configure layer 3 (main layer: frame 0, full part, base 0)
+        lda     #$04            ; frame 00, part 1 (full)
+        sta     arg1
+        lda     grmode_val
+        and     #$1F
+        sta     arg2
+        lda     #0
+        sta     arg3
+        sta     arg4
+        lda     #3
+        jsr     API_VCGALAYER
+        bcs     @err
+
+        ; Configure or disable layer 2 (text window)
+        lda     grmode_val
+        bpl     @disable_layer2
+
+        ; Bit 7 is set: 4-line text window on layer 2 at bottom
+        lda     #$18            ; frame 00, part 6 (bottom 32)
+        sta     arg1
+        lda     #$10            ; text, 1 bpp, 1X
+        sta     arg2
+        lda     #0
+        sta     arg3
+        lda     #$FE            ; base = $FE00
+        sta     arg4
+        lda     #2
+        jsr     API_VCGALAYER
+        bcs     @err
+        rts
+
+@disable_layer2:
+        lda     #0
+        sta     arg1
+        lda     #2
+        jsr     API_VCGALAYER
+        rts
+
+@err:
+        jmp     raise_out_of_range
+
