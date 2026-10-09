@@ -6,7 +6,6 @@
 dir_record:     .res 15
 dir_name        = dir_record
 dir_size        = dir_record + 11
-grmode_val:     .res 1
 
 .segment "CODE"
 
@@ -62,18 +61,26 @@ exec_dir:
 @close_ok:
         lda     #7
         jsr     API_CLOSE
+        clc
         rts
 
 @print_entry:
         ; Print filename and pad to column 14
-        ldx     #0
+        lda     #0
+        sta     D
         ldy     #0
 @print_name:
         lda     dir_name, y
         cmp     #' '
         beq     @name_done
+        tax
+        tya
+        pha
+        txa
         jsr     putch
-        inx
+        pla
+        tay
+        inc     D
         iny
         cpy     #8
         bne     @print_name
@@ -93,24 +100,34 @@ exec_dir:
 @print_ext_dot:
         lda     #'.'
         jsr     putch
-        inx
+        inc     D
         ldy     #8
 @print_ext:
         lda     dir_name, y
         cmp     #' '
         beq     @pad_spaces
+        tax
+        tya
+        pha
+        txa
         jsr     putch
-        inx
+        pla
+        tay
+        inc     D
         iny
         cpy     #11
         bne     @print_ext
 
 @pad_spaces:
+        lda     D
+        cmp     #14
+        bcs     @print_size
         lda     #' '
         jsr     putch
-        inx
-        cpx     #14
-        bcc     @pad_spaces
+        inc     D
+        jmp     @pad_spaces
+
+@print_size:
 
         ; Convert 32-bit size in dir_size to float and print
         lda     dir_size
@@ -161,7 +178,7 @@ exec_grmode:
         tax
         and     #$60
         bne     @err
-        stx     grmode_val
+        stx     E
 
         ; Disable layers 0 and 1
         lda     #0
@@ -173,7 +190,7 @@ exec_grmode:
         ; Configure layer 3 (main layer: frame 0, full part, base 0)
         lda     #$04            ; frame 00, part 1 (full)
         sta     arg1
-        lda     grmode_val
+        lda     E
         and     #$1F
         sta     arg2
         lda     #0
@@ -184,7 +201,7 @@ exec_grmode:
         bcs     @err
 
         ; Configure or disable layer 2 (text window)
-        lda     grmode_val
+        lda     E
         bpl     @disable_layer2
 
         ; Bit 7 is set: 4-line text window on layer 2 at bottom

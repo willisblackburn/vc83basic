@@ -60,62 +60,41 @@ xio:
         jsr     API_XIO
         rts
 
-; Gets a single byte/key from channel or serial UART (blocking).
+; Gets a single byte/key from channel (blocking).
 ; Returns carry clear and byte in A if ok, carry set if error / EOF.
-
 getch:
         lda     channel
-        bpl     @serial_getch           ; Bit 7 clear: not set by command -> default serial UART
         and     #$07
         jsr     API_GET
         rts
 
-@serial_getch:
-        jsr     inkey
-        bcs     @serial_getch
-        rts
-
-; Polls for a key from serial UART without blocking.
+; Polls for a key without blocking using API_STATUS.
 ; Returns carry clear and byte in A if available, carry set if no byte.
-
 inkey:
-        lda     UART_RX_LEVEL
+        lda     channel
+        and     #$07
+        jsr     API_STATUS
+        bcs     @no_key
+        tax                             ; Count of waiting keys in X
         beq     @no_key
-        lda     UART_RX_DATA
-        clc
+        lda     channel
+        and     #$07
+        jsr     API_GET
         rts
 @no_key:
         sec
         rts
 
-; Outputs a single character to serial UART or channel.
+; Outputs a single character to channel.
 ; A = character
-
 putch:
-        pha
-        lda     channel
-        bpl     @serial_putch           ; Bit 7 clear: not set by command -> default serial UART
-        and     #$07
-        tax                             ; Channel in X
-        pla
         sta     arg1                    ; Character in arg1
-        txa                             ; Channel in A
+        lda     channel
+        and     #$07                    ; Channel in A
         jsr     API_PUT
         rts
 
-@serial_putch:
-        pla
-        pha
-:       lda     UART_TX_LEVEL
-        cmp     #8
-        bcs     :-                      ; Wait if FIFO full
-        pla
-        sta     UART_TX_DATA
-        clc
-        rts
-
 ; Emits record delimiter (CR + LF).
-
 newline:
         lda     #$0D                    ; Carriage Return
         jsr     putch
@@ -123,7 +102,6 @@ newline:
         jmp     putch
 
 ; Emits field separator (tabs across zones).
-
 tab:
         ldx     #4
 :       lda     #' '
@@ -133,59 +111,9 @@ tab:
         clc
         rts
 
-; Reads a text record (line) from channel or serial into buffer.
+; Reads a text record (line) from channel into buffer.
 ; NUL-terminates at EOL, returns length in A.
-
 readline:
-        bit     channel
-        bmi     @channel_readline       ; Bit 7 set: channel was set by command -> OS channel
-
-        ldx     #0
-@loop:
-@wait_rx:
-        lda     UART_RX_LEVEL
-        beq     @wait_rx
-        lda     UART_RX_DATA
-        cmp     #$0D                    ; Carriage Return?
-        beq     @cr
-        cmp     #$08                    ; Backspace (Ctrl-H)?
-        beq     @bs
-        cmp     #$7F                    ; Delete?
-        beq     @bs
-        cmp     #$20                    ; Ignore control chars < space
-        bcc     @loop
-        cpx     #BUFFER_SIZE-1
-        bcs     @loop
-
-        ; Standard character
-        sta     buffer,x
-        jsr     putch                   ; Echo
-        inx
-        jmp     @loop
-
-@bs:
-        cpx     #0
-        beq     @loop                   ; Ignore backspace at start of line
-        dex
-        lda     #$08                    ; BS
-        jsr     putch
-        lda     #' '                    ; Space
-        jsr     putch
-        lda     #$08                    ; BS
-        jsr     putch
-        jmp     @loop
-
-@cr:
-        lda     #0
-        sta     buffer,x                ; Null-terminate
-        txa                             ; Return length in A
-        pha
-        jsr     newline                 ; Echo newline
-        pla
-        clc
-        rts
-
-@channel_readline:
         lda     #<buffer
         sta     arg1
         lda     #>buffer
@@ -210,10 +138,16 @@ readline:
         beq     @strip
         iny
         tya
+        tax
+        lda     #0
+        sta     buffer, x
+        txa
         clc
         rts
 
 @strip:
+        lda     #0
+        sta     buffer, y
         tya
         clc
         rts

@@ -2,11 +2,8 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-UART_BASE       := $D100
-UART_TX_LEVEL   := UART_BASE + 0
-UART_RX_LEVEL   := UART_BASE + 1
-UART_TX_DATA    := UART_BASE + 2
-UART_RX_DATA    := UART_BASE + 3
+; Hardware Bank Select Registers
+BANK_SELECT_A   := $00
 
 ; OS API Vectors and Registers
 API_VCGALAYER   := $E003
