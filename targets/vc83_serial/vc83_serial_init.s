@@ -54,8 +54,8 @@ initialize_target:
         jmp     @init_fail
 @open_font_ok:
 
-        lda     #$20
-        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Tile RAM ($20000-$20FFF)
+        lda     #$A0
+        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Tile RAM ($A0000-$A0FFF)
 
         lda     #<$A000
         sta     dst_ptr
@@ -97,12 +97,12 @@ initialize_target:
         jmp     @init_fail
 @open_palette_ok:
 
-        lda     #$28
-        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Palette RAM ($28000-$28FFF)
+        lda     #$B0
+        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Palette RAM ($B0800-$B0FFF)
 
-        lda     #<$A000
+        lda     #<$A800
         sta     dst_ptr
-        lda     #>$A000
+        lda     #>$A800
         sta     dst_ptr+1
 
 @load_palette:
@@ -116,24 +116,24 @@ initialize_target:
         inc     dst_ptr+1
 @no_pal_ptr_carry:
         lda     dst_ptr+1
-        cmp     #>$A200                 ; 512 bytes -> $A000 to $A1FF
+        cmp     #>$AA00                 ; 512 bytes -> $A800 to $A9FF
         bcc     @load_palette
 
 @palette_done:
         lda     #0
         jsr     API_CLOSE
 
-        ; Duplicate Palette 0 to Palette 1 ($A200), Palette 2 ($A400), Palette 3 ($A600)
+        ; Duplicate Palette 0 to Palette 1 ($AA00), Palette 2 ($AC00), Palette 3 ($AE00)
         ldx     #0
 @dup_pal:
-        lda     $A000, x
-        sta     $A200, x
-        sta     $A400, x
-        sta     $A600, x
-        lda     $A100, x
-        sta     $A300, x
-        sta     $A500, x
-        sta     $A700, x
+        lda     $A800, x
+        sta     $AA00, x
+        sta     $AC00, x
+        sta     $AE00, x
+        lda     $A900, x
+        sta     $AB00, x
+        sta     $AD00, x
+        sta     $AF00, x
         inx
         bne     @dup_pal
 
