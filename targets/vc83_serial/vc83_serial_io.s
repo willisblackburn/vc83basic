@@ -61,7 +61,7 @@ ensure_channel_0:
         pha
         tya
         pha
-        lda     #$32                    ; Mode $32: Layer 3, Read/Write
+        lda     #(3 << 5) | OPEN_TERM | OPEN_ECHO | OPEN_READ_WRITE ; Layer 3, Terminal, Echo, Read/Write ($7A)
         sta     arg1
         lda     #<console_filename
         sta     arg2

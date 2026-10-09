@@ -18,7 +18,11 @@ API_XIO         := $E01B
 
 OPEN_READ       = 0
 OPEN_WRITE      = 1
+OPEN_READ_WRITE = 2
+OPEN_APPEND     = 3
 OPEN_DIRECTORY  = 4
+OPEN_ECHO       = 8
+OPEN_TERM       = 16
 
 ERR_EOF         = $08
 
