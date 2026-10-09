@@ -50,9 +50,9 @@ initialize_target:
         sta     arg4
         lda     #0                      ; Channel 0
         jsr     API_OPEN
-        bcc     :+
+        bcc     @open_font_ok
         jmp     @init_fail
-:
+@open_font_ok:
 
         lda     #$20
         sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Tile RAM ($20000-$20FFF)
@@ -69,9 +69,10 @@ initialize_target:
         ldy     #0
         sta     (dst_ptr), y
         inc     dst_ptr
-        bne     :+
+        bne     @no_font_ptr_carry
         inc     dst_ptr+1
-:       lda     dst_ptr+1
+@no_font_ptr_carry:
+        lda     dst_ptr+1
         cmp     #>$A800                 ; 2048 bytes -> $A000 to $A7FF
         bcc     @load_font
 
@@ -92,9 +93,9 @@ initialize_target:
         sta     arg4
         lda     #0                      ; Channel 0
         jsr     API_OPEN
-        bcc     :+
+        bcc     @open_palette_ok
         jmp     @init_fail
-:
+@open_palette_ok:
 
         lda     #$28
         sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Palette RAM ($28000-$28FFF)
@@ -111,9 +112,10 @@ initialize_target:
         ldy     #0
         sta     (dst_ptr), y
         inc     dst_ptr
-        bne     :+
+        bne     @no_pal_ptr_carry
         inc     dst_ptr+1
-:       lda     dst_ptr+1
+@no_pal_ptr_carry:
+        lda     dst_ptr+1
         cmp     #>$A200                 ; 512 bytes -> $A000 to $A1FF
         bcc     @load_palette
 
@@ -145,28 +147,11 @@ initialize_target:
         lda     #$1C
         ldx     #0
         jsr     exec_grmode
-        bcc     :+
+        bcc     @grmode_ok
         jmp     @init_fail
-:
+@grmode_ok:
 
-        ; -------------------------------------------------------------------
-        ; 4. Open console C: on channel 0 (mode $32 = Layer 3, Read/Write)
-        ; -------------------------------------------------------------------
-        lda     #$32                    ; Mode $32: Layer 3, Read/Write
-        sta     arg1
-        lda     #<console_filename
-        sta     arg2
-        lda     #>console_filename
-        sta     arg3
-        lda     #console_filename_len
-        sta     arg4
-        lda     #0                      ; Channel 0
-        jsr     API_OPEN
-        bcc     :+
-        jmp     @init_fail
-:
-
-        ; Set channel = 0
+        ; Set channel = 0 (default channel)
         lda     #0
         sta     channel
 

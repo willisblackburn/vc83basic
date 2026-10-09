@@ -119,9 +119,9 @@ exec_save:
 exec_load:
         ldy     #Line::next_line_offset
         lda     (program_ptr),y
-        beq     :+
+        beq     @empty
         jmp     raise_exists            ; Program exists: user must do NEW first!
-:
+@empty:
         jsr     load
         bcs     raise_io_error
         rts

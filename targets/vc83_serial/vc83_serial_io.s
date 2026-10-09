@@ -43,11 +43,48 @@ close_all:
         bne     @loop
         rts
 
+; ===========================================================================
+; ensure_channel_0
+;
+; If the default channel is active (bit 7 of channel is clear), checks if
+; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, auto-opens
+; the console "C:" with mode $32 on channel #0.
+; Preserves A, X, Y.
+; ===========================================================================
+ensure_channel_0:
+        bit     channel
+        bmi     @done                   ; Explicit channel: do not auto-open
+        bit     $0200                   ; Check IOCB 0 device byte
+        bmi     @done                   ; Bit 7 is 1 -> already open
+        pha
+        txa
+        pha
+        tya
+        pha
+        lda     #$32                    ; Mode $32: Layer 3, Read/Write
+        sta     arg1
+        lda     #<console_filename
+        sta     arg2
+        lda     #>console_filename
+        sta     arg3
+        lda     #console_filename_len
+        sta     arg4
+        lda     #0                      ; Channel 0
+        jsr     API_OPEN
+        pla
+        tay
+        pla
+        tax
+        pla
+@done:
+        rts
+
 ; Performs extended I/O using OS API_XIO ($E01B).
 ; A = command, BC = arg1, DE = arg2
 ; channel = channel index (0..7)
 ; Returns carry clear if ok, carry set if error.
 xio:
+        jsr     ensure_channel_0
         sta     arg1
         lda     BC
         sta     arg2
@@ -63,6 +100,7 @@ xio:
 ; Gets a single byte/key from channel (blocking).
 ; Returns carry clear and byte in A if ok, carry set if error / EOF.
 getch:
+        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_GET
@@ -71,6 +109,7 @@ getch:
 ; Polls for a key without blocking using API_STATUS.
 ; Returns carry clear and byte in A if available, carry set if no byte.
 inkey:
+        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_STATUS
@@ -88,6 +127,7 @@ inkey:
 ; Outputs a single character to channel.
 ; A = character
 putch:
+        jsr     ensure_channel_0
         sta     arg1                    ; Character in arg1
         lda     channel
         and     #$07                    ; Channel in A
@@ -104,16 +144,18 @@ newline:
 ; Emits field separator (tabs across zones).
 tab:
         ldx     #4
-:       lda     #' '
+@tab_loop:
+        lda     #' '
         jsr     putch
         dex
-        bne     :-
+        bne     @tab_loop
         clc
         rts
 
 ; Reads a text record (line) from channel into buffer.
 ; NUL-terminates at EOL, returns length in A.
 readline:
+        jsr     ensure_channel_0
         lda     #<buffer
         sta     arg1
         lda     #>buffer
@@ -127,16 +169,26 @@ readline:
         jsr     API_READ
         bcs     @read_err
 
-        ; If count > 0 and last byte is EOL ($0A) or CR ($0D), strip it
+        ; Strip trailing CR ($0D) and LF ($0A)
         tay
+@strip_loop:
+        cpy     #0
         beq     @no_strip
         dey
         lda     buffer, y
         cmp     #$0A
-        beq     @strip
+        beq     @strip_one
         cmp     #$0D
-        beq     @strip
+        beq     @strip_one
         iny
+        jmp     @term
+
+@strip_one:
+        lda     #0
+        sta     buffer, y
+        jmp     @strip_loop
+
+@term:
         tya
         tax
         lda     #0
@@ -145,14 +197,9 @@ readline:
         clc
         rts
 
-@strip:
-        lda     #0
-        sta     buffer, y
-        tya
-        clc
-        rts
-
 @no_strip:
+        lda     #0
+        sta     buffer
         clc
         rts
 
@@ -165,10 +212,10 @@ readline:
 save:
         ; Check if Channel 7 is open by inspecting IOCB 7 ($02E0)
         lda     $02E0
-        bpl     :+
+        bpl     @channel_available
         sec
         rts
-:
+@channel_available:
         ; Open file on channel 7 for write
         ldy     #0
         lda     (BC), y                 ; String length
@@ -181,9 +228,9 @@ save:
         sta     arg1
         lda     #7
         jsr     API_OPEN
-        bcc     :+
+        bcc     @open_ok
         rts
-:
+@open_ok:
         ; Write program from (__BSS_RUN__ + __BSS_SIZE__) to variable_name_table_ptr
         sec
         lda     variable_name_table_ptr
@@ -213,10 +260,10 @@ save:
 load:
         ; Check if Channel 7 is open
         lda     $02E0
-        bpl     :+
+        bpl     @channel_available
         sec
         rts
-:
+@channel_available:
         ; Open file on channel 7 for read
         ldy     #0
         lda     (BC), y
@@ -229,9 +276,9 @@ load:
         sta     arg1
         lda     #7
         jsr     API_OPEN
-        bcc     :+
+        bcc     @open_ok
         rts
-:
+@open_ok:
         ; Read into (__BSS_RUN__ + __BSS_SIZE__) up to (himem_ptr - start)
         sec
         lda     himem_ptr

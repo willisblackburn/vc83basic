@@ -14,9 +14,9 @@ dir_size        = dir_record + 11
 exec_dir:
         ; Check if Channel 7 is open by inspecting IOCB 7 ($02E0)
         lda     $02E0                   ; IOCB 7 device byte
-        bpl     :+
+        bpl     @channel_available
         jmp     raise_io_error          ; Already open: fail without closing channel 7
-:
+@channel_available:
         ; Set up arguments for API_OPEN
         ldy     #0
         lda     (BC), y                 ; String length
@@ -151,6 +151,7 @@ exec_status:
         jsr     get_variable
         lda     var_name_type
         bne     @status_type_mismatch
+        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_STATUS
