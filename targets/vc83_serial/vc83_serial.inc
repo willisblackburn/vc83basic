@@ -41,12 +41,14 @@ TOK_GRMODE      = $64
         .byte   <(exec_dir-1)
         .byte   <(exec_status-1)
         .byte   <(exec_grmode-1)
+        .byte   0
 .endmacro
 
 .macro extension_statement_vectors_h
         .byte   >(exec_dir-1)
         .byte   >(exec_status-1)
         .byte   >(exec_grmode-1)
+        .byte   0
 .endmacro
 
 .macro extension_statement_flags
