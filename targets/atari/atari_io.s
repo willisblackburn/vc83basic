@@ -48,6 +48,9 @@ copy_s0_to_buffer_eol:
 ; channel = channel index (0..7), A = mode, S0 = filename string
 ; Returns carry clear if ok, carry set if error.
 
+atari_mode_table:
+        .byte   4, 8, 12, 9             ; 0=Read, 1=Write, 2=Update, 3=Append
+
 open:
         sta     open_mode
         jsr     copy_s0_to_buffer_eol
@@ -59,8 +62,8 @@ open:
         lda     open_mode
         cmp     #4                      ; Atari native mode?
         bcs     @atari_mode
-        asl                             ; Map 1->4 (Read), 2->8 (Write), 3->12 (Update)
-        asl
+        tay
+        lda     atari_mode_table,y
 @atari_mode:
         sta     ICAX1,x
         lda     #0

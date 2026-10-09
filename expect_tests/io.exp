@@ -9,7 +9,7 @@ exec rm -f /tmp/vc83_test_1.txt /tmp/vc83_test_bin.dat
 
 # Test OPEN, PRINT #, PUT, CLOSE
 test {
-10 OPEN #1 "/tmp/vc83_test_1.txt", 2
+10 OPEN #1 "/tmp/vc83_test_1.txt", 1
 20 PRINT #1 "LINE ONE"
 30 PRINT #1 "LINE TWO,123"
 40 PUT #1 65
@@ -29,9 +29,9 @@ NEW
 READY
 }
 
-# Test OPEN (read), INPUT #, GET, CLOSE
+# Test OPEN (read default), INPUT #, GET, CLOSE
 test {
-10 OPEN #1 "/tmp/vc83_test_1.txt", 1
+10 OPEN #1 "/tmp/vc83_test_1.txt"
 20 INPUT #1 A$
 30 PRINT A$
 40 INPUT #1 B$, N
@@ -54,10 +54,10 @@ LINE TWO        123
 READY
 }
 
-# Test OPEN (append mode 6), PRINT #, CLOSE
+# Test OPEN (append mode 3), PRINT #, CLOSE
 test {
 NEW
-10 OPEN #1 "/tmp/vc83_test_1.txt", 6
+10 OPEN #1 "/tmp/vc83_test_1.txt", 3
 20 PRINT #1 "LINE THREE"
 30 CLOSE #1
 RUN
@@ -68,7 +68,7 @@ READY
 # Test reading back all four lines
 test {
 NEW
-10 OPEN #1 "/tmp/vc83_test_1.txt", 1
+10 OPEN #1 "/tmp/vc83_test_1.txt", 0
 20 INPUT #1 A$
 30 PRINT A$
 40 INPUT #1 B$, N

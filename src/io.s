@@ -10,7 +10,7 @@
 exec_open:
         jsr     evaluate_expression     ; Evaluates filename -> S0
         jsr     push_pending            ; Push filename onto stack
-        lda     #1                      ; Default mode = 1 (Read)
+        lda     #0                      ; Default mode = 0 (Read)
         pha
         jsr     peek_byte
         beq     @no_mode

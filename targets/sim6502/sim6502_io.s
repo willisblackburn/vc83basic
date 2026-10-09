@@ -51,9 +51,15 @@ copy_s0_to_buffer_nul:
         sta     buffer,y
         rts
 
+posix_mode_table:
+        .byte   $01                     ; 0 = Read:   O_RDONLY
+        .byte   $32                     ; 1 = Write:  O_WRONLY | O_CREAT | O_TRUNC
+        .byte   $13                     ; 2 = Update: O_RDWR | O_CREAT
+        .byte   $52                     ; 3 = Append: O_WRONLY | O_CREAT | O_APPEND
+
 ; Opens a file on channel.
 ; S0 = filename string
-; A = mode bits (1 = read, 2 = write, 3 = both, 6/7 = append)
+; A = mode (0 = read, 1 = write, 2 = update, 3 = append)
 ; channel = channel index (0..7)
 ; Returns carry clear if ok, carry set if error.
 
@@ -67,27 +73,9 @@ open:
         bne     @error                  ; Already open -> fail
 
         lda     open_mode
-        and     #$03                    ; Access mode: 1 (RDONLY), 2 (WRONLY), 3 (RDWR)
-        sta     open_flags
-        lda     open_mode
-        and     #$02                    ; Is write bit (bit 1) set?
-        beq     @call_open              ; If write bit not set -> read only
-        lda     open_flags
-        ora     #$10                    ; Add O_CREAT ($10)
-        sta     open_flags
-        lda     open_mode
-        and     #$04                    ; Check bit 2 (append)
-        beq     @check_trunc
-        lda     open_flags
-        ora     #$40                    ; Add O_APPEND ($40)
-        sta     open_flags
-        bne     @call_open              ; Unconditional
-@check_trunc:
-        lda     open_mode
-        and     #$01                    ; Is read bit set (update mode)?
-        bne     @call_open              ; If update, do not truncate
-        lda     open_flags
-        ora     #$20                    ; Add O_TRUNC ($20)
+        and     #$03                    ; Access mode: 0 (Read), 1 (Write), 2 (Update), 3 (Append)
+        tay
+        lda     posix_mode_table,y
         sta     open_flags
 
 @call_open:

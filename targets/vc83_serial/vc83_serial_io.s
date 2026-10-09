@@ -166,38 +166,31 @@ readline:
         sta     arg4
         lda     channel
         and     #$07
-        jsr     API_READ
+        jsr     API_READLINE
         bcs     @read_err
 
-        ; Strip trailing CR ($0D) and LF ($0A)
+        ; Replace trailing NL ($0A) with NUL
         tay
-@strip_loop:
-        cpy     #0
-        beq     @no_strip
+        beq     @empty
         dey
         lda     buffer, y
         cmp     #$0A
-        beq     @strip_one
-        cmp     #$0D
-        beq     @strip_one
-        iny
-        jmp     @term
-
-@strip_one:
+        bne     @no_nl
         lda     #0
         sta     buffer, y
-        jmp     @strip_loop
-
-@term:
         tya
-        tax
-        lda     #0
-        sta     buffer, x
-        txa
         clc
         rts
 
-@no_strip:
+@no_nl:
+        iny
+        lda     #0
+        sta     buffer, y
+        tya
+        clc
+        rts
+
+@empty:
         lda     #0
         sta     buffer
         clc

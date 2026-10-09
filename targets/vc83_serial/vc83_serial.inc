@@ -15,6 +15,7 @@ API_READ        := $E012
 API_WRITE       := $E015
 API_STATUS      := $E018
 API_XIO         := $E01B
+API_READLINE    := $E02A
 
 OPEN_READ       = 0
 OPEN_WRITE      = 1
