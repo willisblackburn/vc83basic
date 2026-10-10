@@ -61,7 +61,7 @@ ensure_channel_0:
         pha
         tya
         pha
-        lda     #(3 << 5) | OPEN_TERM | OPEN_ECHO | OPEN_READ_WRITE ; Layer 3, Terminal, Echo, Read/Write ($7A)
+        lda     #(3 << 5) | OPEN_READ_WRITE ; Layer 3, Read/Write ($62)
         sta     arg1
         lda     #<console_filename
         sta     arg2
@@ -134,11 +134,9 @@ putch:
         jsr     API_PUT
         rts
 
-; Emits record delimiter (CR + LF).
+; Emits record delimiter (NL).
 newline:
-        lda     #$0D                    ; Carriage Return
-        jsr     putch
-        lda     #$0A                    ; Line Feed
+        lda     #$0A                    ; Newline
         jmp     putch
 
 ; Emits field separator (tabs across zones).
