@@ -28,6 +28,10 @@ tmp_r:          .res 1
 tmp_n:          .res 1
 tmp_p:          .res 1
 tmp_l:          .res 1
+grmode_val:     .res 1
+grmode_base:    .res 1
+grmode_fmt:     .res 1
+grmode_frm:     .res 1
 
 
 .segment "CODE"
@@ -189,33 +193,164 @@ exec_status:
 @status_type_mismatch:
         jmp     raise_type_mismatch
 
+; ===========================================================================
 ; GRMODE mode
-; Configures VCGA graphics layers.
+; Configures VCGA graphics layers and manages the console lifecycle.
+;
 ; Mode argument:
-;   Bits 4:0: format argument for VCGALAYER on Layer 3
-;   Bit 7: if set, configure 4-line text window on Layer 2; if clear, disable Layer 2
-;   Bits 6:5: must be 0 (frame is fixed to 640x400)
-;   Layers 0 and 1 are disabled.
+;   Base mode (bits 6:0):
+;     0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
+;             0: 80x25 text (tall, 640x400) - Default console mode
+;             1: 40x25 text (2X, 640x400)
+;             2: 80x30 text (tall, 640x480)
+;             3: 90x60 text (1X, 720x480)
+;     8..15:  Bitmap graphics modes (Layer 3 full screen, Palette 0)
+;             8: 320x200x256 (2X, 640x400, 8bpp)
+;             9: 320x200x16  (2X, 640x400, 4bpp)
+;             10: 160x100x16 (4X, 640x400, 4bpp)
+;             11: 160x100x256(4X, 640x400, 8bpp)
+;             12: 640x400x4  (1X, 640x400, 2bpp)
+;             13: 640x200x16 (tall, 640x400, 4bpp)
+;             14: 640x480x2  (1X, 640x480, 1bpp)
+;             15: 320x240x16 (2X, 640x480, 4bpp)
+;     16..18: Tilemap modes (Layer 3 full screen, Palette 0, Tile slot 0)
+;             16: 80x25 tilemap (tall, 640x400, 1bpp)
+;             17: 40x25 tilemap (2X, 640x400, 4bpp)
+;             18: 80x50 tilemap (1X, 640x400, 1bpp)
+;   Bit 7:
+;     If set on graphics/tilemap modes (e.g. +128): enables 4-line console
+;     window at bottom of screen on Layer 2 (with transparent background)
+;     and opens channel 0 to "C:".
+;     If clear: disables Layer 2 and leaves channel 0 closed.
+; ===========================================================================
+
+MAX_GRMODE = 18
+
+mode_table_format:
+        .byte   $1C     ; 0: 80x25 text (text, tall, 1bpp)
+        .byte   $14     ; 1: 40x25 text (text, 2X, 1bpp)
+        .byte   $1C     ; 2: 80x30 text (text, tall, 1bpp)
+        .byte   $10     ; 3: 90x60 text (text, 1X, 1bpp)
+        .byte   $FF, $FF, $FF, $FF ; 4..7: Reserved
+        .byte   $07     ; 8: 320x200x256
+        .byte   $06     ; 9: 320x200x16
+        .byte   $0A     ; 10: 160x100x16
+        .byte   $0B     ; 11: 160x100x256
+        .byte   $01     ; 12: 640x400x4
+        .byte   $0E     ; 13: 640x200x16
+        .byte   $00     ; 14: 640x480x2
+        .byte   $06     ; 15: 320x240x16
+        .byte   $1C     ; 16: 80x25 tilemap
+        .byte   $16     ; 17: 40x25 tilemap
+        .byte   $10     ; 18: 80x50 tilemap
+
+mode_table_frame:
+        .byte   0, 0, 1, 2              ; 0..3: frames
+        .byte   0, 0, 0, 0              ; 4..7
+        .byte   0, 0, 0, 0, 0, 0, 1, 1  ; 8..15
+        .byte   0, 0, 0                 ; 16..18
+
+grmode_charset_name:    .byte   "A:CHARSET.DAT"
+grmode_charset_name_len = 13
+
+grmode_console_name:    .byte   "C:"
+grmode_console_name_len = 2
+
 exec_grmode:
         cpx     #0
-        bne     @err
-        tax
-        and     #$60
-        bne     @err
-        stx     E
+        bne     @arg_err
+        sta     grmode_val
+        and     #$7F
+        sta     grmode_base
+        cmp     #MAX_GRMODE+1
+        bcs     @arg_err
 
-        ; Disable layers 0 and 1
+        tax
+        lda     mode_table_format, x
+        cmp     #$FF
+        bne     :+
+@arg_err:
+        jmp     raise_out_of_range
+:
+        sta     grmode_fmt
+
+        lda     mode_table_frame, x
+        sta     grmode_frm
+
+        ; 1. Close channel 0
         lda     #0
-        sta     arg1
+        jsr     API_CLOSE
+
+        ; 2. Always disable layers 0 and 1
+        lda     #0
+        sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
         lda     #1
+        sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
 
-        ; Configure layer 3 (main layer: frame 0, full part, base 0)
-        lda     #$04            ; frame 00, part 1 (full)
+        ; 3. Check if console mode (0..3) vs graphics/tilemap (8..18)
+        lda     grmode_base
+        cmp     #4
+        bcs     @setup_graphics
+
+        ; -------------------------------------------------------------
+        ; Pure Console Mode (0..3)
+        ; -------------------------------------------------------------
+        ; Disable layer 3
+        lda     #0
         sta     arg1
-        lda     E
-        and     #$1F
+        lda     #3
+        jsr     API_VCGALAYER
+
+        ; Configure layer 2: full screen (part 1)
+        lda     #$04            ; part 1 (full), frame in bits 1:0
+        ora     grmode_frm
+        sta     arg1
+        lda     grmode_fmt
+        sta     arg2
+        lda     #0
+        sta     arg3
+        sta     arg4
+        lda     #2
+        jsr     API_VCGALAYER
+        bcs     @err
+
+        ; Overwrite Layer 2 attributes: tile set 7, palette 1, 1bpp, opaque
+        ; (7 << 4) | (1 << 2) | 0 = $74
+        lda     #$B0
+        sta     BANK_SELECT_D
+        lda     #$74
+        sta     $D04D
+        lda     #$E0
+        sta     BANK_SELECT_D
+
+        ; Load charset into tile slot 7
+        jsr     load_font_slot7
+
+        ; Open channel 0 to console on layer 2
+        lda     #(2 << 5) | OPEN_READ_WRITE
+        sta     arg1
+        mvax    #grmode_console_name, arg2
+        mva     #grmode_console_name_len, arg4
+        lda     #0
+        jsr     API_OPEN
+        bcs     @err
+        clc
+        rts
+
+@err:
+        jmp     raise_out_of_range
+
+        ; -------------------------------------------------------------
+        ; Graphics / Tilemap Mode (8..18)
+        ; -------------------------------------------------------------
+@setup_graphics:
+        ; Configure layer 3: full screen (part 1)
+        lda     #$04            ; part 1 (full), frame in bits 1:0
+        ora     grmode_frm
+        sta     arg1
+        lda     grmode_fmt
         sta     arg2
         lda     #0
         sta     arg3
@@ -224,14 +359,27 @@ exec_grmode:
         jsr     API_VCGALAYER
         bcs     @err
 
-        ; Configure or disable layer 2 (text window)
-        lda     E
-        bpl     @disable_layer2
+        ; Overwrite Layer 3 attributes: tile set 0, palette 0, bpp from format, opaque
+        lda     grmode_fmt
+        and     #$03
+        sta     grmode_fmt
+        lda     #$B0
+        sta     BANK_SELECT_D
+        lda     grmode_fmt
+        sta     $D06D
+        lda     #$E0
+        sta     BANK_SELECT_D
 
-        ; Bit 7 is set: 4-line text window on layer 2 at bottom
-        lda     #$18            ; frame 00, part 6 (bottom 32)
+        ; Check if console window (+128) requested
+        lda     grmode_val
+        bpl     @pure_graphics
+
+        ; Mixed mode: 4-line console window at bottom on layer 2
+        ; Region: part 6 (bottom 32)
+        lda     #$18
+        ora     grmode_frm
         sta     arg1
-        lda     #$10            ; text, 1 bpp, 1X
+        lda     #$10            ; text, 1X, 1bpp
         sta     arg2
         lda     #0
         sta     arg3
@@ -240,17 +388,98 @@ exec_grmode:
         lda     #2
         jsr     API_VCGALAYER
         bcs     @err
+
+        ; Overwrite Layer 2 attributes: tile set 7, palette 1, 1bpp, TRANSPARENT!
+        ; $80 | (7 << 4) | (1 << 2) | 0 = $F4
+        lda     #$B0
+        sta     BANK_SELECT_D
+        lda     #$F4
+        sta     $D04D
+        lda     #$E0
+        sta     BANK_SELECT_D
+
+        ; Load charset into tile slot 7
+        jsr     load_font_slot7
+
+        ; Re-open channel 0 to console on layer 2
+        lda     #(2 << 5) | OPEN_READ_WRITE
+        sta     arg1
+        mvax    #grmode_console_name, arg2
+        mva     #grmode_console_name_len, arg4
+        lda     #0
+        jsr     API_OPEN
+        bcs     @err
+        clc
         rts
 
-@disable_layer2:
+@pure_graphics:
+        ; Disable layer 2
         lda     #0
         sta     arg1
         lda     #2
         jsr     API_VCGALAYER
+        ; Channel 0 remains closed
+        clc
         rts
 
-@err:
-        jmp     raise_out_of_range
+
+load_font_slot7:
+        lda     dst_ptr
+        pha
+        lda     dst_ptr+1
+        pha
+
+        lda     #7
+        jsr     API_CLOSE
+
+        lda     #OPEN_READ
+        sta     arg1
+        mvax    #grmode_charset_name, arg2
+        mva     #grmode_charset_name_len, arg4
+        lda     #7                      ; Channel 7
+        jsr     API_OPEN
+        bcc     :+
+        pla
+        sta     dst_ptr+1
+        pla
+        sta     dst_ptr
+        rts
+:
+        lda     #$A3
+        sta     BANK_SELECT_A           ; Window A -> Tile RAM Bank 7
+
+        lda     #<$A800
+        sta     dst_ptr
+        lda     #>$A800
+        sta     dst_ptr+1
+
+@load_font_loop:
+        lda     #7
+        jsr     API_GET
+        bcs     @font_done
+        ldy     #0
+        sta     (dst_ptr), y
+        inc     dst_ptr
+        bne     :+
+        inc     dst_ptr+1
+:
+        lda     dst_ptr+1
+        cmp     #>$B000                 ; 2048 bytes: $A800 to $AFFF
+        bcc     @load_font_loop
+
+@font_done:
+        lda     #7
+        jsr     API_CLOSE
+
+        lda     #0
+        sta     BANK_SELECT_A
+
+        pla
+        sta     dst_ptr+1
+        pla
+        sta     dst_ptr
+        rts
+
 
 ; ===========================================================================
 ; COLOR n

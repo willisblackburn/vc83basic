@@ -142,9 +142,9 @@ initialize_target:
         sta     BANK_SELECT_A
 
         ; -------------------------------------------------------------------
-        ; 3. Initialize text graphics mode (80x25 text on Layer 3, format $1C)
+        ; 3. Initialize text graphics mode (80x25 text on Layer 2, GRMODE 0)
         ; -------------------------------------------------------------------
-        lda     #$1C
+        lda     #0
         ldx     #0
         jsr     exec_grmode
         bcc     @grmode_ok

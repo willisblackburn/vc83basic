@@ -47,8 +47,8 @@ close_all:
 ; ensure_channel_0
 ;
 ; If the default channel is active (bit 7 of channel is clear), checks if
-; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, auto-opens
-; the console "C:" with mode $32 on channel #0.
+; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, restores
+; console via GRMODE 0 (which opens channel #0 to "C:" on Layer 2).
 ; Preserves A, X, Y.
 ; ===========================================================================
 ensure_channel_0:
@@ -61,16 +61,9 @@ ensure_channel_0:
         pha
         tya
         pha
-        lda     #(3 << 5) | OPEN_READ_WRITE ; Layer 3, Read/Write ($62)
-        sta     arg1
-        lda     #<console_filename
-        sta     arg2
-        lda     #>console_filename
-        sta     arg3
-        lda     #console_filename_len
-        sta     arg4
-        lda     #0                      ; Channel 0
-        jsr     API_OPEN
+        lda     #0
+        tax
+        jsr     exec_grmode
         pla
         tay
         pla
@@ -143,8 +136,12 @@ newline:
 tab:
         ldx     #4
 @tab_loop:
+        txa
+        pha
         lda     #' '
         jsr     putch
+        pla
+        tax
         dex
         bne     @tab_loop
         clc

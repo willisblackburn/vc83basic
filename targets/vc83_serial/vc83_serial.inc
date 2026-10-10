@@ -4,6 +4,7 @@
 
 ; Hardware Bank Select Registers
 BANK_SELECT_A   := $00
+BANK_SELECT_D   := $03
 
 ; Bus Accelerator Registers ($04-$1F)
 DST_DATA            := $04
