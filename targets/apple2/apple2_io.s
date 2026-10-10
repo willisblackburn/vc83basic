@@ -176,7 +176,6 @@ load:
         adc     #0
         sta     variable_name_table_ptr+1
 
-        jsr     clear_variables
         jmp     reset_program           ; Tail call: reset_program ends in RTS with C=0
 
 @format_err:

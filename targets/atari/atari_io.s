@@ -365,7 +365,6 @@ load:
         adc     #0
         sta     variable_name_table_ptr+1
 
-        jsr     clear_variables
         jsr     reset_program
         clc
         rts

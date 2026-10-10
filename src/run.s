@@ -11,7 +11,6 @@
 exec_run:
         jsr     reset_program
         jsr     reset_next_line_ptr
-        jsr     clear_variables
         jmp     raise_ps_running
 
 ; END statement:

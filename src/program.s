@@ -22,10 +22,9 @@ initialize_program:
         dey
         bpl     @vbas_loop
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + 4), program_ptr  ; Set program_ptr to start of program space
-        jsr     reset_program
         mvax    #(__BSS_RUN__ + __BSS_SIZE__ + 4 + .sizeof(Line)), variable_name_table_ptr
 
-; Fall through to clear_variables
+; Fall through to reset_program
 
 ; Clears the runtime state of the program.
 ; Clears all variables and the string heap. Resets the expression stack pointers. The run state and next_line_ptr
@@ -33,7 +32,7 @@ initialize_program:
 ; variable_name_table_ptr = the address of the variable name table
 ; BC SAFE
 
-clear_variables:
+reset_program:
         ldx     variable_name_table_ptr ; Add 1 to variable_name_table_ptr to get array_name_table_ptr
         ldy     variable_name_table_ptr+1
         inxy
@@ -43,10 +42,11 @@ clear_variables:
         stx     free_ptr
         sty     free_ptr+1
         lda     #0                      ; Load zero into A
+        sta     channel                 ; Reset channel to 0
+        sta     resume_line_ptr+1       ; Initialize resume_line_ptr high byte to 0 to disable CONT
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     (array_name_table_ptr),y    ; Initialize array name table to 0
-        sta     channel                 ; Reset channel to 0
         mvax    himem_ptr, string_ptr   ; Clear string space
         mva     #OP_STACK_SIZE, op_stack_pos
         mva     #PRIMARY_STACK_SIZE, stack_pos
@@ -54,13 +54,6 @@ clear_variables:
 .ifdef enable_io_channels
         jsr     close_all
 .endif
-        rts
-
-; Resets the stack, clears the resume state, and performs RESTORE.
-; A = the desired program state (RUN sets this to RUNNING)
-
-reset_program:
-        mva     #0, resume_line_ptr+1           ; Initialize resume_line_ptr high byte to 0 to disable CONT
 
 ; Fall through to reset_data
 

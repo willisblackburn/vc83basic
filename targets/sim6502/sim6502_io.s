@@ -448,7 +448,6 @@ load:
         ldx     #0
         jsr     _close
 
-        jsr     clear_variables
         jsr     reset_program
         clc
         rts
