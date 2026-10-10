@@ -71,9 +71,6 @@ ensure_channel_0:
 ; channel = channel index (0..7)
 ; Returns carry clear if ok, carry set if error.
 xio:
-        pha
-        jsr     ensure_channel_0
-        pla
         sta     arg1
         lda     BC
         sta     arg2
@@ -146,7 +143,6 @@ tab:
 ; Reads a text record (line) from channel into buffer.
 ; NUL-terminates at EOL, returns length in A.
 readline:
-        jsr     ensure_channel_0
         lda     #<buffer
         sta     arg1
         lda     #>buffer
