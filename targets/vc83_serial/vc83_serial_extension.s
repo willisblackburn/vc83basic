@@ -32,6 +32,10 @@ grmode_val:     .res 1
 grmode_base:    .res 1
 grmode_fmt:     .res 1
 grmode_frm:     .res 1
+draw_stride:    .res 2
+draw_bpp:       .res 1
+sx_frac:        .res 1
+tmp_frac:       .res 1
 
 
 .segment "CODE"
@@ -198,57 +202,63 @@ exec_status:
 ; Configures VCGA graphics layers and manages the console lifecycle.
 ;
 ; Mode argument:
-;   Base mode (bits 6:0):
-;     0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
-;             0: 80x25 text (tall, 640x400) - Default console mode
-;             1: 40x25 text (2X, 640x400)
-;             2: 80x30 text (tall, 640x480)
-;             3: 90x60 text (1X, 720x480)
-;     8..15:  Bitmap graphics modes (Layer 3 full screen, Palette 0)
-;             8: 320x200x256 (2X, 640x400, 8bpp)
-;             9: 320x200x16  (2X, 640x400, 4bpp)
-;             10: 160x100x16 (4X, 640x400, 4bpp)
-;             11: 160x100x256(4X, 640x400, 8bpp)
-;             12: 640x400x4  (1X, 640x400, 2bpp)
-;             13: 640x200x16 (tall, 640x400, 4bpp)
-;             14: 640x480x2  (1X, 640x480, 1bpp)
-;             15: 320x240x16 (2X, 640x480, 4bpp)
-;     16..18: Tilemap modes (Layer 3 full screen, Palette 0, Tile slot 0)
-;             16: 80x25 tilemap (tall, 640x400, 1bpp)
-;             17: 40x25 tilemap (2X, 640x400, 4bpp)
-;             18: 80x50 tilemap (1X, 640x400, 1bpp)
 ;   Bit 7:
 ;     If set on graphics/tilemap modes (e.g. +128): enables 4-line console
 ;     window at bottom of screen on Layer 2 (with transparent background)
-;     and opens channel 0 to "C:".
+;     and opens channel 0 to "C:". The console window is always tall in
+;     the 640x400 frame (Part 7, bottom 64 lines).
 ;     If clear: disables Layer 2 and leaves channel 0 closed.
+;   Bit 6:
+;     0: Preset table modes (0..15)
+;        0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
+;                0: 80x25 text (tall, 640x400) - Default console mode
+;                1: 40x25 text (2X, 640x400)
+;                2: 90x60 text (1X, 720x480)
+;                3: 45x30 text (2X, 720x480)
+;        4..9:   Bitmap graphics modes (Layer 3 full screen, Palette 0)
+;                4: 320x200x256 (2X, 8bpp, 640x400)
+;                5: 320x200x16  (2X, 4bpp, 640x400)
+;                6: 160x100x256 (4X, 8bpp, 640x400)
+;                7: 160x100x16  (4X, 4bpp, 640x400)
+;                8: 640x200x16  (tall, 4bpp, 640x400)
+;                9: 360x240x16  (2X, 4bpp, 720x480)
+;        10..15: Tilemap modes (Layer 3 full screen, Palette 0, Tile slot 0)
+;                10: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
+;                11: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
+;                12: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
+;                13: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
+;                14: 45x30 tilemap 8bpp (2X, 8bpp, 720x480)
+;                15: 45x30 tilemap 4bpp (2X, 4bpp, 720x480)
+;     1: Algorithmic modes (64..127) on Layer 3
+;        Bit 5: Frame (0 = 640x400, 1 = 720x480)
+;        Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
+;        Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
+;        Bits 1:0: Color depth (00 = 1bpp, 01 = 2bpp, 10 = 4bpp, 11 = 8bpp)
 ; ===========================================================================
 
-MAX_GRMODE = 18
-
 mode_table_format:
-        .byte   $1C     ; 0: 80x25 text (text, tall, 1bpp)
-        .byte   $14     ; 1: 40x25 text (text, 2X, 1bpp)
-        .byte   $1C     ; 2: 80x30 text (text, tall, 1bpp)
-        .byte   $10     ; 3: 90x60 text (text, 1X, 1bpp)
-        .byte   $FF, $FF, $FF, $FF ; 4..7: Reserved
-        .byte   $07     ; 8: 320x200x256
-        .byte   $06     ; 9: 320x200x16
-        .byte   $0A     ; 10: 160x100x16
-        .byte   $0B     ; 11: 160x100x256
-        .byte   $01     ; 12: 640x400x4
-        .byte   $0E     ; 13: 640x200x16
-        .byte   $00     ; 14: 640x480x2
-        .byte   $06     ; 15: 320x240x16
-        .byte   $1C     ; 16: 80x25 tilemap
-        .byte   $16     ; 17: 40x25 tilemap
-        .byte   $10     ; 18: 80x50 tilemap
+        ; Console modes (0..3)
+        ; Bit 7 selects frame: 0 = 640x400 (Frame 0), 1 = 720x480 (Frame 2)
+        .byte   $1C     ; 0: 80x25 text (text, tall, 1bpp, 640x400)
+        .byte   $14     ; 1: 40x25 text (text, 2X, 1bpp, 640x400)
+        .byte   $10|$80 ; 2: 90x60 text (text, 1X, 1bpp, 720x480)
+        .byte   $14|$80 ; 3: 45x30 text (text, 2X, 1bpp, 720x480)
 
-mode_table_frame:
-        .byte   0, 0, 1, 2              ; 0..3: frames
-        .byte   0, 0, 0, 0              ; 4..7
-        .byte   0, 0, 0, 0, 0, 0, 1, 1  ; 8..15
-        .byte   0, 0, 0                 ; 16..18
+        ; Bitmap graphics modes (4..9)
+        .byte   $07     ; 4: 320x200x256 (bitmap, 2X, 8bpp, 640x400)
+        .byte   $06     ; 5: 320x200x16  (bitmap, 2X, 4bpp, 640x400)
+        .byte   $0B     ; 6: 160x100x256 (bitmap, 4X, 8bpp, 640x400)
+        .byte   $0A     ; 7: 160x100x16  (bitmap, 4X, 4bpp, 640x400)
+        .byte   $0E     ; 8: 640x200x16  (bitmap, tall, 4bpp, 640x400)
+        .byte   $06|$80 ; 9: 360x240x16  (bitmap, 2X, 4bpp, 720x480)
+
+        ; Tilemap modes (10..15)
+        .byte   $17     ; 10: 40x25 tilemap 8bpp (tilemap, 2X, 8bpp, 640x400)
+        .byte   $16     ; 11: 40x25 tilemap 4bpp (tilemap, 2X, 4bpp, 640x400)
+        .byte   $13     ; 12: 80x50 tilemap 8bpp (tilemap, 1X, 8bpp, 640x400)
+        .byte   $12     ; 13: 80x50 tilemap 4bpp (tilemap, 1X, 4bpp, 640x400)
+        .byte   $17|$80 ; 14: 45x30 tilemap 8bpp (tilemap, 2X, 8bpp, 720x480)
+        .byte   $16|$80 ; 15: 45x30 tilemap 4bpp (tilemap, 2X, 4bpp, 720x480)
 
 grmode_charset_name:    .byte   "A:CHARSET.DAT"
 grmode_charset_name_len = 13
@@ -258,25 +268,49 @@ grmode_console_name_len = 2
 
 exec_grmode:
         cpx     #0
-        bne     @arg_err
-        sta     grmode_val
-        and     #$7F
-        sta     grmode_base
-        cmp     #MAX_GRMODE+1
-        bcs     @arg_err
-
-        tax
-        lda     mode_table_format, x
-        cmp     #$FF
-        bne     :+
+        beq     :+
 @arg_err:
         jmp     raise_out_of_range
 :
+        sta     grmode_val
+        and     #$7F
+        sta     grmode_base
+
+        ; Check if algorithmic mode (bit 6 set)
+        and     #$40
+        beq     @preset_mode
+
+        ; Algorithmic mode (64..127):
+        lda     grmode_base
+        and     #$1F                    ; format matches VCGALAYER bits 4:0
         sta     grmode_fmt
 
-        lda     mode_table_frame, x
+        lda     grmode_base
+        and     #$20                    ; bit 5: 0 -> frame 0, 1 -> frame 2
+        lsr
+        lsr
+        lsr
+        lsr
         sta     grmode_frm
+        jmp     @setup_layers
 
+@preset_mode:
+        lda     grmode_base
+        cmp     #16
+        bcs     @arg_err
+        tax
+        lda     #0
+        sta     grmode_frm
+        lda     mode_table_format, x
+        bpl     :+
+        lda     #2
+        sta     grmode_frm
+:
+        lda     mode_table_format, x
+        and     #$1F
+        sta     grmode_fmt
+
+@setup_layers:
         ; 1. Close channel 0
         lda     #0
         jsr     API_CLOSE
@@ -289,7 +323,7 @@ exec_grmode:
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
 
-        ; 3. Check if console mode (0..3) vs graphics/tilemap (8..18)
+        ; 3. Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
         lda     grmode_base
         cmp     #4
         bcs     @setup_graphics
@@ -316,11 +350,11 @@ exec_grmode:
         jsr     API_VCGALAYER
         bcs     @err
 
-        ; Overwrite Layer 2 attributes: tile set 7, palette 1, 1bpp, opaque
-        ; (7 << 4) | (1 << 2) | 0 = $74
+        ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, opaque
+        ; (7 << 4) | (2 << 2) | 0 = $78
         lda     #$B0
         sta     BANK_SELECT_D
-        lda     #$74
+        lda     #$78
         sta     $D04D
         lda     #$E0
         sta     BANK_SELECT_D
@@ -336,6 +370,14 @@ exec_grmode:
         lda     #0
         jsr     API_OPEN
         bcs     @err
+
+        ; Default drawing state for text modes
+        lda     #80
+        sta     draw_stride
+        lda     #0
+        sta     draw_stride+1
+        lda     #2
+        sta     draw_bpp
         clc
         rts
 
@@ -343,7 +385,7 @@ exec_grmode:
         jmp     raise_out_of_range
 
         ; -------------------------------------------------------------
-        ; Graphics / Tilemap Mode (8..18)
+        ; Graphics / Tilemap Mode (4..15, 64..127)
         ; -------------------------------------------------------------
 @setup_graphics:
         ; Configure layer 3: full screen (part 1)
@@ -357,16 +399,24 @@ exec_grmode:
         sta     arg4
         lda     #3
         jsr     API_VCGALAYER
-        bcs     @err
+        bcs     @err_graphics
 
-        ; Overwrite Layer 3 attributes: tile set 0, palette 0, bpp from format, opaque
+        ; Overwrite Layer 3 attributes: tile set 0, palette 3, bpp from format, opaque
+        ; (0 << 4) | (3 << 2) | bpp = $0C | (grmode_fmt & 3)
         lda     grmode_fmt
         and     #$03
+        sta     draw_bpp
+        ora     #$0C
         sta     grmode_fmt
         lda     #$B0
         sta     BANK_SELECT_D
         lda     grmode_fmt
         sta     $D06D
+        ; Read Layer 3 stride from $D06A / $D06B (stride in bytes)
+        lda     $D06A
+        sta     draw_stride
+        lda     $D06B
+        sta     draw_stride+1
         lda     #$E0
         sta     BANK_SELECT_D
 
@@ -374,12 +424,11 @@ exec_grmode:
         lda     grmode_val
         bpl     @pure_graphics
 
-        ; Mixed mode: 4-line console window at bottom on layer 2
-        ; Region: part 6 (bottom 32)
-        lda     #$18
-        ora     grmode_frm
+        ; Mixed mode: console window at bottom on layer 2
+        ; Region: part 7 (bottom 64), frame 00 (640x400)
+        lda     #$1C            ; part 7 (bottom 64), frame 00
         sta     arg1
-        lda     #$10            ; text, 1X, 1bpp
+        lda     #$1C            ; text, tall, 1bpp
         sta     arg2
         lda     #0
         sta     arg3
@@ -387,13 +436,13 @@ exec_grmode:
         sta     arg4
         lda     #2
         jsr     API_VCGALAYER
-        bcs     @err
+        bcs     @err_graphics
 
-        ; Overwrite Layer 2 attributes: tile set 7, palette 1, 1bpp, TRANSPARENT!
-        ; $80 | (7 << 4) | (1 << 2) | 0 = $F4
+        ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, TRANSPARENT!
+        ; $80 | (7 << 4) | (2 << 2) | 0 = $F8
         lda     #$B0
         sta     BANK_SELECT_D
-        lda     #$F4
+        lda     #$F8
         sta     $D04D
         lda     #$E0
         sta     BANK_SELECT_D
@@ -408,7 +457,7 @@ exec_grmode:
         mva     #grmode_console_name_len, arg4
         lda     #0
         jsr     API_OPEN
-        bcs     @err
+        bcs     @err_graphics
         clc
         rts
 
@@ -421,6 +470,9 @@ exec_grmode:
         ; Channel 0 remains closed
         clc
         rts
+
+@err_graphics:
+        jmp     raise_out_of_range
 
 
 load_font_slot7:
@@ -510,44 +562,110 @@ exec_plot:
         sta     last_y+1
 
 plot_current_pixel:
-        lda     #MODE_4BPP
+        lda     draw_bpp
         sta     MODE
+        jsr     calc_pixel_addr
 
-        ; Address = last_y * 80 + (last_x >> 1)
-        lda     last_y
-        sta     MUL_A
-        lda     last_y+1
-        sta     MUL_A+1
-
-        lda     #80
-        sta     MUL_B
-        lda     #0
-        sta     MUL_B+1
-
-        lda     last_x+1
-        lsr     A
-        sta     MUL_C+1
-        lda     last_x
-        ror     A
-        sta     MUL_C
-        lda     #0
-        sta     MUL_C+2
-
-        sta     MUL_TO_DST
-
-        lda     #$80
-        sta     DST_ADDR+2
-
-        lda     last_x
-        and     #1
-        asl     A
-        asl     A
+        lda     tmp_frac
         sta     DST_FRAC
 
         bit     DST_DATA
         lda     current_color
         sta     DST_DATA
         rts
+
+calc_pixel_addr:
+        ldx     draw_bpp
+        cpx     #3
+        beq     @bpp8
+        cpx     #2
+        beq     @bpp4
+        cpx     #1
+        beq     @bpp2
+
+        ; 1 bpp (draw_bpp == 0): byte offset = last_x >> 3, frac = last_x & 7
+        lda     last_x
+        and     #7
+        sta     tmp_frac
+        lda     last_x+1
+        lsr     A
+        sta     MUL_C+1
+        lda     last_x
+        ror     A
+        lsr     MUL_C+1
+        ror     A
+        lsr     MUL_C+1
+        ror     A
+        sta     MUL_C
+        jmp     @calc_addr
+
+@bpp2:
+        ; 2 bpp (draw_bpp == 1): byte offset = last_x >> 2, frac = (last_x & 3) << 1
+        lda     last_x
+        and     #3
+        asl     A
+        sta     tmp_frac
+        lda     last_x+1
+        lsr     A
+        sta     MUL_C+1
+        lda     last_x
+        ror     A
+        lsr     MUL_C+1
+        ror     A
+        sta     MUL_C
+        jmp     @calc_addr
+
+@bpp4:
+        ; 4 bpp (draw_bpp == 2): byte offset = last_x >> 1, frac = (last_x & 1) << 2
+        lda     last_x
+        and     #1
+        asl     A
+        asl     A
+        sta     tmp_frac
+        lda     last_x+1
+        lsr     A
+        sta     MUL_C+1
+        lda     last_x
+        ror     A
+        sta     MUL_C
+        jmp     @calc_addr
+
+@bpp8:
+        ; 8 bpp (draw_bpp == 3): byte offset = last_x, frac = 0
+        lda     #0
+        sta     tmp_frac
+        lda     last_x
+        sta     MUL_C
+        lda     last_x+1
+        sta     MUL_C+1
+
+@calc_addr:
+        lda     #0
+        sta     MUL_C+2
+
+        lda     last_y
+        sta     MUL_A
+        lda     last_y+1
+        sta     MUL_A+1
+
+        lda     draw_stride
+        sta     MUL_B
+        lda     draw_stride+1
+        sta     MUL_B+1
+
+        sta     MUL_TO_DST
+
+        lda     #$80
+        sta     DST_ADDR+2
+        rts
+
+sx_pos_whole_l: .byte 0, 0, 0, 1
+sx_pos_whole_h: .byte 0, 0, 0, 0
+sx_pos_frac:    .byte $08, $10, $20, $00
+
+sx_neg_whole_l: .byte $FF, $FF, $FF, $FF
+sx_neg_whole_h: .byte $FF, $FF, $FF, $FF
+sx_neg_frac:    .byte $38, $30, $20, $00
 
 ; ===========================================================================
 ; DRAWTO x, y
@@ -560,7 +678,7 @@ exec_drawto:
         sta     target_x
         stx     target_x+1
 
-        ; Calculate delta_x and sx_whole
+        ; Calculate delta_x and sx
         sec
         lda     target_x
         sbc     last_x
@@ -570,6 +688,7 @@ exec_drawto:
         sta     delta_x+1
         bcs     @x_pos
 
+        ; Negative X: delta_x = -delta_x
         lda     #0
         sec
         sbc     delta_x
@@ -577,15 +696,24 @@ exec_drawto:
         lda     #0
         sbc     delta_x+1
         sta     delta_x+1
-        lda     #$FF
+
+        ldx     draw_bpp
+        lda     sx_neg_whole_l, x
         sta     sx_whole
+        lda     sx_neg_whole_h, x
         sta     sx_whole+1
+        lda     sx_neg_frac, x
+        sta     sx_frac
         jmp     @calc_dy
 
 @x_pos:
-        lda     #0
+        ldx     draw_bpp
+        lda     sx_pos_whole_l, x
         sta     sx_whole
+        lda     sx_pos_whole_h, x
         sta     sx_whole+1
+        lda     sx_pos_frac, x
+        sta     sx_frac
 
 @calc_dy:
         ; Calculate delta_y and sy_whole
@@ -598,6 +726,7 @@ exec_drawto:
         sta     delta_y+1
         bcs     @y_pos
 
+        ; Negative Y: delta_y = -delta_y, sy_whole = -draw_stride
         lda     #0
         sec
         sbc     delta_y
@@ -605,16 +734,20 @@ exec_drawto:
         lda     #0
         sbc     delta_y+1
         sta     delta_y+1
-        lda     #$B0
+
+        lda     #0
+        sec
+        sbc     draw_stride
         sta     sy_whole
-        lda     #$FF
+        lda     #0
+        sbc     draw_stride+1
         sta     sy_whole+1
         jmp     @calc_diag
 
 @y_pos:
-        lda     #80
+        lda     draw_stride
         sta     sy_whole
-        lda     #0
+        lda     draw_stride+1
         sta     sy_whole+1
 
 @calc_diag:
@@ -649,7 +782,7 @@ exec_drawto:
         sta     major_step_whole
         lda     sx_whole+1
         sta     major_step_whole+1
-        lda     #$20
+        lda     sx_frac
         sta     major_step_frac
         jmp     @setup_line
 
@@ -682,35 +815,10 @@ exec_drawto:
         sta     line_count+1
 
         ; Compute start pixel address at (last_x, last_y)
-        lda     last_y
-        sta     MUL_A
-        lda     last_y+1
-        sta     MUL_A+1
-
-        lda     #80
-        sta     MUL_B
-        lda     #0
-        sta     MUL_B+1
-
-        lda     last_x+1
-        lsr     A
-        sta     MUL_C+1
-        lda     last_x
-        ror     A
-        sta     MUL_C
-        lda     #0
-        sta     MUL_C+2
-
-        sta     MUL_TO_DST
-
-        lda     #$80
-        sta     DST_ADDR+2
+        jsr     calc_pixel_addr
 
         ; Step fractions and steps
-        lda     last_x
-        and     #1
-        asl     A
-        asl     A
+        lda     tmp_frac
         ora     major_step_frac
         sta     DST_FRAC
 
@@ -724,7 +832,7 @@ exec_drawto:
         lda     diag_step_whole+1
         sta     DST_LINE_DIAG_STEP+1
 
-        lda     #$20
+        lda     sx_frac
         sta     DST_LINE_DIAG_FRAC
 
         ; DST_LINE_ERROR = -(major_delta >> 1) in 24 bits
@@ -769,7 +877,8 @@ exec_drawto:
         sta     MUL_B+1
 
         ; Enable line mode
-        lda     #(MODE_4BPP | MODE_LINE_BIT)
+        lda     draw_bpp
+        ora     #MODE_LINE_BIT
         sta     MODE
 
 @line_loop:
@@ -786,7 +895,7 @@ exec_drawto:
         bne     @line_loop
 
         ; Line mode off
-        lda     #MODE_4BPP
+        lda     draw_bpp
         sta     MODE
 
         lda     target_x
