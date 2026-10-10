@@ -54,6 +54,7 @@ OPEN_READ_WRITE = 2
 OPEN_APPEND     = 3
 OPEN_DIRECTORY  = 4
 OPEN_RAW        = 16
+OPEN_ACCESS_MASK = $03
 
 ERR_EOF         = $08
 
@@ -69,6 +70,7 @@ TOK_COLOR       = $65
 TOK_PLOT        = $66
 TOK_DRAWTO      = $67
 TOK_SETCOLOR    = $68
+TOK_ENTER       = $69
 
 .macro extension_statement_keywords
 :       name_table_entry "DIR"
@@ -78,6 +80,7 @@ TOK_SETCOLOR    = $68
 :       name_table_entry "PLOT"
 :       name_table_entry "DRAWTO"
 :       name_table_entry "SETCOLOR"
+:       name_table_entry "ENTER"
 .endmacro
 
 .macro extension_statement_vectors_l
@@ -88,7 +91,7 @@ TOK_SETCOLOR    = $68
         .byte   <(exec_plot-1)
         .byte   <(exec_drawto-1)
         .byte   <(exec_setcolor-1)
-        .byte   0
+        .byte   <(exec_enter-1)
 .endmacro
 
 .macro extension_statement_vectors_h
@@ -99,14 +102,14 @@ TOK_SETCOLOR    = $68
         .byte   >(exec_plot-1)
         .byte   >(exec_drawto-1)
         .byte   >(exec_setcolor-1)
-        .byte   0
+        .byte   >(exec_enter-1)
 .endmacro
 
 .macro extension_statement_flags
         .byte   PROLOG_POP_STRING | (PROLOG_NONE << 4)  ; DIR (low nibble), STATUS (high nibble)
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; GRMODE (low nibble), COLOR (high nibble)
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; PLOT (low nibble), DRAWTO (high nibble)
-        .byte   PROLOG_POP_INT | (0 << 4)               ; SETCOLOR (low nibble), padding (high nibble)
+        .byte   PROLOG_POP_INT | (PROLOG_POP_STRING << 4) ; SETCOLOR (low nibble), ENTER (high nibble)
 .endmacro
 
 .macro extension_pvm_statements
@@ -117,6 +120,7 @@ TOK_SETCOLOR    = $68
         BRANCH_IF TOK_PLOT, pvm_arg_2
         BRANCH_IF TOK_DRAWTO, pvm_arg_2
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
+        BRANCH_IF TOK_ENTER, pvm_expression
 .endmacro
 
 .macro extension_pvm_code

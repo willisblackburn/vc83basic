@@ -47,28 +47,22 @@ close_all:
 ; ensure_channel_0
 ;
 ; If the default channel is active (bit 7 of channel is clear), checks if
-; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, restores
-; console via GRMODE 0 (which opens channel #0 to "C:" on Layer 2).
-; Preserves A, X, Y.
+; channel #0 is open for write (IOCB 0 at $0200 has bit 7 set and mode
+; has write access). If not, restores console via GRMODE 0 (which opens
+; channel #0 to "C:" on Layer 2).
 ; ===========================================================================
 ensure_channel_0:
         bit     channel
         bmi     @done                   ; Explicit channel: do not auto-open
         bit     $0200                   ; Check IOCB 0 device byte
-        bmi     @done                   ; Bit 7 is 1 -> already open
-        pha
-        txa
-        pha
-        tya
-        pha
+        bpl     @restore                ; Bit 7 is 0 -> channel closed
+        lda     $0201                   ; Check IOCB 0 mode
+        and     #OPEN_ACCESS_MASK       ; Bits 1:0 (1=WRITE, 2=READ_WRITE, 3=APPEND)
+        bne     @done                   ; Open for write -> done!
+@restore:
         lda     #0
         tax
         jsr     exec_grmode
-        pla
-        tay
-        pla
-        tax
-        pla
 @done:
         rts
 
@@ -77,7 +71,9 @@ ensure_channel_0:
 ; channel = channel index (0..7)
 ; Returns carry clear if ok, carry set if error.
 xio:
+        pha
         jsr     ensure_channel_0
+        pla
         sta     arg1
         lda     BC
         sta     arg2
@@ -93,7 +89,6 @@ xio:
 ; Gets a single byte/key from channel (blocking).
 ; Returns carry clear and byte in A if ok, carry set if error / EOF.
 getch:
-        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_GET
@@ -102,7 +97,6 @@ getch:
 ; Polls for a key without blocking using API_STATUS.
 ; Returns carry clear and byte in A if available, carry set if no byte.
 inkey:
-        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_STATUS
@@ -120,7 +114,9 @@ inkey:
 ; Outputs a single character to channel.
 ; A = character
 putch:
+        pha
         jsr     ensure_channel_0
+        pla
         sta     arg1                    ; Character in arg1
         lda     channel
         and     #$07                    ; Channel in A

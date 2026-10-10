@@ -198,6 +198,26 @@ exec_status:
         jmp     raise_type_mismatch
 
 ; ===========================================================================
+; ENTER string
+; Closes channel 0 and opens string as channel 0 for read.
+; ===========================================================================
+exec_enter:
+        ; Close channel 0
+        lda     #0
+        jsr     API_CLOSE
+
+        ; Open string as channel 0 for read
+        lda     #0
+        sta     channel
+        lda     #OPEN_READ
+        jsr     open
+        bcs     @fail
+        rts
+
+@fail:
+        jmp     raise_io_error
+
+; ===========================================================================
 ; GRMODE mode
 ; Configures VCGA graphics layers and manages the console lifecycle.
 ;
@@ -265,6 +285,9 @@ grmode_charset_name_len = 13
 
 grmode_console_name:    .byte   "C:"
 grmode_console_name_len = 2
+
+grmode_keyboard_name:   .byte   "K:"
+grmode_keyboard_name_len = 2
 
 exec_grmode:
         cpx     #0
@@ -399,7 +422,7 @@ exec_grmode:
         sta     arg4
         lda     #3
         jsr     API_VCGALAYER
-        bcs     @err_graphics
+        bcs     @err
 
         ; Overwrite Layer 3 attributes: tile set 0, palette 3, bpp from format, opaque
         ; (0 << 4) | (3 << 2) | bpp = $0C | (grmode_fmt & 3)
@@ -467,7 +490,14 @@ exec_grmode:
         sta     arg1
         lda     #2
         jsr     API_VCGALAYER
-        ; Channel 0 remains closed
+
+        ; Open channel 0 to K: for keyboard input
+        lda     #OPEN_READ
+        sta     arg1
+        mvax    #grmode_keyboard_name, arg2
+        mva     #grmode_keyboard_name_len, arg4
+        lda     #0                      ; Channel 0
+        jsr     API_OPEN
         clc
         rts
 
