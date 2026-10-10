@@ -295,12 +295,12 @@ plot_current_pixel:
         lda     #0
         sta     MUL_B+1
 
-        lda     last_x
-        sta     MUL_C
         lda     last_x+1
+        lsr     A
         sta     MUL_C+1
-        lsr     MUL_C+1
-        ror     MUL_C
+        lda     last_x
+        ror     A
+        sta     MUL_C
         lda     #0
         sta     MUL_C+2
 
@@ -463,12 +463,12 @@ exec_drawto:
         lda     #0
         sta     MUL_B+1
 
-        lda     last_x
-        sta     MUL_C
         lda     last_x+1
+        lsr     A
         sta     MUL_C+1
-        lsr     MUL_C+1
-        ror     MUL_C
+        lda     last_x
+        ror     A
+        sta     MUL_C
         lda     #0
         sta     MUL_C+2
 
