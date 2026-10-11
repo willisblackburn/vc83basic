@@ -22,12 +22,8 @@ sy_whole:       .res 2
 major_step_whole: .res 2
 major_step_frac:  .res 1
 diag_step_whole:  .res 2
-tmp_b:          .res 1
-tmp_g:          .res 1
-tmp_r:          .res 1
-tmp_n:          .res 1
-tmp_p:          .res 1
 tmp_l:          .res 1
+tmp_h:          .res 1
 grmode_val:     .res 1
 grmode_base:    .res 1
 grmode_fmt:     .res 1
@@ -1019,7 +1015,7 @@ exec_drawto:
 @calc_error:
         lda     major_delta+1
         lsr     A
-        sta     tmp_g
+        sta     tmp_h
         lda     major_delta
         ror     A
         sta     tmp_l
@@ -1029,7 +1025,7 @@ exec_drawto:
         sbc     tmp_l
         sta     DST_LINE_ERROR
         lda     #0
-        sbc     tmp_g
+        sbc     tmp_h
         sta     DST_LINE_ERROR+1
         lda     #0
         sbc     #0
@@ -1084,67 +1080,39 @@ exec_drawto:
 ; Sets color n of palette p to RGB555 value.
 ; ===========================================================================
 exec_setcolor:
-        sta     tmp_b
+        ldx     #3                      ; 3 color components: B, then G, then R
+@comp_loop:
+        ldy     #5                      ; 5 bits per component
+@bit_loop:
+        lsr     A
+        ror     E
+        ror     D
+        dey
+        bne     @bit_loop
+        dex
+        beq     @done_color
         jsr     pop_int_fp0
-        sta     tmp_g
-        jsr     pop_int_fp0
-        sta     tmp_r
-        jsr     pop_int_fp0
-        sta     tmp_n
-        jsr     pop_int_fp0
-        sta     tmp_p
+        bra     @comp_loop
 
-        ; Palette RAM base address: $B0800 + (p << 9) + (n << 1)
-        lda     tmp_n
+@done_color:
+        lsr     E                       ; 16th shift: clears bit 15 of DE and shifts into D
+        ror     D
+        jsr     pop_int_fp0             ; A = n (color index)
+        pha
+        jsr     pop_int_fp0             ; A = p (palette index)
+        asl     A
+        ora     #$08
+        sta     DST_ADDR+1
+        pla                             ; A = n
         asl     A
         sta     DST_ADDR
-        lda     tmp_p
-        asl     A
-        adc     #$08
-        sta     DST_ADDR+1
-        lda     #$B0
-        sta     DST_ADDR+2
-
-        lda     #1
-        sta     DST_STEP
-        lda     #0
-        sta     DST_STEP+1
-        sta     DST_FRAC
-
-        lda     tmp_b
-        and     #$1F
-        sta     tmp_b
-
-        lda     tmp_g
-        and     #$1F
-        sta     tmp_g
-
-        lda     tmp_r
-        and     #$1F
-        sta     tmp_r
-
-        ; Low byte: ((G & 7) << 5) | B
-        lda     tmp_g
-        and     #$07
-        asl     A
-        asl     A
-        asl     A
-        asl     A
-        asl     A
-        ora     tmp_b
-        sta     DST_DATA_INC
-
-        ; High byte: ((R & 31) << 2) | (G >> 3)
-        lda     tmp_g
-        lsr     A
-        lsr     A
-        lsr     A
-        sta     tmp_g
-        lda     tmp_r
-        asl     A
-        asl     A
-        ora     tmp_g
-        sta     DST_DATA
+        bcc     @no_carry
+        inc     DST_ADDR+1
+@no_carry:
+        mva     #$B0, DST_ADDR+2
+        mva     D, DST_DATA
+        inc     DST_ADDR
+        mva     E, DST_DATA
         rts
 
 
@@ -1183,6 +1151,3 @@ exec_sync:
 
 @out_of_range:
         jmp     raise_out_of_range
-
-
-
