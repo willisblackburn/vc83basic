@@ -82,7 +82,6 @@ enable_console:
         rts
 
 ; Reset handler. Closes all open channels (1..7).
-; Also closes channel 0 if it was redirected to a file (not C: or K:).
 on_reset:
         stz     default_channel         ; Clear redirected channel on reset
         ldx     #7
@@ -94,18 +93,6 @@ on_reset:
         tax
         dex
         bne     @loop
-
-        ; Check channel 0: if open to a file (not C: or K:), close it
-        lda     $0200                   ; IOCB 0 device byte
-        bpl     @done                   ; Bit 7 is 0 -> closed
-        and     #$78                    ; Device table index << 3
-        cmp     #(2 << 3)               ; Device 2 = C:
-        beq     @done
-        cmp     #(5 << 3)               ; Device 5 = K:
-        beq     @done
-        lda     #0                      ; Channel 0
-        jsr     API_CLOSE
-@done:
         rts
 
 ; ===========================================================================
