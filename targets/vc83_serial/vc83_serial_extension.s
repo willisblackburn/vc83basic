@@ -1156,24 +1156,17 @@ exec_setcolor:
 ; ===========================================================================
 exec_sync:
         cpx     #0                              ; Validate integer fits in 8 bits
-        raine   ERR_OUT_OF_RANGE
+        bne     @out_of_range
         cmp     #128                            ; Limit to max 127 frames (~2.1s)
-        raics   ERR_OUT_OF_RANGE
+        bcs     @out_of_range
+
+        clc
+        adc     sync_last_frame
+        sta     sync_last_frame
 
         ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0087
         mvax    #$0087, SRC_ADDR
         mva     #$B0, SRC_ADDR+2
-
-        tax
-        bne     @wait_frames
-        mva     SRC_DATA, sync_last_frame       ; SYNC 0: snapshot current frame counter as baseline
-        rts
-
-@wait_frames:
-        txa
-        clc
-        adc     sync_last_frame
-        sta     sync_last_frame
 
 @spin:
         lda     sync_last_frame
@@ -1182,8 +1175,14 @@ exec_sync:
         beq     @done
         bpl     @spin
 
+        ; Target is overdue (in the past); reset baseline to current frame
+        mva     SRC_DATA, sync_last_frame
+
 @done:
         rts
+
+@out_of_range:
+        jmp     raise_out_of_range
 
 
 
