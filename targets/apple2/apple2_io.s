@@ -45,7 +45,8 @@ putch:
 ; Suppresses prompt, strips bit 7, NUL-terminates at CR, returns length in A.
 
 readline:
-        jsr     GETLNNOPMPT             ; Apple II ROM reads into buffer ($0200) without prompt, length in X
+        mva     #$80, PROMPT            ; Suppress prompt character in GETLN
+        jsr     GETLN                   ; Apple II ROM GETLN reads into buffer ($0200), length in X
         lda     #0
         sta     buffer,x                ; Replace CR with NUL
         txa                             ; Save length in A
