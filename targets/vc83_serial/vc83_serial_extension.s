@@ -37,10 +37,6 @@ draw_bpp:       .res 1
 sx_frac:        .res 1
 tmp_frac:       .res 1
 sync_last_frame: .res 1
-sync_valid:     .res 1
-sync_target:    .res 1
-sync_n:         .res 1
-sync_curr:      .res 1
 
 
 .segment "CODE"
@@ -403,9 +399,6 @@ exec_grmode:
         and     #$7F
         sta     grmode_base
 
-        lda     #0
-        sta     sync_valid
-
         ; Check if algorithmic mode (bit 6 set)
         and     #$40
         beq     @preset_mode
@@ -718,6 +711,8 @@ plot_current_pixel:
         bit     DST_DATA
         lda     current_color
         sta     DST_DATA
+        stz     MODE
+        stz     DST_FRAC
         rts
 
 ; ===========================================================================
@@ -745,6 +740,8 @@ fun_colorat:
 
         lda     DST_DATA
         ldx     #0
+        stz     MODE
+        stz     DST_FRAC
         rts
 
 calc_pixel_addr:
@@ -1067,9 +1064,10 @@ exec_drawto:
         ora     line_count+1
         bne     @line_loop
 
-        ; Line mode off
-        lda     draw_bpp
-        sta     MODE
+        ; Reset mode and fraction registers before returning
+        stz     MODE
+        stz     DST_FRAC
+        stz     DST_LINE_DIAG_FRAC
 
         lda     target_x
         sta     last_x
@@ -1095,11 +1093,6 @@ exec_setcolor:
         sta     tmp_n
         jsr     pop_int_fp0
         sta     tmp_p
-
-        lda     MODE
-        pha
-        lda     #MODE_8BPP
-        sta     MODE
 
         ; Palette RAM base address: $B0800 + (p << 9) + (n << 1)
         lda     tmp_n
@@ -1152,72 +1145,44 @@ exec_setcolor:
         asl     A
         ora     tmp_g
         sta     DST_DATA
-
-        pla
-        sta     MODE
         rts
 
 
 ; ===========================================================================
 ; SYNC n
 ; Synchronizes execution to the VCGA frame counter.
-; Remembers the last frame counter value and spins until counter reaches that + n.
-; n: 0..127 frames.
+; n = 0: resets sync baseline to current frame counter.
+; n = 1..127: waits until frame counter reaches baseline + n.
 ; ===========================================================================
 exec_sync:
         cpx     #0                              ; Validate integer fits in 8 bits
         raine   ERR_OUT_OF_RANGE
         cmp     #128                            ; Limit to max 127 frames (~2.1s)
         raics   ERR_OUT_OF_RANGE
-        tax
-        bne     @start_sync
-        rts                                     ; n = 0 -> return immediately
-
-@start_sync:
-        stx     sync_n
-        ldpha   MODE
-        mva     #MODE_8BPP, MODE                ; Full 8-bit read via bus accelerator
 
         ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0087
         mvax    #$0087, SRC_ADDR
         mva     #$B0, SRC_ADDR+2
 
-        mva     SRC_DATA, sync_curr             ; Current frame counter LSB
+        tax
+        bne     @wait_frames
+        mva     SRC_DATA, sync_last_frame       ; SYNC 0: snapshot current frame counter as baseline
+        rts
 
-        ; Check if first call or if elapsed >= 128 frames (stale / long pause)
-        lda     sync_valid
-        beq     @init_last
-        lda     sync_curr
-        sec
-        sbc     sync_last_frame
-        cmp     #128
-        bcc     @have_last
-
-@init_last:
-        mva     sync_curr, sync_last_frame
-        mva     #1, sync_valid
-
-@have_last:
-        ; target = sync_last_frame + sync_n
+@wait_frames:
+        txa
         clc
-        lda     sync_last_frame
-        adc     sync_n
-        sta     sync_last_frame                 ; Update baseline for next call
-        sta     sync_target
+        adc     sync_last_frame
+        sta     sync_last_frame
 
 @spin:
-        mva     SRC_DATA, sync_curr             ; Read current frame counter LSB
+        lda     sync_last_frame
         sec
-        lda     sync_target
-        sbc     sync_curr
-        beq     @done                           ; Reached target
-        bmi     @done                           ; Passed target (overdue)
-        cmp     #128
-        bcs     @done                           ; Wraparound safeguard (> 128 away)
-        jmp     @spin
+        sbc     SRC_DATA
+        beq     @done
+        bpl     @spin
 
 @done:
-        plsta   MODE
         rts
 
 

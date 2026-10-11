@@ -108,11 +108,11 @@ build/basic_ac6502: build/basic_ac6502.o
 # Goal: basic_vc83_serial
 build/basic_vc83_serial.o: targets/vc83_serial/basic_vc83_serial.s src/basic.s $(GENERATED_ASM_SOURCES)
 	@mkdir -p $(@D)
-	cl65 -t none -c $(ASMFLAGS) --asm-include-dir targets/vc83_serial -o $@ $<
+	cl65 -t none --cpu 65c02 -c $(ASMFLAGS) --asm-include-dir targets/vc83_serial -o $@ $<
 
 build/basic_vc83_serial: build/basic_vc83_serial.o
 	@mkdir -p $(@D)
-	cl65 -t none -C targets/vc83_serial/vc83_serial.cfg $(LDFLAGS) -o $@ $<
+	cl65 -t none --cpu 65c02 -C targets/vc83_serial/vc83_serial.cfg $(LDFLAGS) -o $@ $<
 	$(PRINT_SIZE)
 
 build/basic_vc83_serial.mem: build/basic_vc83_serial
