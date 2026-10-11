@@ -673,14 +673,23 @@ output_y_zeros:
 
 string_to_fp_x = fp_scratch
 
+string_to_fp:
+        stax    read_ptr                ; Store read_ptr
+string_to_fp_2:
+        jsr     skip_whitespace         ; Skip any whitespace        
+        sty     E                       ; Save starting position in E
+        mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
+        lda     (read_ptr),y
+        cmp     #'$'
+        bne     @parse_decimal
+
 ; Parses a hexadecimal literal ($ followed by hex digits).
 ; Accumulates into 32-bit significand FP0t, shifting left 4 bits per digit.
 ; Throws error on 32-bit overflow or if no hex digits follow '$'.
 
-parse_hex:
+@parse_hex:
         iny                             ; Consume '$'
         jsr     clear_fp0               ; Reset FP0 to 0 (returns A = 0)
-        sta     D                       ; D = 0 (digit counter)
 @hex_loop:
         lda     (read_ptr),y
         and     #<~EOT                  ; Mask out EOT bit if set
@@ -695,7 +704,7 @@ parse_hex:
         cmp     #16
         bcs     @finish_hex             ; Not a valid hex digit
 @valid:
-        inc     D                       ; Count valid digit
+        dec     D                       ; Count valid digit
         ldx     #4                      ; 4 bits per hex digit
 @shift_bit:
         jsr     shift_left              ; Shift significand left 1 bit
@@ -708,27 +717,12 @@ parse_hex:
 
 @finish_hex:
         lda     D                       ; Ensure at least one digit was parsed
-        beq     @err                    ; Fail if bare '$'
+        bmi     @err                    ; Fail if bare '$'
         sty     E                       ; Save Y in E for restore
         jsr     int32_to_fp             ; Convert 32-bit integer in FP0t to float
-        clc                             ; Signal success
-@exit:
-        ldy     E                       ; Return buffer read position in Y
-        rts
+        bcc     @exit                   ; Return via string_to_fp's exit (carry clear from int32_to_fp)
 
-@err:
-        sec                             ; Signal error
-        bcs     @exit                   ; Unconditional
-
-string_to_fp:
-        stax    read_ptr                ; Store read_ptr
-string_to_fp_2:
-        jsr     skip_whitespace         ; Skip any whitespace        
-        sty     E                       ; Save starting position in E
-        lda     (read_ptr),y
-        cmp     #'$'
-        beq     parse_hex
-        mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
+@parse_decimal:
         jsr     parse_signed_digits     ; Phase 1: Pre-decimal digits
         lda     (read_ptr),y
         and     #<~EOT
@@ -764,6 +758,12 @@ string_to_fp_2:
         clc
         adc     FP0t
         bcc     @exp_done               ; Unconditional (sum < 256)
+
+@err:
+        sec                             ; Signal error
+@exit:
+        ldy     E                       ; Return buffer read position in Y
+        rts
 
 @exp_pos:
         sec
@@ -808,11 +808,6 @@ string_to_fp_2:
         clc                             ; Signal success
         bcc     @exit                   ; Unconditional
 
-@err:
-        sec                             ; Signal error
-@exit:
-        ldy     E                       ; Return buffer read position in Y
-        rts
 
 ; Clears FP0 and FPX, parses an optional sign ('+' or '-'), setting bit 7 of FP0s if negative,
 ; then falls through to parse_digits.
