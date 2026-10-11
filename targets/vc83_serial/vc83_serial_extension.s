@@ -428,7 +428,7 @@ exec_grmode:
         sta     grmode_fmt
 
 @setup_layers:
-        ; 1. Always disable layers 0 and 1
+        ; Disable layers 0 and 1
         lda     #0
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
@@ -436,7 +436,19 @@ exec_grmode:
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
 
-        ; 2. Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
+        ; Disable all 32 sprites
+        lda     #$B0
+        sta     BANK_SELECT_D
+        ldx     #0
+        clc
+@clear_sprites:
+        stz     $D106, x
+        txa
+        adc     #8
+        tax
+        bne     @clear_sprites
+
+        ; Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
         lda     grmode_base
         cmp     #4
         bcs     @setup_graphics
