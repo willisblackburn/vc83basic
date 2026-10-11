@@ -1165,23 +1165,24 @@ exec_setcolor:
 ; n: 0..127 frames.
 ; ===========================================================================
 exec_sync:
-        cpx     #0
-        bne     @arg_err
-        cmp     #128
-        bcs     @arg_err
+        cpx     #0                              ; Validate integer fits in 8 bits
+        raine   ERR_OUT_OF_RANGE
+        cmp     #128                            ; Limit to max 127 frames (~2.1s)
+        raics   ERR_OUT_OF_RANGE
         tax
-        bne     @sync_positive
-        rts                             ; n = 0 -> return immediately
-@sync_positive:
+        bne     @start_sync
+        rts                                     ; n = 0 -> return immediately
+
+@start_sync:
         stx     sync_n
+        ldpha   MODE
+        mva     #MODE_8BPP, MODE                ; Full 8-bit read via bus accelerator
 
-        lda     BANK_SELECT_A
-        pha
-        lda     #$B0
-        sta     BANK_SELECT_A
+        ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0087
+        mvax    #$0087, SRC_ADDR
+        mva     #$B0, SRC_ADDR+2
 
-        lda     $A087                   ; Read Frame Count [7:0]
-        sta     sync_curr
+        mva     SRC_DATA, sync_curr             ; Current frame counter LSB
 
         ; Check if first call or if elapsed >= 128 frames (stale / long pause)
         lda     sync_valid
@@ -1191,39 +1192,33 @@ exec_sync:
         sbc     sync_last_frame
         cmp     #128
         bcc     @have_last
+
 @init_last:
-        lda     sync_curr
-        sta     sync_last_frame
-        lda     #1
-        sta     sync_valid
+        mva     sync_curr, sync_last_frame
+        mva     #1, sync_valid
 
 @have_last:
         ; target = sync_last_frame + sync_n
         clc
         lda     sync_last_frame
         adc     sync_n
-        sta     sync_last_frame         ; Update last_sync_frame for next call
+        sta     sync_last_frame                 ; Update baseline for next call
         sta     sync_target
 
 @spin:
-        lda     $A087                   ; Current frame counter LSB
-        sta     sync_curr
+        mva     SRC_DATA, sync_curr             ; Read current frame counter LSB
         sec
         lda     sync_target
         sbc     sync_curr
-        beq     @done                   ; Reached target
-        bmi     @done                   ; Passed target (overdue)
+        beq     @done                           ; Reached target
+        bmi     @done                           ; Passed target (overdue)
         cmp     #128
-        bcs     @done                   ; Wraparound safeguard (> 128 away)
+        bcs     @done                           ; Wraparound safeguard (> 128 away)
         jmp     @spin
 
 @done:
-        pla
-        sta     BANK_SELECT_A
+        plsta   MODE
         rts
-
-@arg_err:
-        jmp     raise_out_of_range
 
 
 
