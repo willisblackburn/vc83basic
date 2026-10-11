@@ -50,7 +50,7 @@ exec_on_goto_gosub:
         cmp     #TOK_COMMA
         bne     @next_byte
         sty     line_pos                ; Update line_pos with the position after the next ','
-        jmp     @loop                   ; Unconditional
+        beq     @loop                   ; Unconditional because BNE
 
 @type_mismatch:
         jmp     raise_type_mismatch

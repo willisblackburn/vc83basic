@@ -45,8 +45,7 @@ putch:
 ; Suppresses prompt, strips bit 7, NUL-terminates at CR, returns length in A.
 
 readline:
-        mva     #$80, PROMPT            ; Suppress prompt character in GETLN
-        jsr     GETLN                   ; Apple II ROM GETLN reads into buffer ($0200), length in X
+        jsr     GETLNNOPMPT             ; Apple II ROM reads into buffer ($0200) without prompt, length in X
         lda     #0
         sta     buffer,x                ; Replace CR with NUL
         txa                             ; Save length in A
@@ -79,13 +78,11 @@ tab:
         rts
 
 ; Prints 16-bit word in AX as 4 hex digits (high byte first) using ROM PRBYTE.
-; A = low byte, X = high byte
+; A = high byte, X = low byte
 
 print_ax_hex:
-        pha                             ; Save low byte
-        txa                             ; High byte into A
         jsr     PRBYTE                  ; Print high byte hex
-        pla                             ; Restore low byte
+        txa                             ; Low byte into A
         jmp     PRBYTE                  ; Print low byte hex
 
 ; Emits CROUT, Ctrl-D, command string, filename, ",A$", and start address.
@@ -101,7 +98,8 @@ emit_dos_command_and_addr:
         jsr     print_string            ; Prints filename
         lday    #addr_cmd
         jsr     print_string            ; Prints ",A$"
-        ldax    #(__BSS_RUN__ + __BSS_SIZE__)
+        lda     #>(__BSS_RUN__ + __BSS_SIZE__)
+        ldx     #<(__BSS_RUN__ + __BSS_SIZE__)
         jmp     print_ax_hex            ; Prints address and returns
 
 ; Saves program memory to file via DOS CHR$(4) BSAVE.
@@ -115,11 +113,9 @@ save:
         sec
         lda     variable_name_table_ptr
         sbc     #<(__BSS_RUN__ + __BSS_SIZE__)
-        pha
+        tax
         lda     variable_name_table_ptr+1
         sbc     #>(__BSS_RUN__ + __BSS_SIZE__)
-        tax
-        pla
         jsr     print_ax_hex            ; Prints hex length
         jsr     CROUT
         clc
