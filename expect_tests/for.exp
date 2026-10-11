@@ -137,3 +137,22 @@ RUN
 1
 -0.5
 }
+
+# FOR requires numeric start, end, and step values
+test {
+FOR I="A" TO 3
+} {
+ERR: TYPE?
+}
+
+test {
+FOR I=1 TO "A"
+} {
+ERR: TYPE?
+}
+
+test {
+FOR I=1 TO 3 STEP "A"
+} {
+ERR: TYPE?
+}

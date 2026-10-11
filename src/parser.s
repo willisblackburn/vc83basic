@@ -132,7 +132,7 @@ run_pvm:
         jsr     run_pvm                 ; Call it
         plstaa  pvm_program_ptr         ; Recover return address
         bcs     @fail                   ; If the called function failed then just keep failing
-        jmp     run_pvm
+        bcc     run_pvm
 
 @jump:
         jsr     calculate_address_10    ; Get the address: call address in AX
@@ -297,8 +297,7 @@ calculate_address_10:
 ; PVM program
 
 pvm_statement:
-        BRANCH_IF TOK_PRINT, pvm_print
-        BRANCH_IF TOK_ALT_PRINT, pvm_print
+        BRANCH_IF_RANGE TOK_PRINT, 2, pvm_print
         BRANCH_IF TOK_LET, pvm_let
         BRANCH_IF TOK_NAME, pvm_impl_let
         BRANCH_IF TOK_FOR, pvm_for
@@ -307,11 +306,9 @@ pvm_statement:
         BRANCH_IF TOK_INPUT, pvm_input
         BRANCH_IF TOK_READ, pvm_read
         BRANCH_IF TOK_ON, pvm_on
-        BRANCH_IF TOK_GOTO, pvm_goto
-        BRANCH_IF TOK_GOSUB, pvm_gosub
+        BRANCH_IF_RANGE TOK_GOTO, 2, pvm_goto_gosub
         BRANCH_IF TOK_LIST, pvm_list
-        BRANCH_IF TOK_POKE, pvm_arg_2
-        BRANCH_IF TOK_DPOKE, pvm_arg_2
+        BRANCH_IF_RANGE TOK_POKE, 2, pvm_arg_2
         BRANCH_IF TOK_DIM, pvm_read
         BRANCH_IF TOK_DATA, pvm_data
         BRANCH_IF TOK_REM, pvm_rem
@@ -319,8 +316,7 @@ pvm_statement:
         BRANCH_IF_RANGE TOK_RUN, 8, @done       ; Any other no-arg statement (RUN..POP, $52..$59)
         BRANCH_IF TOK_GET, pvm_get
         BRANCH_IF TOK_PUT, pvm_put
-        BRANCH_IF TOK_SAVE, pvm_save_load
-        BRANCH_IF TOK_LOAD, pvm_save_load
+        BRANCH_IF_RANGE TOK_SAVE, 2, pvm_expression
         invoke_if_defined extension_pvm_statements
         FAIL
 @done:
@@ -348,21 +344,16 @@ pvm_put:
 .endif
         JUMP pvm_expression
 
-pvm_save_load:
-        JUMP pvm_expression
-
 pvm_print:
 .ifdef enable_io_channels
         CALL pvm_channel
 .endif
 @loop:
-        BRANCH_IF TOK_SEMI, @loop
-        BRANCH_IF TOK_COMMA, @loop
+        BRANCH_IF_RANGE TOK_COMMA, 2, @loop
         GUARD TOK_COLON                 ; Abandon the PRINT statement if we see COLON or EOL
         GUARD TOK_EOL
         CALL pvm_expression             ; Otherwise it has to be an expression
-        BRANCH_IF TOK_SEMI, @loop
-        BRANCH_IF TOK_COMMA, @loop
+        BRANCH_IF_RANGE TOK_COMMA, 2, @loop
         GUARD TOK_COLON
         GUARD TOK_EOL
         FAIL
@@ -412,8 +403,7 @@ pvm_read:
 
 pvm_on:
         CALL pvm_expression
-        BRANCH_IF TOK_GOTO, @line_number_list
-        BRANCH_IF TOK_GOSUB, @line_number_list
+        BRANCH_IF_RANGE TOK_GOTO, 2, @line_number_list
         FAIL
 
 @line_number_list:
@@ -421,8 +411,7 @@ pvm_on:
         BRANCH_IF TOK_COMMA, @line_number_list
         RETURN
 
-pvm_goto:
-pvm_gosub:
+pvm_goto_gosub:
         MATCH TOK_NUM
         RETURN
 
@@ -452,13 +441,11 @@ pvm_expression:
 
 pvm_primary_expression:
         BRANCH_IF TOK_LPAREN, pvm_subexpression
-        BRANCH_IF TOK_ADD, pvm_primary_expression   ; Unary +
-        BRANCH_IF TOK_SUB, pvm_primary_expression   ; Unary -
+        BRANCH_IF_RANGE TOK_ADD, 2, pvm_primary_expression  ; Unary + and -
         BRANCH_IF TOK_NOT, pvm_primary_expression   ; Unary NOT
         BRANCH_IF TOK_NAME, pvm_optional_array
         BRANCH_IF_RANGE TOK_LEN, 15, pvm_fun_1      ; 1-arg functions ($80..$8E: LEN..RND)
-        BRANCH_IF TOK_LEFT_S, pvm_fun_2             ; 2-arg function ($8F: LEFT$)
-        BRANCH_IF_RANGE TOK_RIGHT_S, 2, pvm_fun_2   ; 2-arg functions ($90..$91: RIGHT$, USR)
+        BRANCH_IF_RANGE TOK_LEFT_S, 3, pvm_fun_2    ; 2-arg functions ($8F..$91: LEFT$, RIGHT$, USR)
         BRANCH_IF TOK_MID_S, pvm_fun_3              ; 3-arg function ($92: MID$)
         BRANCH_IF_RANGE TOK_FRE, 2, pvm_fun_0       ; 0-arg functions ($93..$94: FRE, INKEY$)
 .ifdef enable_trig_functions
@@ -470,6 +457,8 @@ pvm_primary_expression:
 @done:
         RETURN
 
+pvm_fun_1:
+        MATCH TOK_LPAREN
 pvm_subexpression:
         CALL pvm_expression
         MATCH TOK_RPAREN
@@ -487,12 +476,6 @@ pvm_optional_array:
 pvm_fun_0:
         MATCH TOK_LPAREN
 pvm_close_paren:
-        MATCH TOK_RPAREN
-        RETURN
-
-pvm_fun_1:
-        MATCH TOK_LPAREN
-        CALL pvm_expression
         MATCH TOK_RPAREN
         RETURN
 

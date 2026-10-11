@@ -55,21 +55,3 @@ exec_load:
         jsr     load
         bcs     raise_io_error
         rts
-
-; INKEY$() function
-; EPILOG_PUSH_STRING pushes string returned in S0 / string_ptr
-
-fun_inkey_s:
-        jsr     inkey
-        bcs     @no_key
-        pha                             ; Save character
-        lda     #1
-        jsr     string_alloc_for_copy
-        pla
-        ldy     #0
-        sta     (dst_ptr),y
-        rts
-
-@no_key:
-        lda     #0
-        jmp     string_alloc

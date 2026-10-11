@@ -59,12 +59,8 @@ next_expression:
         jsr     process_operators       ; Handle operators >= the precedence of this operator
         jsr     push_pending            ; Push result for the new operator
         pla                             ; Get the operator value again
-        tay                             ; Hold in Y
-        lsr     A                       ; Divide by 2 (again)
-        tax                             ; Move into X to use as index (again)
-        tya                             ; Operator value back into A
-        ora     operator_precedence_table,x ; OR the precedence value
-        jmp     after_operator
+        ora     min_precedence          ; OR the precedence value, which process_operators left in min_precedence
+        bne     after_operator          ; Unconditional because precedence is never 0
 
 @dispatch:
         ldy     #TYPE_NUMBER            ; Default expr_type to TYPE_NUMBER (0)
@@ -83,10 +79,7 @@ next_expression:
         rts
 
 evaluate_paren:
-        lda     #PR_OPEN_PAREN          ; Push the open paren, which will never be removed by process_operators
-        jsr     push_operator
-        jsr     evaluate_expression     ; Evaluate the subexpression; may fail
-        inc     op_stack_pos            ; Pop the open paren (even if evaluate_expression failed)
+        jsr     evaluate_expression     ; Evaluate the subexpression; it pushes its own open paren
         inc     line_pos                ; Consume the ')'
         rts
 
@@ -167,7 +160,7 @@ evaluate_argument_list:
         cmp     #TOK_COMMA
         bne     @done                   ; No comma, stop
         inc     line_pos                ; Skip comma
-        jmp     @loop                   ; And continue
+        bne     @loop                   ; And continue; unconditional
 @done:
         pla                             ; Return remaining count
         rts
@@ -280,6 +273,12 @@ op_le:
 set_value_1:
         jmp     load_one_fp0
 
+unary_op_not:
+        jsr     require_number
+        lda     FP0e
+        beq     set_value_1             ; Zero -> 1
+        bne     set_value_0             ; Non-zero -> 0
+
 compare_num_values:
         jsr     load_fp1
         jsr     swap_fp0_fp1
@@ -340,10 +339,7 @@ compare_values:
 
 call_binary_operator:
         phax                            ; Push operator handler address -1 onto the stack so we can RTS to it
-        lda     expr_type               ; Make sure right operand is TYPE_NUMBER (0)
-        beq     @type_ok
-        jmp     raise_type_mismatch
-@type_ok:
+        jsr     require_number          ; Make sure right operand is TYPE_NUMBER (0)
         jsr     stack_free_value_with_type ; A is 0, so checks left operand is TYPE_NUMBER (0)
         txa                             ; Original value of stack_pos, returned in X
         ldy     #>stack                 ; Stack page
@@ -392,23 +388,9 @@ op_add:
         lda     #>(fadd-1)
         bne     call_binary_operator
 
-unary_op_not:
-        lda     expr_type
-        beq     @type_ok
-        jmp     raise_type_mismatch
-@type_ok:
-        lda     FP0e
-        bne     @false
-        jmp     load_one_fp0
-@false:
-        jmp     clear_fp0
-
 unary_op_minus:
-        lda     expr_type
-        bne     @type_mismatch
+        jsr     require_number
         jmp     fneg
-@type_mismatch:
-        jmp     raise_type_mismatch
 
 ; Push the value in FP0 onto the value stack.
 ; FP0 = the value to push
@@ -530,6 +512,13 @@ stack_free_value_with_type:
         beq     stack_free_value        ; Type check succeeded so remove value from stack
 raise_type_mismatch:
         raise   ERR_TYPE_MISMATCH       ; Not the expected type
+
+; Raises a type mismatch error unless expr_type is TYPE_NUMBER. Returns with A=0 and Z set.
+
+require_number:
+        lda     expr_type
+        bne     raise_type_mismatch
+        rts
 
 op_and:
         jsr     set_up_logical_op

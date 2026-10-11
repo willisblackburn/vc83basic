@@ -25,6 +25,12 @@ fun_chr_s:
         sta     (string_ptr),y          ; Set the character in the string
         rts
 
+fun_inkey_s:
+        jsr     inkey                   ; Plaform-specific implementation
+        bcc     fun_chr_s               ; Got a key (A): return it as a 1-character string
+        lda     #0                      ; No key: return an empty string
+        jmp     string_alloc
+
 fun_fre:
         jsr     compact                 ; GC strings
         sec                             ; Calculate free memory as himem_ptr - free_ptr
