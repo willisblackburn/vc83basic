@@ -48,6 +48,8 @@ Spaces around operators in expressions follow a semantic convention. Simple addr
 
 Prefer to use full words in variable names and not abbreviate. Use `count` not `cnt`. Use `size` not `sz`. However, *do* use `dst` and `src` for destination and source pointers, and use `ptr` instead of `pointer`.
 
+Always used named labels in VC83 BASIC code. Use "cheap labels" (labels that start with '@') for lables that you only need to reference within a single function. Do not use unnamed lables (i.e., ":+"), except in macros. 
+
 ## Minimizing Permission Checks and Command Overhead
 
 Repeated command permission checks slow down work significantly. Minimize interactive command prompts by adopting these strategies:
