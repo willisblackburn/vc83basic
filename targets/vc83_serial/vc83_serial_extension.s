@@ -1170,3 +1170,55 @@ exec_sync:
 
 @out_of_range:
         jmp     raise_out_of_range
+
+
+; ===========================================================================
+; POKE24 addr, val
+; DPOKE24 addr, val
+; Writes a single byte or 16-bit word to a 24-bit address using the bus
+; accelerator DST registers.
+; PROLOG_POP_INT pops val into AX; addr is popped from the value stack.
+; ===========================================================================
+exec_dpoke24:
+        jsr     exec_poke24
+        mva     E, DST_DATA             ; Write high byte to incremented address
+        rts
+
+exec_poke24:
+        stax    DE                      ; Save val in DE
+        jsr     pop_fp0                 ; Pop 24-bit addr into FP0
+        jsr     set_dst_addr_from_fp0   ; Set DST_ADDR and step = 1
+        mva     D, DST_DATA_INC         ; Write low byte, advance pointer by 1
+        rts
+
+
+; ===========================================================================
+; PEEK24(addr)
+; DPEEK24(addr)
+; Reads a single byte or 16-bit word from a 24-bit address using the bus
+; accelerator DST registers.
+; PROLOG_POP_FP pops addr into FP0.
+; ===========================================================================
+fun_dpeek24:
+        jsr     fun_peek24              ; Read low byte, advance pointer by 1
+        ldx     DST_DATA                ; Read high byte into X
+        rts
+
+fun_peek24:
+        jsr     set_dst_addr_from_fp0   ; Set DST_ADDR and step = 1
+        lda     DST_DATA_INC            ; Read low byte, advance pointer by 1
+        ldx     #0                      ; Zero-extend to 16-bit AX
+        rts
+
+set_dst_addr_from_fp0:
+        jsr     truncate_fp_to_int32    ; Truncate FP0 to 32-bit int in FP0t
+        ldx     #2                      ; Copy 24-bit address to DST_ADDR
+@copy:  lda     FP0t,x
+        sta     DST_ADDR,x
+        dex
+        bpl     @copy
+
+        lda     #1                      ; Set DST_STEP to 1
+        sta     DST_STEP
+        stz     DST_STEP+1
+        rts

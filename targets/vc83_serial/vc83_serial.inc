@@ -75,8 +75,12 @@ TOK_DRAWTO      = $68
 TOK_SETCOLOR    = $69
 TOK_SOURCE      = $6A
 TOK_SYNC        = $6B
+TOK_POKE24      = $6C
+TOK_DPOKE24     = $6D
 
 TOK_COLORAT     = $9A
+TOK_PEEK24      = $9C
+TOK_DPEEK24     = $9D
 
 .macro extension_statement_keywords
 :       name_table_entry "OPEN"
@@ -91,6 +95,8 @@ TOK_COLORAT     = $9A
 :       name_table_entry "SETCOLOR"
 :       name_table_entry "SOURCE"
 :       name_table_entry "SYNC"
+:       name_table_entry "POKE24"
+:       name_table_entry "DPOKE24"
 .endmacro
 
 .macro extension_statement_vectors_l
@@ -106,6 +112,8 @@ TOK_COLORAT     = $9A
         .byte   <(exec_setcolor-1)
         .byte   <(exec_source-1)
         .byte   <(exec_sync-1)
+        .byte   <(exec_poke24-1)
+        .byte   <(exec_dpoke24-1)
 .endmacro
 
 .macro extension_statement_vectors_h
@@ -121,6 +129,8 @@ TOK_COLORAT     = $9A
         .byte   >(exec_setcolor-1)
         .byte   >(exec_source-1)
         .byte   >(exec_sync-1)
+        .byte   >(exec_poke24-1)
+        .byte   >(exec_dpoke24-1)
 .endmacro
 
 .macro extension_statement_flags
@@ -130,6 +140,7 @@ TOK_COLORAT     = $9A
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; COLOR, PLOT
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; DRAWTO, SETCOLOR
         .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4) ; SOURCE, SYNC
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; POKE24, DPOKE24
 .endmacro
 
 .macro extension_pvm_statements
@@ -145,6 +156,7 @@ TOK_COLORAT     = $9A
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
         BRANCH_IF TOK_SOURCE, pvm_expression
         BRANCH_IF TOK_SYNC, pvm_expression
+        BRANCH_IF_RANGE TOK_POKE24, 2, pvm_arg_2
 .endmacro
 
 .macro extension_pvm_code
@@ -183,24 +195,32 @@ pvm_setcolor:
 .macro extension_function_keywords
 :       name_table_entry "COLORAT"
 :       name_table_entry ""             ; Padding for even function count
+:       name_table_entry "PEEK24"
+:       name_table_entry "DPEEK24"
 .endmacro
 
 .macro extension_pvm_functions
         BRANCH_IF TOK_COLORAT, pvm_fun_2
+        BRANCH_IF_RANGE TOK_PEEK24, 2, pvm_fun_1
 .endmacro
 
 .macro extension_function_vectors_l
         .byte   <(fun_colorat-1)
         .byte   0
+        .byte   <(fun_peek24-1)
+        .byte   <(fun_dpeek24-1)
 .endmacro
 
 .macro extension_function_vectors_h
         .byte   >(fun_colorat-1)
         .byte   0
+        .byte   >(fun_peek24-1)
+        .byte   >(fun_dpeek24-1)
 .endmacro
 
 .macro extension_function_flags
-        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | (0 << 4)   ; COLORAT + padding
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | (0 << 4)                                   ; COLORAT + padding
+        .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4) ; PEEK24, DPEEK24
 .endmacro
 
 
