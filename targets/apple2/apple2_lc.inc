@@ -6,13 +6,13 @@
 
 TOK_AT    = $15
 
-TOK_GR    = $5E
-TOK_TEXT  = $5F
-TOK_HOME  = $60
-TOK_COLOR = $61
-TOK_PLOT  = $62
-TOK_HLIN  = $63
-TOK_VLIN  = $64
+TOK_GR    = $60
+TOK_TEXT  = $61
+TOK_HOME  = $62
+TOK_COLOR = $63
+TOK_PLOT  = $64
+TOK_HLIN  = $65
+TOK_VLIN  = $66
 
 TOK_PDL   = $9A
 TOK_SCRN  = $9B
@@ -24,7 +24,6 @@ TOK_SCRN  = $9B
 .macro extension_statement_keywords
 :       name_table_entry "GR"
 :       name_table_entry "TEXT"
-KEYWORD_BLOCK_6_OFFSET = keyword_counter
 :       name_table_entry "HOME"
 :       name_table_entry "COLOR"
 :       name_table_entry "PLOT"
@@ -32,6 +31,7 @@ KEYWORD_BLOCK_6_OFFSET = keyword_counter
 :       name_table_entry "VLIN"
 :       name_table_entry ""             ; Padding for even statement count
 .endmacro
+
 
 .macro extension_function_keywords
 :       name_table_entry "PDL"

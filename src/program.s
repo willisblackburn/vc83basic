@@ -51,9 +51,7 @@ reset_program:
         mva     #OP_STACK_SIZE, op_stack_pos
         mva     #PRIMARY_STACK_SIZE, stack_pos
         sta     reset_stack_pos
-.ifdef enable_io_channels
-        jsr     close_all
-.endif
+        jsr     on_reset
 
 ; Fall through to reset_data
 

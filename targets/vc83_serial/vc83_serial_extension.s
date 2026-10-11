@@ -36,9 +36,113 @@ draw_stride:    .res 2
 draw_bpp:       .res 1
 sx_frac:        .res 1
 tmp_frac:       .res 1
+sync_last_frame: .res 1
+sync_valid:     .res 1
+sync_target:    .res 1
+sync_n:         .res 1
+sync_curr:      .res 1
 
 
 .segment "CODE"
+
+; OPEN [#channel] {name} [,{mode}]
+exec_open:
+        jsr     evaluate_expression     ; Evaluates filename -> S0
+        jsr     push_pending            ; Push filename onto stack
+        lda     #0                      ; Default mode = 0 (Read)
+        pha
+        jsr     peek_byte
+        beq     @no_mode
+        inc     line_pos
+        jsr     evaluate_expression     ; Evaluates mode -> FP0
+        bne     @open_type_mismatch
+        jsr     truncate_fp_to_int      ; Mode in AX
+        tsx
+        sta     $101,x                  ; Replace default mode on stack
+@no_mode:
+        jsr     pop_string_s0           ; Pop filename into S0 (checks string type)
+        pla                             ; Mode in A
+        jsr     open_channel
+        bcs     @open_err
+        rts
+
+@open_type_mismatch:
+        jmp     raise_type_mismatch
+
+@open_err:
+        raise   ERR_IO_ERROR
+
+; Opens a channel using OS API_OPEN ($E006).
+; S0 = filename string, length in (BC)
+; A = open mode
+; channel = channel index (0..7)
+open_channel:
+        sta     arg1                    ; Mode in arg1
+        ldy     #0
+        lda     (BC), y                 ; Length
+        sta     arg4                    ; Length in arg4
+        lda     S0
+        sta     arg2                    ; String ptr low
+        lda     S0+1
+        sta     arg3                    ; String ptr high
+        lda     channel
+        and     #$07                    ; Channel 0..7
+        jsr     API_OPEN
+        rts
+
+; CLOSE [#channel]
+exec_close:
+        lda     channel
+        and     #$07
+        jsr     API_CLOSE
+        rts
+
+; XIO [#channel] {command}[,{arg1}[,{arg2}]]
+exec_xio:
+        jsr     evaluate_expression     ; Command -> FP0
+        bne     @xio_type_mismatch
+        jsr     truncate_fp_to_int
+        sta     B                       ; Command in B
+        lda     #0
+        sta     BC                      ; Default arg1 = 0
+        sta     BC+1
+        sta     DE                      ; Default arg2 = 0
+        sta     DE+1
+        jsr     peek_byte
+        beq     @do_xio
+        inc     line_pos
+        jsr     evaluate_expression     ; Arg1 -> FP0
+        bne     @xio_type_mismatch
+        jsr     truncate_fp_to_int
+        stax    BC
+        jsr     peek_byte
+        beq     @do_xio
+        inc     line_pos
+        jsr     evaluate_expression     ; Arg2 -> FP0
+        bne     @xio_type_mismatch
+        jsr     truncate_fp_to_int
+        stax    DE
+
+@do_xio:
+        lda     B                       ; Command in arg1
+        sta     arg1
+        lda     BC
+        sta     arg2
+        lda     BC+1
+        sta     arg3
+        lda     DE
+        sta     arg4
+        lda     channel
+        and     #$07
+        jsr     API_XIO
+        bcs     @xio_err
+        rts
+
+@xio_type_mismatch:
+        jmp     raise_type_mismatch
+
+@xio_err:
+        raise   ERR_IO_ERROR
 
 ; DIR statement:
 ; PROLOG_POP_STRING has already evaluated the path argument into S0, length in (BC) and A.
@@ -210,7 +314,7 @@ exec_enter:
         lda     #0
         sta     channel
         lda     #OPEN_READ
-        jsr     open
+        jsr     open_channel
         bcs     @fail
         rts
 
@@ -291,13 +395,16 @@ grmode_keyboard_name_len = 2
 
 exec_grmode:
         cpx     #0
-        beq     :+
+        beq     @arg_ok
 @arg_err:
         jmp     raise_out_of_range
-:
+@arg_ok:
         sta     grmode_val
         and     #$7F
         sta     grmode_base
+
+        lda     #0
+        sta     sync_valid
 
         ; Check if algorithmic mode (bit 6 set)
         and     #$40
@@ -325,10 +432,10 @@ exec_grmode:
         lda     #0
         sta     grmode_frm
         lda     mode_table_format, x
-        bpl     :+
+        bpl     @format_frame0
         lda     #2
         sta     grmode_frm
-:
+@format_frame0:
         lda     mode_table_format, x
         and     #$1F
         sta     grmode_fmt
@@ -399,7 +506,7 @@ exec_grmode:
         sta     draw_stride
         lda     #0
         sta     draw_stride+1
-        lda     #2
+        lda     #MODE_8BPP
         sta     draw_bpp
         clc
         rts
@@ -427,8 +534,17 @@ exec_grmode:
         ; Overwrite Layer 3 attributes: tile set 0, palette 3, bpp from format, opaque
         ; (0 << 4) | (3 << 2) | bpp = $0C | (grmode_fmt & 3)
         lda     grmode_fmt
+        and     #$10            ; Check if tilemap mode (bit 4 set)
+        beq     @bitmap_bpp
+        lda     #MODE_8BPP      ; Tilemap VRAM is always 8 bits per tile
+        bne     @set_draw_bpp
+@bitmap_bpp:
+        lda     grmode_fmt
         and     #$03
+@set_draw_bpp:
         sta     draw_bpp
+        lda     grmode_fmt
+        and     #$03
         ora     #$0C
         sta     grmode_fmt
         lda     #$B0
@@ -520,13 +636,13 @@ load_font_slot7:
         mva     #grmode_charset_name_len, arg4
         lda     #7                      ; Channel 7
         jsr     API_OPEN
-        bcc     :+
+        bcc     @open_font_ok
         pla
         sta     dst_ptr+1
         pla
         sta     dst_ptr
         rts
-:
+@open_font_ok:
         lda     #$A3
         sta     BANK_SELECT_A           ; Window A -> Tile RAM Bank 7
 
@@ -542,9 +658,9 @@ load_font_slot7:
         ldy     #0
         sta     (dst_ptr), y
         inc     dst_ptr
-        bne     :+
+        bne     @no_ptr_carry
         inc     dst_ptr+1
-:
+@no_ptr_carry:
         lda     dst_ptr+1
         cmp     #>$B000                 ; 2048 bytes: $A800 to $AFFF
         bcc     @load_font_loop
@@ -602,6 +718,33 @@ plot_current_pixel:
         bit     DST_DATA
         lda     current_color
         sta     DST_DATA
+        rts
+
+; ===========================================================================
+; COLORAT(x, y)
+; Returns the pixel or tile value at (x, y).
+; PROLOG_POP_INT pops y into AX.
+; ===========================================================================
+fun_colorat:
+        sta     target_y
+        stx     target_y+1
+        sta     last_y
+        stx     last_y+1
+        jsr     pop_int_fp0             ; Pop x into AX
+        sta     target_x
+        stx     target_x+1
+        sta     last_x
+        stx     last_x+1
+
+        lda     draw_bpp
+        sta     MODE
+        jsr     calc_pixel_addr
+
+        lda     tmp_frac
+        sta     DST_FRAC
+
+        lda     DST_DATA
+        ldx     #0
         rts
 
 calc_pixel_addr:
@@ -1013,5 +1156,74 @@ exec_setcolor:
         pla
         sta     MODE
         rts
+
+
+; ===========================================================================
+; SYNC n
+; Synchronizes execution to the VCGA frame counter.
+; Remembers the last frame counter value and spins until counter reaches that + n.
+; n: 0..127 frames.
+; ===========================================================================
+exec_sync:
+        cpx     #0
+        bne     @arg_err
+        cmp     #128
+        bcs     @arg_err
+        tax
+        bne     @sync_positive
+        rts                             ; n = 0 -> return immediately
+@sync_positive:
+        stx     sync_n
+
+        lda     BANK_SELECT_A
+        pha
+        lda     #$B0
+        sta     BANK_SELECT_A
+
+        lda     $A087                   ; Read Frame Count [7:0]
+        sta     sync_curr
+
+        ; Check if first call or if elapsed >= 128 frames (stale / long pause)
+        lda     sync_valid
+        beq     @init_last
+        lda     sync_curr
+        sec
+        sbc     sync_last_frame
+        cmp     #128
+        bcc     @have_last
+@init_last:
+        lda     sync_curr
+        sta     sync_last_frame
+        lda     #1
+        sta     sync_valid
+
+@have_last:
+        ; target = sync_last_frame + sync_n
+        clc
+        lda     sync_last_frame
+        adc     sync_n
+        sta     sync_last_frame         ; Update last_sync_frame for next call
+        sta     sync_target
+
+@spin:
+        lda     $A087                   ; Current frame counter LSB
+        sta     sync_curr
+        sec
+        lda     sync_target
+        sbc     sync_curr
+        beq     @done                   ; Reached target
+        bmi     @done                   ; Passed target (overdue)
+        cmp     #128
+        bcs     @done                   ; Wraparound safeguard (> 128 away)
+        jmp     @spin
+
+@done:
+        pla
+        sta     BANK_SELECT_A
+        rts
+
+@arg_err:
+        jmp     raise_out_of_range
+
 
 

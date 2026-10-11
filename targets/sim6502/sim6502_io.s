@@ -9,12 +9,6 @@
 .import _open, _close, _read, _write
 
 
-; Mode flag constants for cc65 / POSIX open()
-; Mode 1 (Read):   O_RDONLY = $01
-; Mode 2 (Write):  O_WRONLY | O_CREAT | O_TRUNC = $02 | $10 | $20 = $32
-; Mode 3 (Update): O_RDWR | O_CREAT = $03 | $10 = $13
-; Mode 4 (Append): O_WRONLY | O_CREAT | O_APPEND = $02 | $10 | $40 = $52
-
 .data
 
 channel_fds:
@@ -22,7 +16,6 @@ channel_fds:
 
 .bss
 
-open_mode:        .res 1
 open_flags:       .res 1
 get_byte_buf:     .res 1
 put_byte_buf:     .res 1
@@ -51,91 +44,26 @@ copy_s0_to_buffer_nul:
         sta     buffer,y
         rts
 
-posix_mode_table:
-        .byte   $01                     ; 0 = Read:   O_RDONLY
-        .byte   $32                     ; 1 = Write:  O_WRONLY | O_CREAT | O_TRUNC
-        .byte   $13                     ; 2 = Update: O_RDWR | O_CREAT
-        .byte   $52                     ; 3 = Append: O_WRONLY | O_CREAT | O_APPEND
+; Reset handler. Closes all open channels (1..7).
 
-; Opens a file on channel.
-; S0 = filename string
-; A = mode (0 = read, 1 = write, 2 = update, 3 = append)
-; channel = channel index (0..7)
-; Returns carry clear if ok, carry set if error.
-
-open:
-        sta     open_mode
-        lda     channel
-        and     #$07
-        tax
-        lda     channel_fds,x           ; Check if already open
+on_reset:
+        ldx     #1
+@loop:
+        lda     channel_fds,x
         cmp     #$FF
-        bne     @error                  ; Already open -> fail
-
-        lda     open_mode
-        and     #$03                    ; Access mode: 0 (Read), 1 (Write), 2 (Update), 3 (Append)
-        tay
-        lda     posix_mode_table,y
-        sta     open_flags
-
-@call_open:
-        jsr     copy_s0_to_buffer_nul
-        ldax    #buffer
-        jsr     pushax                  ; Push filename pointer
-        lda     open_flags
-        jsr     pusha0                  ; Push open flags
-        lda     #$FF                    ; Mode 0777 permission ($01FF)
-        ldx     #$01
-        jsr     pushax
-        ldy     #6                      ; 3 arguments (6 bytes)
-        jsr     _open                   ; Call C open()
-        cpx     #$80                    ; Negative return value?
-        bcs     @error
-        tay                             ; Save fd in Y
-        lda     channel
-        and     #$07
-        tax                             ; Channel index in X
-        tya                             ; Restore fd in A
-        sta     channel_fds,x           ; Save file descriptor
-        clc
-        rts
-
-@error:
-        sec
-        rts
-
-; Closes channel.
-; channel = channel (0..7)
-; Returns carry clear.
-
-close:
-        lda     channel
-        and     #$07
-        tax
-        beq     @done                   ; Channel 0 (console) is never closed
-        lda     channel_fds,x           ; Get fd
-        cmp     #$FF
-        beq     @done                   ; If already closed, leave it closed
+        beq     @next
         pha
-        lda     #$FF                    ; Mark closed
+        lda     #$FF
         sta     channel_fds,x
         pla
         ldx     #0
         jsr     _close
-@done:
-        clc
-        rts
-
-; Closes all open channels (1..7). Called by NEW / CLR.
-
-close_all:
-        lda     #7
-        sta     channel
-@loop:
-        jsr     close
-        dec     channel
+@next:
+        inx
+        cpx     #8
         bne     @loop
         rts
+
 
 ; Gets a single byte from channel.
 ; channel = channel (0..7)
@@ -346,7 +274,7 @@ save:
         jsr     copy_s0_to_buffer_nul
         ldax    #buffer
         jsr     pushax                  ; Filename
-        lda     #$32                    ; O_WRONLY | O_CREAT | O_TRUNC
+        lda     #(O_WRONLY | O_CREAT | O_TRUNC)
         jsr     pusha0
         lda     #$FF                    ; 0777
         ldx     #$01
@@ -394,7 +322,7 @@ load:
         jsr     copy_s0_to_buffer_nul
         ldax    #buffer
         jsr     pushax                  ; Filename
-        lda     #$01                    ; O_RDONLY
+        lda     #O_RDONLY
         jsr     pusha0
         lda     #$FF                    ; 0777
         ldx     #$01

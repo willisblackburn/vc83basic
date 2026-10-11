@@ -125,21 +125,21 @@ SC_CMD              := $9002             ; Serial card (R65C51) command register
 SC_CMD_RX_READY     = $09                ; No parity/echo, RTSB low, RX interrupts on
 
 ; --- BASIC extension tokens and macros ---
-TOK_CLS     = $5E
-TOK_LOCATE  = $5F
-TOK_COLOR   = $60
-TOK_SOUND   = $61
-TOK_VOL     = $62
-TOK_PAUSE   = $63
-TOK_WAIT    = $64
-TOK_TIME    = $65
-TOK_DATE    = $66
-TOK_SETTIME = $67
-TOK_SETDATE = $68
-TOK_NVRAM_W = $69
-TOK_BANK    = $6A
-TOK_MEM     = $6B
-TOK_SYS     = $6C
+TOK_CLS     = $60
+TOK_LOCATE  = $61
+TOK_COLOR   = $62
+TOK_SOUND   = $63
+TOK_VOL     = $64
+TOK_PAUSE   = $65
+TOK_WAIT    = $66
+TOK_TIME    = $67
+TOK_DATE    = $68
+TOK_SETTIME = $69
+TOK_SETDATE = $6A
+TOK_NVRAM_W = $6B
+TOK_BANK    = $6C
+TOK_MEM     = $6D
+TOK_SYS     = $6E
 
 TOK_JOY     = $99
 TOK_NVRAM_F = $9A
@@ -147,7 +147,6 @@ TOK_NVRAM_F = $9A
 .macro extension_statement_keywords
 :       name_table_entry "CLS"
 :       name_table_entry "LOCATE"
-KEYWORD_BLOCK_6_OFFSET = keyword_counter
 :       name_table_entry "COLOR"
 :       name_table_entry "SOUND"
 :       name_table_entry "VOL"
@@ -163,6 +162,7 @@ KEYWORD_BLOCK_6_OFFSET = keyword_counter
 :       name_table_entry "SYS"
 :       name_table_entry ""             ; Padding for even statement count
 .endmacro
+
 
 .macro extension_function_keywords
 :       name_table_entry "JOY"

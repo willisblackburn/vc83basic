@@ -4,39 +4,6 @@
 
 ; I/O statements and functions
 
-.ifdef enable_io_channels
-; OPEN [#channel] {name} [,{mode}]
-
-exec_open:
-        jsr     evaluate_expression     ; Evaluates filename -> S0
-        jsr     push_pending            ; Push filename onto stack
-        lda     #0                      ; Default mode = 0 (Read)
-        pha
-        jsr     peek_byte
-        beq     @no_mode
-        inc     line_pos
-        jsr     evaluate_expression     ; Evaluates mode -> FP0
-        bne     @open_type_mismatch
-        jsr     truncate_fp_to_int      ; Mode in AX
-        tsx
-        sta     $101,x                  ; Replace default mode on stack
-@no_mode:
-        jsr     pop_string_s0           ; Pop filename into S0 (checks string type)
-        pla                             ; Mode in A
-        jsr     open
-        bcs     raise_io_error
-        rts
-
-@open_type_mismatch:
-        jmp     raise_type_mismatch
-
-; CLOSE [#channel]
-
-exec_close:
-        jsr     close
-        bcs     raise_io_error
-        rts
-.endif
 
 ; GET [#channel] {numeric_variable}
 
@@ -67,43 +34,6 @@ exec_put:
 raise_io_error:
         raise   ERR_IO_ERROR
 
-.ifdef enable_io_channels
-; XIO [#channel] {command}[,{arg1}[,{arg2}]]
-
-exec_xio:
-        jsr     evaluate_expression     ; Command -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        sta     B                       ; Command in B
-        lda     #0
-        sta     BC                      ; Default arg1 = 0
-        sta     BC+1
-        sta     DE                      ; Default arg2 = 0
-        sta     DE+1
-        jsr     peek_byte
-        beq     @do_xio
-        inc     line_pos
-        jsr     evaluate_expression     ; Arg1 -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        stax    BC
-        jsr     peek_byte
-        beq     @do_xio
-        inc     line_pos
-        jsr     evaluate_expression     ; Arg2 -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        stax    DE
-
-@do_xio:
-        lda     B                       ; Command in A
-        jsr     xio
-        bcs     raise_io_error
-        rts
-
-@xio_type_mismatch:
-        jmp     raise_type_mismatch
-.endif
 
 ; SAVE {name}
 ; PROLOG_POP_STRING has already evaluated the filename and loaded S0!

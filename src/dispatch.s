@@ -165,12 +165,8 @@ dispatch_vectors_l:
         .byte   <(exec_put-1)
         .byte   <(exec_save-1)
         .byte   <(exec_load-1)
-.ifdef enable_io_channels
-        .byte   <(exec_open-1)
-        .byte   <(exec_close-1)
-        .byte   <(exec_xio-1)
-        .byte   0                       ; Pad core statements to even count
-.endif
+        .byte   0                       ; Pad Block 5 ($5E)
+        .byte   0                       ; Pad Block 5 ($5F)
 .if .definedmacro(extension_statement_vectors_l)
         extension_statement_vectors_l
 .endif
@@ -243,12 +239,8 @@ dispatch_vectors_h:
         .byte   >(exec_put-1)
         .byte   >(exec_save-1)
         .byte   >(exec_load-1)
-.ifdef enable_io_channels
-        .byte   >(exec_open-1)
-        .byte   >(exec_close-1)
-        .byte   >(exec_xio-1)
-        .byte   0                       ; Pad core statements to even count
-.endif
+        .byte   0                       ; Pad Block 5 ($5E)
+        .byte   0                       ; Pad Block 5 ($5F)
 .if .definedmacro(extension_statement_vectors_h)
         extension_statement_vectors_h
 .endif
@@ -292,10 +284,7 @@ dispatch_flags:
         .byte   0, 0, 0, 0                                                                              ; RUN..POP
         .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)                                                    ; GET, PUT
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)                                            ; SAVE, LOAD
-.ifdef enable_io_channels
-        .byte   0                                                                                       ; OPEN, CLOSE
-        .byte   0                                                                                       ; XIO + padding
-.endif
+        .byte   0                                                                                       ; Pad Block 5 ($5E, $5F)
         invoke_if_defined extension_statement_flags
 
         ; --- Functions ---

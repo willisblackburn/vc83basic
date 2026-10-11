@@ -92,12 +92,7 @@ get_command:
         stax    line_ptr                ; Reset line_ptr too, so line number reported correctly on error
         jsr     readline
         bcc     @line_ok
-.ifdef enable_io_channels
-        lda     #0
-        sta     channel
-        jsr     close
         raise   PS_READY
-.endif
 @line_ok:
         tay
         lda     #0

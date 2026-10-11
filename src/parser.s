@@ -321,11 +321,6 @@ pvm_statement:
         BRANCH_IF TOK_PUT, pvm_put
         BRANCH_IF TOK_SAVE, pvm_save_load
         BRANCH_IF TOK_LOAD, pvm_save_load
-.ifdef enable_io_channels
-        BRANCH_IF TOK_OPEN, pvm_open
-        BRANCH_IF TOK_CLOSE, pvm_close
-        BRANCH_IF TOK_XIO, pvm_xio
-.endif
         invoke_if_defined extension_pvm_statements
         FAIL
 @done:
@@ -337,26 +332,6 @@ pvm_statement:
 pvm_channel:
         BRANCH_IF_RANGE TOK_CHANNEL_0, 8, @done
 @done:
-        RETURN
-
-pvm_open:
-        CALL pvm_channel
-        CALL pvm_expression
-        BRANCH_IF TOK_COMMA, pvm_expression
-        RETURN
-
-pvm_close:
-        CALL pvm_channel
-        RETURN
-
-pvm_xio:
-        CALL pvm_channel
-        CALL pvm_expression
-        BRANCH_IF TOK_COMMA, @arg1
-        RETURN
-@arg1:
-        CALL pvm_expression
-        BRANCH_IF TOK_COMMA, pvm_expression
         RETURN
 .endif
 

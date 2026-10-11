@@ -2,36 +2,9 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-; Opens a channel using OS API_OPEN ($E006).
-; S0 = filename string, length in (BC)
-; A = open mode (e.g. 0=read, 1=write, $32=console layer 3, etc.)
-; channel = channel index (0..7)
-; Returns carry clear if ok, carry set if error.
-open:
-        sta     arg1                    ; Mode in arg1
-        ldy     #0
-        lda     (BC), y                 ; Length
-        sta     arg4                    ; Length in arg4
-        lda     S0
-        sta     arg2                    ; String ptr low
-        lda     S0+1
-        sta     arg3                    ; String ptr high
-        lda     channel
-        and     #$07                    ; Channel 0..7
-        jsr     API_OPEN
-        rts
-
-; Closes a channel using OS API_CLOSE ($E009).
-; channel = channel index (0..7)
-; Returns carry clear if ok, carry set if error.
-close:
-        lda     channel
-        and     #$07
-        jsr     API_CLOSE
-        rts
-
-; Closes all open channels (1..7).
-close_all:
+; Reset handler. Closes all open channels (1..7).
+; Also closes channel 0 if it was redirected to a file (not C: or K:).
+on_reset:
         ldx     #7
 @loop:
         txa
@@ -41,46 +14,36 @@ close_all:
         tax
         dex
         bne     @loop
+
+        ; Check channel 0: if open to a file (not C: or K:), close it
+        lda     $0200                   ; IOCB 0 device byte
+        bpl     @done                   ; Bit 7 is 0 -> closed
+        and     #$78                    ; Device table index << 3
+        cmp     #(2 << 3)               ; Device 2 = C:
+        beq     @done
+        cmp     #(5 << 3)               ; Device 5 = K:
+        beq     @done
+        lda     #0                      ; Channel 0
+        jsr     API_CLOSE
+@done:
         rts
 
 ; ===========================================================================
 ; ensure_channel_0
 ;
 ; If the default channel is active (bit 7 of channel is clear), checks if
-; channel #0 is open for write (IOCB 0 at $0200 has bit 7 set and mode
-; has write access). If not, restores console via GRMODE 0 (which opens
-; channel #0 to "C:" on Layer 2).
+; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, restores console
+; via GRMODE 0 (which opens channel #0 to "C:" on Layer 2).
 ; ===========================================================================
 ensure_channel_0:
         bit     channel
         bmi     @done                   ; Explicit channel: do not auto-open
         bit     $0200                   ; Check IOCB 0 device byte
-        bpl     @restore                ; Bit 7 is 0 -> channel closed
-        lda     $0201                   ; Check IOCB 0 mode
-        and     #OPEN_ACCESS_MASK       ; Bits 1:0 (1=WRITE, 2=READ_WRITE, 3=APPEND)
-        bne     @done                   ; Open for write -> done!
-@restore:
+        bmi     @done                   ; Bit 7 is 1 -> channel open
         lda     #0
         tax
         jsr     exec_grmode
 @done:
-        rts
-
-; Performs extended I/O using OS API_XIO ($E01B).
-; A = command, BC = arg1, DE = arg2
-; channel = channel index (0..7)
-; Returns carry clear if ok, carry set if error.
-xio:
-        sta     arg1
-        lda     BC
-        sta     arg2
-        lda     BC+1
-        sta     arg3
-        lda     DE
-        sta     arg4
-        lda     channel
-        and     #$07
-        jsr     API_XIO
         rts
 
 ; Gets a single byte/key from channel (blocking).

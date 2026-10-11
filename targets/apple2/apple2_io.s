@@ -2,28 +2,10 @@
 ;
 ; SPDX-License-Identifier: MIT
 
-.ifdef enable_io_channels
-; Opens a file on channel.
-; channel = channel (0..7), A = mode, S0 = filename string
-; Returns carry clear if ok, carry set if error.
+; Reset handler.
 
-open:
-        clc
+on_reset:
         rts
-
-; Closes channel.
-; channel = channel (0..7)
-; Returns carry clear.
-
-close:
-        clc
-        rts
-
-; Closes all open channels.
-
-close_all:
-        rts
-.endif
 
 ; Gets a single byte/key from channel (blocking).
 ; channel = channel (0..7)

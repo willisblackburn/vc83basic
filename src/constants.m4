@@ -96,11 +96,6 @@ def(TOK_PUT,            hex(5B))
 def(TOK_SAVE,           hex(5C))
 def(TOK_LOAD,           hex(5D))
 
-ifdef(`enable_io_channels')
-def(TOK_OPEN,           hex(5E))
-def(TOK_CLOSE,          hex(5F))
-def(TOK_XIO,            hex(60))
-endif
 
 def(TOK_LEN,            hex(80))
 def(TOK_STR_S,          hex(81))

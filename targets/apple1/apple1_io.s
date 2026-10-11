@@ -109,3 +109,8 @@ load:
         sec
         rts
 
+; Reset handler.
+
+on_reset:
+        rts
+

@@ -63,16 +63,25 @@ arg2            := $21
 arg3            := $22
 arg4            := $23
 
-TOK_DIR         = $62
-TOK_STATUS      = $63
-TOK_GRMODE      = $64
-TOK_COLOR       = $65
-TOK_PLOT        = $66
-TOK_DRAWTO      = $67
-TOK_SETCOLOR    = $68
-TOK_ENTER       = $69
+TOK_OPEN        = $60
+TOK_CLOSE       = $61
+TOK_XIO         = $62
+TOK_DIR         = $63
+TOK_STATUS      = $64
+TOK_GRMODE      = $65
+TOK_COLOR       = $66
+TOK_PLOT        = $67
+TOK_DRAWTO      = $68
+TOK_SETCOLOR    = $69
+TOK_ENTER       = $6A
+TOK_SYNC        = $6B
+
+TOK_COLORAT     = $9A
 
 .macro extension_statement_keywords
+:       name_table_entry "OPEN"
+:       name_table_entry "CLOSE"
+:       name_table_entry "XIO"
 :       name_table_entry "DIR"
 :       name_table_entry "STATUS"
 :       name_table_entry "GRMODE"
@@ -81,9 +90,13 @@ TOK_ENTER       = $69
 :       name_table_entry "DRAWTO"
 :       name_table_entry "SETCOLOR"
 :       name_table_entry "ENTER"
+:       name_table_entry "SYNC"
 .endmacro
 
 .macro extension_statement_vectors_l
+        .byte   <(exec_open-1)
+        .byte   <(exec_close-1)
+        .byte   <(exec_xio-1)
         .byte   <(exec_dir-1)
         .byte   <(exec_status-1)
         .byte   <(exec_grmode-1)
@@ -92,9 +105,13 @@ TOK_ENTER       = $69
         .byte   <(exec_drawto-1)
         .byte   <(exec_setcolor-1)
         .byte   <(exec_enter-1)
+        .byte   <(exec_sync-1)
 .endmacro
 
 .macro extension_statement_vectors_h
+        .byte   >(exec_open-1)
+        .byte   >(exec_close-1)
+        .byte   >(exec_xio-1)
         .byte   >(exec_dir-1)
         .byte   >(exec_status-1)
         .byte   >(exec_grmode-1)
@@ -103,16 +120,22 @@ TOK_ENTER       = $69
         .byte   >(exec_drawto-1)
         .byte   >(exec_setcolor-1)
         .byte   >(exec_enter-1)
+        .byte   >(exec_sync-1)
 .endmacro
 
 .macro extension_statement_flags
-        .byte   PROLOG_POP_STRING | (PROLOG_NONE << 4)  ; DIR (low nibble), STATUS (high nibble)
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; GRMODE (low nibble), COLOR (high nibble)
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; PLOT (low nibble), DRAWTO (high nibble)
-        .byte   PROLOG_POP_INT | (PROLOG_POP_STRING << 4) ; SETCOLOR (low nibble), ENTER (high nibble)
+        .byte   0                                       ; OPEN, CLOSE
+        .byte   PROLOG_NONE | (PROLOG_POP_STRING << 4)  ; XIO, DIR
+        .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)     ; STATUS, GRMODE
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; COLOR, PLOT
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; DRAWTO, SETCOLOR
+        .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4) ; ENTER, SYNC
 .endmacro
 
 .macro extension_pvm_statements
+        BRANCH_IF TOK_OPEN, pvm_open
+        BRANCH_IF TOK_CLOSE, pvm_close
+        BRANCH_IF TOK_XIO, pvm_xio
         BRANCH_IF TOK_DIR, pvm_expression
         BRANCH_IF TOK_STATUS, pvm_get
         BRANCH_IF TOK_GRMODE, pvm_expression
@@ -121,9 +144,30 @@ TOK_ENTER       = $69
         BRANCH_IF TOK_DRAWTO, pvm_arg_2
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
         BRANCH_IF TOK_ENTER, pvm_expression
+        BRANCH_IF TOK_SYNC, pvm_expression
 .endmacro
 
 .macro extension_pvm_code
+pvm_open:
+        CALL    pvm_channel
+        CALL    pvm_expression
+        BRANCH_IF TOK_COMMA, pvm_expression
+        RETURN
+
+pvm_close:
+        CALL    pvm_channel
+        RETURN
+
+pvm_xio:
+        CALL    pvm_channel
+        CALL    pvm_expression
+        BRANCH_IF TOK_COMMA, @arg1
+        RETURN
+@arg1:
+        CALL    pvm_expression
+        BRANCH_IF TOK_COMMA, pvm_expression
+        RETURN
+
 pvm_setcolor:
         CALL    pvm_expression
         MATCH   TOK_COMMA
@@ -135,5 +179,29 @@ pvm_setcolor:
         MATCH   TOK_COMMA
         JUMP    pvm_expression
 .endmacro
+
+.macro extension_function_keywords
+:       name_table_entry "COLORAT"
+:       name_table_entry ""             ; Padding for even function count
+.endmacro
+
+.macro extension_pvm_functions
+        BRANCH_IF TOK_COLORAT, pvm_fun_2
+.endmacro
+
+.macro extension_function_vectors_l
+        .byte   <(fun_colorat-1)
+        .byte   0
+.endmacro
+
+.macro extension_function_vectors_h
+        .byte   >(fun_colorat-1)
+        .byte   0
+.endmacro
+
+.macro extension_function_flags
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | (0 << 4)   ; COLORAT + padding
+.endmacro
+
 
 

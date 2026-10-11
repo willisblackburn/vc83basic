@@ -44,56 +44,9 @@ copy_s0_to_buffer_eol:
         sta     buffer,y
         rts
 
-; Opens a file on channel.
-; channel = channel index (0..7), A = mode, S0 = filename string
-; Returns carry clear if ok, carry set if error.
+; Reset handler. Closes all open channels (IOCBs 1..7).
 
-atari_mode_table:
-        .byte   4, 8, 12, 9             ; 0=Read, 1=Write, 2=Update, 3=Append
-
-open:
-        sta     open_mode
-        jsr     copy_s0_to_buffer_eol
-        jsr     get_iocb_index          ; Sets IOCB index in X (0..$70) based on channel
-        lda     #<buffer
-        sta     ICBAL,x
-        lda     #>buffer
-        sta     ICBAH,x
-        lda     open_mode
-        cmp     #4                      ; Atari native mode?
-        bcs     @atari_mode
-        tay
-        lda     atari_mode_table,y
-@atari_mode:
-        sta     ICAX1,x
-        lda     #0
-        sta     ICAX2,x
-        lda     #3                      ; OPEN
-        sta     ICCOM,x
-        jsr     CIOV
-        cpy     #128
-        bcs     @err
-        clc
-        rts
-@err:
-        sec
-        rts
-
-; Closes channel.
-; channel = channel index (0..7)
-; Returns carry clear.
-
-close:
-        jsr     get_iocb_index          ; Sets IOCB index in X based on channel
-        lda     #12                     ; CLOSE
-        sta     ICCOM,x
-        jsr     CIOV
-        clc
-        rts
-
-; Closes all open channels (IOCBs 1..7).
-
-close_all:
+on_reset:
         ldx     #$70
 @close_loop:
         lda     #12                     ; CLOSE
@@ -106,6 +59,7 @@ close_all:
         bne     @close_loop
         clc
         rts
+
 
 ; Scans HATABS for 'K' (Keyboard device) and saves K: get-byte handler address.
 
@@ -382,23 +336,3 @@ load:
         sec
         rts
 
-; Device-specific control operation (XIO).
-; channel = channel (0..7), A = command, BC = arg1, DE = arg2
-
-xio:
-        sta     open_mode
-        jsr     get_iocb_index          ; Sets IOCB index in X based on channel
-        lda     open_mode
-        sta     ICCOM,x
-        lda     BC
-        sta     ICAX1,x
-        lda     DE
-        sta     ICAX2,x
-        jsr     CIOV
-        cpy     #128
-        bcs     @err
-        clc
-        rts
-@err:
-        sec
-        rts
