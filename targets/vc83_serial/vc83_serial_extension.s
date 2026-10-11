@@ -357,32 +357,32 @@ exec_enter:
 ;        Bit 5: Frame (0 = 640x400, 1 = 720x480)
 ;        Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
 ;        Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
-;        Bits 1:0: Color depth (00 = 1bpp, 01 = 2bpp, 10 = 4bpp, 11 = 8bpp)
+;        Bits 1:0: Color depth (00 = 8bpp, 01 = 4bpp, 10 = 2bpp, 11 = 1bpp)
 ; ===========================================================================
 
 mode_table_format:
         ; Console modes (0..3)
         ; Bit 7 selects frame: 0 = 640x400 (Frame 0), 1 = 720x480 (Frame 2)
-        .byte   $1C     ; 0: 80x25 text (text, tall, 1bpp, 640x400)
-        .byte   $14     ; 1: 40x25 text (text, 2X, 1bpp, 640x400)
-        .byte   $10|$80 ; 2: 90x60 text (text, 1X, 1bpp, 720x480)
-        .byte   $14|$80 ; 3: 45x30 text (text, 2X, 1bpp, 720x480)
+        .byte   $1F     ; 0: 80x25 text (text, tall, 1bpp, 640x400)
+        .byte   $17     ; 1: 40x25 text (text, 2X, 1bpp, 640x400)
+        .byte   $13|$80 ; 2: 90x60 text (text, 1X, 1bpp, 720x480)
+        .byte   $17|$80 ; 3: 45x30 text (text, 2X, 1bpp, 720x480)
 
         ; Bitmap graphics modes (4..9)
-        .byte   $07     ; 4: 320x200x256 (bitmap, 2X, 8bpp, 640x400)
-        .byte   $06     ; 5: 320x200x16  (bitmap, 2X, 4bpp, 640x400)
-        .byte   $0B     ; 6: 160x100x256 (bitmap, 4X, 8bpp, 640x400)
-        .byte   $0A     ; 7: 160x100x16  (bitmap, 4X, 4bpp, 640x400)
-        .byte   $0E     ; 8: 640x200x16  (bitmap, tall, 4bpp, 640x400)
-        .byte   $06|$80 ; 9: 360x240x16  (bitmap, 2X, 4bpp, 720x480)
+        .byte   $04     ; 4: 320x200x256 (bitmap, 2X, 8bpp, 640x400)
+        .byte   $05     ; 5: 320x200x16  (bitmap, 2X, 4bpp, 640x400)
+        .byte   $08     ; 6: 160x100x256 (bitmap, 4X, 8bpp, 640x400)
+        .byte   $09     ; 7: 160x100x16  (bitmap, 4X, 4bpp, 640x400)
+        .byte   $0D     ; 8: 640x200x16  (bitmap, tall, 4bpp, 640x400)
+        .byte   $05|$80 ; 9: 360x240x16  (bitmap, 2X, 4bpp, 720x480)
 
         ; Tilemap modes (10..15)
-        .byte   $17     ; 10: 40x25 tilemap 8bpp (tilemap, 2X, 8bpp, 640x400)
-        .byte   $16     ; 11: 40x25 tilemap 4bpp (tilemap, 2X, 4bpp, 640x400)
-        .byte   $13     ; 12: 80x50 tilemap 8bpp (tilemap, 1X, 8bpp, 640x400)
-        .byte   $12     ; 13: 80x50 tilemap 4bpp (tilemap, 1X, 4bpp, 640x400)
-        .byte   $17|$80 ; 14: 45x30 tilemap 8bpp (tilemap, 2X, 8bpp, 720x480)
-        .byte   $16|$80 ; 15: 45x30 tilemap 4bpp (tilemap, 2X, 4bpp, 720x480)
+        .byte   $14     ; 10: 40x25 tilemap 8bpp (tilemap, 2X, 8bpp, 640x400)
+        .byte   $15     ; 11: 40x25 tilemap 4bpp (tilemap, 2X, 4bpp, 640x400)
+        .byte   $10     ; 12: 80x50 tilemap 8bpp (tilemap, 1X, 8bpp, 640x400)
+        .byte   $11     ; 13: 80x50 tilemap 4bpp (tilemap, 1X, 4bpp, 640x400)
+        .byte   $14|$80 ; 14: 45x30 tilemap 8bpp (tilemap, 2X, 8bpp, 720x480)
+        .byte   $15|$80 ; 15: 45x30 tilemap 4bpp (tilemap, 2X, 4bpp, 720x480)
 
 grmode_charset_name:    .byte   "A:CHARSET.DAT"
 grmode_charset_name_len = 13
@@ -481,10 +481,10 @@ exec_grmode:
         bcs     @err
 
         ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, opaque
-        ; (7 << 4) | (2 << 2) | 0 = $78
+        ; (7 << 4) | (2 << 2) | 3 = $7B
         lda     #$B0
         sta     BANK_SELECT_D
-        lda     #$78
+        lda     #$7B
         sta     $D04D
         lda     #$E0
         sta     BANK_SELECT_D
@@ -537,7 +537,7 @@ exec_grmode:
         and     #$10            ; Check if tilemap mode (bit 4 set)
         beq     @bitmap_bpp
         lda     #MODE_8BPP      ; Tilemap VRAM is always 8 bits per tile
-        bne     @set_draw_bpp
+        beq     @set_draw_bpp
 @bitmap_bpp:
         lda     grmode_fmt
         and     #$03
@@ -567,7 +567,7 @@ exec_grmode:
         ; Region: part 7 (bottom 64), frame 00 (640x400)
         lda     #$1C            ; part 7 (bottom 64), frame 00
         sta     arg1
-        lda     #$1C            ; text, tall, 1bpp
+        lda     #$1F            ; text, tall, 1bpp
         sta     arg2
         lda     #0
         sta     arg3
@@ -578,10 +578,10 @@ exec_grmode:
         bcs     @err_graphics
 
         ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, TRANSPARENT!
-        ; $80 | (7 << 4) | (2 << 2) | 0 = $F8
+        ; $80 | (7 << 4) | (2 << 2) | 3 = $FB
         lda     #$B0
         sta     BANK_SELECT_D
-        lda     #$F8
+        lda     #$FB
         sta     $D04D
         lda     #$E0
         sta     BANK_SELECT_D
@@ -749,14 +749,13 @@ fun_colorat:
 
 calc_pixel_addr:
         ldx     draw_bpp
-        cpx     #3
-        beq     @bpp8
-        cpx     #2
-        beq     @bpp4
+        beq     @bpp8                   ; 0 = 8 bpp
         cpx     #1
-        beq     @bpp2
+        beq     @bpp4                   ; 1 = 4 bpp
+        cpx     #2
+        beq     @bpp2                   ; 2 = 2 bpp
 
-        ; 1 bpp (draw_bpp == 0): byte offset = last_x >> 3, frac = last_x & 7
+        ; 1 bpp (draw_bpp == 3): byte offset = last_x >> 3, frac = last_x & 7
         lda     last_x
         and     #7
         sta     tmp_frac
@@ -773,7 +772,7 @@ calc_pixel_addr:
         jmp     @calc_addr
 
 @bpp2:
-        ; 2 bpp (draw_bpp == 1): byte offset = last_x >> 2, frac = (last_x & 3) << 1
+        ; 2 bpp (draw_bpp == 2): byte offset = last_x >> 2, frac = (last_x & 3) << 1
         lda     last_x
         and     #3
         asl     A
@@ -789,7 +788,7 @@ calc_pixel_addr:
         jmp     @calc_addr
 
 @bpp4:
-        ; 4 bpp (draw_bpp == 2): byte offset = last_x >> 1, frac = (last_x & 1) << 2
+        ; 4 bpp (draw_bpp == 1): byte offset = last_x >> 1, frac = (last_x & 1) << 2
         lda     last_x
         and     #1
         asl     A
@@ -804,7 +803,7 @@ calc_pixel_addr:
         jmp     @calc_addr
 
 @bpp8:
-        ; 8 bpp (draw_bpp == 3): byte offset = last_x, frac = 0
+        ; 8 bpp (draw_bpp == 0): byte offset = last_x, frac = 0
         lda     #0
         sta     tmp_frac
         lda     last_x
@@ -832,13 +831,14 @@ calc_pixel_addr:
         sta     DST_ADDR+2
         rts
 
-sx_pos_whole_l: .byte 0, 0, 0, 1
+; Line mode step tables indexed by draw_bpp: 0=8bpp, 1=4bpp, 2=2bpp, 3=1bpp
+sx_pos_whole_l: .byte 1, 0, 0, 0
 sx_pos_whole_h: .byte 0, 0, 0, 0
-sx_pos_frac:    .byte $08, $10, $20, $00
+sx_pos_frac:    .byte $00, $20, $10, $08
 
 sx_neg_whole_l: .byte $FF, $FF, $FF, $FF
 sx_neg_whole_h: .byte $FF, $FF, $FF, $FF
-sx_neg_frac:    .byte $38, $30, $20, $00
+sx_neg_frac:    .byte $00, $20, $30, $38
 
 ; ===========================================================================
 ; DRAWTO x, y

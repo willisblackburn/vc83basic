@@ -29,10 +29,10 @@ MUL_C               := $1C
 MUL_RESULT          := $1C
 MUL_TO_DST          := $1F
 
-MODE_1BPP           = $00
-MODE_2BPP           = $01
-MODE_4BPP           = $02
-MODE_8BPP           = $03
+MODE_8BPP           = $00
+MODE_4BPP           = $01
+MODE_2BPP           = $02
+MODE_1BPP           = $03
 MODE_LINE_BIT       = $04
 
 
