@@ -673,11 +673,61 @@ output_y_zeros:
 
 string_to_fp_x = fp_scratch
 
+; Parses a hexadecimal literal ($ followed by hex digits).
+; Accumulates into 32-bit significand FP0t, shifting left 4 bits per digit.
+; Throws error on 32-bit overflow or if no hex digits follow '$'.
+
+parse_hex:
+        iny                             ; Consume '$'
+        jsr     clear_fp0               ; Reset FP0 to 0 (returns A = 0)
+        sta     D                       ; D = 0 (digit counter)
+@hex_loop:
+        lda     (read_ptr),y
+        and     #<~EOT                  ; Mask out EOT bit if set
+        sec
+        sbc     #'0'                    ; Map '0'..'9' to 0..9
+        cmp     #10
+        bcc     @valid                  ; Digit '0'..'9'
+        sbc     #7                      ; Map 'A'..'F' to 10..15 (with C=1)
+        and     #$DF                    ; Fold lowercase 'a'..'f' to uppercase
+        cmp     #10
+        bcc     @finish_hex             ; Not a valid hex digit
+        cmp     #16
+        bcs     @finish_hex             ; Not a valid hex digit
+@valid:
+        inc     D                       ; Count valid digit
+        ldx     #4                      ; 4 bits per hex digit
+@shift_bit:
+        jsr     shift_left              ; Shift significand left 1 bit
+        dex
+        bne     @shift_bit
+        ora     FP0t                    ; Insert nibble into low bits
+        sta     FP0t
+        iny                             ; Next character
+        bne     @hex_loop               ; Unconditional
+
+@finish_hex:
+        lda     D                       ; Ensure at least one digit was parsed
+        beq     @err                    ; Fail if bare '$'
+        sty     E                       ; Save Y in E for restore
+        jsr     int32_to_fp             ; Convert 32-bit integer in FP0t to float
+        clc                             ; Signal success
+@exit:
+        ldy     E                       ; Return buffer read position in Y
+        rts
+
+@err:
+        sec                             ; Signal error
+        bcs     @exit                   ; Unconditional
+
 string_to_fp:
         stax    read_ptr                ; Store read_ptr
 string_to_fp_2:
         jsr     skip_whitespace         ; Skip any whitespace        
         sty     E                       ; Save starting position in E
+        lda     (read_ptr),y
+        cmp     #'$'
+        beq     parse_hex
         mva     #$80, D                 ; D counts digits after '.'; starts at -128 and jumps to 0 on '.'
         jsr     parse_signed_digits     ; Phase 1: Pre-decimal digits
         lda     (read_ptr),y

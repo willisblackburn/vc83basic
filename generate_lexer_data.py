@@ -40,7 +40,7 @@ class TokenSpec:
 # ==============================================================================
 TOKEN_SPECS = [
     TokenSpec("TOK_STRING", r'"[ !#-~]*"'),
-    TokenSpec("TOK_NUM", r'([0-9]+(\.[0-9]*)?|\.[0-9]+)(E[-+]?[0-9]+)?', case_insensitive=True),
+    TokenSpec("TOK_NUM", r'([0-9]+(\.[0-9]*)?|\.[0-9]+)(E[-+]?[0-9]+)?|\$[0-9A-F]+', case_insensitive=True),
     TokenSpec("TOK_SYMBOL", r'#[0-7]|[-+/*^&,;:()=]|[<>][>=]?'),
     TokenSpec("TOK_NAME", r'\?|[A-Z][A-Z0-9_]*\$?', case_insensitive=True),
 ]
