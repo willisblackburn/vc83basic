@@ -30,10 +30,11 @@ on_raise:
         tax                             ; Update flags for new program state since STA won't do it
         sta     program_state           ; Whatever comes back from exception handler is new state
         beq     run                     ; Program is running; do the next thing
-        pha                             ; Save the error value and output a newline, which we will need no matter what
-        mva     #0, channel             ; Reset channel to default console (0)
+        mvx     #0, channel             ; Reset channel to default console (0)
+        jsr     enable_console          ; Prepare console; C=1 suppresses prompt
+        bcs     get_command             ; If carry set then suppress prompt
         jsr     newline
-        pla
+        lda     program_state
         bmi     handle_error
         lday    #ready_message
         jsr     print_string
@@ -100,7 +101,7 @@ get_command:
         jsr     parse_line
         lda     line_buffer+Line::number+1  ; Get high byte of line number
         bmi     immediate_mode          ; If line number is negative then we're in immediate mode
-        jsr     reset_program           ; Clear program line pointers
+        jsr     reset_line_pointers     ; Clear program line pointers
         jsr     insert_or_update_line   ; Update the program
         jmp     get_command
 

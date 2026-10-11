@@ -73,7 +73,7 @@ TOK_COLOR       = $66
 TOK_PLOT        = $67
 TOK_DRAWTO      = $68
 TOK_SETCOLOR    = $69
-TOK_ENTER       = $6A
+TOK_SOURCE      = $6A
 TOK_SYNC        = $6B
 
 TOK_COLORAT     = $9A
@@ -89,7 +89,7 @@ TOK_COLORAT     = $9A
 :       name_table_entry "PLOT"
 :       name_table_entry "DRAWTO"
 :       name_table_entry "SETCOLOR"
-:       name_table_entry "ENTER"
+:       name_table_entry "SOURCE"
 :       name_table_entry "SYNC"
 .endmacro
 
@@ -104,7 +104,7 @@ TOK_COLORAT     = $9A
         .byte   <(exec_plot-1)
         .byte   <(exec_drawto-1)
         .byte   <(exec_setcolor-1)
-        .byte   <(exec_enter-1)
+        .byte   <(exec_source-1)
         .byte   <(exec_sync-1)
 .endmacro
 
@@ -119,7 +119,7 @@ TOK_COLORAT     = $9A
         .byte   >(exec_plot-1)
         .byte   >(exec_drawto-1)
         .byte   >(exec_setcolor-1)
-        .byte   >(exec_enter-1)
+        .byte   >(exec_source-1)
         .byte   >(exec_sync-1)
 .endmacro
 
@@ -129,7 +129,7 @@ TOK_COLORAT     = $9A
         .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)     ; STATUS, GRMODE
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; COLOR, PLOT
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)  ; DRAWTO, SETCOLOR
-        .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4) ; ENTER, SYNC
+        .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4) ; SOURCE, SYNC
 .endmacro
 
 .macro extension_pvm_statements
@@ -143,7 +143,7 @@ TOK_COLORAT     = $9A
         BRANCH_IF TOK_PLOT, pvm_arg_2
         BRANCH_IF TOK_DRAWTO, pvm_arg_2
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
-        BRANCH_IF TOK_ENTER, pvm_expression
+        BRANCH_IF TOK_SOURCE, pvm_expression
         BRANCH_IF TOK_SYNC, pvm_expression
 .endmacro
 

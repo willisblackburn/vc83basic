@@ -64,6 +64,10 @@ on_reset:
         bne     @loop
         rts
 
+enable_console:
+        clc                             ; Carry clear to display READY prompt
+        rts
+
 
 ; Gets a single byte from channel.
 ; channel = channel (0..7)

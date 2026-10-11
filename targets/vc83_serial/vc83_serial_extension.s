@@ -294,20 +294,18 @@ exec_status:
         jmp     raise_type_mismatch
 
 ; ===========================================================================
-; ENTER string
-; Closes channel 0 and opens string as channel 0 for read.
+; SOURCE string
+; Opens string as channel 7 for read and sets default_channel to 7.
 ; ===========================================================================
-exec_enter:
-        ; Close channel 0
-        lda     #0
-        jsr     API_CLOSE
-
-        ; Open string as channel 0 for read
-        lda     #0
+exec_source:
+        lda     #7                      ; Channel 7 is reserved for SOURCE
         sta     channel
-        lda     #OPEN_READ
+        jsr     API_CLOSE               ; Close channel 7 in case already open
+        lda     #OPEN_READ              ; Open mode: read
         jsr     open_channel
-        bcs     @fail
+        bcs     @fail                   ; If open failed then raise error
+        lda     #7
+        sta     default_channel         ; Direct subsequent input to channel 7
         rts
 
 @fail:
@@ -430,11 +428,7 @@ exec_grmode:
         sta     grmode_fmt
 
 @setup_layers:
-        ; 1. Close channel 0
-        lda     #0
-        jsr     API_CLOSE
-
-        ; 2. Always disable layers 0 and 1
+        ; 1. Always disable layers 0 and 1
         lda     #0
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
@@ -442,7 +436,7 @@ exec_grmode:
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
 
-        ; 3. Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
+        ; 2. Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
         lda     grmode_base
         cmp     #4
         bcs     @setup_graphics
@@ -481,15 +475,22 @@ exec_grmode:
         ; Load charset into tile slot 7
         jsr     load_font_slot7
 
-        ; Open channel 0 to console on layer 2
+        ; If channel 0 is open to other device (e.g. H:), leave it alone
+        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
+        bcs     @text_done              ; Leave channel 0 alone if other device
+
+        lda     #0                      ; Close existing console channel 0
+        jsr     API_CLOSE
+
         lda     #(2 << 5) | OPEN_READ_WRITE
         sta     arg1
         mvax    #grmode_console_name, arg2
         mva     #grmode_console_name_len, arg4
         lda     #0
         jsr     API_OPEN
-        bcs     @err
+        bcs     @err                    ; If open failed then raise error
 
+@text_done:
         ; Default drawing state for text modes
         lda     #80
         sta     draw_stride
@@ -548,11 +549,20 @@ exec_grmode:
         lda     #$E0
         sta     BANK_SELECT_D
 
-        ; Check if console window (+128) requested
-        lda     grmode_val
-        bpl     @pure_graphics
+        ; If channel 0 is open to other device, leave channel 0 alone and disable Layer 2
+        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
+        bcc     @setup_l2_console       ; Configure console window if not other device
 
-        ; Mixed mode: console window at bottom on layer 2
+        ; Disable layer 2
+        lda     #0                      ; Layer mode 0 = disabled
+        sta     arg1
+        lda     #2
+        jsr     API_VCGALAYER           ; Disable layer 2
+        clc
+        rts
+
+@setup_l2_console:
+        ; Channel 0 is open to C:. Always configure Layer 2 console window at bottom
         ; Region: part 7 (bottom 64), frame 00 (640x400)
         lda     #$1C            ; part 7 (bottom 64), frame 00
         sta     arg1
@@ -578,7 +588,10 @@ exec_grmode:
         ; Load charset into tile slot 7
         jsr     load_font_slot7
 
-        ; Re-open channel 0 to console on layer 2
+        ; Close channel 0 and re-open to console on layer 2
+        lda     #0                      ; Close existing channel 0
+        jsr     API_CLOSE
+
         lda     #(2 << 5) | OPEN_READ_WRITE
         sta     arg1
         mvax    #grmode_console_name, arg2
@@ -586,23 +599,20 @@ exec_grmode:
         lda     #0
         jsr     API_OPEN
         bcs     @err_graphics
-        clc
-        rts
 
-@pure_graphics:
-        ; Disable layer 2
-        lda     #0
-        sta     arg1
-        lda     #2
-        jsr     API_VCGALAYER
+        ; Check if console window (+128) requested
+        lda     grmode_val
+        bmi     @window_visible         ; Bit 7 is 1: keep console window visible
 
-        ; Open channel 0 to K: for keyboard input
-        lda     #OPEN_READ
-        sta     arg1
-        mvax    #grmode_keyboard_name, arg2
-        mva     #grmode_keyboard_name_len, arg4
-        lda     #0                      ; Channel 0
-        jsr     API_OPEN
+        ; Pure graphics: hide Layer 2 and cursor
+        lda     #$B0                    ; Select VCGA register bank
+        sta     BANK_SELECT_D
+        stz     $D04C                   ; Layer 2 mode = 0 (hidden)
+        stz     $D1FE                   ; Disable Sprite 31 cursor
+        lda     #$E0                    ; Restore standard bank
+        sta     BANK_SELECT_D
+
+@window_visible:
         clc
         rts
 
@@ -1080,25 +1090,12 @@ exec_drawto:
 ; Sets color n of palette p to RGB555 value.
 ; ===========================================================================
 exec_setcolor:
-        ldx     #3                      ; 3 color components: B, then G, then R
-@comp_loop:
-        ldy     #5                      ; 5 bits per component
-@bit_loop:
-        lsr     A
-        ror     E
-        ror     D
-        dey
-        bne     @bit_loop
-        dex
-        beq     @done_color
-        jsr     pop_int_fp0
-        bra     @comp_loop
-
-@done_color:
+        jsr     @read_component
+        jsr     @read_component
+        jsr     @read_component         ; Leaves n in A
         lsr     E                       ; 16th shift: clears bit 15 of DE and shifts into D
         ror     D
-        jsr     pop_int_fp0             ; A = n (color index)
-        pha
+        pha                             ; Save n (color index)
         jsr     pop_int_fp0             ; A = p (palette index)
         asl     A
         ora     #$08
@@ -1114,6 +1111,16 @@ exec_setcolor:
         inc     DST_ADDR
         mva     E, DST_DATA
         rts
+
+@read_component:
+        ldy     #5                      ; 5 bits per component
+@bit_loop:
+        lsr     A
+        ror     E
+        ror     D
+        dey
+        bne     @bit_loop
+        jmp     pop_int_fp0
 
 
 ; ===========================================================================

@@ -60,6 +60,10 @@ on_reset:
         clc
         rts
 
+enable_console:
+        clc                             ; Carry clear to display READY prompt
+        rts
+
 
 ; Scans HATABS for 'K' (Keyboard device) and saves K: get-byte handler address.
 

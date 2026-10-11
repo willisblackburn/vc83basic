@@ -2,9 +2,89 @@
 ;
 ; SPDX-License-Identifier: MIT
 
+.segment "BSS"
+default_channel: .res 1
+.segment "CODE"
+
+; ===========================================================================
+; is_channel_0_other
+;
+; Checks if channel 0 is open to a non-console device (e.g. H: or a file).
+; Returns carry set if open to other device, carry clear if closed or open to C:.
+; ===========================================================================
+is_channel_0_other:
+        lda     $0200                   ; IOCB 0 device byte
+        bpl     @not_other              ; Bit 7 is 0: closed (not other device)
+        and     #$78                    ; Device table index << 3
+        lsr                             ; Index * 4
+        tax
+        lda     $0300, x                ; Device letter in Device Table
+        cmp     #'C'
+        beq     @not_other              ; Open to C:: return carry clear
+        sec                             ; Carry set: open to other device
+        rts
+@not_other:
+        clc
+        rts
+
+; ===========================================================================
+; enable_console
+;
+; Called by main interpreter (on_raise) when transitioning to PS_READY or error.
+; A = new program_state (PS_READY or error code)
+; Returns carry clear to display READY, carry set to suppress READY.
+; ===========================================================================
+enable_console:
+        cmp     #ERR_STOPPED            ; Check if program was stopped by STOP/Ctrl-C
+        beq     @check_suppress
+        bpl     @check_suppress         ; Positive: normal termination (PS_READY)
+        lda     default_channel         ; Error occurred; check if SOURCE is active
+        beq     @ensure_active
+        jsr     API_CLOSE               ; Close redirected default_channel (7)
+        stz     default_channel
+        bra     @ensure_active
+
+@check_suppress:
+        lda     default_channel         ; Check if input is redirected by SOURCE
+        beq     @ensure_active
+        sec                             ; Carry set suppresses READY / STOPPED
+        rts
+
+@ensure_active:
+        ; 1. Check if channel 0 is closed
+        lda     $0200                   ; Check IOCB 0 device byte
+        bmi     @check_c                ; If open (bit 7 set) then check device
+        ; Channel 0 closed: re-open C: via GRMODE 0
+        lda     #0                      ; Re-open C: in default text mode 0
+        tax
+        jsr     exec_grmode
+        clc                             ; Carry clear to display READY prompt
+        rts
+
+@check_c:
+        ; 2. Channel 0 is open; check if it's C:
+        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
+        bcs     @done                   ; Leave alone if open to other device (e.g., H:)
+
+        ; Channel 0 is open to C:; make sure Layer 2 is visible if hidden
+        lda     #$B0                    ; Select VCGA register bank
+        sta     BANK_SELECT_D
+        lda     $D04C                   ; VCGA_L2_MODE
+        bne     @already_visible        ; Skip enabling if layer 2 is already active
+        lda     #2                      ; Tilemap mode for layer 2
+        sta     $D04C
+@already_visible:
+        lda     #$E0                    ; Restore standard bank
+        sta     BANK_SELECT_D
+
+@done:
+        clc                             ; Carry clear to display prompt
+        rts
+
 ; Reset handler. Closes all open channels (1..7).
 ; Also closes channel 0 if it was redirected to a file (not C: or K:).
 on_reset:
+        stz     default_channel         ; Clear redirected channel on reset
         ldx     #7
 @loop:
         txa
@@ -106,6 +186,15 @@ tab:
 ; Reads a text record (line) from channel into buffer.
 ; NUL-terminates at EOL, returns length in A.
 readline:
+        ; Check if reading from default channel (channel == 0)
+        lda     channel                 ; Check channel being read
+        bne     @read_explicit          ; If non-zero (or bit 7 set), read channel directly
+
+        ; Reading from default channel
+        lda     default_channel         ; Check if input is redirected by SOURCE
+        beq     @read_console_0
+
+        ; default_channel != 0: read from default_channel (e.g. channel 7)
         lda     #<buffer
         sta     arg1
         lda     #>buffer
@@ -114,11 +203,56 @@ readline:
         sta     arg3
         lda     #>BUFFER_SIZE
         sta     arg4
+        lda     default_channel         ; Channel to read from
+        jsr     API_READLINE            ; Read line from redirected channel
+        bcs     @default_eof
+        jmp     @format_line
+
+@default_eof:
+        ; EOF / error on default_channel: close it, clear default_channel, return EOF
+        lda     default_channel         ; Channel that hit EOF
+        jsr     API_CLOSE               ; Close redirected channel
+        stz     default_channel         ; Reset default channel to 0
+        sec                             ; Carry set indicates EOF
+        rts
+
+@read_console_0:
+        ; Reading from console channel 0. If open to C:, ensure Layer 2 visible
+        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
+        bcs     @do_read_0
+        lda     #$B0                    ; Select VCGA register bank
+        sta     BANK_SELECT_D
+        lda     $D04C                   ; VCGA_L2_MODE
+        bne     @already_visible        ; Skip enabling if layer 2 is already active
+        lda     #2                      ; Tilemap mode for layer 2
+        sta     $D04C
+@already_visible:
+        lda     #$E0                    ; Restore standard bank
+        sta     BANK_SELECT_D
+
+@do_read_0:
+        lda     #0
+        bra     @do_read
+
+@read_explicit:
         lda     channel
-        and     #$07
+        and     #$07                    ; Mask to 3-bit channel number (0..7)
+
+@do_read:
+        pha
+        lda     #<buffer
+        sta     arg1
+        lda     #>buffer
+        sta     arg2
+        lda     #<BUFFER_SIZE
+        sta     arg3
+        lda     #>BUFFER_SIZE
+        sta     arg4
+        pla
         jsr     API_READLINE
         bcs     @read_err
 
+@format_line:
         ; Replace trailing NL ($0A) with NUL
         tay
         beq     @empty

@@ -154,6 +154,7 @@ initialize_target:
         ; Set channel = 0 (default channel)
         lda     #0
         sta     channel
+        sta     default_channel
 
         ; Initialize drawing state
         lda     #1

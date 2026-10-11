@@ -43,7 +43,6 @@ reset_program:
         sty     free_ptr+1
         lda     #0                      ; Load zero into A
         sta     channel                 ; Reset channel to 0
-        sta     resume_line_ptr+1       ; Initialize resume_line_ptr high byte to 0 to disable CONT
         tay                             ; Write index is also zero
         sta     (variable_name_table_ptr),y ; Initialize variable name table to 0
         sta     (array_name_table_ptr),y    ; Initialize array name table to 0
@@ -53,10 +52,16 @@ reset_program:
         sta     reset_stack_pos
         jsr     on_reset
 
-; Fall through to reset_data
+; Fall through to reset_line_pointers
 
 ; Reset the pointers used by CONT and READ.
 ; These point into the program, so we have to invalidate them whenever the program changes.
+
+reset_line_pointers:
+        lda     #0
+        sta     resume_line_ptr+1       ; Initialize resume_line_ptr high byte to 0 to disable CONT
+
+; Fall through
 
 reset_data:
         ldax    program_ptr                         ; Begin reading DATA at start of program

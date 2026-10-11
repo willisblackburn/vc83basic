@@ -324,3 +324,7 @@ load:
 on_reset:
         rts
 
+enable_console:
+        clc                             ; Carry clear to display READY prompt
+        rts
+

@@ -7,6 +7,10 @@
 on_reset:
         rts
 
+enable_console:
+        clc                             ; Carry clear to display READY prompt
+        rts
+
 ; Gets a single byte/key from channel (blocking).
 ; channel = channel (0..7)
 ; Returns carry clear and byte in A if ok, carry set if error.
