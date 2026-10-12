@@ -35,9 +35,8 @@ is_channel_0_other:
 ; Returns carry clear to display READY, carry set to suppress READY.
 ; ===========================================================================
 enable_console:
-        cmp     #ERR_STOPPED            ; Check if program was stopped by STOP/Ctrl-C
-        beq     @check_suppress
-        bpl     @check_suppress         ; Positive: normal termination (PS_READY)
+        cmp     #ERR_STOPPED + 1        ; Check if stopped (STOP/Ctrl-C) or normal termination (PS_READY)
+        bcc     @check_suppress         ; Suppress READY / STOPPED if <= ERR_STOPPED
         lda     default_channel         ; Error occurred; check if SOURCE is active
         beq     @ensure_active
         jsr     API_CLOSE               ; Close redirected default_channel (7)
