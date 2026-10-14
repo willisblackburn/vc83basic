@@ -37,6 +37,7 @@ MODE_LINE_BIT       = $04
 
 
 ; OS API Vectors and Registers
+API_EXEC        := $E000
 API_VCGALAYER   := $E003
 API_OPEN        := $E006
 API_CLOSE       := $E009
