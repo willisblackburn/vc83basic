@@ -182,13 +182,14 @@ readline:
 
         ; default_channel != 0: read from default_channel (e.g. channel 7)
         lda     #<buffer
-        sta     arg1
+        sta     io_ptr
         lda     #>buffer
-        sta     arg2
+        sta     io_ptr+1
+        stz     io_seg
         lda     #<BUFFER_SIZE
-        sta     arg3
+        sta     io_len
         lda     #>BUFFER_SIZE
-        sta     arg4
+        sta     io_len+1
         lda     default_channel         ; Channel to read from
         jsr     API_READLINE            ; Read line from redirected channel
         bcs     @default_eof
@@ -227,13 +228,14 @@ readline:
 @do_read:
         pha
         lda     #<buffer
-        sta     arg1
+        sta     io_ptr
         lda     #>buffer
-        sta     arg2
+        sta     io_ptr+1
+        stz     io_seg
         lda     #<BUFFER_SIZE
-        sta     arg3
+        sta     io_len
         lda     #>BUFFER_SIZE
-        sta     arg4
+        sta     io_len+1
         pla
         jsr     API_READLINE
         bcs     @read_err
@@ -282,11 +284,11 @@ save:
         ; Open file on channel 7 for write
         ldy     #0
         lda     (BC), y                 ; String length
-        sta     arg4
+        sta     path_len
         lda     S0
-        sta     arg2
+        sta     path_ptr
         lda     S0+1
-        sta     arg3
+        sta     path_ptr+1
         lda     #OPEN_WRITE             ; 1
         sta     arg1
         lda     #7
@@ -298,15 +300,16 @@ save:
         sec
         lda     variable_name_table_ptr
         sbc     #<(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg3
+        sta     io_len
         lda     variable_name_table_ptr+1
         sbc     #>(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg4
+        sta     io_len+1
 
         lda     #<(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg1
+        sta     io_ptr
         lda     #>(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg2
+        sta     io_ptr+1
+        stz     io_seg
 
         lda     #7
         jsr     API_WRITE
@@ -330,11 +333,11 @@ load:
         ; Open file on channel 7 for read
         ldy     #0
         lda     (BC), y
-        sta     arg4
+        sta     path_len
         lda     S0
-        sta     arg2
+        sta     path_ptr
         lda     S0+1
-        sta     arg3
+        sta     path_ptr+1
         lda     #OPEN_READ              ; 0
         sta     arg1
         lda     #7
@@ -346,15 +349,16 @@ load:
         sec
         lda     himem_ptr
         sbc     #<(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg3
+        sta     io_len
         lda     himem_ptr+1
         sbc     #>(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg4
+        sta     io_len+1
 
         lda     #<(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg1
+        sta     io_ptr
         lda     #>(__BSS_RUN__ + __BSS_SIZE__)
-        sta     arg2
+        sta     io_ptr+1
+        stz     io_seg
 
         lda     #7
         jsr     API_READ                ; Returns bytes read in A (low) and X (high)

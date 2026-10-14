@@ -43,11 +43,11 @@ initialize_target:
         lda     #OPEN_READ
         sta     arg1
         lda     #<charset_filename
-        sta     arg2
+        sta     path_ptr
         lda     #>charset_filename
-        sta     arg3
+        sta     path_ptr+1
         lda     #charset_filename_len
-        sta     arg4
+        sta     path_len
         lda     #0                      ; Channel 0
         jsr     API_OPEN
         bcc     @open_font_ok
@@ -86,11 +86,11 @@ initialize_target:
         lda     #OPEN_READ
         sta     arg1
         lda     #<palette_filename
-        sta     arg2
+        sta     path_ptr
         lda     #>palette_filename
-        sta     arg3
+        sta     path_ptr+1
         lda     #palette_filename_len
-        sta     arg4
+        sta     path_len
         lda     #0                      ; Channel 0
         jsr     API_OPEN
         bcc     @open_palette_ok

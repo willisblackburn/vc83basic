@@ -72,11 +72,11 @@ open_channel:
         sta     arg1                    ; Mode in arg1
         ldy     #0
         lda     (BC), y                 ; Length
-        sta     arg4                    ; Length in arg4
+        sta     path_len                ; Length in path_len
         lda     S0
-        sta     arg2                    ; String ptr low
+        sta     path_ptr                ; String ptr low
         lda     S0+1
-        sta     arg3                    ; String ptr high
+        sta     path_ptr+1              ; String ptr high
         lda     channel
         and     #$07                    ; Channel 0..7
         jsr     API_OPEN
@@ -147,11 +147,11 @@ exec_dir:
         ; Set up arguments for API_OPEN
         ldy     #0
         lda     (BC), y                 ; String length
-        sta     arg4
+        sta     path_len
         lda     S0
-        sta     arg2
+        sta     path_ptr
         lda     S0+1
-        sta     arg3
+        sta     path_ptr+1
         lda     #4                      ; OPEN_DIRECTORY
         sta     arg1
         lda     #7                      ; Channel 7
@@ -163,13 +163,13 @@ exec_dir:
 
 @dir_read_loop:
         lda     #<dir_record
-        sta     arg1
+        sta     io_ptr
         lda     #>dir_record
-        sta     arg2
+        sta     io_ptr+1
+        stz     io_seg
         lda     #15                     ; DIR_RECORD_SIZE
-        sta     arg3
-        lda     #0
-        sta     arg4
+        sta     io_len
+        stz     io_len+1
         lda     #7
         jsr     API_READ
         bcc     @print_entry
@@ -496,8 +496,8 @@ exec_grmode:
 
         lda     #(2 << 5) | OPEN_READ_WRITE
         sta     arg1
-        mvax    #grmode_console_name, arg2
-        mva     #grmode_console_name_len, arg4
+        mvax    #grmode_console_name, path_ptr
+        mva     #grmode_console_name_len, path_len
         lda     #0
         jsr     API_OPEN
         bcs     @err                    ; If open failed then raise error
@@ -606,8 +606,8 @@ exec_grmode:
 
         lda     #(2 << 5) | OPEN_READ_WRITE
         sta     arg1
-        mvax    #grmode_console_name, arg2
-        mva     #grmode_console_name_len, arg4
+        mvax    #grmode_console_name, path_ptr
+        mva     #grmode_console_name_len, path_len
         lda     #0
         jsr     API_OPEN
         bcs     @err_graphics
@@ -643,8 +643,8 @@ load_font_slot7:
 
         lda     #OPEN_READ
         sta     arg1
-        mvax    #grmode_charset_name, arg2
-        mva     #grmode_charset_name_len, arg4
+        mvax    #grmode_charset_name, path_ptr
+        mva     #grmode_charset_name_len, path_len
         lda     #7                      ; Channel 7
         jsr     API_OPEN
         bcc     @open_font_ok

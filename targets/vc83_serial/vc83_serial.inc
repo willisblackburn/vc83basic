@@ -62,6 +62,11 @@ arg1            := $20
 arg2            := $21
 arg3            := $22
 arg4            := $23
+path_ptr        := $31
+path_len        := $33
+io_ptr          := $34
+io_seg          := $36
+io_len          := $37
 
 TOK_OPEN        = $60
 TOK_CLOSE       = $61
