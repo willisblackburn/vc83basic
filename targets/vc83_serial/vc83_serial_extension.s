@@ -1430,14 +1430,23 @@ exec_i2cwrite:
         jmp     call_i2cxfer
 
 ; ===========================================================================
+; SPACE$(len)
 ; STRING$(len, byte)
-; Returns a string of len bytes (0..255) filled with byte (0..255).
-; PROLOG_POP_INT pops byte into AX; len is on the value stack.
+; Returns a string of len bytes (0..255) filled with space ($20) or byte (0..255).
+; For SPACE$, PROLOG_POP_INT pops len into AX.
+; For STRING$, PROLOG_POP_INT pops byte into AX; len is on the value stack.
 ; ===========================================================================
+fun_space_s:
+        jsr     require_byte_ax         ; Verify length in AX is 0..255
+        ldy     #' '                    ; Fill byte = space ($20)
+        phy                             ; Save fill byte
+        bra     string_fill
+
 fun_string_s:
         jsr     require_byte_ax         ; Verify fill byte is 0..255
         pha                             ; Save fill byte
         jsr     pop_byte_fp0            ; Pop length (0..255) into A
+string_fill:
         jsr     string_alloc_for_copy   ; Allocate string, dst_ptr = data, Y = len
         pla                             ; Restore fill byte
         cpy     #0                      ; Empty string?

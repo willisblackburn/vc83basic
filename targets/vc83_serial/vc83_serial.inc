@@ -115,9 +115,10 @@ TOK_COLORAT     = $9A
 TOK_STRING_S    = $9B
 TOK_PEEK24      = $9C
 TOK_DPEEK24     = $9D
-TOK_SPI_S       = $9E
-TOK_I2C_S       = $9F
-TOK_BUF_S       = $A0
+TOK_SPACE_S     = $9E
+TOK_SPI_S       = $9F
+TOK_I2C_S       = $A0
+TOK_BUF_S       = $A1
 
 .macro extension_statement_keywords
 :       name_table_entry "OPEN"
@@ -278,16 +279,16 @@ pvm_buf_fun:
 :       name_table_entry "STRING$"
 :       name_table_entry "PEEK24"
 :       name_table_entry "DPEEK24"
+:       name_table_entry "SPACE$"
 :       name_table_entry "SPI$"
-:       name_table_entry "I2C$"
 KEYWORD_BLOCK_A_OFFSET = keyword_counter
+:       name_table_entry "I2C$"
 :       name_table_entry "BUF$"
-:       name_table_entry ""             ; Padding for even function count
 .endmacro
 
 .macro extension_pvm_functions
         BRANCH_IF_RANGE TOK_COLORAT, 2, pvm_fun_2
-        BRANCH_IF_RANGE TOK_PEEK24, 2, pvm_fun_1
+        BRANCH_IF_RANGE TOK_PEEK24, 3, pvm_fun_1
         BRANCH_IF_RANGE TOK_SPI_S, 2, pvm_spi_fun
         BRANCH_IF TOK_BUF_S, pvm_buf_fun
 .endmacro
@@ -297,10 +298,10 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
         .byte   <(fun_string_s-1)
         .byte   <(fun_peek24-1)
         .byte   <(fun_dpeek24-1)
+        .byte   <(fun_space_s-1)
         .byte   <(fun_spi_s-1)
         .byte   <(fun_i2c_s-1)
         .byte   <(fun_buf_s-1)
-        .byte   0
 .endmacro
 
 .macro extension_function_vectors_h
@@ -308,15 +309,15 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
         .byte   >(fun_string_s-1)
         .byte   >(fun_peek24-1)
         .byte   >(fun_dpeek24-1)
+        .byte   >(fun_space_s-1)
         .byte   >(fun_spi_s-1)
         .byte   >(fun_i2c_s-1)
         .byte   >(fun_buf_s-1)
-        .byte   0
 .endmacro
 
 .macro extension_function_flags
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)       ; COLORAT, STRING$
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, DPEEK24
-        .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; SPI$, I2C$
-        .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | (0 << 4)                                           ; BUF$ + padding
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)       ; SPACE$, SPI$
+        .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; I2C$, BUF$
 .endmacro
