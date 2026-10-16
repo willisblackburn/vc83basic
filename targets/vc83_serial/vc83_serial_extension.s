@@ -1365,6 +1365,15 @@ call_i2cxfer:
         bcs     io_error
         rts
 
+; ===========================================================================
+; EXEC path
+; Calls OS API_EXEC ($E000) to load and execute a binary program.
+; PROLOG_POP_STRING pops path into S0 with length in A.
+; ===========================================================================
+exec_exec:
+        sta     path_len                ; Store path length
+        mvax    S0, path_ptr            ; Store path pointer
+        jsr     API_EXEC                ; Load and execute (only returns on error)
 io_error:
         jmp     raise_io_error
 
@@ -1375,14 +1384,20 @@ eval_next_string_arg:
         beq     io_type_mismatch
         rts
 
+eval_next_int_arg:
+        inc     line_pos                ; Skip TOK_COMMA
+        jsr     evaluate_expression     ; Evaluate numeric expression -> FP0
+require_int_fp0:
+        lda     expr_type               ; Verify expression is numeric
+        bne     io_type_mismatch
+        jmp     truncate_fp_to_int      ; Convert FP0 to 16-bit int in AX
+
 eval_next_byte_arg:
         inc     line_pos                ; Skip TOK_COMMA
 eval_byte_arg:
         jsr     evaluate_expression     ; Evaluate numeric expression -> FP0
 require_byte_fp0:
-        lda     expr_type               ; Verify expression is numeric
-        bne     io_type_mismatch
-        jsr     truncate_fp_to_int      ; Convert FP0 to 16-bit int in AX
+        jsr     require_int_fp0         ; Convert numeric FP0 to 16-bit int in AX
 require_byte_ax:
         cpx     #0                      ; Verify value is in range 0..255
         bne     io_out_of_range
@@ -1563,3 +1578,202 @@ io_close:
         lda     #0
         sta     (io_ptr),y              ; Disable controller
         rts
+
+; ===========================================================================
+; PORTDIR port, dir
+; Sets the 16-bit GPIO direction mask (0 = input, 1 = output).
+; PROLOG_POP_INT pops dir into AX; port is on the value stack.
+; ===========================================================================
+exec_portdir:
+        stax    DE                      ; Save 16-bit direction mask in DE
+        jsr     pop_byte_fp0            ; Pop port (0..255) into A
+        ldx     #CAP_GPIO
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_GPIO_DIR_0
+        lda     D
+        sta     (io_ptr),y              ; Write Group 0 direction ($12)
+        ldy     #IO_GPIO_DIR_1
+        lda     E
+        sta     (io_ptr),y              ; Write Group 1 direction ($1A)
+        rts
+
+; ===========================================================================
+; PORTWRITE port, value [, mask]
+; Writes to the 16-bit GPIO output registers, optionally masked by mask.
+; ===========================================================================
+exec_portwrite:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        jsr     eval_next_int_arg       ; Skip comma, evaluate 16-bit value
+        stax    DE                      ; Save value in DE
+        lda     #$FF
+        sta     tmp_l                   ; Default mask = $FFFF
+        sta     tmp_h
+        jsr     peek_byte               ; Optional mask argument present?
+        beq     @apply
+        jsr     eval_next_int_arg       ; Skip comma, evaluate 16-bit mask
+        stax    tmp_l                   ; Save mask in tmp_l/tmp_h
+@apply:
+        pla                             ; Restore port
+        ldx     #CAP_GPIO
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_GPIO_OUT_0
+        lda     (io_ptr),y              ; Read Group 0 output ($10)
+        eor     D
+        and     tmp_l
+        eor     (io_ptr),y
+        sta     (io_ptr),y              ; Write updated Group 0 output ($10)
+        ldy     #IO_GPIO_OUT_1
+        lda     (io_ptr),y              ; Read Group 1 output ($18)
+        eor     E
+        and     tmp_h
+        eor     (io_ptr),y
+        sta     (io_ptr),y              ; Write updated Group 1 output ($18)
+        rts
+
+; ===========================================================================
+; PORTRESET port [, pulse_len [, polarity]]
+; Triggers a hardware reset pulse on the specified I/O port.
+; ===========================================================================
+exec_portreset:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        mva     #50, tmp_l              ; Default pulse_len = 50
+        mva     #$04, tmp_h             ; Default CTRL = $04 (auto-pulse, active-low)
+        jsr     peek_byte               ; Optional pulse_len argument present?
+        beq     @apply
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate pulse_len (0..255)
+        sta     tmp_l
+        jsr     peek_byte               ; Optional polarity argument present?
+        beq     @apply
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate polarity (0..1)
+        cmp     #2                      ; Verify polarity is 0 or 1
+        bcs     port_out_of_range
+        asl     A                       ; Shift polarity into bit 1
+        ora     #$04                    ; Combine with auto-pulse trigger (bit 2)
+        sta     tmp_h
+@apply:
+        pla                             ; Restore port
+        ldx     #CAP_RESET
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_RESET_PULSE_LEN
+        lda     tmp_l
+        sta     (io_ptr),y              ; Write pulse length ($71)
+        dey                             ; Advance to IO_RESET_CTRL ($70)
+        lda     tmp_h
+        sta     (io_ptr),y              ; Trigger reset pulse ($70)
+        rts
+
+port_out_of_range:
+        jmp     raise_out_of_range
+
+; ===========================================================================
+; PORTPWM port [, pin, period, duty [, prescaler [, invert]]]
+; Configures and enables (or disables) the 16-bit PWM generator on a port.
+; ===========================================================================
+exec_portpwm:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        stz     tmp_h                   ; Default CTRL = 0 (disabled)
+        jsr     peek_byte               ; Check if only port was given
+        beq     @apply_ctrl             ; 1 arg: disable PWM on port
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate pin (0..15)
+        cmp     #16                     ; Verify pin is in range 0..15
+        bcs     port_out_of_range
+        asl     A                       ; Shift pin into bits 7:4
+        asl     A
+        asl     A
+        asl     A
+        ora     #$01                    ; Set bit 0 (pwm_en = 1)
+        sta     tmp_h                   ; Save CTRL byte
+        jsr     eval_next_int_arg       ; Skip comma, evaluate 16-bit period
+        stax    arg2                    ; Save period in arg2/arg3
+        jsr     eval_next_int_arg       ; Skip comma, evaluate 16-bit duty
+        stax    DE                      ; Save duty in DE
+        stz     tmp_l                   ; Default prescaler = 0
+        jsr     peek_byte               ; Optional prescaler argument present?
+        beq     @apply_all
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate prescaler (0..255)
+        sta     tmp_l
+        jsr     peek_byte               ; Optional invert argument present?
+        beq     @apply_all
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate invert (0..1)
+        cmp     #2                      ; Verify invert is 0 or 1
+        bcs     port_out_of_range
+        asl     A                       ; Shift invert into bit 1
+        ora     tmp_h
+        sta     tmp_h
+@apply_all:
+        pla                             ; Restore port
+        ldx     #CAP_PWM
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_PWM_PRESCALER
+        lda     tmp_l
+        sta     (io_ptr),y              ; Write prescaler ($51)
+        iny
+        lda     arg2
+        sta     (io_ptr),y              ; Write period low ($52)
+        iny
+        lda     arg3
+        sta     (io_ptr),y              ; Write period high ($53)
+        iny
+        lda     D
+        sta     (io_ptr),y              ; Write duty low ($54)
+        iny
+        lda     E
+        sta     (io_ptr),y              ; Write duty high ($55)
+        lda     arg2                    ; If period == 0 and duty == 0, disable PWM
+        ora     arg3
+        ora     D
+        ora     E
+        bne     @write_ctrl
+        stz     tmp_h
+        bra     @write_ctrl
+
+@apply_ctrl:
+        pla                             ; Restore port
+        ldx     #CAP_PWM
+        jsr     check_io_port           ; Validate port and set up io_ptr
+@write_ctrl:
+        ldy     #IO_PWM_CTRL
+        lda     tmp_h
+        sta     (io_ptr),y              ; Write PWM control register ($50)
+        rts
+
+; ===========================================================================
+; PORT(port)
+; Returns the 16-bit GPIO input state for the specified I/O port.
+; PROLOG_POP_INT pops port into AX.
+; ===========================================================================
+fun_port:
+        jsr     require_byte_ax         ; Verify port high byte is 0
+        ldx     #CAP_GPIO
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_GPIO_IN_1
+        lda     (io_ptr),y              ; Read Group 1 input ($19)
+        tax                             ; High byte in X
+        ldy     #IO_GPIO_IN_0
+        lda     (io_ptr),y              ; Read Group 0 input ($11) in A
+        rts
+
+; ===========================================================================
+; PORTADC(port)
+; Enables the ADC slice and returns the 12-bit analog sample (0..4095).
+; PROLOG_POP_INT pops port into AX.
+; ===========================================================================
+fun_portadc:
+        jsr     require_byte_ax         ; Verify port high byte is 0
+        ldx     #CAP_ANALOG
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_ADC_CTRL
+        lda     #1
+        sta     (io_ptr),y              ; Ensure ADC is enabled ($60)
+        ldy     #IO_ADC_DATA_LO
+        lda     (io_ptr),y              ; Read low byte ($62) and latch high nibble
+        pha                             ; Save low byte
+        iny                             ; Advance to IO_ADC_DATA_HI ($63)
+        lda     (io_ptr),y              ; Read latched high nibble
+        tax                             ; High byte in X
+        pla                             ; Low byte in A
+        rts
+

@@ -64,6 +64,17 @@ ERR_EOF         = $08
 ; I/O Port Capability and Register Offsets (Window D mapped to $E0)
 CAP_SPI             = $01
 CAP_I2C             = $02
+CAP_GPIO            = $08
+CAP_PWM             = $10
+CAP_ANALOG          = $20
+CAP_RESET           = $40
+
+IO_GPIO_OUT_0       = $10
+IO_GPIO_IN_0        = $11
+IO_GPIO_DIR_0       = $12
+IO_GPIO_OUT_1       = $18
+IO_GPIO_IN_1        = $19
+IO_GPIO_DIR_1       = $1A
 
 IO_SPI_CTRL         = $20
 IO_SPI_CLK_DIV      = $22
@@ -72,6 +83,20 @@ IO_SPI_CS_SELECT    = $23
 IO_I2C_CTRL         = $30
 IO_I2C_CLK_DIV      = $32
 IO_I2C_ADDR         = $33
+
+IO_PWM_CTRL         = $50
+IO_PWM_PRESCALER    = $51
+IO_PWM_PERIOD_LO    = $52
+IO_PWM_PERIOD_HI    = $53
+IO_PWM_DUTY_LO      = $54
+IO_PWM_DUTY_HI      = $55
+
+IO_ADC_CTRL         = $60
+IO_ADC_DATA_LO      = $62
+IO_ADC_DATA_HI      = $63
+
+IO_RESET_CTRL       = $70
+IO_RESET_PULSE_LEN  = $71
 
 SPI_WRITE_ONLY      = $80
 SPI_CS_HOLD         = $04
@@ -106,19 +131,26 @@ TOK_POKE24      = $6C
 TOK_DPOKE24     = $6D
 TOK_SPIWRITE    = $6E
 TOK_I2CWRITE    = $6F
-TOK_SPIOPEN     = $70
-TOK_I2COPEN     = $71
-TOK_SPICLOSE    = $72
-TOK_I2CCLOSE    = $73
+TOK_PORTDIR     = $70
+TOK_SPICLOSE    = $71
+TOK_I2CCLOSE    = $72
+TOK_EXEC        = $73
+TOK_PORTWRITE   = $74
+TOK_I2COPEN     = $75
+TOK_SPIOPEN     = $76
+TOK_PORTRESET   = $77
+TOK_PORTPWM     = $78
 
 TOK_COLORAT     = $9A
 TOK_STRING_S    = $9B
 TOK_PEEK24      = $9C
 TOK_DPEEK24     = $9D
 TOK_SPACE_S     = $9E
-TOK_SPI_S       = $9F
-TOK_I2C_S       = $A0
-TOK_BUF_S       = $A1
+TOK_PORT        = $9F
+TOK_PORTADC     = $A0
+TOK_SPI_S       = $A1
+TOK_I2C_S       = $A2
+TOK_BUF_S       = $A3
 
 .macro extension_statement_keywords
 :       name_table_entry "OPEN"
@@ -138,10 +170,16 @@ TOK_BUF_S       = $A1
 :       name_table_entry "SPIWRITE"
 :       name_table_entry "I2CWRITE"
 KEYWORD_BLOCK_7_OFFSET = keyword_counter
-:       name_table_entry "SPIOPEN"
-:       name_table_entry "I2COPEN"
+:       name_table_entry "PORTDIR"
 :       name_table_entry "SPICLOSE"
 :       name_table_entry "I2CCLOSE"
+:       name_table_entry "EXEC"
+:       name_table_entry "PORTWRITE"
+:       name_table_entry "I2COPEN"
+:       name_table_entry "SPIOPEN"
+:       name_table_entry "PORTRESET"
+:       name_table_entry "PORTPWM"
+:       name_table_entry ""             ; Padding for even statement count
 .endmacro
 
 .macro extension_statement_vectors_l
@@ -161,10 +199,16 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   <(exec_dpoke24-1)
         .byte   <(exec_spiwrite-1)
         .byte   <(exec_i2cwrite-1)
-        .byte   <(exec_spiopen-1)
-        .byte   <(exec_i2copen-1)
+        .byte   <(exec_portdir-1)
         .byte   <(exec_spiclose-1)
         .byte   <(exec_i2cclose-1)
+        .byte   <(exec_exec-1)
+        .byte   <(exec_portwrite-1)
+        .byte   <(exec_i2copen-1)
+        .byte   <(exec_spiopen-1)
+        .byte   <(exec_portreset-1)
+        .byte   <(exec_portpwm-1)
+        .byte   0
 .endmacro
 
 .macro extension_statement_vectors_h
@@ -184,10 +228,16 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   >(exec_dpoke24-1)
         .byte   >(exec_spiwrite-1)
         .byte   >(exec_i2cwrite-1)
-        .byte   >(exec_spiopen-1)
-        .byte   >(exec_i2copen-1)
+        .byte   >(exec_portdir-1)
         .byte   >(exec_spiclose-1)
         .byte   >(exec_i2cclose-1)
+        .byte   >(exec_exec-1)
+        .byte   >(exec_portwrite-1)
+        .byte   >(exec_i2copen-1)
+        .byte   >(exec_spiopen-1)
+        .byte   >(exec_portreset-1)
+        .byte   >(exec_portpwm-1)
+        .byte   0
 .endmacro
 
 .macro extension_statement_flags
@@ -199,8 +249,11 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4)      ; SOURCE, SYNC
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; POKE24, DPOKE24
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)    ; SPIWRITE, I2CWRITE
-        .byte   0                                               ; SPIOPEN, I2COPEN
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; SPICLOSE, I2CCLOSE
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; PORTDIR, SPICLOSE
+        .byte   PROLOG_POP_INT | (PROLOG_POP_STRING << 4)       ; I2CCLOSE, EXEC
+        .byte   0                                               ; PORTWRITE, I2COPEN
+        .byte   0                                               ; SPIOPEN, PORTRESET
+        .byte   0                                               ; PORTPWM, padding
 .endmacro
 
 .macro extension_pvm_statements
@@ -216,10 +269,12 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
         BRANCH_IF TOK_SOURCE, pvm_expression
         BRANCH_IF TOK_SYNC, pvm_expression
-        BRANCH_IF_RANGE TOK_POKE24, 4, pvm_arg_2
+        BRANCH_IF_RANGE TOK_POKE24, 5, pvm_arg_2
+        BRANCH_IF_RANGE TOK_SPICLOSE, 3, pvm_expression
+        BRANCH_IF_RANGE TOK_PORTWRITE, 2, pvm_i2copen
         BRANCH_IF TOK_SPIOPEN, pvm_spiopen
-        BRANCH_IF TOK_I2COPEN, pvm_i2copen
-        BRANCH_IF_RANGE TOK_SPICLOSE, 2, pvm_expression
+        BRANCH_IF TOK_PORTRESET, pvm_1_to_3_args
+        BRANCH_IF TOK_PORTPWM, pvm_portpwm
 .endmacro
 
 .macro extension_pvm_code
@@ -233,6 +288,16 @@ pvm_close:
 
 pvm_xio:
         CALL    pvm_channel
+        JUMP    pvm_1_to_3_args
+
+pvm_portpwm:
+        CALL    pvm_expression
+        BRANCH_IF TOK_COMMA, pvm_portpwm_enable
+        RETURN
+
+pvm_portpwm_enable:
+        CALL    pvm_arg_2
+        MATCH   TOK_COMMA
         JUMP    pvm_1_to_3_args
 
 pvm_spiopen:
@@ -280,15 +345,17 @@ pvm_buf_fun:
 :       name_table_entry "PEEK24"
 :       name_table_entry "DPEEK24"
 :       name_table_entry "SPACE$"
-:       name_table_entry "SPI$"
+:       name_table_entry "PORT"
 KEYWORD_BLOCK_A_OFFSET = keyword_counter
+:       name_table_entry "PORTADC"
+:       name_table_entry "SPI$"
 :       name_table_entry "I2C$"
 :       name_table_entry "BUF$"
 .endmacro
 
 .macro extension_pvm_functions
         BRANCH_IF_RANGE TOK_COLORAT, 2, pvm_fun_2
-        BRANCH_IF_RANGE TOK_PEEK24, 3, pvm_fun_1
+        BRANCH_IF_RANGE TOK_PEEK24, 5, pvm_fun_1
         BRANCH_IF_RANGE TOK_SPI_S, 2, pvm_spi_fun
         BRANCH_IF TOK_BUF_S, pvm_buf_fun
 .endmacro
@@ -299,6 +366,8 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
         .byte   <(fun_peek24-1)
         .byte   <(fun_dpeek24-1)
         .byte   <(fun_space_s-1)
+        .byte   <(fun_port-1)
+        .byte   <(fun_portadc-1)
         .byte   <(fun_spi_s-1)
         .byte   <(fun_i2c_s-1)
         .byte   <(fun_buf_s-1)
@@ -310,6 +379,8 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
         .byte   >(fun_peek24-1)
         .byte   >(fun_dpeek24-1)
         .byte   >(fun_space_s-1)
+        .byte   >(fun_port-1)
+        .byte   >(fun_portadc-1)
         .byte   >(fun_spi_s-1)
         .byte   >(fun_i2c_s-1)
         .byte   >(fun_buf_s-1)
@@ -318,6 +389,7 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .macro extension_function_flags
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)       ; COLORAT, STRING$
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, DPEEK24
-        .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)       ; SPACE$, SPI$
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_POP_INT | EPILOG_PUSH_INT) << 4)       ; SPACE$, PORT
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; PORTADC, SPI$
         .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; I2C$, BUF$
 .endmacro
