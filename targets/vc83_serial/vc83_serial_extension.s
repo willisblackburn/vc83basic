@@ -729,8 +729,6 @@ plot_current_pixel:
         bit     DST_DATA
         lda     current_color
         sta     DST_DATA
-        stz     MODE
-        stz     DST_FRAC
         rts
 
 ; ===========================================================================
@@ -758,8 +756,6 @@ fun_colorat:
 
         lda     DST_DATA
         ldx     #0
-        stz     MODE
-        stz     DST_FRAC
         rts
 
 calc_pixel_addr:
@@ -1002,6 +998,11 @@ exec_drawto:
         adc     #0
         sta     line_count+1
 
+        ; Enable line mode first (resets step and fraction registers)
+        lda     draw_bpp
+        ora     #MODE_LINE_BIT
+        sta     MODE
+
         ; Compute start pixel address at (last_x, last_y)
         jsr     calc_pixel_addr
 
@@ -1064,11 +1065,6 @@ exec_drawto:
         lda     major_delta+1
         sta     MUL_B+1
 
-        ; Enable line mode
-        lda     draw_bpp
-        ora     #MODE_LINE_BIT
-        sta     MODE
-
 @line_loop:
         bit     DST_DATA
         lda     current_color
@@ -1081,11 +1077,6 @@ exec_drawto:
         lda     line_count
         ora     line_count+1
         bne     @line_loop
-
-        ; Reset mode and fraction registers before returning
-        stz     MODE
-        stz     DST_FRAC
-        stz     DST_LINE_DIAG_FRAC
 
         lda     target_x
         sta     last_x
@@ -1118,6 +1109,7 @@ exec_setcolor:
         bcc     @no_carry
         inc     DST_ADDR+1
 @no_carry:
+        stz     MODE
         mva     #$B0, DST_ADDR+2
         mva     D, DST_DATA
         inc     DST_ADDR
@@ -1151,6 +1143,7 @@ exec_sync:
         sta     sync_last_frame
 
         ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0087
+        stz     MODE
         mvax    #$0087, SRC_ADDR
         mva     #$B0, SRC_ADDR+2
 
@@ -1216,9 +1209,7 @@ set_dst_addr_from_fp0:
         dex
         bpl     @copy
 
-        lda     #1                      ; Set DST_STEP to 1
-        sta     DST_STEP
-        stz     DST_STEP+1
+        stz     MODE                    ; Set 8bpp mode, DST_STEP = 1, DST_FRAC = 0
         rts
 
 ; ===========================================================================

@@ -164,8 +164,6 @@ initialize_target:
         sta     last_x+1
         sta     last_y
         sta     last_y+1
-        lda     #MODE_4BPP
-        sta     MODE
 
         ; -------------------------------------------------------------------
         ; 5. Display startup banner to screen
