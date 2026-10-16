@@ -1134,7 +1134,6 @@ exec_setcolor:
         bne     @bit_loop
         jmp     pop_int_fp0
 
-
 ; ===========================================================================
 ; SYNC n
 ; Synchronizes execution to the VCGA frame counter.
@@ -1191,7 +1190,6 @@ exec_poke24:
         mva     D, DST_DATA_INC         ; Write low byte, advance pointer by 1
         rts
 
-
 ; ===========================================================================
 ; PEEK24(addr)
 ; DPEEK24(addr)
@@ -1221,4 +1219,338 @@ set_dst_addr_from_fp0:
         lda     #1                      ; Set DST_STEP to 1
         sta     DST_STEP
         stz     DST_STEP+1
+        rts
+
+; ===========================================================================
+; SPIOPEN port, cs [, mode [, clk_div]]
+; Configures and enables the SPI controller on the specified I/O port.
+; ===========================================================================
+exec_spiopen:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate CS line (0..3)
+        cmp     #4                      ; Verify CS is in range 0..3
+        bcs     io_out_of_range
+        sta     tmp_l                   ; Save CS line
+        stz     tmp_h                   ; Default mode = 0
+        jsr     peek_byte               ; Optional mode argument present?
+        beq     @default_clk
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate mode (0..7)
+        cmp     #8                      ; Verify mode is in range 0..7
+        bcs     io_out_of_range
+        asl     A                       ; Shift mode into bits 3:1
+        sta     tmp_h
+        jsr     peek_byte               ; Optional clk_div argument present?
+        beq     @default_clk
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate clk_div (0..255)
+        bra     @apply
+
+@default_clk:
+        lda     #2                      ; Default clk_div = 2 (6.75 MHz)
+@apply:
+        sta     arg2                    ; Save clk_div
+        pla                             ; Restore port
+        ldx     #CAP_SPI
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_SPI_CTRL
+        lda     #0
+        sta     (io_ptr),y              ; Disable SPI so CS select writes directly
+        ldy     #IO_SPI_CLK_DIV
+        lda     arg2
+        sta     (io_ptr),y              ; Write IO_SPI_CLK_DIV ($22)
+        iny                             ; Advance to IO_SPI_CS_SELECT ($23)
+        lda     tmp_l
+        sta     (io_ptr),y              ; Set idle CS line with cs_enable = 0
+        ldy     #IO_SPI_CTRL
+        lda     tmp_h
+        ora     #$01                    ; Combine (mode << 1) with spi_en
+        sta     (io_ptr),y              ; Enable SPI controller ($20)
+        rts
+
+; ===========================================================================
+; I2COPEN port, addr [, clk_div]
+; Configures and enables the I2C controller on the specified I/O port.
+; ===========================================================================
+exec_i2copen:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate target address
+        bmi     io_out_of_range         ; Verify target address is 0..127
+        sta     tmp_l                   ; Save target address
+        jsr     peek_byte               ; Optional clk_div argument present?
+        beq     @default_clk
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate clk_div (0..255)
+        bra     @apply
+
+@default_clk:
+        lda     #67                     ; Default clk_div = 67 (~100 kHz)
+@apply:
+        sta     arg2                    ; Save clk_div
+        pla                             ; Restore port
+        ldx     #CAP_I2C
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        ldy     #IO_I2C_CLK_DIV
+        lda     arg2
+        sta     (io_ptr),y              ; Write IO_I2C_CLK_DIV ($32)
+        iny                             ; Advance to IO_I2C_ADDR ($33)
+        lda     tmp_l
+        sta     (io_ptr),y              ; Write IO_I2C_ADDR ($33)
+        ldy     #IO_I2C_CTRL
+        lda     #1
+        sta     (io_ptr),y              ; Enable I2C controller ($30)
+        rts
+
+io_out_of_range:
+        jmp     raise_out_of_range
+
+; ===========================================================================
+; BUF$(b1 [, b2, ...])
+; Packs byte arguments (0..255) into a newly allocated string using the 6502
+; hardware stack.
+; ===========================================================================
+fun_buf_s:
+        lda     #0                      ; Initialize byte count on stack
+        pha
+@loop:
+        jsr     eval_byte_arg           ; Evaluate next byte argument (0..255)
+        tay                             ; Save byte in Y
+        pla                             ; Pull current byte count
+        inc     A                       ; Increment count
+        phy                             ; Push byte onto hardware stack
+        pha                             ; Push updated count on top
+        tsx                             ; Check hardware stack pointer
+        bpl     @stack_error            ; Error if stack grew below $80
+        jsr     peek_byte               ; Check for TOK_COMMA (more arguments)
+        cmp     #TOK_COMMA
+        bne     @done                   ; TOK_RPAREN -> finished
+        inc     line_pos                ; Skip comma
+        bra     @loop
+
+@done:
+        pla                             ; Pull total byte count
+        jsr     string_alloc_for_copy   ; Allocate string, dst_ptr = data, Y = len
+@copy:
+        dey
+        pla                             ; Pull bytes in reverse order (Y-1 down to 0)
+        sta     (dst_ptr),y
+        tya
+        bne     @copy
+        rts
+
+@stack_error:
+        jmp     raise_stack
+
+; ===========================================================================
+; SPI / I2C Helper Routines
+; ===========================================================================
+check_io_port:
+        cmp     #16                     ; Verify port is in range 0..15
+        bcs     io_out_of_range
+        ora     #$D0                    ; Map to Window D page ($D0..$DF)
+        sta     io_ptr+1
+        stz     io_ptr
+        mva     #$E0, BANK_SELECT_D     ; Select I/O bank ($E0000) in Window D
+        txa                             ; Capability mask in A
+        and     (io_ptr)                ; Check IO_CAPABILITIES at offset $00
+        beq     io_error                ; Capability not supported -> I/O error
+        rts
+
+call_spixfer:
+        jsr     API_SPIXFER
+        bcs     io_error
+        rts
+
+call_i2cxfer:
+        jsr     API_I2CXFER
+        bcs     io_error
+        rts
+
+io_error:
+        jmp     raise_io_error
+
+eval_next_string_arg:
+        inc     line_pos                ; Skip TOK_COMMA
+        jsr     evaluate_expression     ; Evaluate string expression -> S0
+        lda     expr_type               ; Verify expression is a string
+        beq     io_type_mismatch
+        rts
+
+eval_next_byte_arg:
+        inc     line_pos                ; Skip TOK_COMMA
+eval_byte_arg:
+        jsr     evaluate_expression     ; Evaluate numeric expression -> FP0
+require_byte_fp0:
+        lda     expr_type               ; Verify expression is numeric
+        bne     io_type_mismatch
+        jsr     truncate_fp_to_int      ; Convert FP0 to 16-bit int in AX
+require_byte_ax:
+        cpx     #0                      ; Verify value is in range 0..255
+        bne     io_out_of_range
+        rts
+
+pop_byte_fp0:
+        jsr     pop_int_fp0             ; Pop numeric value and truncate to AX
+        bra     require_byte_ax
+
+prepare_write_transfer:
+        stx     arg1                    ; Store transfer flags in arg1
+        jsr     set_io_buffer_s0        ; Set io_ptr = S0, io_len = A
+        jmp     pop_byte_fp0            ; Pop port (0..255) into A
+
+set_io_buffer_s0:
+        sta     io_len                  ; Set low byte of transfer length
+        stz     io_len+1                ; High byte of transfer length = 0
+        mvax    S0, io_ptr              ; Point io_ptr to string data buffer
+        rts
+
+alloc_copy_s0:
+        jsr     push_string_s0          ; Push source string on value stack
+        lday    S0
+        jsr     load_s0                 ; A = source string length
+        jsr     string_alloc_for_copy   ; Allocate string (string_ptr), dst_ptr = data
+        jsr     pop_string_s0           ; Pop relocated source string: S0 = data
+        tay                             ; Length in Y
+        ldax    S0                      ; Source data pointer in AX
+        jmp     copy_y_from             ; Copy Y bytes from AX to dst_ptr
+
+; ===========================================================================
+; SPIWRITE port, tx$
+; I2CWRITE port, tx$
+; Transmits tx$ as a complete SPI or I2C write transaction.
+; PROLOG_POP_STRING pops tx$ into S0 (data ptr) and A (length); port is on stack.
+; ===========================================================================
+exec_spiwrite:
+        ldx     #SPI_WRITE_ONLY         ; Discard received bytes, release CS
+        jsr     prepare_write_transfer  ; Set io_ptr/io_len, arg1 = X, pop port
+        jmp     call_spixfer
+
+exec_i2cwrite:
+        ldx     #0                      ; Write with START and STOP
+        jsr     prepare_write_transfer  ; Set io_ptr/io_len, arg1 = X, pop port
+        jmp     call_i2cxfer
+
+; ===========================================================================
+; STRING$(len, byte)
+; Returns a string of len bytes (0..255) filled with byte (0..255).
+; PROLOG_POP_INT pops byte into AX; len is on the value stack.
+; ===========================================================================
+fun_string_s:
+        jsr     require_byte_ax         ; Verify fill byte is 0..255
+        pha                             ; Save fill byte
+        jsr     pop_byte_fp0            ; Pop length (0..255) into A
+        jsr     string_alloc_for_copy   ; Allocate string, dst_ptr = data, Y = len
+        pla                             ; Restore fill byte
+        cpy     #0                      ; Empty string?
+        beq     @done
+@fill:
+        dey
+        sta     (dst_ptr),y             ; Fill character buffer with byte
+        bne     @fill
+@done:
+        rts
+
+io_type_mismatch:
+        jmp     raise_type_mismatch
+
+; ===========================================================================
+; SPI$(port, [cmd$,] tx$)
+; Executes a full-duplex SPI exchange (2 args) or command-then-exchange (3 args)
+; and returns the received bytes as a string.
+; ===========================================================================
+fun_spi_s:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        jsr     eval_next_string_arg    ; Skip comma, evaluate 2nd arg
+        jsr     peek_byte
+        cmp     #TOK_COMMA              ; Check if 3rd argument is present
+        bne     @two_args
+
+        ; 3 arguments: SPI$(port, cmd$, tx$)
+        jsr     push_string_s0          ; Push cmd$ on value stack (GC safe)
+        jsr     eval_next_string_arg    ; Skip comma, evaluate tx$
+        jsr     alloc_copy_s0           ; Allocate copy of tx$ at string_ptr
+        jsr     pop_string_s0           ; Pop cmd$: S0 = data ptr, A = length
+        beq     @exchange               ; Skip Phase 1 if cmd$ is empty
+        jsr     set_io_buffer_s0        ; io_ptr = S0, io_len = A
+        mva     #SPI_WRITE_ONLY | SPI_CS_HOLD, arg1
+        tsx
+        lda     $101,x                  ; Read port from stack
+        jsr     call_spixfer            ; Phase 1: write cmd$ and hold CS low
+        bra     @exchange
+
+@two_args:
+        ; 2 arguments: SPI$(port, tx$)
+        jsr     alloc_copy_s0           ; Allocate copy of tx$ at string_ptr
+
+@exchange:
+        lday    string_ptr
+        jsr     load_s0                 ; S0 = string_ptr + 1, A = length
+        jsr     set_io_buffer_s0        ; io_ptr = S0, io_len = length
+        stz     arg1                    ; Full-duplex exchange, release CS
+        pla                             ; Restore port
+        jmp     call_spixfer
+
+
+; ===========================================================================
+; I2C$(port, [tx$,] rx_len)
+; Executes an I2C read (2 args) or write-then-repeated-start-read (3 args)
+; and returns the received bytes as a string.
+; ===========================================================================
+fun_i2c_s:
+        jsr     eval_byte_arg           ; Evaluate port (0..15)
+        pha                             ; Save port
+        inc     line_pos                ; Skip comma
+        jsr     evaluate_expression     ; Evaluate 2nd arg (rx_len or tx$)
+        jsr     peek_byte
+        cmp     #TOK_COMMA              ; Check if 3rd argument is present
+        beq     @three_args
+
+        ; 2 arguments: I2C$(port, rx_len)
+        jsr     require_byte_fp0        ; Verify rx_len is numeric 0..255
+        jsr     string_alloc_for_copy   ; Allocate RX string at string_ptr
+        bra     @read_phase
+
+@three_args:
+        ; 3 arguments: I2C$(port, tx$, rx_len)
+        lda     expr_type               ; Verify tx$ is a string
+        beq     io_type_mismatch
+        jsr     push_string_s0          ; Push tx$ on value stack (GC safe)
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate rx_len (0..255)
+        jsr     string_alloc_for_copy   ; Allocate RX string at string_ptr
+        jsr     pop_string_s0           ; Pop tx$: S0 = data ptr, A = length
+        beq     @read_phase             ; Skip write phase if tx$ is empty
+        jsr     set_io_buffer_s0        ; io_ptr = S0, io_len = A
+        mva     #I2C_NO_STOP, arg1      ; Write tx$ without STOP
+        tsx
+        lda     $101,x                  ; Read port from stack
+        jsr     call_i2cxfer            ; Phase 1: START + addr+W + tx$
+
+@read_phase:
+        lday    string_ptr
+        jsr     load_s0                 ; S0 = string_ptr + 1, A = rx_len
+        jsr     set_io_buffer_s0        ; io_ptr = S0, io_len = rx_len
+        mva     #I2C_READ, arg1         ; Read rx_len bytes with STOP at end
+        pla                             ; Restore port
+        jmp     call_i2cxfer
+
+; ===========================================================================
+; SPICLOSE port
+; I2CCLOSE port
+; Disables the SPI or I2C controller on the specified I/O port.
+; PROLOG_POP_INT pops port into AX.
+; ===========================================================================
+exec_spiclose:
+        ldy     #IO_SPI_CTRL
+        jsr     require_byte_ax         ; Verify port high byte is 0
+        ldx     #CAP_SPI
+        bne     io_close                ; Unconditional
+
+exec_i2cclose:
+        ldy     #IO_I2C_CTRL
+        jsr     require_byte_ax         ; Verify port high byte is 0
+        ldx     #CAP_I2C
+io_close:
+        jsr     check_io_port           ; Validate port and set up io_ptr
+        lda     #0
+        sta     (io_ptr),y              ; Disable controller
         rts
