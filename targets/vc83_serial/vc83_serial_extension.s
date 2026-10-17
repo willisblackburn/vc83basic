@@ -374,7 +374,7 @@ mode_table_format:
         .byte   $14|$80 ; 14: 45x30 tilemap 8bpp (tilemap, 2X, 8bpp, 720x480)
         .byte   $15|$80 ; 15: 45x30 tilemap 4bpp (tilemap, 2X, 4bpp, 720x480)
 
-grmode_charset_name:    .byte   "A:CHARSET.DAT"
+grmode_charset_name:    .byte   "B:CHARSET.DAT"
 grmode_charset_name_len = 13
 
 grmode_console_name:    .byte   "C:"

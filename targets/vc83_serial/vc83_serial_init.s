@@ -10,11 +10,11 @@ line_buffer:    .res 256
 .segment "ONCE"     
 
 charset_filename:
-        .byte   "A:CHARSET.DAT"
+        .byte   "B:CHARSET.DAT"
 charset_filename_len = * - charset_filename
 
 palette_filename:
-        .byte   "A:PALETTE.DAT"
+        .byte   "B:PALETTE.DAT"
 palette_filename_len = * - palette_filename
 
 console_filename:
@@ -38,7 +38,7 @@ initialize_target:
 
 @start_init:
         ; -------------------------------------------------------------------
-        ; 1. Load standard font from A:CHARSET.DAT into Tile RAM Bank 0
+        ; 1. Load standard font from B:CHARSET.DAT into Tile RAM Bank 0
         ; -------------------------------------------------------------------
         lda     #OPEN_READ
         sta     arg1
@@ -81,7 +81,7 @@ initialize_target:
         jsr     API_CLOSE
 
         ; -------------------------------------------------------------------
-        ; 2. Load palette from A:PALETTE.DAT into Palette RAM
+        ; 2. Load palette from B:PALETTE.DAT into Palette RAM
         ; -------------------------------------------------------------------
         lda     #OPEN_READ
         sta     arg1
