@@ -136,22 +136,22 @@ exec_xio:
 @xio_err:
         raise   ERR_IO_ERROR
 
-; DIR statement:
-; PROLOG_POP_STRING has already evaluated the path argument into S0, length in (BC) and A.
+; DIR [{path}]
 exec_dir:
+        stz     path_len                ; Default to empty path ("", assumes "A:")
+        jsr     peek_byte
+        beq     @check_channel          ; No argument: use empty path
+        jsr     evaluate_expression
+        jsr     push_pending
+        jsr     pop_string_s0           ; Pop path into S0, length in A
+        sta     path_len
+        mvax    S0, path_ptr
+@check_channel:
         ; Check if Channel 7 is open by inspecting IOCB 7 ($02E0)
         lda     $02E0                   ; IOCB 7 device byte
         bpl     @channel_available
         jmp     raise_io_error          ; Already open: fail without closing channel 7
 @channel_available:
-        ; Set up arguments for API_OPEN
-        ldy     #0
-        lda     (BC), y                 ; String length
-        sta     path_len
-        lda     S0
-        sta     path_ptr
-        lda     S0+1
-        sta     path_ptr+1
         lda     #4                      ; OPEN_DIRECTORY
         sta     arg1
         lda     #7                      ; Channel 7
@@ -561,6 +561,9 @@ exec_grmode:
         lda     #$E0
         sta     BANK_SELECT_D
 
+        ; Load charset into tile slot 7
+        jsr     load_font_slot7
+
         ; If channel 0 is open to other device, leave channel 0 alone and disable Layer 2
         jsr     is_channel_0_other      ; Check if channel 0 is open to other device
         bcc     @setup_l2_console       ; Configure console window if not other device
@@ -596,9 +599,6 @@ exec_grmode:
         sta     $D04D
         lda     #$E0
         sta     BANK_SELECT_D
-
-        ; Load charset into tile slot 7
-        jsr     load_font_slot7
 
         ; Close channel 0 and re-open to console on layer 2
         lda     #0                      ; Close existing channel 0
@@ -772,14 +772,16 @@ calc_pixel_addr:
         sta     tmp_frac
         lda     last_x+1
         lsr     A
-        sta     MUL_C+1
+        sta     tmp_h
         lda     last_x
         ror     A
-        lsr     MUL_C+1
+        lsr     tmp_h
         ror     A
-        lsr     MUL_C+1
+        lsr     tmp_h
         ror     A
         sta     MUL_C
+        lda     tmp_h
+        sta     MUL_C+1
         jmp     @calc_addr
 
 @bpp2:
@@ -790,12 +792,14 @@ calc_pixel_addr:
         sta     tmp_frac
         lda     last_x+1
         lsr     A
-        sta     MUL_C+1
+        sta     tmp_h
         lda     last_x
         ror     A
-        lsr     MUL_C+1
+        lsr     tmp_h
         ror     A
         sta     MUL_C
+        lda     tmp_h
+        sta     MUL_C+1
         jmp     @calc_addr
 
 @bpp4:

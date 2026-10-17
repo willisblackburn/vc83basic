@@ -242,7 +242,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
 
 .macro extension_statement_flags
         .byte   0                                               ; OPEN, CLOSE
-        .byte   PROLOG_NONE | (PROLOG_POP_STRING << 4)          ; XIO, DIR
+        .byte   0                                               ; XIO, DIR
         .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)             ; STATUS, GRMODE
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; COLOR, PLOT
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; DRAWTO, SETCOLOR
@@ -260,7 +260,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         BRANCH_IF TOK_OPEN, pvm_open
         BRANCH_IF TOK_CLOSE, pvm_close
         BRANCH_IF TOK_XIO, pvm_xio
-        BRANCH_IF TOK_DIR, pvm_expression
+        BRANCH_IF TOK_DIR, pvm_dir
         BRANCH_IF TOK_STATUS, pvm_get
         BRANCH_IF TOK_GRMODE, pvm_expression
         BRANCH_IF TOK_COLOR, pvm_expression
@@ -278,6 +278,11 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_pvm_code
+pvm_dir:
+        GUARD   TOK_COLON
+        GUARD   TOK_EOL
+        JUMP    pvm_expression
+
 pvm_open:
         CALL    pvm_channel
         JUMP    pvm_1_to_2_args
