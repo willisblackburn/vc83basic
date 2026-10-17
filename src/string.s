@@ -177,6 +177,7 @@ string_alloc_memory:
 .assert STRING_EXTRA = 3, error
 
 compact:
+        ldphaa  name_ptr                ; Preserve name_ptr (e.g. during READ or INPUT)
 
 ; Phase 1: Set the relocation offset high byte of all strings to $FF.
 
@@ -221,6 +222,7 @@ compact:
 ; Phase 6: All the strings have been relocated to free_ptr.
 ; The new value of string_ptr is in BC. Subtract it from himem_ptr to get the size to copy.
 
+        plstaa  name_ptr                ; Restore name_ptr
         mvax    BC, string_ptr          ; Set up new string_ptr
         stax    dst_ptr                 ; Also destination for copy
         mvax    free_ptr, src_ptr
