@@ -649,14 +649,38 @@ load_font_slot7:
 
 
 ; ===========================================================================
-; COLOR n
-;MOVE x, y
-; PLOT x, y
-; DRAWTO x, y
-; FILLTO x, y
-; LOCATE(x, y)
-; Graphics primitives dispatched via XIO on channel 6 (S3:).
+; COLOR [#channel] n
+; MOVE [#channel] x, y
+; PLOT [#channel] x, y
+; DRAWTO [#channel] x, y
+; FILLTO [#channel] x, y
+; LOCATE([#channel] x, y)
+; Graphics primitives dispatched via XIO on S: (default channel 6).
 ; ===========================================================================
+fun_locate:
+        lda     channel                 ; Save outer statement's channel
+        pha
+        ldx     #6                      ; Default to channel 6
+        jsr     peek_byte
+        sec
+        sbc     #TOK_CHANNEL_0
+        cmp     #8
+        bcs     @got_ch
+        inc     line_pos                ; Consume channel token
+        ora     #$80
+        tax
+@got_ch:
+        phx                             ; Save LOCATE's channel across arg evaluation
+        jsr     evaluate_argument_list  ; Evaluate x, y onto stack
+        jsr     pop_int_fp0             ; Pop Y into AX
+        ply
+        sty     channel                 ; Set LOCATE's channel for do_screen_xio_xy
+        ldy     #XIO_LOCATE
+        jsr     do_screen_xio_xy        ; Returns color/tile in AX (X=0)
+        ply
+        sty     channel                 ; Restore outer statement's channel
+        rts
+
 exec_color:
         sta     arg2
         lda     #XIO_COLOR
@@ -673,9 +697,6 @@ exec_drawto:
         .byte   $2C
 exec_fillto:
         ldy     #XIO_FILLTO
-        .byte   $2C
-fun_locate:
-        ldy     #XIO_LOCATE
 do_screen_xio_xy:
         phy                             ; Save XIO command
         sta     arg4                    ; Y low
@@ -685,7 +706,11 @@ do_screen_xio_xy:
         pla                             ; A = XIO command
 call_screen_xio:
         sta     arg1
-        lda     #6                      ; Graphics channel 6
+        lda     channel                 ; Use explicit channel if bit 7 set
+        bmi     @explicit
+        lda     #6                      ; Otherwise default to graphics channel 6
+@explicit:
+        and     #$07
         jsr     API_XIO
         bcs     @err
         rts

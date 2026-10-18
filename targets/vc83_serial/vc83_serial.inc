@@ -280,8 +280,8 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         BRANCH_IF TOK_DIR, pvm_dir
         BRANCH_IF TOK_STATUS, pvm_get
         BRANCH_IF TOK_GRMODE, pvm_expression
-        BRANCH_IF TOK_COLOR, pvm_expression
-        BRANCH_IF_RANGE TOK_PLOT, 4, pvm_arg_2
+        BRANCH_IF TOK_COLOR, pvm_put
+        BRANCH_IF_RANGE TOK_PLOT, 4, pvm_plot
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
         BRANCH_IF TOK_SOURCE, pvm_expression
         BRANCH_IF TOK_SYNC, pvm_expression
@@ -310,6 +310,16 @@ pvm_close:
 pvm_xio:
         CALL    pvm_channel
         JUMP    pvm_1_to_3_args
+
+pvm_plot:
+        CALL    pvm_channel
+        JUMP    pvm_arg_2
+
+pvm_locate:
+        MATCH   TOK_LPAREN
+        CALL    pvm_channel
+        CALL    pvm_arg_2
+        JUMP    pvm_close_paren
 
 pvm_portpwm:
         CALL    pvm_expression
@@ -375,7 +385,8 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_pvm_functions
-        BRANCH_IF_RANGE TOK_LOCATE, 2, pvm_fun_2
+        BRANCH_IF TOK_LOCATE, pvm_locate
+        BRANCH_IF TOK_STRING_S, pvm_fun_2
         BRANCH_IF_RANGE TOK_PEEK24, 5, pvm_fun_1
         BRANCH_IF_RANGE TOK_SPI_S, 2, pvm_spi_fun
         BRANCH_IF TOK_BUF_S, pvm_buf_fun
@@ -408,7 +419,7 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_function_flags
-        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)       ; LOCATE, STRING$
+        .byte   (PROLOG_NONE | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)          ; LOCATE, STRING$
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, DPEEK24
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_POP_INT | EPILOG_PUSH_INT) << 4)       ; SPACE$, PORT
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; PORTADC, SPI$
