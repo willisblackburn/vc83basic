@@ -7,31 +7,12 @@ dir_record:     .res 15
 dir_name        = dir_record
 dir_size        = dir_record + 11
 
-current_color:  .res 1
-last_x:         .res 2
-last_y:         .res 2
-target_x:       .res 2
-target_y:       .res 2
-delta_x:        .res 2
-delta_y:        .res 2
-major_delta:    .res 2
-minor_delta:    .res 2
-line_count:     .res 2
-sx_whole:       .res 2
-sy_whole:       .res 2
-major_step_whole: .res 2
-major_step_frac:  .res 1
-diag_step_whole:  .res 2
 tmp_l:          .res 1
 tmp_h:          .res 1
 grmode_val:     .res 1
 grmode_base:    .res 1
 grmode_fmt:     .res 1
 grmode_frm:     .res 1
-draw_stride:    .res 2
-draw_bpp:       .res 1
-sx_frac:        .res 1
-tmp_frac:       .res 1
 sync_last_frame: .res 1
 
 
@@ -91,47 +72,35 @@ exec_close:
 
 ; XIO [#channel] {command}[,{arg1}[,{arg2}]]
 exec_xio:
-        jsr     evaluate_expression     ; Command -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        sta     B                       ; Command in B
-        lda     #0
-        sta     BC                      ; Default arg1 = 0
-        sta     BC+1
-        sta     DE                      ; Default arg2 = 0
-        sta     DE+1
+        jsr     eval_byte_arg           ; Evaluate command (0..255) -> A
+        pha                             ; Save command on stack
+        stz     arg2                    ; Default arg1 = 0
+        stz     arg3
+        stz     arg4                    ; Default arg2 = 0
+        stz     arg5
         jsr     peek_byte
         beq     @do_xio
-        inc     line_pos
-        jsr     evaluate_expression     ; Arg1 -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        stax    BC
+        jsr     eval_next_int_arg       ; Skip comma, evaluate arg1 -> AX
+        pha                             ; Save arg1 low
+        phx                             ; Save arg1 high
         jsr     peek_byte
-        beq     @do_xio
-        inc     line_pos
-        jsr     evaluate_expression     ; Arg2 -> FP0
-        bne     @xio_type_mismatch
-        jsr     truncate_fp_to_int
-        stax    DE
-
-@do_xio:
-        lda     B                       ; Command in arg1
-        sta     arg1
-        lda     BC
-        sta     arg2
-        lda     BC+1
-        sta     arg3
-        lda     DE
+        beq     @pop_arg1
+        jsr     eval_next_int_arg       ; Skip comma, evaluate arg2 -> AX
         sta     arg4
+        stx     arg5
+@pop_arg1:
+        plx
+        stx     arg3
+        pla
+        sta     arg2
+@do_xio:
+        pla                             ; Restore command into arg1
+        sta     arg1
         lda     channel
         and     #$07
         jsr     API_XIO
         bcs     @xio_err
         rts
-
-@xio_type_mismatch:
-        jmp     raise_type_mismatch
 
 @xio_err:
         raise   ERR_IO_ERROR
@@ -380,8 +349,8 @@ grmode_charset_name_len = 13
 grmode_console_name:    .byte   "C:"
 grmode_console_name_len = 2
 
-grmode_keyboard_name:   .byte   "K:"
-grmode_keyboard_name_len = 2
+grmode_screen_name:     .byte   "S3:"
+grmode_screen_name_len  = 3
 
 exec_grmode:
         cpx     #0
@@ -428,6 +397,10 @@ exec_grmode:
         sta     grmode_fmt
 
 @setup_layers:
+        ; Close graphics channel 6
+        lda     #6
+        jsr     API_CLOSE
+
         ; Disable layers 0 and 1
         lda     #0
         sta     arg1            ; part 0 = disabled
@@ -503,13 +476,6 @@ exec_grmode:
         bcs     @err                    ; If open failed then raise error
 
 @text_done:
-        ; Default drawing state for text modes
-        lda     #80
-        sta     draw_stride
-        lda     #0
-        sta     draw_stride+1
-        lda     #MODE_8BPP
-        sta     draw_bpp
         clc
         rts
 
@@ -536,30 +502,22 @@ exec_grmode:
         ; Overwrite Layer 3 attributes: tile set 0, palette 3, bpp from format, opaque
         ; (0 << 4) | (3 << 2) | bpp = $0C | (grmode_fmt & 3)
         lda     grmode_fmt
-        and     #$10            ; Check if tilemap mode (bit 4 set)
-        beq     @bitmap_bpp
-        lda     #MODE_8BPP      ; Tilemap VRAM is always 8 bits per tile
-        beq     @set_draw_bpp
-@bitmap_bpp:
-        lda     grmode_fmt
-        and     #$03
-@set_draw_bpp:
-        sta     draw_bpp
-        lda     grmode_fmt
         and     #$03
         ora     #$0C
-        sta     grmode_fmt
-        lda     #$B0
-        sta     BANK_SELECT_D
-        lda     grmode_fmt
+        ldx     #$B0
+        stx     BANK_SELECT_D
         sta     $D06D
-        ; Read Layer 3 stride from $D06A / $D06B (stride in bytes)
-        lda     $D06A
-        sta     draw_stride
-        lda     $D06B
-        sta     draw_stride+1
-        lda     #$E0
-        sta     BANK_SELECT_D
+        ldx     #$E0
+        stx     BANK_SELECT_D
+
+        ; Open channel 6 to graphics layer S3:
+        lda     #OPEN_READ_WRITE
+        sta     arg1
+        mvax    #grmode_screen_name, path_ptr
+        mva     #grmode_screen_name_len, path_len
+        lda     #6
+        jsr     API_OPEN
+        bcs     @err
 
         ; Load charset into tile slot 7
         jsr     load_font_slot7
@@ -692,405 +650,47 @@ load_font_slot7:
 
 ; ===========================================================================
 ; COLOR n
-; Sets current drawing color.
+;MOVE x, y
+; PLOT x, y
+; DRAWTO x, y
+; FILLTO x, y
+; LOCATE(x, y)
+; Graphics primitives dispatched via XIO on channel 6 (S3:).
 ; ===========================================================================
 exec_color:
-        sta     current_color
-        rts
+        sta     arg2
+        lda     #XIO_COLOR
+        bra     call_screen_xio
 
-; ===========================================================================
-; PLOT x, y
-; Sets the pixel at (x, y) to current drawing color and updates last point.
-; ===========================================================================
+exec_move:
+        ldy     #XIO_MOVE
+        .byte   $2C
 exec_plot:
-        sta     target_y
-        stx     target_y+1
-        jsr     pop_int_fp0
-        sta     target_x
-        stx     target_x+1
-
-        lda     target_x
-        sta     last_x
-        lda     target_x+1
-        sta     last_x+1
-        lda     target_y
-        sta     last_y
-        lda     target_y+1
-        sta     last_y+1
-
-plot_current_pixel:
-        lda     draw_bpp
-        sta     MODE
-        jsr     calc_pixel_addr
-
-        lda     tmp_frac
-        sta     DST_FRAC
-
-        bit     DST_DATA
-        lda     current_color
-        sta     DST_DATA
-        rts
-
-; ===========================================================================
-; COLORAT(x, y)
-; Returns the pixel or tile value at (x, y).
-; PROLOG_POP_INT pops y into AX.
-; ===========================================================================
-fun_colorat:
-        sta     target_y
-        stx     target_y+1
-        sta     last_y
-        stx     last_y+1
-        jsr     pop_int_fp0             ; Pop x into AX
-        sta     target_x
-        stx     target_x+1
-        sta     last_x
-        stx     last_x+1
-
-        lda     draw_bpp
-        sta     MODE
-        jsr     calc_pixel_addr
-
-        lda     tmp_frac
-        sta     DST_FRAC
-
-        lda     DST_DATA
-        ldx     #0
-        rts
-
-calc_pixel_addr:
-        ldx     draw_bpp
-        beq     @bpp8                   ; 0 = 8 bpp
-        cpx     #1
-        beq     @bpp4                   ; 1 = 4 bpp
-        cpx     #2
-        beq     @bpp2                   ; 2 = 2 bpp
-
-        ; 1 bpp (draw_bpp == 3): byte offset = last_x >> 3, frac = last_x & 7
-        lda     last_x
-        and     #7
-        sta     tmp_frac
-        lda     last_x+1
-        lsr     A
-        sta     tmp_h
-        lda     last_x
-        ror     A
-        lsr     tmp_h
-        ror     A
-        lsr     tmp_h
-        ror     A
-        sta     MUL_C
-        lda     tmp_h
-        sta     MUL_C+1
-        jmp     @calc_addr
-
-@bpp2:
-        ; 2 bpp (draw_bpp == 2): byte offset = last_x >> 2, frac = (last_x & 3) << 1
-        lda     last_x
-        and     #3
-        asl     A
-        sta     tmp_frac
-        lda     last_x+1
-        lsr     A
-        sta     tmp_h
-        lda     last_x
-        ror     A
-        lsr     tmp_h
-        ror     A
-        sta     MUL_C
-        lda     tmp_h
-        sta     MUL_C+1
-        jmp     @calc_addr
-
-@bpp4:
-        ; 4 bpp (draw_bpp == 1): byte offset = last_x >> 1, frac = (last_x & 1) << 2
-        lda     last_x
-        and     #1
-        asl     A
-        asl     A
-        sta     tmp_frac
-        lda     last_x+1
-        lsr     A
-        sta     MUL_C+1
-        lda     last_x
-        ror     A
-        sta     MUL_C
-        jmp     @calc_addr
-
-@bpp8:
-        ; 8 bpp (draw_bpp == 0): byte offset = last_x, frac = 0
-        lda     #0
-        sta     tmp_frac
-        lda     last_x
-        sta     MUL_C
-        lda     last_x+1
-        sta     MUL_C+1
-
-@calc_addr:
-        lda     #0
-        sta     MUL_C+2
-
-        lda     last_y
-        sta     MUL_A
-        lda     last_y+1
-        sta     MUL_A+1
-
-        lda     draw_stride
-        sta     MUL_B
-        lda     draw_stride+1
-        sta     MUL_B+1
-
-        sta     MUL_TO_DST
-
-        lda     #$80
-        sta     DST_ADDR+2
-        rts
-
-; Line mode step tables indexed by draw_bpp: 0=8bpp, 1=4bpp, 2=2bpp, 3=1bpp
-sx_pos_whole_l: .byte 1, 0, 0, 0
-sx_pos_whole_h: .byte 0, 0, 0, 0
-sx_pos_frac:    .byte $00, $20, $10, $08
-
-sx_neg_whole_l: .byte $FF, $FF, $FF, $FF
-sx_neg_whole_h: .byte $FF, $FF, $FF, $FF
-sx_neg_frac:    .byte $00, $20, $30, $38
-
-; ===========================================================================
-; DRAWTO x, y
-; Draws a line from (last_x, last_y) to (x, y) using hardware line mode.
-; ===========================================================================
+        ldy     #XIO_PLOT
+        .byte   $2C
 exec_drawto:
-        sta     target_y
-        stx     target_y+1
-        jsr     pop_int_fp0
-        sta     target_x
-        stx     target_x+1
-
-        ; Calculate delta_x and sx
-        sec
-        lda     target_x
-        sbc     last_x
-        sta     delta_x
-        lda     target_x+1
-        sbc     last_x+1
-        sta     delta_x+1
-        bcs     @x_pos
-
-        ; Negative X: delta_x = -delta_x
-        lda     #0
-        sec
-        sbc     delta_x
-        sta     delta_x
-        lda     #0
-        sbc     delta_x+1
-        sta     delta_x+1
-
-        ldx     draw_bpp
-        lda     sx_neg_whole_l, x
-        sta     sx_whole
-        lda     sx_neg_whole_h, x
-        sta     sx_whole+1
-        lda     sx_neg_frac, x
-        sta     sx_frac
-        jmp     @calc_dy
-
-@x_pos:
-        ldx     draw_bpp
-        lda     sx_pos_whole_l, x
-        sta     sx_whole
-        lda     sx_pos_whole_h, x
-        sta     sx_whole+1
-        lda     sx_pos_frac, x
-        sta     sx_frac
-
-@calc_dy:
-        ; Calculate delta_y and sy_whole
-        sec
-        lda     target_y
-        sbc     last_y
-        sta     delta_y
-        lda     target_y+1
-        sbc     last_y+1
-        sta     delta_y+1
-        bcs     @y_pos
-
-        ; Negative Y: delta_y = -delta_y, sy_whole = -draw_stride
-        lda     #0
-        sec
-        sbc     delta_y
-        sta     delta_y
-        lda     #0
-        sbc     delta_y+1
-        sta     delta_y+1
-
-        lda     #0
-        sec
-        sbc     draw_stride
-        sta     sy_whole
-        lda     #0
-        sbc     draw_stride+1
-        sta     sy_whole+1
-        jmp     @calc_diag
-
-@y_pos:
-        lda     draw_stride
-        sta     sy_whole
-        lda     draw_stride+1
-        sta     sy_whole+1
-
-@calc_diag:
-        ; diag_step_whole = sx_whole + sy_whole
-        clc
-        lda     sx_whole
-        adc     sy_whole
-        sta     diag_step_whole
-        lda     sx_whole+1
-        adc     sy_whole+1
-        sta     diag_step_whole+1
-
-        ; Compare delta_x and delta_y
-        sec
-        lda     delta_x
-        sbc     delta_y
-        lda     delta_x+1
-        sbc     delta_y+1
-        bcc     @mostly_vertical
-
-        ; Case A: delta_x >= delta_y (mostly horizontal)
-        lda     delta_x
-        sta     major_delta
-        lda     delta_x+1
-        sta     major_delta+1
-        lda     delta_y
-        sta     minor_delta
-        lda     delta_y+1
-        sta     minor_delta+1
-
-        lda     sx_whole
-        sta     major_step_whole
-        lda     sx_whole+1
-        sta     major_step_whole+1
-        lda     sx_frac
-        sta     major_step_frac
-        jmp     @setup_line
-
-@mostly_vertical:
-        ; Case B: delta_y > delta_x (mostly vertical)
-        lda     delta_y
-        sta     major_delta
-        lda     delta_y+1
-        sta     major_delta+1
-        lda     delta_x
-        sta     minor_delta
-        lda     delta_x+1
-        sta     minor_delta+1
-
-        lda     sy_whole
-        sta     major_step_whole
-        lda     sy_whole+1
-        sta     major_step_whole+1
-        lda     #0
-        sta     major_step_frac
-
-@setup_line:
-        ; line_count = major_delta + 1
-        clc
-        lda     major_delta
-        adc     #1
-        sta     line_count
-        lda     major_delta+1
-        adc     #0
-        sta     line_count+1
-
-        ; Enable line mode first (resets step and fraction registers)
-        lda     draw_bpp
-        ora     #MODE_LINE_BIT
-        sta     MODE
-
-        ; Compute start pixel address at (last_x, last_y)
-        jsr     calc_pixel_addr
-
-        ; Step fractions and steps
-        lda     tmp_frac
-        ora     major_step_frac
-        sta     DST_FRAC
-
-        lda     major_step_whole
-        sta     DST_STEP
-        lda     major_step_whole+1
-        sta     DST_STEP+1
-
-        lda     diag_step_whole
-        sta     DST_LINE_DIAG_STEP
-        lda     diag_step_whole+1
-        sta     DST_LINE_DIAG_STEP+1
-
-        lda     sx_frac
-        sta     DST_LINE_DIAG_FRAC
-
-        ; DST_LINE_ERROR = -(major_delta >> 1) in 24 bits
-        ; If minor_delta == 0, use -1 ($FFFFFF) to prevent false diagonal steps
-        lda     minor_delta
-        ora     minor_delta+1
-        bne     @calc_error
-        lda     #$FF
-        sta     DST_LINE_ERROR
-        sta     DST_LINE_ERROR+1
-        sta     DST_LINE_ERROR+2
-        jmp     @set_mul
-
-@calc_error:
-        lda     major_delta+1
-        lsr     A
-        sta     tmp_h
-        lda     major_delta
-        ror     A
-        sta     tmp_l
-
-        lda     #0
-        sec
-        sbc     tmp_l
-        sta     DST_LINE_ERROR
-        lda     #0
-        sbc     tmp_h
-        sta     DST_LINE_ERROR+1
-        lda     #0
-        sbc     #0
-        sta     DST_LINE_ERROR+2
-
-@set_mul:
-        lda     minor_delta
-        sta     MUL_A
-        lda     minor_delta+1
-        sta     MUL_A+1
-
-        lda     major_delta
-        sta     MUL_B
-        lda     major_delta+1
-        sta     MUL_B+1
-
-@line_loop:
-        bit     DST_DATA
-        lda     current_color
-        sta     DST_DATA_INC
-        lda     line_count
-        bne     @dec_lo
-        dec     line_count+1
-@dec_lo:
-        dec     line_count
-        lda     line_count
-        ora     line_count+1
-        bne     @line_loop
-
-        lda     target_x
-        sta     last_x
-        lda     target_x+1
-        sta     last_x+1
-        lda     target_y
-        sta     last_y
-        lda     target_y+1
-        sta     last_y+1
+        ldy     #XIO_DRAWTO
+        .byte   $2C
+exec_fillto:
+        ldy     #XIO_FILLTO
+        .byte   $2C
+fun_locate:
+        ldy     #XIO_LOCATE
+do_screen_xio_xy:
+        phy                             ; Save XIO command
+        sta     arg4                    ; Y low
+        stx     arg5                    ; Y high
+        jsr     pop_int_fp0             ; Pop X into AX
+        stax    arg2                    ; X low/high
+        pla                             ; A = XIO command
+call_screen_xio:
+        sta     arg1
+        lda     #6                      ; Graphics channel 6
+        jsr     API_XIO
+        bcs     @err
         rts
+@err:
+        jmp     raise_io_error
 
 ; ===========================================================================
 ; SETCOLOR p, n, r, g, b

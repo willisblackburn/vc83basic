@@ -61,6 +61,13 @@ OPEN_ACCESS_MASK = $03
 
 ERR_EOF         = $08
 
+XIO_COLOR       = $20
+XIO_MOVE        = $21
+XIO_PLOT        = $22
+XIO_DRAWTO      = $23
+XIO_FILLTO      = $24
+XIO_LOCATE      = $25
+
 ; I/O Port Capability and Register Offsets (Window D mapped to $E0)
 CAP_SPI             = $01
 CAP_I2C             = $02
@@ -109,6 +116,7 @@ arg1            := $20
 arg2            := $21
 arg3            := $22
 arg4            := $23
+arg5            := $26
 path_ptr        := $31
 path_len        := $33
 io_ptr          := $34
@@ -124,24 +132,26 @@ TOK_GRMODE      = $65
 TOK_COLOR       = $66
 TOK_PLOT        = $67
 TOK_DRAWTO      = $68
-TOK_SETCOLOR    = $69
-TOK_SOURCE      = $6A
-TOK_SYNC        = $6B
-TOK_POKE24      = $6C
-TOK_DPOKE24     = $6D
-TOK_SPIWRITE    = $6E
-TOK_I2CWRITE    = $6F
-TOK_PORTDIR     = $70
-TOK_SPICLOSE    = $71
-TOK_I2CCLOSE    = $72
-TOK_EXEC        = $73
-TOK_PORTWRITE   = $74
-TOK_I2COPEN     = $75
-TOK_SPIOPEN     = $76
-TOK_PORTRESET   = $77
-TOK_PORTPWM     = $78
+TOK_FILLTO      = $69
+TOK_MOVE        = $6A
+TOK_SETCOLOR    = $6B
+TOK_SOURCE      = $6C
+TOK_SYNC        = $6D
+TOK_POKE24      = $6E
+TOK_DPOKE24     = $6F
+TOK_SPIWRITE    = $70
+TOK_I2CWRITE    = $71
+TOK_PORTDIR     = $72
+TOK_SPICLOSE    = $73
+TOK_I2CCLOSE    = $74
+TOK_EXEC        = $75
+TOK_PORTWRITE   = $76
+TOK_I2COPEN     = $77
+TOK_SPIOPEN     = $78
+TOK_PORTRESET   = $79
+TOK_PORTPWM     = $7A
 
-TOK_COLORAT     = $9A
+TOK_LOCATE      = $9A
 TOK_STRING_S    = $9B
 TOK_PEEK24      = $9C
 TOK_DPEEK24     = $9D
@@ -162,14 +172,16 @@ TOK_BUF_S       = $A3
 :       name_table_entry "COLOR"
 :       name_table_entry "PLOT"
 :       name_table_entry "DRAWTO"
+:       name_table_entry "FILLTO"
+:       name_table_entry "MOVE"
 :       name_table_entry "SETCOLOR"
 :       name_table_entry "SOURCE"
 :       name_table_entry "SYNC"
 :       name_table_entry "POKE24"
 :       name_table_entry "DPOKE24"
+KEYWORD_BLOCK_7_OFFSET = keyword_counter
 :       name_table_entry "SPIWRITE"
 :       name_table_entry "I2CWRITE"
-KEYWORD_BLOCK_7_OFFSET = keyword_counter
 :       name_table_entry "PORTDIR"
 :       name_table_entry "SPICLOSE"
 :       name_table_entry "I2CCLOSE"
@@ -192,6 +204,8 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   <(exec_color-1)
         .byte   <(exec_plot-1)
         .byte   <(exec_drawto-1)
+        .byte   <(exec_fillto-1)
+        .byte   <(exec_move-1)
         .byte   <(exec_setcolor-1)
         .byte   <(exec_source-1)
         .byte   <(exec_sync-1)
@@ -221,6 +235,8 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   >(exec_color-1)
         .byte   >(exec_plot-1)
         .byte   >(exec_drawto-1)
+        .byte   >(exec_fillto-1)
+        .byte   >(exec_move-1)
         .byte   >(exec_setcolor-1)
         .byte   >(exec_source-1)
         .byte   >(exec_sync-1)
@@ -245,7 +261,8 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   0                                               ; XIO, DIR
         .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)             ; STATUS, GRMODE
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; COLOR, PLOT
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; DRAWTO, SETCOLOR
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; DRAWTO, FILLTO
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; MOVE, SETCOLOR
         .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4)      ; SOURCE, SYNC
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; POKE24, DPOKE24
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)    ; SPIWRITE, I2CWRITE
@@ -264,8 +281,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         BRANCH_IF TOK_STATUS, pvm_get
         BRANCH_IF TOK_GRMODE, pvm_expression
         BRANCH_IF TOK_COLOR, pvm_expression
-        BRANCH_IF TOK_PLOT, pvm_arg_2
-        BRANCH_IF TOK_DRAWTO, pvm_arg_2
+        BRANCH_IF_RANGE TOK_PLOT, 4, pvm_arg_2
         BRANCH_IF TOK_SETCOLOR, pvm_setcolor
         BRANCH_IF TOK_SOURCE, pvm_expression
         BRANCH_IF TOK_SYNC, pvm_expression
@@ -345,7 +361,7 @@ pvm_buf_fun:
 .endmacro
 
 .macro extension_function_keywords
-:       name_table_entry "COLORAT"
+:       name_table_entry "LOCATE"
 :       name_table_entry "STRING$"
 :       name_table_entry "PEEK24"
 :       name_table_entry "DPEEK24"
@@ -359,14 +375,14 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_pvm_functions
-        BRANCH_IF_RANGE TOK_COLORAT, 2, pvm_fun_2
+        BRANCH_IF_RANGE TOK_LOCATE, 2, pvm_fun_2
         BRANCH_IF_RANGE TOK_PEEK24, 5, pvm_fun_1
         BRANCH_IF_RANGE TOK_SPI_S, 2, pvm_spi_fun
         BRANCH_IF TOK_BUF_S, pvm_buf_fun
 .endmacro
 
 .macro extension_function_vectors_l
-        .byte   <(fun_colorat-1)
+        .byte   <(fun_locate-1)
         .byte   <(fun_string_s-1)
         .byte   <(fun_peek24-1)
         .byte   <(fun_dpeek24-1)
@@ -379,7 +395,7 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_function_vectors_h
-        .byte   >(fun_colorat-1)
+        .byte   >(fun_locate-1)
         .byte   >(fun_string_s-1)
         .byte   >(fun_peek24-1)
         .byte   >(fun_dpeek24-1)
@@ -392,7 +408,7 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 .endmacro
 
 .macro extension_function_flags
-        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)       ; COLORAT, STRING$
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)       ; LOCATE, STRING$
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, DPEEK24
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_POP_INT | EPILOG_PUSH_INT) << 4)       ; SPACE$, PORT
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; PORTADC, SPI$

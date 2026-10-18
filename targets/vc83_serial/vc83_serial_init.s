@@ -156,15 +156,6 @@ initialize_target:
         sta     channel
         sta     default_channel
 
-        ; Initialize drawing state
-        lda     #1
-        sta     current_color
-        lda     #0
-        sta     last_x
-        sta     last_x+1
-        sta     last_y
-        sta     last_y+1
-
         ; -------------------------------------------------------------------
         ; 5. Display startup banner to screen
         ; -------------------------------------------------------------------
