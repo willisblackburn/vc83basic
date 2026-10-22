@@ -159,6 +159,9 @@ TOK_I2COPEN     = $77
 TOK_SPIOPEN     = $78
 TOK_PORTRESET   = $79
 TOK_PORTPWM     = $7A
+TOK_NOTE        = $7B
+TOK_PROGRAM     = $7C
+TOK_CONTROL     = $7D
 
 TOK_LOCATE      = $9A
 TOK_STRING_S    = $9B
@@ -207,7 +210,9 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
 :       name_table_entry "SPIOPEN"
 :       name_table_entry "PORTRESET"
 :       name_table_entry "PORTPWM"
-:       name_table_entry ""             ; Padding for even statement count
+:       name_table_entry "NOTE"
+:       name_table_entry "PROGRAM"
+:       name_table_entry "CONTROL"
 .endmacro
 
 .macro extension_statement_vectors_l
@@ -238,7 +243,9 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   <(exec_spiopen-1)
         .byte   <(exec_portreset-1)
         .byte   <(exec_portpwm-1)
-        .byte   0
+        .byte   <(exec_note-1)
+        .byte   <(exec_program-1)
+        .byte   <(exec_control-1)
 .endmacro
 
 .macro extension_statement_vectors_h
@@ -269,7 +276,9 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   >(exec_spiopen-1)
         .byte   >(exec_portreset-1)
         .byte   >(exec_portpwm-1)
-        .byte   0
+        .byte   >(exec_note-1)
+        .byte   >(exec_program-1)
+        .byte   >(exec_control-1)
 .endmacro
 
 .macro extension_statement_flags
@@ -279,14 +288,15 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; COLOR, PLOT
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; DRAWTO, FILLTO
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; MOVE, SETCOLOR
-        .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4)      ; SOURCE, SYNC
+        .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4)       ; SOURCE, SYNC
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; POKE24, DPOKE24
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)    ; SPIWRITE, I2CWRITE
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; PORTDIR, SPICLOSE
         .byte   PROLOG_POP_INT | (PROLOG_POP_STRING << 4)       ; I2CCLOSE, EXEC
         .byte   0                                               ; PORTWRITE, I2COPEN
         .byte   0                                               ; SPIOPEN, PORTRESET
-        .byte   0                                               ; PORTPWM, padding
+        .byte   0                                               ; PORTPWM, NOTE
+        .byte   0                                               ; PROGRAM, CONTROL
 .endmacro
 
 .macro extension_pvm_statements
@@ -307,6 +317,9 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         BRANCH_IF TOK_SPIOPEN, pvm_spiopen
         BRANCH_IF TOK_PORTRESET, pvm_1_to_3_args
         BRANCH_IF TOK_PORTPWM, pvm_portpwm
+        BRANCH_IF TOK_NOTE, pvm_note
+        BRANCH_IF TOK_PROGRAM, pvm_plot
+        BRANCH_IF TOK_CONTROL, pvm_control
 .endmacro
 
 .macro extension_pvm_code
@@ -330,6 +343,14 @@ pvm_xio:
 pvm_plot:
         CALL    pvm_channel
         JUMP    pvm_arg_2
+
+pvm_note:
+        CALL    pvm_channel
+        JUMP    pvm_i2copen
+
+pvm_control:
+        CALL    pvm_channel
+        JUMP    pvm_arg_3
 
 pvm_locate:
         MATCH   TOK_LPAREN

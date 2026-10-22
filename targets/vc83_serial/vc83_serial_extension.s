@@ -1286,6 +1286,23 @@ exec_portreset:
         sta     (io_ptr),y              ; Trigger reset pulse ($70)
         rts
 
+eval_midi_header:
+        sta     tmp_h                   ; Save status opcode ($90, $B0, or $C0)
+        jsr     eval_byte_arg           ; Evaluate MIDI channel (1..16)
+        dec     A                       ; Convert 1..16 to 0..15
+        cmp     #16
+        bcs     port_out_of_range
+        ora     tmp_h
+        sta     tmp_h                   ; Store full status byte ($9n, $Bn, or $Cn)
+        jsr     eval_next_midi_byte     ; Evaluate first 7-bit data byte (0..127)
+        sta     tmp_l
+        rts
+
+eval_next_midi_byte:
+        jsr     eval_next_byte_arg      ; Skip comma and evaluate byte (0..255)
+        bmi     port_out_of_range       ; MIDI data bytes must be 0..127
+        rts
+
 port_out_of_range:
         jmp     raise_out_of_range
 
@@ -1398,4 +1415,54 @@ fun_portadc:
         tax                             ; High byte in X
         pla                             ; Low byte in A
         rts
+
+; ===========================================================================
+; NOTE [#channel] mchan, note [, velocity]
+; PROGRAM [#channel] mchan, program
+; CONTROL [#channel] mchan, controller, value
+; Sends MIDI messages to the specified channel (default channel 5).
+; mchan is 1..16; note, velocity, program, controller, and value are 0..127.
+; Omitting velocity in NOTE defaults to 0 (Note Off).
+; ===========================================================================
+exec_program:
+        lda     #$C0                    ; Program Change status ($Cn)
+        jsr     eval_midi_header        ; tmp_h = $Cn, tmp_l = program (0..127)
+        bra     midi_send_2
+
+exec_control:
+        lda     #$B0                    ; Control Change status ($Bn)
+        jsr     eval_midi_header        ; tmp_h = $Bn, tmp_l = controller (0..127)
+        jsr     eval_next_midi_byte     ; Evaluate value (0..127)
+        bra     midi_send_3
+
+exec_note:
+        lda     #$90                    ; Note On status ($9n)
+        jsr     eval_midi_header        ; tmp_h = $9n, tmp_l = note (0..127)
+        jsr     peek_byte               ; Optional velocity argument present?
+        beq     midi_send_3             ; No -> A is 0 (velocity = 0, Note Off)
+        jsr     eval_next_midi_byte     ; Evaluate velocity (0..127)
+
+midi_send_3:
+        pha                             ; Save 2nd data byte
+        jsr     midi_send_2             ; Send status (tmp_h) and 1st data byte (tmp_l)
+        pla                             ; Restore 2nd data byte
+        bra     midi_put_byte
+
+midi_send_2:
+        lda     tmp_h                   ; Send status byte
+        jsr     midi_put_byte
+        lda     tmp_l                   ; Send 1st data byte
+midi_put_byte:
+        sta     arg1
+        lda     channel                 ; Use explicit channel if bit 7 set
+        bmi     @explicit
+        lda     #5                      ; Otherwise default to MIDI channel 5
+@explicit:
+        and     #$07
+        jsr     API_PUT
+        bcs     @err
+        rts
+@err:
+        jmp     raise_io_error
+
 

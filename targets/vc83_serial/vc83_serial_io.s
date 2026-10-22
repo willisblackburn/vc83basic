@@ -80,8 +80,8 @@ enable_console:
         clc                             ; Carry clear to display prompt
         rts
 
-; Reset handler. Closes all open channels (1..7), installs the keyboard break
-; interrupt handler, and registers the NMI warm-start entry point.
+; Reset handler. Closes all open channels (1..7), installs the keyboard
+; break interrupt handler, and registers the NMI warm-start entry point.
 on_reset:
         stz     default_channel         ; Clear redirected channel on reset
         ldx     #7
