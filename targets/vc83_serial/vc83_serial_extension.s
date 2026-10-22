@@ -409,9 +409,11 @@ exec_grmode:
         sta     arg1            ; part 0 = disabled
         jsr     API_VCGALAYER
 
-        ; Disable all 32 sprites
+        ; Set background to color 0, palette 2 and disable all 32 sprites
         lda     #$B0
         sta     BANK_SELECT_D
+        mva     #2, $D080               ; Background palette = 2
+        stz     $D081                   ; Background color = 0
         ldx     #0
         clc
 @clear_sprites:
