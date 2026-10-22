@@ -80,7 +80,8 @@ enable_console:
         clc                             ; Carry clear to display prompt
         rts
 
-; Reset handler. Closes all open channels (1..7).
+; Reset handler. Closes all open channels (1..7), installs the keyboard break
+; interrupt handler, and registers the NMI warm-start entry point.
 on_reset:
         stz     default_channel         ; Clear redirected channel on reset
         ldx     #7
@@ -92,7 +93,37 @@ on_reset:
         tax
         dex
         bne     @loop
+
+        mvaa    #warm_start, WARM_START_VECTOR ; Register NMI warm-start vector
+        mvaa    #keyboard_irq_handler, arg1 ; Install keyboard break handler
+        lda     #IRQ_KEYBOARD
+        jsr     API_SETIRQ
+        mva     #$E0, BANK_SELECT_D     ; Select peripheral bank
+        lda     #$02                    ; Bit 1 = keyboard break IRQ
+        sta     KEYBOARD_STATUS         ; Clear any stale break IRQ latch (W1C)
+        tsb     KEYBOARD_OPTIONS        ; Enable keyboard break IRQ
+        cli                             ; Enable CPU interrupts
         rts
+
+; Warm-start entry point invoked by OS NMI handler on Ctrl+Alt+Backspace.
+warm_start:
+        ldy     #3                      ; Verify 4-byte "VBAS" header in RAM
+@check_vbas:
+        lda     __BSS_RUN__ + __BSS_SIZE__,y
+        cmp     vbas_header,y
+        bne     @cold_start             ; Header corrupted -> full cold start
+        dey
+        bpl     @check_vbas
+
+        mva     #OP_STACK_SIZE, op_stack_pos ; Reset operator stack
+        mva     #PRIMARY_STACK_SIZE, stack_pos ; Reset primary stack
+        sta     reset_stack_pos
+        stz     resume_line_ptr+1       ; Disable CONT
+        jsr     on_reset                ; Re-initialize channels and IRQ
+        jmp     raise_ps_ready          ; Return to READY prompt
+
+@cold_start:
+        jmp     startup
 
 ; ===========================================================================
 ; ensure_channel_0
@@ -116,8 +147,13 @@ ensure_channel_0:
 ; Returns carry clear and byte in A if ok, carry set if error / EOF.
 getch:
         lda     channel
-        and     #$07
+        and     #$07                    ; Mask to 3-bit channel number (0..7)
         jsr     API_GET
+        bcc     @done                   ; Success -> return byte in A
+        cmp     #ERR_BREAK              ; Aborted by break?
+        beq     on_break
+        sec                             ; Restore carry set for EOF / error
+@done:
         rts
 
 ; Polls for a key without blocking using API_STATUS.
@@ -141,12 +177,26 @@ inkey:
 ; A = character
 putch:
         pha
+        lda     program_state           ; Check break while running (e.g. LIST / PRINT)
+        bne     @output
+        bit     break_flag              ; Break requested?
+        bmi     on_break
+
+@output:
         jsr     ensure_channel_0
         pla
         sta     arg1                    ; Character in arg1
         lda     channel
         and     #$07                    ; Channel in A
         jsr     API_PUT
+        rts
+
+; Keyboard break ISR (dispatched by OS irq handler with BANK_SELECT_D = $E0).
+keyboard_irq_handler:
+        lda     #$02
+        sta     KEYBOARD_STATUS         ; Clear break IRQ latch (W1C)
+        sec
+        ror     break_flag              ; Set bit 7 of break_flag
         rts
 
 ; Emits record delimiter (NL).
@@ -168,6 +218,11 @@ tab:
         bne     @tab_loop
         clc
         rts
+
+; Aborts running BASIC program when break is detected.
+on_break:
+        stz     break_flag              ; Clear break flag
+        jmp     exec_stop
 
 ; Reads a text record (line) from channel into buffer.
 ; NUL-terminates at EOL, returns length in A.
@@ -238,7 +293,7 @@ readline:
         sta     io_len+1
         pla
         jsr     API_READLINE
-        bcs     @read_err
+        bcs     @read_error
 
 @format_line:
         ; Replace trailing NL ($0A) with NUL
@@ -268,7 +323,14 @@ readline:
         clc
         rts
 
-@read_err:
+@read_error:
+        cmp     #ERR_BREAK              ; Aborted by break?
+        bne     @return_error
+        lda     program_state           ; Running a program (e.g. INPUT)?
+        bne     @return_error
+        jmp     exec_stop               ; Yes -> stop at current line
+
+@return_error:
         sec
         rts
 

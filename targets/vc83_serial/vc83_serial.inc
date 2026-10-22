@@ -50,6 +50,13 @@ API_XIO         := $E01B
 API_READLINE    := $E02A
 API_SPIXFER     := $E02D
 API_I2CXFER     := $E030
+API_SETIRQ      := $E033
+
+WARM_START_VECTOR   := $0350
+
+KEYBOARD_OPTIONS    := $D084
+KEYBOARD_STATUS     := $D085
+IRQ_KEYBOARD        = 6
 
 OPEN_READ       = 0
 OPEN_WRITE      = 1
@@ -60,6 +67,7 @@ OPEN_RAW        = 16
 OPEN_ACCESS_MASK = $03
 
 ERR_EOF         = $08
+ERR_BREAK       = $0C
 
 XIO_COLOR       = $20
 XIO_MOVE        = $21
@@ -117,6 +125,7 @@ arg2            := $21
 arg3            := $22
 arg4            := $23
 arg5            := $26
+break_flag      := $27
 path_ptr        := $31
 path_len        := $33
 io_ptr          := $34
@@ -161,6 +170,13 @@ TOK_PORTADC     = $A0
 TOK_SPI_S       = $A1
 TOK_I2C_S       = $A2
 TOK_BUF_S       = $A3
+
+.macro extension_check_break
+        bit     break_flag              ; Check if break was requested
+        bpl     :+
+        jmp     on_break
+:
+.endmacro
 
 .macro extension_statement_keywords
 :       name_table_entry "OPEN"
