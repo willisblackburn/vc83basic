@@ -40,88 +40,38 @@ initialize_target:
         ; -------------------------------------------------------------------
         ; 1. Load standard font from B:CHARSET.DAT into Tile RAM Bank 0
         ; -------------------------------------------------------------------
-        lda     #OPEN_READ
-        sta     arg1
-        lda     #<charset_filename
-        sta     path_ptr
-        lda     #>charset_filename
-        sta     path_ptr+1
-        lda     #charset_filename_len
-        sta     path_len
-        lda     #0                      ; Channel 0
-        jsr     API_OPEN
+        mvax    #charset_filename, path_ptr
+        mva     #charset_filename_len, path_len
+        stz     arg1
+        stz     arg2
+        stz     arg3
+        stz     io_ptr
+        stz     io_ptr+1
+        mva     #$A0, io_seg            ; Tile RAM Bank 0 ($A0000-$A07FF)
+        mvax    #2048, io_len
+        jsr     API_LOAD
         bcc     @open_font_ok
         jmp     @init_fail
 @open_font_ok:
 
-        lda     #$A0
-        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Tile RAM ($A0000-$A0FFF)
-
-        lda     #<$A000
-        sta     dst_ptr
-        lda     #>$A000
-        sta     dst_ptr+1
-
-@load_font:
-        lda     #0
-        jsr     API_GET
-        bcs     @font_done
-        ldy     #0
-        sta     (dst_ptr), y
-        inc     dst_ptr
-        bne     @no_font_ptr_carry
-        inc     dst_ptr+1
-@no_font_ptr_carry:
-        lda     dst_ptr+1
-        cmp     #>$A800                 ; 2048 bytes -> $A000 to $A7FF
-        bcc     @load_font
-
-@font_done:
-        lda     #0
-        jsr     API_CLOSE
-
         ; -------------------------------------------------------------------
         ; 2. Load palette from B:PALETTE.DAT into Palette RAM
         ; -------------------------------------------------------------------
-        lda     #OPEN_READ
-        sta     arg1
-        lda     #<palette_filename
-        sta     path_ptr
-        lda     #>palette_filename
-        sta     path_ptr+1
-        lda     #palette_filename_len
-        sta     path_len
-        lda     #0                      ; Channel 0
-        jsr     API_OPEN
+        mvax    #palette_filename, path_ptr
+        mva     #palette_filename_len, path_len
+        stz     arg1
+        stz     arg2
+        stz     arg3
+        mvax    #$0800, io_ptr
+        mva     #$B0, io_seg            ; Palette 0 RAM ($B0800-$B09FF)
+        mvax    #512, io_len
+        jsr     API_LOAD
         bcc     @open_palette_ok
         jmp     @init_fail
 @open_palette_ok:
 
         lda     #$B0
         sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Palette RAM ($B0800-$B0FFF)
-
-        lda     #<$A800
-        sta     dst_ptr
-        lda     #>$A800
-        sta     dst_ptr+1
-
-@load_palette:
-        lda     #0
-        jsr     API_GET
-        bcs     @palette_done
-        ldy     #0
-        sta     (dst_ptr), y
-        inc     dst_ptr
-        bne     @no_pal_ptr_carry
-        inc     dst_ptr+1
-@no_pal_ptr_carry:
-        lda     dst_ptr+1
-        cmp     #>$AA00                 ; 512 bytes -> $A800 to $A9FF
-        bcc     @load_palette
-
-@palette_done:
-        lda     #0
-        jsr     API_CLOSE
 
         ; Duplicate Palette 0 to Palette 1 ($AA00), Palette 2 ($AC00), Palette 3 ($AE00)
         ldx     #0

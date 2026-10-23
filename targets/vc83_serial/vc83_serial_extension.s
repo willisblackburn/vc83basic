@@ -121,7 +121,7 @@ exec_dir:
         bpl     @channel_available
         jmp     raise_io_error          ; Already open: fail without closing channel 7
 @channel_available:
-        lda     #4                      ; OPEN_DIRECTORY
+        lda     #OPEN_DIRECTORY
         sta     arg1
         lda     #7                      ; Channel 7
         jsr     API_OPEN
@@ -593,61 +593,15 @@ exec_grmode:
 
 
 load_font_slot7:
-        lda     dst_ptr
-        pha
-        lda     dst_ptr+1
-        pha
-
-        lda     #7
-        jsr     API_CLOSE
-
-        lda     #OPEN_READ
-        sta     arg1
         mvax    #grmode_charset_name, path_ptr
         mva     #grmode_charset_name_len, path_len
-        lda     #7                      ; Channel 7
-        jsr     API_OPEN
-        bcc     @open_font_ok
-        pla
-        sta     dst_ptr+1
-        pla
-        sta     dst_ptr
-        rts
-@open_font_ok:
-        lda     #$A3
-        sta     BANK_SELECT_A           ; Window A -> Tile RAM Bank 7
-
-        lda     #<$A800
-        sta     dst_ptr
-        lda     #>$A800
-        sta     dst_ptr+1
-
-@load_font_loop:
-        lda     #7
-        jsr     API_GET
-        bcs     @font_done
-        ldy     #0
-        sta     (dst_ptr), y
-        inc     dst_ptr
-        bne     @no_ptr_carry
-        inc     dst_ptr+1
-@no_ptr_carry:
-        lda     dst_ptr+1
-        cmp     #>$B000                 ; 2048 bytes: $A800 to $AFFF
-        bcc     @load_font_loop
-
-@font_done:
-        lda     #7
-        jsr     API_CLOSE
-
-        lda     #0
-        sta     BANK_SELECT_A
-
-        pla
-        sta     dst_ptr+1
-        pla
-        sta     dst_ptr
-        rts
+        stz     arg1
+        stz     arg2
+        stz     arg3
+        mvax    #$3800, io_ptr
+        mva     #$A0, io_seg            ; Tile RAM Bank 7 ($A3800-$A3FFF)
+        mvax    #2048, io_len
+        jmp     API_LOAD
 
 
 ; ===========================================================================

@@ -351,7 +351,7 @@ save:
         sta     path_ptr
         lda     S0+1
         sta     path_ptr+1
-        lda     #OPEN_WRITE             ; 1
+        lda     #OPEN_CREATE            ; 1
         sta     arg1
         lda     #7
         jsr     API_OPEN

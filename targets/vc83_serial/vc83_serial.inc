@@ -47,6 +47,7 @@ API_READ        := $E012
 API_WRITE       := $E015
 API_STATUS      := $E018
 API_XIO         := $E01B
+API_LOAD        := $E021
 API_READLINE    := $E02A
 API_SPIXFER     := $E02D
 API_I2CXFER     := $E030
@@ -59,7 +60,7 @@ KEYBOARD_STATUS     := $D085
 IRQ_KEYBOARD        = 6
 
 OPEN_READ       = 0
-OPEN_WRITE      = 1
+OPEN_CREATE     = 1
 OPEN_READ_WRITE = 2
 OPEN_APPEND     = 3
 OPEN_DIRECTORY  = 4
