@@ -70,8 +70,7 @@ initialize_target:
         jmp     @init_fail
 @open_palette_ok:
 
-        lda     #$B0
-        sta     BANK_SELECT_A           ; Window A ($A000-$AFFF) -> Palette RAM ($B0800-$B0FFF)
+        mva     #$B0, BANK_SELECT_A     ; Window A ($A000-$AFFF) -> Palette RAM ($B0800-$B0FFF)
 
         ; Duplicate Palette 0 to Palette 1 ($AA00), Palette 2 ($AC00), Palette 3 ($AE00)
         ldx     #0
@@ -88,8 +87,7 @@ initialize_target:
         bne     @dup_pal
 
         ; Restore BANK_SELECT_A = 0
-        lda     #0
-        sta     BANK_SELECT_A
+        stz     BANK_SELECT_A
 
         ; -------------------------------------------------------------------
         ; 3. Initialize text graphics mode (80x25 text on Layer 2, GRMODE 0)
@@ -102,9 +100,8 @@ initialize_target:
 @grmode_ok:
 
         ; Set channel = 0 (default channel)
-        lda     #0
-        sta     channel
-        sta     default_channel
+        stz     channel
+        stz     default_channel
 
         ; -------------------------------------------------------------------
         ; 5. Display startup banner to screen

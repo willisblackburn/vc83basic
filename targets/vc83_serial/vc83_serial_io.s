@@ -86,11 +86,10 @@ on_reset:
         stz     default_channel         ; Clear redirected channel on reset
         ldx     #7
 @loop:
+        phx
         txa
-        pha
         jsr     API_CLOSE
-        pla
-        tax
+        plx
         dex
         bne     @loop
 
@@ -236,15 +235,9 @@ readline:
         beq     @read_console_0
 
         ; default_channel != 0: read from default_channel (e.g. channel 7)
-        lda     #<buffer
-        sta     io_ptr
-        lda     #>buffer
-        sta     io_ptr+1
+        mvaa    #buffer, io_ptr
         stz     io_seg
-        lda     #<BUFFER_SIZE
-        sta     io_len
-        lda     #>BUFFER_SIZE
-        sta     io_len+1
+        mvaa    #BUFFER_SIZE, io_len
         lda     default_channel         ; Channel to read from
         jsr     API_READLINE            ; Read line from redirected channel
         bcs     @default_eof
@@ -282,15 +275,9 @@ readline:
 
 @do_read:
         pha
-        lda     #<buffer
-        sta     io_ptr
-        lda     #>buffer
-        sta     io_ptr+1
+        mvaa    #buffer, io_ptr
         stz     io_seg
-        lda     #<BUFFER_SIZE
-        sta     io_len
-        lda     #>BUFFER_SIZE
-        sta     io_len+1
+        mvaa    #BUFFER_SIZE, io_len
         pla
         jsr     API_READLINE
         bcs     @read_error
