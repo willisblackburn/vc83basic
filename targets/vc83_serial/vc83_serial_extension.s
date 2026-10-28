@@ -727,9 +727,9 @@ exec_sync:
         adc     sync_last_frame
         sta     sync_last_frame
 
-        ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0087
+        ; Point SRC_ADDR to VCGA Frame Count [7:0] at $B0082
         stz     MODE
-        mvax    #$0087, SRC_ADDR
+        mvax    #$0082, SRC_ADDR
         mva     #$B0, SRC_ADDR+2
 
 @spin:
