@@ -349,6 +349,9 @@ grmode_charset_name_len = 13
 grmode_console_name:    .byte   "C:"
 grmode_console_name_len = 2
 
+grmode_host_name:       .byte   "H:"
+grmode_host_name_len    = 2
+
 grmode_screen_name:     .byte   "S3:"
 grmode_screen_name_len  = 3
 
@@ -466,15 +469,7 @@ exec_grmode:
         jsr     is_channel_0_other      ; Check if channel 0 is open to other device
         bcs     @text_done              ; Leave channel 0 alone if other device
 
-        lda     #0                      ; Close existing console channel 0
-        jsr     API_CLOSE
-
-        lda     #(2 << 5) | OPEN_READ_WRITE
-        sta     arg1
-        mvax    #grmode_console_name, path_ptr
-        mva     #grmode_console_name_len, path_len
-        lda     #0
-        jsr     API_OPEN
+        jsr     @open_console_or_host
         bcs     @err                    ; If open failed then raise error
 
 @text_done:
@@ -560,23 +555,16 @@ exec_grmode:
         lda     #$E0
         sta     BANK_SELECT_D
 
-        ; Close channel 0 and re-open to console on layer 2
-        lda     #0                      ; Close existing channel 0
-        jsr     API_CLOSE
-
-        lda     #(2 << 5) | OPEN_READ_WRITE
-        sta     arg1
-        mvax    #grmode_console_name, path_ptr
-        mva     #grmode_console_name_len, path_len
-        lda     #0
-        jsr     API_OPEN
+        ; Close channel 0 and re-open to console on layer 2 (or fallback to H:)
+        jsr     @open_console_or_host
         bcs     @err_graphics
 
         ; Check if console window (+128) requested
         lda     grmode_val
         bmi     @window_visible         ; Bit 7 is 1: keep console window visible
 
-        ; Pure graphics: hide Layer 2 and cursor
+@hide_l2:
+        ; Hide Layer 2 and cursor
         lda     #$B0                    ; Select VCGA register bank
         sta     BANK_SELECT_D
         stz     $D04C                   ; Layer 2 mode = 0 (hidden)
@@ -590,6 +578,29 @@ exec_grmode:
 
 @err_graphics:
         jmp     raise_out_of_range
+
+@open_console_or_host:
+        lda     #0                      ; Close existing channel 0
+        jsr     API_CLOSE
+
+        lda     #(2 << 5) | OPEN_READ_WRITE
+        sta     arg1
+        mvax    #grmode_console_name, path_ptr
+        mva     #grmode_console_name_len, path_len
+        lda     #0
+        jsr     API_OPEN
+        bcc     @open_done              ; Success: C: is open on channel 0
+
+        ; C: unavailable (no keyboard): hide Layer 2 and open H: on channel 0
+        jsr     @hide_l2
+        lda     #OPEN_READ_WRITE
+        sta     arg1
+        mvax    #grmode_host_name, path_ptr
+        mva     #grmode_host_name_len, path_len
+        lda     #0
+        jmp     API_OPEN
+@open_done:
+        rts
 
 
 load_font_slot7:
