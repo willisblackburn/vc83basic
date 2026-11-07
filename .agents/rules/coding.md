@@ -22,6 +22,21 @@ If you see that I've made changes to the code, keep them. If you think my change
 
 If I say "wait," or "stop," immediately stop everything you are doing and await instructions.
 
+## Scratch Space
+
+Use your own scratch space for test scripts, output logs, random data files, etc. Don't put them in the project directory where they might be accidentally checked into source control.
+
+## Simplicity and Fail Fast
+
+Write simple, direct code that works as intended or fails immediately and loudly when something unexpected occurs. Do NOT add defensive complexity, optionality, or "fallbacks" to try to cope with unexpected conditions or allow the build, tests, or code to keep running in a broken state.
+
+Specifically, NEVER:
+
+1. Search multiple candidate paths or reach into other projects for missing files, assets, or dependencies. Use a single canonical path and fail immediately if it is missing or invalid.
+2. Synthesize dummy, blank, or default data/files (such as blank fonts, default images, empty `.mem` files, or fallback stubs) when a required tool or input file is missing.
+3. Add workarounds in production code (such as duplicate/legacy register addresses, fallback state initialization, or silent clamping of invalid state) to make broken or incomplete tests pass. Fix the test or fix the bug.
+4. Swallow errors in builds, tools, tests, or runtime code (such as `|| true`, `2>/dev/null`, bare `except: pass`, ignoring error flags/return values, or falling back to stale artifacts when generation fails). Always include `.DELETE_ON_ERROR:` in Makefiles and exit non-zero on any failure.
+
 ## Optimize for Space
 
 Memory is precious: the core interpreter needs to fit into just 8K; with platform-specific extensions the total size can go up to 10K, 12K, or 16K, depending on the platform. The apple2 (not apple2_lc) binary must fit into 8K. The code size limitation means that we may sometimes have to select algorithms that are most space-efficient, even if they are slower. The `make` process will report the code size of each binary.
