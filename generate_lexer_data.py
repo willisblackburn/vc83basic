@@ -89,6 +89,8 @@ class NFABuilder:
     def parse_regex(self, pattern, case_insensitive=False):
         self.case_insensitive = case_insensitive
         nfa, pos = self._parse_alternation(pattern, 0)
+        if pos != len(pattern):
+            raise ValueError(f"Unexpected character {pattern[pos]!r} at position {pos} in regex {pattern!r}")
         return nfa
 
     def _parse_alternation(self, pattern, pos):
@@ -168,8 +170,9 @@ class NFABuilder:
         if char == '(':
             pos += 1
             nfa, pos = self._parse_alternation(pattern, pos)
-            if pos < len(pattern) and pattern[pos] == ')':
-                pos += 1
+            if pos >= len(pattern) or pattern[pos] != ')':
+                raise ValueError(f"Unclosed '(' in regex {pattern!r}")
+            pos += 1
             return nfa, pos
 
         elif char == '[':
@@ -191,13 +194,16 @@ class NFABuilder:
                     else:
                         end_c = pattern[pos]
                         pos += 1
+                    if ord(c) > ord(end_c):
+                        raise ValueError(f"Invalid character range {c!r}-{end_c!r} in regex {pattern!r}")
                     for code in range(ord(c), ord(end_c) + 1):
                         chars.add(chr(code))
                 else:
                     chars.add(c)
 
-            if pos < len(pattern) and pattern[pos] == ']':
-                pos += 1
+            if pos >= len(pattern) or pattern[pos] != ']':
+                raise ValueError(f"Unclosed '[' in regex {pattern!r}")
+            pos += 1
             return self.from_char_set(chars), pos
 
         elif char == '.':
@@ -206,7 +212,9 @@ class NFABuilder:
             any_chars = set(chr(c) for c in range(32, 127))
             return self.from_char_set(any_chars), pos
 
-        elif char == '\\' and pos + 1 < len(pattern):
+        elif char == '\\':
+            if pos + 1 >= len(pattern):
+                raise ValueError(f"Trailing backslash in regex {pattern!r}")
             escaped_char = pattern[pos + 1]
             pos += 2
             if escaped_char == '0':

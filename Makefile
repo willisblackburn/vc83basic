@@ -15,7 +15,7 @@ ASMFLAGS = --create-dep $(@:.o=.d) --asm-include-dir src
 CFLAGS = --create-dep $(@:.o=.d) -I src
 LDFLAGS = -m $@.map -vm
 
-GIT_VERSION := .byte "$(shell git describe --always --dirty 2>/dev/null || echo unknown)"
+GIT_VERSION := .byte "$(shell git describe --always --dirty)"
 
 PRINT_SIZE = @sum=0; \
 	for size in $$(awk '/^(CODE|PARSER) / { print $$4 }' $@.map); do \
@@ -23,7 +23,7 @@ PRINT_SIZE = @sum=0; \
 	done; \
 	printf "Code size: \$$%X (%d)\n" $$sum $$sum
 
-PYTHON ?= ./.venv/bin/python
+PYTHON = ./.venv/bin/python
 
 # Define DEBUG=1 to build with debug symbols
 ifeq ($(DEBUG),1)
@@ -117,7 +117,7 @@ build/basic_vc83_serial: build/basic_vc83_serial.o
 
 build/basic_vc83_serial.mem: build/basic_vc83_serial
 	@mkdir -p $(@D)
-	if command -v srec_cat >/dev/null; then srec_cat $< -Binary -offset 0x0800 -Output $@ -VMem 8; else echo "srec_cat not installed"; touch $@; fi 
+	srec_cat $< -Binary -offset 0x0800 -Output $@ -VMem 8
 
 # Rule for version.inc
 src/version.inc: FORCE

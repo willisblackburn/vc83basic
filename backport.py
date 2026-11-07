@@ -31,6 +31,7 @@ try:
 
 except FileNotFoundError:
     print(f"PREVIOUS_BRANCH not found")
+    exit(1)
 except subprocess.CalledProcessError as e:
     print(f"git failed with exit code {e.returncode}")
     exit(1) 

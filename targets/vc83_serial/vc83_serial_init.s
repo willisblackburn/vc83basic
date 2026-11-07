@@ -34,7 +34,7 @@ initialize_target:
         jmp     @start_init
 
 @init_fail:
-        jmp     @init_fail
+        jmp     ($FFFC)
 
 @start_init:
         ; -------------------------------------------------------------------

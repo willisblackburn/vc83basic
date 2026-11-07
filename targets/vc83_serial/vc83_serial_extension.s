@@ -68,6 +68,7 @@ exec_close:
         lda     channel
         and     #$07
         jsr     API_CLOSE
+        bcs     ext_io_err
         rts
 
 ; XIO [#channel] {command}[,{arg1}[,{arg2}]]
@@ -99,10 +100,10 @@ exec_xio:
         lda     channel
         and     #$07
         jsr     API_XIO
-        bcs     @xio_err
+        bcs     ext_io_err
         rts
 
-@xio_err:
+ext_io_err:
         raise   ERR_IO_ERROR
 
 ; DIR [{path}]
@@ -157,7 +158,7 @@ exec_dir:
 @close_ok:
         lda     #7
         jsr     API_CLOSE
-        clc
+        bcs     ext_io_err
         rts
 
 @print_entry:
@@ -247,7 +248,6 @@ exec_status:
         jsr     get_variable
         lda     var_name_type
         bne     @status_type_mismatch
-        jsr     ensure_channel_0
         lda     channel
         and     #$07
         jsr     API_STATUS
@@ -464,6 +464,7 @@ exec_grmode:
 
         ; Load charset into tile slot 7
         jsr     load_font_slot7
+        bcs     @err
 
         ; If channel 0 is open to other device (e.g. H:), leave it alone
         jsr     is_channel_0_other      ; Check if channel 0 is open to other device
@@ -518,6 +519,7 @@ exec_grmode:
 
         ; Load charset into tile slot 7
         jsr     load_font_slot7
+        bcs     @err_graphics
 
         ; If channel 0 is open to other device, leave channel 0 alone and disable Layer 2
         jsr     is_channel_0_other      ; Check if channel 0 is open to other device

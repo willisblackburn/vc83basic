@@ -131,6 +131,7 @@ void test_normalize(void) {
     B = 0;
     C = 0;
     normalize();
+    ASSERT_NE(err, 0);
 
     // If e is >0 but reaches 0 before we finish normalizing, also fail.
     SET_FP_FIELDS(FP0, 0x00, 5, 0x00008283);

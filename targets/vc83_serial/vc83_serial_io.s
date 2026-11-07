@@ -124,24 +124,6 @@ warm_start:
 @cold_start:
         jmp     startup
 
-; ===========================================================================
-; ensure_channel_0
-;
-; If the default channel is active (bit 7 of channel is clear), checks if
-; channel #0 is open (IOCB 0 at $0200 has bit 7 set). If not, restores console
-; via GRMODE 0 (which opens channel #0 to "C:" on Layer 2).
-; ===========================================================================
-ensure_channel_0:
-        bit     channel
-        bmi     @done                   ; Explicit channel: do not auto-open
-        bit     $0200                   ; Check IOCB 0 device byte
-        bmi     @done                   ; Bit 7 is 1 -> channel open
-        lda     #0
-        tax
-        jsr     exec_grmode
-@done:
-        rts
-
 ; Gets a single byte/key from channel (blocking).
 ; Returns carry clear and byte in A if ok, carry set if error / EOF.
 getch:
@@ -182,13 +164,16 @@ putch:
         bmi     on_break
 
 @output:
-        jsr     ensure_channel_0
         pla
         sta     arg1                    ; Character in arg1
         lda     channel
         and     #$07                    ; Channel in A
         jsr     API_PUT
+        bcs     @put_err
         rts
+
+@put_err:
+        jmp     raise_io_error
 
 ; Keyboard break ISR (dispatched by OS irq handler with BANK_SELECT_D = $E0).
 keyboard_irq_handler:
