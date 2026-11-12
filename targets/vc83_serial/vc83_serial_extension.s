@@ -296,24 +296,24 @@ exec_source:
 ;        0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
 ;                0: 80x25 text (tall, 640x400) - Default console mode
 ;                1: 40x25 text (2X, 640x400)
-;                2: 90x60 text (1X, 720x480)
-;                3: 45x30 text (2X, 720x480)
+;                2: 106x60 text (1X, 848x480)
+;                3: 53x30 text (2X, 848x480)
 ;        4..9:   Bitmap graphics modes (Layer 3 full screen, Palette 0)
 ;                4: 320x200x256 (2X, 8bpp, 640x400)
 ;                5: 320x200x16  (2X, 4bpp, 640x400)
 ;                6: 160x100x256 (4X, 8bpp, 640x400)
 ;                7: 160x100x16  (4X, 4bpp, 640x400)
 ;                8: 640x200x16  (tall, 4bpp, 640x400)
-;                9: 360x240x16  (2X, 4bpp, 720x480)
+;                9: 424x240x16  (2X, 4bpp, 848x480)
 ;        10..15: Tilemap modes (Layer 3 full screen, Palette 0, Tile slot 0)
 ;                10: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
 ;                11: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
 ;                12: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
 ;                13: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
-;                14: 45x30 tilemap 8bpp (2X, 8bpp, 720x480)
-;                15: 45x30 tilemap 4bpp (2X, 4bpp, 720x480)
+;                14: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
+;                15: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
 ;     1: Algorithmic modes (64..127) on Layer 3
-;        Bit 5: Frame (0 = 640x400, 1 = 720x480)
+;        Bit 5: Frame (0 = 640x400, 1 = 848x480)
 ;        Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
 ;        Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
 ;        Bits 1:0: Color depth (00 = 8bpp, 01 = 4bpp, 10 = 2bpp, 11 = 1bpp)
@@ -321,11 +321,11 @@ exec_source:
 
 mode_table_format:
         ; Console modes (0..3)
-        ; Bit 7 selects frame: 0 = 640x400 (Frame 0), 1 = 720x480 (Frame 2)
+        ; Bit 7 selects frame: 0 = 640x400 (Frame 0), 1 = 848x480 (Frame 2)
         .byte   $1F     ; 0: 80x25 text (text, tall, 1bpp, 640x400)
         .byte   $17     ; 1: 40x25 text (text, 2X, 1bpp, 640x400)
-        .byte   $13|$80 ; 2: 90x60 text (text, 1X, 1bpp, 720x480)
-        .byte   $17|$80 ; 3: 45x30 text (text, 2X, 1bpp, 720x480)
+        .byte   $13|$80 ; 2: 106x60 text (text, 1X, 1bpp, 848x480)
+        .byte   $17|$80 ; 3: 53x30 text (text, 2X, 1bpp, 848x480)
 
         ; Bitmap graphics modes (4..9)
         .byte   $04     ; 4: 320x200x256 (bitmap, 2X, 8bpp, 640x400)
@@ -333,15 +333,15 @@ mode_table_format:
         .byte   $08     ; 6: 160x100x256 (bitmap, 4X, 8bpp, 640x400)
         .byte   $09     ; 7: 160x100x16  (bitmap, 4X, 4bpp, 640x400)
         .byte   $0D     ; 8: 640x200x16  (bitmap, tall, 4bpp, 640x400)
-        .byte   $05|$80 ; 9: 360x240x16  (bitmap, 2X, 4bpp, 720x480)
+        .byte   $05|$80 ; 9: 424x240x16  (bitmap, 2X, 4bpp, 848x480)
 
         ; Tilemap modes (10..15)
         .byte   $14     ; 10: 40x25 tilemap 8bpp (tilemap, 2X, 8bpp, 640x400)
         .byte   $15     ; 11: 40x25 tilemap 4bpp (tilemap, 2X, 4bpp, 640x400)
         .byte   $10     ; 12: 80x50 tilemap 8bpp (tilemap, 1X, 8bpp, 640x400)
         .byte   $11     ; 13: 80x50 tilemap 4bpp (tilemap, 1X, 4bpp, 640x400)
-        .byte   $14|$80 ; 14: 45x30 tilemap 8bpp (tilemap, 2X, 8bpp, 720x480)
-        .byte   $15|$80 ; 15: 45x30 tilemap 4bpp (tilemap, 2X, 4bpp, 720x480)
+        .byte   $14|$80 ; 14: 53x30 tilemap 8bpp (tilemap, 2X, 8bpp, 848x480)
+        .byte   $15|$80 ; 15: 53x30 tilemap 4bpp (tilemap, 2X, 4bpp, 848x480)
 
 grmode_charset_name:    .byte   "B:CHARSET.DAT"
 grmode_charset_name_len = 13
@@ -835,7 +835,7 @@ exec_spiopen:
         bra     @apply
 
 @default_clk:
-        lda     #2                      ; Default clk_div = 2 (6.75 MHz)
+        lda     #2                      ; Default clk_div = 2 (8.44 MHz)
 @apply:
         sta     arg2                    ; Save clk_div
         pla                             ; Restore port
@@ -872,7 +872,7 @@ exec_i2copen:
         bra     @apply
 
 @default_clk:
-        lda     #67                     ; Default clk_div = 67 (~100 kHz)
+        lda     #85                     ; Default clk_div = 85 (~99.3 kHz)
 @apply:
         sta     arg2                    ; Save clk_div
         pla                             ; Restore port
@@ -1227,7 +1227,7 @@ exec_portwrite:
 exec_portreset:
         jsr     eval_byte_arg           ; Evaluate port (0..15)
         pha                             ; Save port
-        mva     #50, tmp_l              ; Default pulse_len = 50
+        mva     #63, tmp_l              ; Default pulse_len = 63 (~478 us)
         mva     #$04, tmp_h             ; Default CTRL = $04 (auto-pulse, active-low)
         jsr     peek_byte               ; Optional pulse_len argument present?
         beq     @apply
