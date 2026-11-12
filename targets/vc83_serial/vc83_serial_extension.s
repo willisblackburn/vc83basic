@@ -287,61 +287,86 @@ exec_source:
 ; Mode argument:
 ;   Bit 7:
 ;     If set on graphics/tilemap modes (e.g. +128): enables 4-line console
-;     window at bottom of screen on Layer 2 (with transparent background)
-;     and opens channel 0 to "C:". The console window is always tall in
-;     the 640x400 frame (Part 7, bottom 64 lines).
-;     If clear: disables Layer 2 and leaves channel 0 closed.
-;   Bit 6:
-;     0: Preset table modes (0..15)
-;        0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
-;                0: 80x25 text (tall, 640x400) - Default console mode
-;                1: 40x25 text (2X, 640x400)
-;                2: 106x60 text (1X, 848x480)
-;                3: 53x30 text (2X, 848x480)
-;        4..9:   Bitmap graphics modes (Layer 3 full screen, Palette 0)
-;                4: 320x200x256 (2X, 8bpp, 640x400)
-;                5: 320x200x16  (2X, 4bpp, 640x400)
-;                6: 160x100x256 (4X, 8bpp, 640x400)
-;                7: 160x100x16  (4X, 4bpp, 640x400)
-;                8: 640x200x16  (tall, 4bpp, 640x400)
-;                9: 424x240x16  (2X, 4bpp, 848x480)
-;        10..15: Tilemap modes (Layer 3 full screen, Palette 0, Tile slot 0)
-;                10: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
-;                11: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
-;                12: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
-;                13: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
-;                14: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
-;                15: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
-;     1: Algorithmic modes (64..127) on Layer 3
-;        Bit 5: Frame (0 = 640x400, 1 = 848x480)
-;        Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
-;        Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
-;        Bits 1:0: Color depth (00 = 8bpp, 01 = 4bpp, 10 = 2bpp, 11 = 1bpp)
+;     window at bottom of active frame on Layer 2 (with transparent background)
+;     and opens channel 0 to "C:".
+;     If clear: hides Layer 2.
+;   Bits 6:5:
+;     00: Preset table modes (0..27)
+;         0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
+;                 0: 80x25 text (tall, 640x400) - Default console mode
+;                 1: 53x30 text (2X, 848x480)
+;                 2: 106x30 text (tall, 848x480)
+;                 3: 106x60 text (1X, 848x480)
+;         4..15:  Bitmap graphics modes (Layer 3 full screen, Palette 3)
+;                 4:  160x100x256 (4X, 8bpp, 640x400)
+;                 5:  320x200x256 (2X, 8bpp, 640x400)
+;                 6:  640x200x16  (tall, 4bpp, 640x400)
+;                 7:  640x400x4   (1X, 2bpp, 640x400)
+;                 8:  176x92x256  (4X, 8bpp, 704x368)
+;                 9:  352x184x256 (2X, 8bpp, 704x368)
+;                 10: 704x184x16  (tall, 4bpp, 704x368)
+;                 11: 704x368x4   (1X, 2bpp, 704x368)
+;                 12: 212x120x256 (4X, 8bpp, 848x480)
+;                 13: 424x240x16  (2X, 4bpp, 848x480)
+;                 14: 848x240x4   (tall, 2bpp, 848x480)
+;                 15: 848x480x2   (1X, 1bpp, 848x480)
+;         16..27: Tilemap modes (Layer 3 full screen, Palette 3, Tile slot 0)
+;                 16: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
+;                 17: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
+;                 18: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
+;                 19: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
+;                 20: 44x23 tilemap 4bpp (2X, 4bpp, 704x368)
+;                 21: 44x23 tilemap 8bpp (2X, 8bpp, 704x368)
+;                 22: 88x46 tilemap 4bpp (1X, 4bpp, 704x368)
+;                 23: 88x46 tilemap 8bpp (1X, 8bpp, 704x368)
+;                 24: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
+;                 25: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
+;                 26: 106x60 tilemap 4bpp (1X, 4bpp, 848x480)
+;                 27: 106x60 tilemap 8bpp (1X, 8bpp, 848x480)
+;     01: Algorithmic modes (32..63)  on Layer 3, Standard frame (640x400)
+;     10: Algorithmic modes (64..95)  on Layer 3, Wide frame (704x368)
+;     11: Algorithmic modes (96..127) on Layer 3, Full frame (848x480)
+;         Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
+;         Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
+;         Bits 1:0: Color depth (00 = 8bpp, 01 = 4bpp, 10 = 2bpp, 11 = 1bpp)
 ; ===========================================================================
 
 mode_table_format:
+        ; Packed as (frame << 5) | format:
+        ;   frame: $00 = Standard (640x400), $20 = Wide (704x368), $40 = Full (848x480)
         ; Console modes (0..3)
-        ; Bit 7 selects frame: 0 = 640x400 (Frame 0), 1 = 848x480 (Frame 2)
-        .byte   $1F     ; 0: 80x25 text (text, tall, 1bpp, 640x400)
-        .byte   $17     ; 1: 40x25 text (text, 2X, 1bpp, 640x400)
-        .byte   $13|$80 ; 2: 106x60 text (text, 1X, 1bpp, 848x480)
-        .byte   $17|$80 ; 3: 53x30 text (text, 2X, 1bpp, 848x480)
+        .byte   $1F                     ; 0:  80x25 text (tall, 1bpp, 640x400)
+        .byte   $40 | $17               ; 1:  53x30 text (2X, 1bpp, 848x480)
+        .byte   $40 | $1F               ; 2:  106x30 text (tall, 1bpp, 848x480)
+        .byte   $40 | $13               ; 3:  106x60 text (1X, 1bpp, 848x480)
 
-        ; Bitmap graphics modes (4..9)
-        .byte   $04     ; 4: 320x200x256 (bitmap, 2X, 8bpp, 640x400)
-        .byte   $05     ; 5: 320x200x16  (bitmap, 2X, 4bpp, 640x400)
-        .byte   $08     ; 6: 160x100x256 (bitmap, 4X, 8bpp, 640x400)
-        .byte   $09     ; 7: 160x100x16  (bitmap, 4X, 4bpp, 640x400)
-        .byte   $0D     ; 8: 640x200x16  (bitmap, tall, 4bpp, 640x400)
-        .byte   $05|$80 ; 9: 424x240x16  (bitmap, 2X, 4bpp, 848x480)
+        ; Bitmap graphics modes (4..15)
+        .byte   $08                     ; 4:  160x100x256 (4X, 8bpp, 640x400)
+        .byte   $04                     ; 5:  320x200x256 (2X, 8bpp, 640x400)
+        .byte   $0D                     ; 6:  640x200x16  (tall, 4bpp, 640x400)
+        .byte   $02                     ; 7:  640x400x4   (1X, 2bpp, 640x400)
+        .byte   $20 | $08               ; 8:  176x92x256  (4X, 8bpp, 704x368)
+        .byte   $20 | $04               ; 9:  352x184x256 (2X, 8bpp, 704x368)
+        .byte   $20 | $0D               ; 10: 704x184x16  (tall, 4bpp, 704x368)
+        .byte   $20 | $02               ; 11: 704x368x4   (1X, 2bpp, 704x368)
+        .byte   $40 | $08               ; 12: 212x120x256 (4X, 8bpp, 848x480)
+        .byte   $40 | $05               ; 13: 424x240x16  (2X, 4bpp, 848x480)
+        .byte   $40 | $0E               ; 14: 848x240x4   (tall, 2bpp, 848x480)
+        .byte   $40 | $03               ; 15: 848x480x2   (1X, 1bpp, 848x480)
 
-        ; Tilemap modes (10..15)
-        .byte   $14     ; 10: 40x25 tilemap 8bpp (tilemap, 2X, 8bpp, 640x400)
-        .byte   $15     ; 11: 40x25 tilemap 4bpp (tilemap, 2X, 4bpp, 640x400)
-        .byte   $10     ; 12: 80x50 tilemap 8bpp (tilemap, 1X, 8bpp, 640x400)
-        .byte   $11     ; 13: 80x50 tilemap 4bpp (tilemap, 1X, 4bpp, 640x400)
-        .byte   $14|$80 ; 14: 53x30 tilemap 8bpp (tilemap, 2X, 8bpp, 848x480)
-        .byte   $15|$80 ; 15: 53x30 tilemap 4bpp (tilemap, 2X, 4bpp, 848x480)
+        ; Tilemap modes (16..27)
+        .byte   $15                     ; 16: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
+        .byte   $14                     ; 17: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
+        .byte   $11                     ; 18: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
+        .byte   $10                     ; 19: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
+        .byte   $20 | $15               ; 20: 44x23 tilemap 4bpp (2X, 4bpp, 704x368)
+        .byte   $20 | $14               ; 21: 44x23 tilemap 8bpp (2X, 8bpp, 704x368)
+        .byte   $20 | $11               ; 22: 88x46 tilemap 4bpp (1X, 4bpp, 704x368)
+        .byte   $20 | $10               ; 23: 88x46 tilemap 8bpp (1X, 8bpp, 704x368)
+        .byte   $40 | $15               ; 24: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
+        .byte   $40 | $14               ; 25: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
+        .byte   $40 | $11               ; 26: 106x60 tilemap 4bpp (1X, 4bpp, 848x480)
+        .byte   $40 | $10               ; 27: 106x60 tilemap 8bpp (1X, 8bpp, 848x480)
 
 grmode_charset_name:    .byte   "B:CHARSET.DAT"
 grmode_charset_name_len = 13
@@ -356,48 +381,37 @@ grmode_screen_name:     .byte   "S3:"
 grmode_screen_name_len  = 3
 
 exec_grmode:
-        cpx     #0
+        cpx     #0                      ; Validate mode fits in 0..255
         beq     @arg_ok
 @arg_err:
         jmp     raise_out_of_range
+
 @arg_ok:
-        sta     grmode_val
-        and     #$7F
+        sta     grmode_val              ; Save full mode byte (including bit 7)
+        and     #$7F                    ; Strip console window flag (bit 7)
         sta     grmode_base
-
-        ; Check if algorithmic mode (bit 6 set)
-        and     #$40
-        beq     @preset_mode
-
-        ; Algorithmic mode (64..127):
-        lda     grmode_base
-        and     #$1F                    ; format matches VCGALAYER bits 4:0
-        sta     grmode_fmt
-
-        lda     grmode_base
-        and     #$20                    ; bit 5: 0 -> frame 0, 1 -> frame 2
-        lsr
-        lsr
-        lsr
-        lsr
-        sta     grmode_frm
-        jmp     @setup_layers
+        cmp     #32                     ; Algorithmic mode (bits 6:5 != 00)?
+        bcc     @preset_mode
+        sbc     #32                     ; Shift bits 6:5 from 1..3 to frame 0..2
+        bra     @decode_entry
 
 @preset_mode:
-        lda     grmode_base
-        cmp     #16
+        cmp     #28                     ; Validate preset index 0..27
         bcs     @arg_err
         tax
-        lda     #0
-        sta     grmode_frm
-        lda     mode_table_format, x
-        bpl     @format_frame0
-        lda     #2
-        sta     grmode_frm
-@format_frame0:
-        lda     mode_table_format, x
-        and     #$1F
+        lda     mode_table_format,x     ; Load packed (frame << 5) | format
+
+@decode_entry:
+        pha                             ; Save packed byte
+        and     #$1F                    ; Extract 5-bit VCGALAYER format
         sta     grmode_fmt
+        pla
+        lsr     A                       ; Shift frame (bits 6:5) into bits 1:0
+        lsr     A
+        lsr     A
+        lsr     A
+        lsr     A
+        sta     grmode_frm
 
 @setup_layers:
         ; Close graphics channel 6
@@ -426,7 +440,7 @@ exec_grmode:
         tax
         bne     @clear_sprites
 
-        ; Check if console mode (0..3) vs graphics/tilemap (4..15 or 64..127)
+        ; Check if console mode (0..3) vs graphics/tilemap (4..27 or 32..127)
         lda     grmode_base
         cmp     #4
         bcs     @setup_graphics
@@ -481,7 +495,7 @@ exec_grmode:
         jmp     raise_out_of_range
 
         ; -------------------------------------------------------------
-        ; Graphics / Tilemap Mode (4..15, 64..127)
+        ; Graphics / Tilemap Mode (4..27, 32..127)
         ; -------------------------------------------------------------
 @setup_graphics:
         ; Configure layer 3: full screen (part 1)
@@ -535,8 +549,9 @@ exec_grmode:
 
 @setup_l2_console:
         ; Channel 0 is open to C:. Always configure Layer 2 console window at bottom
-        ; Region: part 7 (bottom 64), frame 00 (640x400)
-        lda     #$1C            ; part 7 (bottom 64), frame 00
+        ; Region: part 7 (bottom 64), active frame (grmode_frm)
+        lda     #$1C                    ; Part 7 (bottom 64)
+        ora     grmode_frm              ; Align console window with active frame
         sta     arg1
         lda     #$1F            ; text, tall, 1bpp
         sta     arg2
