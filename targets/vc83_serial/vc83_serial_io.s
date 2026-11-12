@@ -70,7 +70,7 @@ enable_console:
         sta     BANK_SELECT_D
         lda     $D04C                   ; VCGA_L2_MODE
         bne     @already_visible        ; Skip enabling if layer 2 is already active
-        lda     #2                      ; Tilemap mode for layer 2
+        lda     #3                      ; Tilemap mode for layer 2
         sta     $D04C
 @already_visible:
         lda     #$E0                    ; Restore standard bank
@@ -244,7 +244,7 @@ readline:
         sta     BANK_SELECT_D
         lda     $D04C                   ; VCGA_L2_MODE
         bne     @already_visible        ; Skip enabling if layer 2 is already active
-        lda     #2                      ; Tilemap mode for layer 2
+        lda     #3                      ; Tilemap mode for layer 2
         sta     $D04C
 @already_visible:
         lda     #$E0                    ; Restore standard bank
