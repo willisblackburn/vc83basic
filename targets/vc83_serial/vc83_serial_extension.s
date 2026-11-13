@@ -282,58 +282,52 @@ exec_source:
 
 ; ===========================================================================
 ; GRMODE mode
-; Configures VCGA graphics layers and manages the console lifecycle.
+; Configures VCGA graphics layers, clears layer VRAM, reloads default palettes,
+; and manages the console lifecycle.
 ;
 ; Mode argument:
-;   Bit 7:
-;     If set on graphics/tilemap modes (e.g. +128): enables 4-line console
-;     window at bottom of active frame on Layer 2 (with transparent background)
-;     and opens channel 0 to "C:".
-;     If clear: hides Layer 2.
-;   Bits 6:5:
-;     00: Preset table modes (0..27)
-;         0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
-;                 0: 80x25 text (tall, 640x400) - Default console mode
-;                 1: 53x30 text (2X, 848x480)
-;                 2: 106x30 text (tall, 848x480)
-;                 3: 106x60 text (1X, 848x480)
-;         4..15:  Bitmap graphics modes (Layer 3 full screen, Palette 3)
-;                 4:  160x100x256 (4X, 8bpp, 640x400)
-;                 5:  320x200x256 (2X, 8bpp, 640x400)
-;                 6:  640x200x16  (tall, 4bpp, 640x400)
-;                 7:  640x400x4   (1X, 2bpp, 640x400)
-;                 8:  176x92x256  (4X, 8bpp, 704x368)
-;                 9:  352x184x256 (2X, 8bpp, 704x368)
-;                 10: 704x184x16  (tall, 4bpp, 704x368)
-;                 11: 704x368x4   (1X, 2bpp, 704x368)
-;                 12: 212x120x256 (4X, 8bpp, 848x480)
-;                 13: 424x240x16  (2X, 4bpp, 848x480)
-;                 14: 848x240x4   (tall, 2bpp, 848x480)
-;                 15: 848x480x2   (1X, 1bpp, 848x480)
-;         16..27: Tilemap modes (Layer 3 full screen, Palette 3, Tile slot 0)
-;                 16: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
-;                 17: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
-;                 18: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
-;                 19: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
-;                 20: 44x23 tilemap 4bpp (2X, 4bpp, 704x368)
-;                 21: 44x23 tilemap 8bpp (2X, 8bpp, 704x368)
-;                 22: 88x46 tilemap 4bpp (1X, 4bpp, 704x368)
-;                 23: 88x46 tilemap 8bpp (1X, 8bpp, 704x368)
-;                 24: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
-;                 25: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
-;                 26: 106x60 tilemap 4bpp (1X, 4bpp, 848x480)
-;                 27: 106x60 tilemap 8bpp (1X, 8bpp, 848x480)
-;     01: Algorithmic modes (32..63)  on Layer 3, Standard frame (640x400)
-;     10: Algorithmic modes (64..95)  on Layer 3, Wide frame (704x368)
-;     11: Algorithmic modes (96..127) on Layer 3, Full frame (848x480)
-;         Bit 4: Kind (0 = Bitmap, 1 = Tilemap)
-;         Bits 3:2: Scale (00 = 1X, 01 = 2X, 10 = 4X, 11 = tall)
-;         Bits 1:0: Color depth (00 = 8bpp, 01 = 4bpp, 10 = 2bpp, 11 = 1bpp)
+;   Bits 6:0: Preset mode (0..27)
+;     0..3:   Console modes (Layer 2 full screen, Layer 3 disabled)
+;             0: 80x25 text (tall, 640x400) - Default console mode
+;             1: 53x30 text (2X, 848x480)
+;             2: 106x30 text (tall, 848x480)
+;             3: 106x60 text (1X, 848x480)
+;     4..15:  Bitmap graphics modes (Layer 3 full screen, Palette 3)
+;             4:  160x100x256 (4X, 8bpp, 640x400)
+;             5:  320x200x256 (2X, 8bpp, 640x400)
+;             6:  640x200x16  (tall, 4bpp, 640x400)
+;             7:  640x400x4   (1X, 2bpp, 640x400)
+;             8:  176x92x256  (4X, 8bpp, 704x368)
+;             9:  352x184x256 (2X, 8bpp, 704x368)
+;             10: 704x184x16  (tall, 4bpp, 704x368)
+;             11: 704x368x4   (1X, 2bpp, 704x368)
+;             12: 212x120x256 (4X, 8bpp, 848x480)
+;             13: 424x240x16  (2X, 4bpp, 848x480)
+;             14: 848x240x4   (tall, 2bpp, 848x480)
+;             15: 848x480x2   (1X, 1bpp, 848x480)
+;     16..27: Tilemap modes (Layer 3 full screen, Palette 3, Tile slot 0)
+;             16: 40x25 tilemap 4bpp (2X, 4bpp, 640x400)
+;             17: 40x25 tilemap 8bpp (2X, 8bpp, 640x400)
+;             18: 80x50 tilemap 4bpp (1X, 4bpp, 640x400)
+;             19: 80x50 tilemap 8bpp (1X, 8bpp, 640x400)
+;             20: 44x23 tilemap 4bpp (2X, 4bpp, 704x368)
+;             21: 44x23 tilemap 8bpp (2X, 8bpp, 704x368)
+;             22: 88x46 tilemap 4bpp (1X, 4bpp, 704x368)
+;             23: 88x46 tilemap 8bpp (1X, 8bpp, 704x368)
+;             24: 53x30 tilemap 4bpp (2X, 4bpp, 848x480)
+;             25: 53x30 tilemap 8bpp (2X, 8bpp, 848x480)
+;             26: 106x60 tilemap 4bpp (1X, 4bpp, 848x480)
+;             27: 106x60 tilemap 8bpp (1X, 8bpp, 848x480)
+;   Bit 7 (+128):
+;     In graphics/tilemap modes (4..27), the 4-line transparent console window
+;     at the bottom of the active frame on Layer 2 is shown by default (bit 7 = 0).
+;     Setting bit 7 (+128) suppresses/hides the console window.
 ; ===========================================================================
 
 mode_table_format:
         ; Packed as (frame << 5) | format:
         ;   frame: $00 = Standard (640x400), $20 = Wide (704x368), $40 = Full (848x480)
+        ;   format: bit 4 = tilemap, bits 3:2 = scale (1X, 2X, 4X, tall), bits 1:0 = bpp
         ; Console modes (0..3)
         .byte   $1F                     ; 0:  80x25 text (tall, 1bpp, 640x400)
         .byte   $40 | $17               ; 1:  53x30 text (2X, 1bpp, 848x480)
@@ -368,6 +362,22 @@ mode_table_format:
         .byte   $40 | $11               ; 26: 106x60 tilemap 4bpp (1X, 4bpp, 848x480)
         .byte   $40 | $10               ; 27: 106x60 tilemap 8bpp (1X, 8bpp, 848x480)
 
+frame_x:                .byte   104, 72, 0
+frame_y0:               .byte   40, 56, 0
+frame_width_low:        .byte   <640, <704, <848
+frame_width_high:       .byte   >640, >704, >848
+frame_height0_low:      .byte   <400, <368, <480
+frame_height0_high:     .byte   >400, >368, >480
+frame_con_y_low:        .byte   <376, <360, <416
+frame_con_stride:       .byte   80, 88, 112
+
+scale_width_bits:       .byte   0, 1, 2, 0
+scale_height_bits:      .byte   0, 1, 2, 1
+scale_stretch:          .byte   $00, $05, $0A, $04
+
+grmode_palette_name:    .byte   "B:PALETTE.DAT"
+grmode_palette_name_len = 13
+
 grmode_charset_name:    .byte   "B:CHARSET.DAT"
 grmode_charset_name_len = 13
 
@@ -388,22 +398,14 @@ exec_grmode:
 
 @arg_ok:
         sta     grmode_val              ; Save full mode byte (including bit 7)
-        and     #$7F                    ; Strip console window flag (bit 7)
+        and     #$7F                    ; Strip console suppress flag (bit 7)
         sta     grmode_base
-        cmp     #32                     ; Algorithmic mode (bits 6:5 != 00)?
-        bcc     @preset_mode
-        sbc     #32                     ; Shift bits 6:5 from 1..3 to frame 0..2
-        bra     @decode_entry
-
-@preset_mode:
         cmp     #28                     ; Validate preset index 0..27
         bcs     @arg_err
         tax
         lda     mode_table_format,x     ; Load packed (frame << 5) | format
-
-@decode_entry:
-        pha                             ; Save packed byte
-        and     #$1F                    ; Extract 5-bit VCGALAYER format
+        pha
+        and     #$1F                    ; Extract 5-bit format
         sta     grmode_fmt
         pla
         lsr     A                       ; Shift frame (bits 6:5) into bits 1:0
@@ -413,34 +415,33 @@ exec_grmode:
         lsr     A
         sta     grmode_frm
 
-@setup_layers:
         ; Close graphics channel 6
         lda     #6
         jsr     API_CLOSE
 
-        ; Disable layers 0 and 1
-        lda     #0
-        sta     arg1            ; part 0 = disabled
-        jsr     API_VCGALAYER
-        lda     #1
-        sta     arg1            ; part 0 = disabled
-        jsr     API_VCGALAYER
-
-        ; Set background to color 0, palette 2 and disable all 32 sprites
-        lda     #$B0
-        sta     BANK_SELECT_D
+        ; Disable layers 0 and 1, set background to Palette 2 Color 0, disable all 32 sprites
+        mva     #$B0, BANK_SELECT_D
+        stz     $D00C                   ; Layer 0 mode = 0 (disabled)
+        stz     $D02C                   ; Layer 1 mode = 0 (disabled)
         mva     #2, $D080               ; Background palette = 2
         stz     $D081                   ; Background color = 0
         ldx     #0
         clc
 @clear_sprites:
-        stz     $D106, x
+        stz     $D106,x                 ; Disable sprite flags/stretch
         txa
         adc     #8
         tax
         bne     @clear_sprites
 
-        ; Check if console mode (0..3) vs graphics/tilemap (4..27 or 32..127)
+        ; Reload Palette 2 ($B0C00) and console charset in Tile Slot 7 ($A3800)
+        lda     #$0C
+        jsr     load_palette
+        bcs     @io_err
+        jsr     load_font_slot7
+        bcs     @io_err
+
+        ; Dispatch console modes (0..3) vs graphics/tilemap modes (4..27)
         lda     grmode_base
         cmp     #4
         bcs     @setup_graphics
@@ -448,160 +449,116 @@ exec_grmode:
         ; -------------------------------------------------------------
         ; Pure Console Mode (0..3)
         ; -------------------------------------------------------------
-        ; Disable layer 3
-        lda     #0
-        sta     arg1
-        lda     #3
-        jsr     API_VCGALAYER
+        mva     #$B0, BANK_SELECT_D
+        stz     $D06C                   ; Disable Layer 3
 
-        ; Configure layer 2: full screen (part 1)
-        lda     #$04            ; part 1 (full), frame in bits 1:0
-        ora     grmode_frm
-        sta     arg1
-        lda     grmode_fmt
-        sta     arg2
-        lda     #0
-        sta     arg3
-        sta     arg4
-        lda     #2
-        jsr     API_VCGALAYER
-        bcs     @err
-
-        ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, opaque
-        ; (7 << 4) | (2 << 2) | 3 = $7B
-        lda     #$B0
-        sta     BANK_SELECT_D
+        ; Configure Layer 2 full-frame: tile set 7, palette 2, 1bpp, opaque ($7B)
         lda     #$7B
-        sta     $D04D
-        lda     #$E0
-        sta     BANK_SELECT_D
-
-        ; Load charset into tile slot 7
-        jsr     load_font_slot7
-        bcs     @err
+        ldx     #$40
+        jsr     setup_full_layer
 
         ; If channel 0 is open to other device (e.g. H:), leave it alone
-        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
-        bcs     @text_done              ; Leave channel 0 alone if other device
+        jsr     is_channel_0_other      ; Carry set if open to non-console device
+        bcs     @text_done
 
         jsr     @open_console_or_host
-        bcs     @err                    ; If open failed then raise error
-
+        bcs     @io_err
 @text_done:
-        clc
-        rts
+        jmp     @exit
 
-@err:
-        jmp     raise_out_of_range
+@io_err:
+        mva     #$E0, BANK_SELECT_D
+        jmp     raise_io_error
 
         ; -------------------------------------------------------------
-        ; Graphics / Tilemap Mode (4..27, 32..127)
+        ; Graphics / Tilemap Mode (4..27)
         ; -------------------------------------------------------------
 @setup_graphics:
-        ; Configure layer 3: full screen (part 1)
-        lda     #$04            ; part 1 (full), frame in bits 1:0
-        ora     grmode_frm
-        sta     arg1
-        lda     grmode_fmt
-        sta     arg2
-        lda     #0
-        sta     arg3
-        sta     arg4
-        lda     #3
-        jsr     API_VCGALAYER
-        bcs     @err
-
-        ; Overwrite Layer 3 attributes: tile set 0, palette 3, bpp from format, opaque
-        ; (0 << 4) | (3 << 2) | bpp = $0C | (grmode_fmt & 3)
+        ; Configure Layer 3 full-frame: tile set 0, palette 3, bpp, opaque ($0C | bpp)
         lda     grmode_fmt
         and     #$03
         ora     #$0C
-        ldx     #$B0
-        stx     BANK_SELECT_D
-        sta     $D06D
-        ldx     #$E0
-        stx     BANK_SELECT_D
+        ldx     #$60
+        jsr     setup_full_layer
+
+        ; Reload Palette 3 ($B0E00)
+        lda     #$0E
+        jsr     load_palette
+        bcs     @io_err
 
         ; Open channel 6 to graphics layer S3:
-        lda     #OPEN_READ_WRITE
-        sta     arg1
+        mva     #OPEN_READ_WRITE, arg1
         mvax    #grmode_screen_name, path_ptr
         mva     #grmode_screen_name_len, path_len
         lda     #6
         jsr     API_OPEN
-        bcs     @err
-
-        ; Load charset into tile slot 7
-        jsr     load_font_slot7
-        bcs     @err_graphics
+        bcs     @io_err
 
         ; If channel 0 is open to other device, leave channel 0 alone and disable Layer 2
-        jsr     is_channel_0_other      ; Check if channel 0 is open to other device
-        bcc     @setup_l2_console       ; Configure console window if not other device
+        jsr     is_channel_0_other      ; Carry set if open to non-console device
+        bcc     @setup_l2_console
 
-        ; Disable layer 2
-        lda     #0                      ; Layer mode 0 = disabled
-        sta     arg1
-        lda     #2
-        jsr     API_VCGALAYER           ; Disable layer 2
-        clc
-        rts
+        mva     #$B0, BANK_SELECT_D
+        stz     $D04C                   ; Disable Layer 2
+        bra     @exit
 
 @setup_l2_console:
-        ; Channel 0 is open to C:. Always configure Layer 2 console window at bottom
-        ; Region: part 7 (bottom 64), active frame (grmode_frm)
-        lda     #$1C                    ; Part 7 (bottom 64)
-        ora     grmode_frm              ; Align console window with active frame
-        sta     arg1
-        lda     #$1F            ; text, tall, 1bpp
-        sta     arg2
-        lda     #0
-        sta     arg3
-        lda     #$FE            ; base = $FE00
-        sta     arg4
-        lda     #2
-        jsr     API_VCGALAYER
-        bcs     @err_graphics
+        ; Configure Layer 2 as 4-line transparent console window at bottom of active frame
+        mva     #$B0, BANK_SELECT_D
+        ldy     grmode_frm
+        lda     frame_x,y
+        sta     $D040                   ; X low
+        stz     $D041                   ; X high = 0
+        lda     frame_con_y_low,y
+        sta     $D042                   ; Y low (376, 360, or 416)
+        mva     #$01, $D043             ; Y high = $01
+        lda     frame_width_low,y
+        sta     $D044                   ; WIDTH low
+        lda     frame_width_high,y
+        sta     $D045                   ; WIDTH high
+        mva     #32, $D046              ; HEIGHT low = 32 (64 screen lines / 2)
+        stz     $D047                   ; HEIGHT high = 0
+        stz     $D048                   ; BASE_ADDRESS low = $00
+        mva     #$FE, $D049             ; BASE_ADDRESS high = $FE ($FE00)
+        lda     frame_con_stride,y
+        sta     $D04A                   ; STRIDE low (80, 88, or 112)
+        stz     $D04B                   ; STRIDE high = 0
+        mva     #3, $D04C               ; MODE = 3 (tilemap)
+        mva     #$FB, $D04D             ; ATTRIBUTES = transparent, tile set 7, palette 2, 1bpp
+        mva     #$04, $D04E             ; STRETCH = $04 (tall: 1X width, 2X height)
+        ldx     #4
+@zero_l2_tail:
+        stz     $D04F,x                 ; Zero COLOR_SHIFT, HSCROLL, VSCROLL, ATTR_OFFSET
+        dex
+        bpl     @zero_l2_tail
 
-        ; Overwrite Layer 2 attributes: tile set 7, palette 2, 1bpp, TRANSPARENT!
-        ; $80 | (7 << 4) | (2 << 2) | 3 = $FB
-        lda     #$B0
-        sta     BANK_SELECT_D
-        lda     #$FB
-        sta     $D04D
-        lda     #$E0
-        sta     BANK_SELECT_D
-
-        ; Close channel 0 and re-open to console on layer 2 (or fallback to H:)
+        ; Re-open channel 0 to console on Layer 2 (clears $FE00 with spaces; falls back to H:)
         jsr     @open_console_or_host
-        bcs     @err_graphics
+        bcc     @check_suppress
+        jmp     @io_err
 
-        ; Check if console window (+128) requested
+@check_suppress:
+        ; Bit 7 = 0 (default): keep console window visible; Bit 7 = 1 (+128): suppress it
         lda     grmode_val
-        bmi     @window_visible         ; Bit 7 is 1: keep console window visible
+        bpl     @exit
+        jsr     @hide_l2
 
-@hide_l2:
-        ; Hide Layer 2 and cursor
-        lda     #$B0                    ; Select VCGA register bank
-        sta     BANK_SELECT_D
-        stz     $D04C                   ; Layer 2 mode = 0 (hidden)
-        stz     $D1FE                   ; Disable Sprite 31 cursor
-        lda     #$E0                    ; Restore standard bank
-        sta     BANK_SELECT_D
-
-@window_visible:
+@exit:
+        mva     #$E0, BANK_SELECT_D     ; Restore standard peripheral bank
         clc
         rts
 
-@err_graphics:
-        jmp     raise_out_of_range
+@hide_l2:
+        mva     #$B0, BANK_SELECT_D     ; Select VCGA register bank
+        stz     $D04C                   ; Layer 2 mode = 0 (hidden)
+        stz     $D1FE                   ; Disable Sprite 31 cursor
+        rts
 
 @open_console_or_host:
         lda     #0                      ; Close existing channel 0
         jsr     API_CLOSE
 
-        lda     #(2 << 5) | OPEN_READ_WRITE
-        sta     arg1
+        mva     #(2 << 5) | OPEN_READ_WRITE, arg1
         mvax    #grmode_console_name, path_ptr
         mva     #grmode_console_name_len, path_len
         lda     #0
@@ -610,25 +567,181 @@ exec_grmode:
 
         ; C: unavailable (no keyboard): hide Layer 2 and open H: on channel 0
         jsr     @hide_l2
-        lda     #OPEN_READ_WRITE
-        sta     arg1
+        mva     #OPEN_READ_WRITE, arg1
         mvax    #grmode_host_name, path_ptr
         mva     #grmode_host_name_len, path_len
         lda     #0
         jmp     API_OPEN
+
 @open_done:
         rts
 
+; Configures a full-frame VCGA layer at BASE = $0000 and clears its VRAM.
+; A = layer attributes, X = layer register offset ($40 or $60).
+setup_full_layer:
+        stx     tmp_l                   ; Save layer register offset ($40 or $60)
+        sta     tmp_h                   ; Save layer attributes
+
+        ; Extract scale (bits 3:2) into X
+        lda     grmode_fmt
+        lsr     A
+        lsr     A
+        and     #3
+        tax                             ; X = scale (0..3)
+
+        ; Load unscaled frame width into BC and height into DE
+        ldy     grmode_frm
+        lda     frame_width_low,y
+        sta     B
+        lda     frame_width_high,y
+        sta     C
+        lda     frame_height0_low,y
+        sta     D
+        lda     frame_height0_high,y
+        sta     E
+
+        ; Scale logical width and height by stretch factor
+        phx                             ; Save scale
+        ldy     scale_width_bits,x
+        ldx     #B
+        jsr     shr_zp_word             ; BC = width >> scale_width_bits[scale]
+        plx
+        ldy     scale_height_bits,x
+        ldx     #D
+        jsr     shr_zp_word             ; DE = height >> scale_height_bits[scale]
+
+        ; Write X, Y, WIDTH, HEIGHT, and BASE_ADDRESS ($0000) to layer registers
+        mva     #$B0, BANK_SELECT_D
+        ldx     tmp_l
+        ldy     grmode_frm
+        lda     frame_x,y
+        sta     $D000,x                 ; X low
+        stz     $D001,x                 ; X high = 0
+        lda     frame_y0,y
+        sta     $D002,x                 ; Y low
+        stz     $D003,x                 ; Y high = 0
+        lda     B
+        sta     $D004,x                 ; WIDTH low
+        lda     C
+        sta     $D005,x                 ; WIDTH high
+        lda     D
+        sta     $D006,x                 ; HEIGHT low
+        lda     E
+        sta     $D007,x                 ; HEIGHT high
+        stz     $D008,x                 ; BASE_ADDRESS low = 0
+        stz     $D009,x                 ; BASE_ADDRESS high = 0
+
+        ; Compute VRAM row count (DE) and 8-byte aligned row stride (BC)
+        lda     grmode_fmt
+        and     #3
+        tay                             ; Y = bpp (0..3) for bitmap stride shift
+        lda     grmode_fmt
+        and     #$10                    ; Bit 4 = kind (0 = bitmap, $10 = tilemap)
+        beq     @round_stride           ; Bitmap: rows = height, shift = bpp
+        ldx     #D
+        ldy     #3
+        jsr     shr_zp_word             ; Tilemap: rows = height >> 3
+        ldy     #3                      ; Tilemap: 1 byte per 8-pixel tile column
+@round_stride:
+        lda     B                       ; Compute (((width - 1) >> Y) + 8) & $FFF8
+        bne     @dec_b                  ; Check borrow from high byte
+        dec     C
+@dec_b:
+        dec     B
+        ldx     #B
+        jsr     shr_zp_word
+        lda     B
+        clc
+        adc     #8
+        and     #$F8
+        sta     B
+        bcc     @stride_done
+        inc     C
+@stride_done:
+
+        ; Write STRIDE, MODE, ATTRIBUTES, STRETCH, and zero remaining layer registers
+        ldx     tmp_l
+        lda     B
+        sta     $D00A,x                 ; STRIDE low
+        lda     C
+        sta     $D00B,x                 ; STRIDE high
+        lda     grmode_fmt              ; Mode = 1 (bitmap) or 3 (tilemap)
+        lsr     A
+        lsr     A
+        lsr     A
+        and     #2
+        ora     #1
+        sta     $D00C,x                 ; MODE
+        lda     tmp_h
+        sta     $D00D,x                 ; ATTRIBUTES
+        lda     grmode_fmt
+        lsr     A
+        lsr     A
+        and     #3
+        tay
+        lda     scale_stretch,y
+        sta     $D00E,x                 ; STRETCH
+        stz     $D00F,x                 ; COLOR_SHIFT = 0
+        stz     $D010,x                 ; HSCROLL = 0
+        stz     $D011,x                 ; VSCROLL = 0
+        stz     $D012,x                 ; ATTR_OFFSET low = 0
+        stz     $D013,x                 ; ATTR_OFFSET high = 0
+
+        ; Zero-fill stride * rows bytes of VRAM starting at $80:0000
+        stz     MUL_C
+        stz     MUL_C+1
+        stz     MUL_C+2
+        mvax    B, MUL_A
+        mvax    D, MUL_B
+        stz     MODE                    ; MODE_8BPP, DST_STEP = 1
+        stz     DST_ADDR
+        stz     DST_ADDR+1
+        mva     #$80, DST_ADDR+2
+        ldx     MUL_RESULT              ; Low byte of VRAM byte count
+        ldy     MUL_RESULT+1            ; High byte of VRAM byte count
+        iny
+        txa
+        beq     @clear_chk_hi
+@clear_loop:
+        stz     DST_DATA_INC            ; Clear VRAM byte and advance DST_ADDR
+        dex
+        bne     @clear_loop
+@clear_chk_hi:
+        dey
+        bne     @clear_loop
+        rts
+
+; Shifts 16-bit zero-page word at (0,x) right by Y bits.
+shr_zp_word:
+        dey
+        bmi     @done
+        lsr     1,x
+        ror     0,x
+        bra     shr_zp_word
+
+@done:
+        rts
+
+; Loads 512-byte default palette from B:PALETTE.DAT into $B0:(A << 8).
+load_palette:
+        sta     io_ptr+1
+        stz     io_ptr
+        mvax    #grmode_palette_name, path_ptr
+        mva     #grmode_palette_name_len, path_len
+        mva     #$B0, io_seg            ; Palette RAM ($B0800-$B0FFF)
+        mvax    #512, io_len
+        bra     load_from_offset_0
 
 load_font_slot7:
         mvax    #grmode_charset_name, path_ptr
         mva     #grmode_charset_name_len, path_len
-        stz     arg1
-        stz     arg2
-        stz     arg3
         mvax    #$3800, io_ptr
         mva     #$A0, io_seg            ; Tile RAM Bank 7 ($A3800-$A3FFF)
         mvax    #2048, io_len
+load_from_offset_0:
+        stz     arg1
+        stz     arg2
+        stz     arg3
         jmp     API_LOAD
 
 
