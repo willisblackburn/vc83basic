@@ -32,7 +32,7 @@ Write simple, direct code that works as intended or fails immediately and loudly
 
 Specifically, NEVER:
 
-1. Search multiple candidate paths or reach into other projects for missing files, assets, or dependencies. Use a single canonical path and fail immediately if it is missing or invalid.
+1. Write code, scripts, or build rules that search multiple candidate paths or reach outside this repository (other than Git submodules) for files, assets, or dependencies (e.g., `../../other-project/font.dat`). Use a single canonical path within the repository and fail immediately if it is missing or invalid. (Reading sibling repositories yourself for reference or debugging is fine.)
 2. Synthesize dummy, blank, or default data/files (such as blank fonts, default images, empty `.mem` files, or fallback stubs) when a required tool or input file is missing.
 3. Add workarounds in production code (such as duplicate/legacy register addresses, fallback state initialization, or silent clamping of invalid state) to make broken or incomplete tests pass. Fix the test or fix the bug.
 4. Swallow errors in builds, tools, tests, or runtime code (such as `|| true`, `2>/dev/null`, bare `except: pass`, ignoring error flags/return values, or falling back to stale artifacts when generation fails). Always include `.DELETE_ON_ERROR:` in Makefiles and exit non-zero on any failure.
