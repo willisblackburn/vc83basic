@@ -152,7 +152,7 @@ dispatch_vectors_l:
         .byte   <(exec_dim-1)
         .byte   <(exec_data-1)
         .byte   <(exec_poke-1)
-        .byte   <(exec_dpoke-1)
+        .byte   <(exec_pokew-1)
         .byte   <(exec_run-1)
         .byte   <(exec_stop-1)
         .byte   <(exec_end-1)
@@ -180,7 +180,7 @@ statement_count = * - dispatch_vectors_l
         .byte   <(fun_asc-1)
         .byte   <(fun_val-1)
         .byte   <(fun_peek-1)
-        .byte   <(fun_dpeek-1)
+        .byte   <(fun_peekw-1)
         .byte   <(fun_adr-1)
         .byte   <(floor-1)
         .byte   <(flog-1)
@@ -226,7 +226,7 @@ dispatch_vectors_h:
         .byte   >(exec_dim-1)
         .byte   >(exec_data-1)
         .byte   >(exec_poke-1)
-        .byte   >(exec_dpoke-1)
+        .byte   >(exec_pokew-1)
         .byte   >(exec_run-1)
         .byte   >(exec_stop-1)
         .byte   >(exec_end-1)
@@ -252,7 +252,7 @@ dispatch_vectors_h:
         .byte   >(fun_asc-1)
         .byte   >(fun_val-1)
         .byte   >(fun_peek-1)
-        .byte   >(fun_dpeek-1)
+        .byte   >(fun_peekw-1)
         .byte   >(fun_adr-1)
         .byte   >(floor-1)
         .byte   >(flog-1)
@@ -280,7 +280,7 @@ dispatch_vectors_h:
 
 dispatch_flags:
         ; --- Statements ---
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)                                                  ; POKE, DPOKE
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)                                                  ; POKE, POKEW
         .byte   0, 0, 0, 0                                                                              ; RUN..POP
         .byte   PROLOG_NONE | (PROLOG_POP_INT << 4)                                                    ; GET, PUT
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)                                            ; SAVE, LOAD
@@ -291,7 +291,7 @@ dispatch_flags:
         .byte   (PROLOG_POP_STRING | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_STRING) << 4)    ; LEN, STR$
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_POP_STRING | EPILOG_PUSH_INT) << 4)   ; CHR$, ASC
         .byte   (PROLOG_POP_STRING | EPILOG_PUSH_FP) | ((PROLOG_POP_INT | EPILOG_PUSH_INT) << 4)       ; VAL, PEEK
-        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_STRING | EPILOG_PUSH_INT) << 4)     ; DPEEK, ADR
+        .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_POP_STRING | EPILOG_PUSH_INT) << 4)     ; PEEKW, ADR
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_FP) | ((PROLOG_POP_FP | EPILOG_PUSH_FP) << 4)             ; INT, LOG
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_FP) | ((PROLOG_POP_FP | EPILOG_PUSH_FP) << 4)             ; EXP, ABS
         .byte   (PROLOG_POP_FP | EPILOG_PUSH_FP) | ((PROLOG_POP_FP | EPILOG_PUSH_FP) << 4)             ; SGN, SQR

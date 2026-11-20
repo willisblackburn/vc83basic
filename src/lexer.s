@@ -112,7 +112,7 @@ KEYWORD_BLOCK_4_OFFSET = keyword_counter
 ; Block 5 ($50..$5F)
 KEYWORD_BLOCK_5_OFFSET = keyword_counter
 :       name_table_entry "POKE"
-:       name_table_entry "DPOKE"
+:       name_table_entry "POKEW"
 :       name_table_entry "RUN"
 :       name_table_entry "STOP"
 :       name_table_entry "END"
@@ -143,7 +143,7 @@ KEYWORD_BLOCK_8_OFFSET = keyword_counter
 :       name_table_entry "ASC"
 :       name_table_entry "VAL"
 :       name_table_entry "PEEK"
-:       name_table_entry "DPEEK"
+:       name_table_entry "PEEKW"
 :       name_table_entry "ADR"
 :       name_table_entry "INT"
 :       name_table_entry "LOG"

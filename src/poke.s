@@ -14,7 +14,7 @@ exec_poke:
         rts
 
 
-exec_dpoke:
+exec_pokew:
         jsr     exec_poke               ; Leaves high byte in E and Y=0
         iny
         lda     E

@@ -892,12 +892,12 @@ exec_sync:
 
 ; ===========================================================================
 ; POKE24 addr, val
-; DPOKE24 addr, val
+; POKEW24 addr, val
 ; Writes a single byte or 16-bit word to a 24-bit address using the bus
 ; accelerator DST registers.
 ; PROLOG_POP_INT pops val into AX; addr is popped from the value stack.
 ; ===========================================================================
-exec_dpoke24:
+exec_pokew24:
         jsr     exec_poke24
         mva     E, DST_DATA             ; Write high byte to incremented address
         rts
@@ -911,12 +911,12 @@ exec_poke24:
 
 ; ===========================================================================
 ; PEEK24(addr)
-; DPEEK24(addr)
+; PEEKW24(addr)
 ; Reads a single byte or 16-bit word from a 24-bit address using the bus
 ; accelerator DST registers.
 ; PROLOG_POP_FP pops addr into FP0.
 ; ===========================================================================
-fun_dpeek24:
+fun_peekw24:
         jsr     fun_peek24              ; Read low byte, advance pointer by 1
         ldx     DST_DATA                ; Read high byte into X
         rts
@@ -1559,5 +1559,81 @@ midi_put_byte:
         rts
 @err:
         jmp     raise_io_error
+
+; ===========================================================================
+; HEX$(n [, width])
+; Formats 16-bit integer n as uppercase hexadecimal, optionally left-padded
+; with '0' to at least width characters (0..255).
+; ===========================================================================
+fun_hex_s:
+        jsr     evaluate_expression     ; Evaluate numeric argument -> FP0
+        jsr     require_int_fp0         ; Truncate to 16-bit int in AX
+        phax                            ; Save 16-bit value across width evaluation
+        jsr     peek_byte
+        cmp     #TOK_COMMA              ; Optional width argument present?
+        beq     @has_width
+        lda     #0                      ; Default minimum width = 0
+        bra     @got_width
+
+@has_width:
+        jsr     eval_next_byte_arg      ; Skip comma, evaluate width (0..255) into A
+@got_width:
+        sta     arg1                    ; Save requested width
+        plax                            ; Restore 16-bit value into AX
+        stx     arg2                    ; High byte in arg2
+        ldy     #0                      ; Digit count (1..4)
+@digit_loop:
+        pha                             ; Save current low byte
+        and     #$0F                    ; Isolate low nybble
+        cmp     #10                     ; 0..9 or A..F?
+        bcc     @is_digit
+        adc     #'A' - '0' - 10 - 1     ; C=1, so adds 7 to map 10..15 -> 'A'..'F'
+@is_digit:
+        adc     #'0'                    ; Convert to ASCII hex character
+        tax                             ; Park ASCII digit in X
+        pla                             ; Restore current low byte
+        phx                             ; Push ASCII digit (MSD ends up on top)
+        iny                             ; Increment digit count
+        ldx     #4                      ; Shift 16-bit value (arg2:A) right by 4 bits
+@shift:
+        lsr     arg2
+        ror     a
+        dex
+        bne     @shift
+        cmp     #0                      ; Low byte zero?
+        bne     @digit_loop
+        ldx     arg2                    ; High byte zero?
+        bne     @digit_loop
+
+        sty     arg2                    ; Save digit count (1..4)
+        tya                             ; Default output length = digit count
+        cmp     arg1                    ; Compare digit count with requested width
+        bcs     @alloc                  ; digit_count >= width: no padding needed
+        lda     arg1                    ; Otherwise output length = width
+@alloc:
+        pha                             ; Save output length
+        jsr     string_alloc            ; Allocate string of length A at string_ptr
+        pla                             ; Restore output length
+        sec
+        sbc     arg2                    ; A = pad count (out_len - digit_count)
+        tax                             ; Pad count in X
+        ldy     #1                      ; String data starts at index 1
+        cpx     #0                      ; Any leading zeros to write?
+        beq     @write_digits
+        lda     #'0'
+@pad_loop:
+        sta     (string_ptr),y          ; Write leading '0'
+        iny
+        dex
+        bne     @pad_loop
+@write_digits:
+        ldx     arg2                    ; Digit count (1..4)
+@copy_loop:
+        pla                             ; Pop next hex digit (MSD first)
+        sta     (string_ptr),y
+        iny
+        dex
+        bne     @copy_loop
+        rts
 
 

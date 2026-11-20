@@ -147,7 +147,7 @@ TOK_SETCOLOR    = $6B
 TOK_SOURCE      = $6C
 TOK_SYNC        = $6D
 TOK_POKE24      = $6E
-TOK_DPOKE24     = $6F
+TOK_POKEW24     = $6F
 TOK_SPIWRITE    = $70
 TOK_I2CWRITE    = $71
 TOK_PORTDIR     = $72
@@ -166,13 +166,14 @@ TOK_CONTROL     = $7D
 TOK_LOCATE      = $9A
 TOK_STRING_S    = $9B
 TOK_PEEK24      = $9C
-TOK_DPEEK24     = $9D
+TOK_PEEKW24     = $9D
 TOK_SPACE_S     = $9E
 TOK_PORT        = $9F
 TOK_PORTADC     = $A0
 TOK_SPI_S       = $A1
 TOK_I2C_S       = $A2
 TOK_BUF_S       = $A3
+TOK_HEX_S       = $A4
 
 .macro extension_check_break
         bit     break_flag              ; Check if break was requested
@@ -197,7 +198,7 @@ TOK_BUF_S       = $A3
 :       name_table_entry "SOURCE"
 :       name_table_entry "SYNC"
 :       name_table_entry "POKE24"
-:       name_table_entry "DPOKE24"
+:       name_table_entry "POKEW24"
 KEYWORD_BLOCK_7_OFFSET = keyword_counter
 :       name_table_entry "SPIWRITE"
 :       name_table_entry "I2CWRITE"
@@ -231,7 +232,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   <(exec_source-1)
         .byte   <(exec_sync-1)
         .byte   <(exec_poke24-1)
-        .byte   <(exec_dpoke24-1)
+        .byte   <(exec_pokew24-1)
         .byte   <(exec_spiwrite-1)
         .byte   <(exec_i2cwrite-1)
         .byte   <(exec_portdir-1)
@@ -264,7 +265,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   >(exec_source-1)
         .byte   >(exec_sync-1)
         .byte   >(exec_poke24-1)
-        .byte   >(exec_dpoke24-1)
+        .byte   >(exec_pokew24-1)
         .byte   >(exec_spiwrite-1)
         .byte   >(exec_i2cwrite-1)
         .byte   >(exec_portdir-1)
@@ -289,7 +290,7 @@ KEYWORD_BLOCK_7_OFFSET = keyword_counter
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; DRAWTO, FILLTO
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; MOVE, SETCOLOR
         .byte   PROLOG_POP_STRING | (PROLOG_POP_INT << 4)       ; SOURCE, SYNC
-        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; POKE24, DPOKE24
+        .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; POKE24, POKEW24
         .byte   PROLOG_POP_STRING | (PROLOG_POP_STRING << 4)    ; SPIWRITE, I2CWRITE
         .byte   PROLOG_POP_INT | (PROLOG_POP_INT << 4)          ; PORTDIR, SPICLOSE
         .byte   PROLOG_POP_INT | (PROLOG_POP_STRING << 4)       ; I2CCLOSE, EXEC
@@ -405,13 +406,18 @@ pvm_buf_fun:
         MATCH   TOK_LPAREN
         CALL    pvm_arg_list
         JUMP    pvm_close_paren
+
+pvm_hex_fun:
+        MATCH   TOK_LPAREN
+        CALL    pvm_1_to_2_args
+        JUMP    pvm_close_paren
 .endmacro
 
 .macro extension_function_keywords
 :       name_table_entry "LOCATE"
 :       name_table_entry "STRING$"
 :       name_table_entry "PEEK24"
-:       name_table_entry "DPEEK24"
+:       name_table_entry "PEEKW24"
 :       name_table_entry "SPACE$"
 :       name_table_entry "PORT"
 KEYWORD_BLOCK_A_OFFSET = keyword_counter
@@ -419,6 +425,8 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
 :       name_table_entry "SPI$"
 :       name_table_entry "I2C$"
 :       name_table_entry "BUF$"
+:       name_table_entry "HEX$"
+:       name_table_entry ""             ; Padding for even function count
 .endmacro
 
 .macro extension_pvm_functions
@@ -427,38 +435,44 @@ KEYWORD_BLOCK_A_OFFSET = keyword_counter
         BRANCH_IF_RANGE TOK_PEEK24, 5, pvm_fun_1
         BRANCH_IF_RANGE TOK_SPI_S, 2, pvm_spi_fun
         BRANCH_IF TOK_BUF_S, pvm_buf_fun
+        BRANCH_IF TOK_HEX_S, pvm_hex_fun
 .endmacro
 
 .macro extension_function_vectors_l
         .byte   <(fun_locate-1)
         .byte   <(fun_string_s-1)
         .byte   <(fun_peek24-1)
-        .byte   <(fun_dpeek24-1)
+        .byte   <(fun_peekw24-1)
         .byte   <(fun_space_s-1)
         .byte   <(fun_port-1)
         .byte   <(fun_portadc-1)
         .byte   <(fun_spi_s-1)
         .byte   <(fun_i2c_s-1)
         .byte   <(fun_buf_s-1)
+        .byte   <(fun_hex_s-1)
+        .byte   0
 .endmacro
 
 .macro extension_function_vectors_h
         .byte   >(fun_locate-1)
         .byte   >(fun_string_s-1)
         .byte   >(fun_peek24-1)
-        .byte   >(fun_dpeek24-1)
+        .byte   >(fun_peekw24-1)
         .byte   >(fun_space_s-1)
         .byte   >(fun_port-1)
         .byte   >(fun_portadc-1)
         .byte   >(fun_spi_s-1)
         .byte   >(fun_i2c_s-1)
         .byte   >(fun_buf_s-1)
+        .byte   >(fun_hex_s-1)
+        .byte   0
 .endmacro
 
 .macro extension_function_flags
         .byte   (PROLOG_NONE | EPILOG_PUSH_INT) | ((PROLOG_POP_INT | EPILOG_PUSH_STRING) << 4)          ; LOCATE, STRING$
-        .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, DPEEK24
+        .byte   (PROLOG_POP_FP | EPILOG_PUSH_INT) | ((PROLOG_POP_FP | EPILOG_PUSH_INT) << 4)            ; PEEK24, PEEKW24
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_STRING) | ((PROLOG_POP_INT | EPILOG_PUSH_INT) << 4)       ; SPACE$, PORT
         .byte   (PROLOG_POP_INT | EPILOG_PUSH_INT) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; PORTADC, SPI$
         .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | ((PROLOG_NONE | EPILOG_PUSH_STRING) << 4)          ; I2C$, BUF$
+        .byte   (PROLOG_NONE | EPILOG_PUSH_STRING) | (0 << 4)                                           ; HEX$ + padding
 .endmacro

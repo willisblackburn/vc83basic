@@ -127,7 +127,7 @@ fun_len:
         ldx     #0                      ; Zero-extend to 16 bits; for len we receive the string length in A
         rts
 
-fun_dpeek:
+fun_peekw:
         jsr     fun_peek                ; Leaves pointer in BC and Y=0
         pha
         iny

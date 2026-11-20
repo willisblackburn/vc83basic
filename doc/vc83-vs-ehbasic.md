@@ -84,7 +84,7 @@ VC83 preserves and matches complete variable names. In EhBASIC, `TOTAL` and `TOK
 
 | Feature | VC83 | EhBASIC |
 |---|---|---|
-| `DPEEK` / `DPOKE` (16-bit memory) | ✅ | ✅ (`DEEK`/`DOKE` — same concept) |
+| `PEEKW` / `POKEW` (16-bit memory) | ✅ | ✅ (`DEEK`/`DOKE` — same concept) |
 | `ADR(s$)` (string address) | ✅ | ✅ (`SADD(s$)` — same concept) |
 | `POP` (discard GOSUB/FOR frame) | ✅ | ❌ |
 | `&` operator (string concatenation) | ✅ (dedicated operator) | ❌ (uses `+` only) |
@@ -192,7 +192,7 @@ Minor convenience — easily defined by the user as variables.
 | **Program management** | LIST, RUN, NEW, CLR, CONT, STOP, END |
 | **Variables** | DEF FN, DIM, LET |
 | **Multi-statement lines** | `:` separator |
-| **16-bit memory** | DPEEK/DPOKE ≡ DEEK/DOKE |
+| **16-bit memory** | PEEKW/POKEW ≡ DEEK/DOKE |
 | **String address** | ADR() ≡ SADD() |
 | **String heap** | Downward-growing with garbage collection |
 | **LOAD/SAVE** | Both support (EhBASIC via vectors) |
